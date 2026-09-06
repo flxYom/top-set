@@ -4,6 +4,12 @@
 
 # top-set
 
+**Log a set in ten seconds. Watch your progress build over months.**
+
+[![CI](https://github.com/flxYom/top-set/actions/workflows/ci.yml/badge.svg)](https://github.com/flxYom/top-set/actions/workflows/ci.yml)
+![Status](https://img.shields.io/badge/status-beta-orange)
+[![Licence](https://img.shields.io/badge/licence-all%20rights%20reserved-lightgrey)](LICENSE)
+
 A weightlifting logbook that runs entirely in the browser. You log sets, weights,
 reps and RPE during a session; it gives you volume, records and progression over
 time.
@@ -13,6 +19,18 @@ browser's `localStorage`, on the device you use. That is a deliberate trade, and
 it cuts both ways — see [Where your data lives](#where-your-data-lives).
 
 The interface is in French.
+
+**This is an early beta**, used and developed day to day by its author. Expect
+rough edges and the occasional breaking change. If something is broken, confusing,
+or missing, [open an issue](../../issues/new/choose) — that is exactly what this
+repository is for right now.
+
+<p align="center">
+  <img src="screenshots/planning.png" width="240" alt="Weekly planning screen: day pills for the week, a chest-day summary banner, and a logged bench press exercise" />
+  <img src="screenshots/session.png" width="240" alt="Logging a set: weight and rep steppers, RPE, rest, and the duplicated third set" />
+  <img src="screenshots/recap.png" width="240" alt="Weekly recap: volume lifted, sessions, sets, an assiduity heatmap, and the muscle-group split" />
+</p>
+<p align="center"><sub>Planning · Logging a set · Weekly recap — real screens, seeded with placeholder numbers for these screenshots.</sub></p>
 
 ---
 
@@ -71,8 +89,8 @@ rejects it — the field empties and the set loses its weight. That field is
 
 In `localStorage`, on one device, in one browser. Nowhere else.
 
-**What that buys you:** no account, instant start, nothing to leak, works
-offline, no server bill.
+**What that buys you:** no account, instant start, nothing to leak, no server
+bill.
 
 **What it costs you:** no sync between devices, and the logbook is *destroyed* by
 clearing site data, switching phones, or browsing in a private window.
@@ -150,6 +168,7 @@ mentions-legales.html    legal notice              (French)
 legal.css                shared styles for the pages above
 chart.umd.js             Chart.js 4.4.1, loaded on demand
 fonts/                   Bricolage Grotesque, self-hosted (latin + latin-ext)
+screenshots/             README screenshots (planning, session, recap)
 icon.svg                 primary favicon
 favicon-16/32.png        fallbacks where SVG favicons are not supported
 icon-180/192/512.png     home screen and PWA icons
@@ -158,6 +177,8 @@ manifest.webmanifest     PWA manifest
 vercel.json              security headers and cache policy
 robots.txt  sitemap.xml  indexing
 set-domaine.mjs          replaces the placeholder domain everywhere
+LICENSE  SECURITY.md  CONTRIBUTING.md  CHANGELOG.md
+.github/                 issue templates, PR template, CI workflow
 ```
 
 Icons and the social image are generated from geometry by a script rather than
@@ -198,8 +219,8 @@ anything that is not a domain.
 
 ## Installing on a phone
 
-It is a PWA — it installs without a store, gets its own icon, opens full screen
-and works offline.
+It is a PWA — it installs without a store, gets its own icon and opens full
+screen.
 
 **iOS (Safari)** — Share, then *Add to Home Screen*.
 **Android (Chrome)** — menu, then *Install app*.
@@ -207,6 +228,13 @@ and works offline.
 Worth doing on iOS for a reason beyond convenience: Safari may clear
 `localStorage` for a site not visited in about a week, but not for a site
 installed on the home screen.
+
+**Not offline yet.** There is no service worker: opening the app still needs a
+network connection (`index.html` is served `no-cache` on purpose, so you always
+get the latest version). Once the page is loaded, whatever is already in
+`localStorage` stays readable even if the connection drops mid-session — but
+launching Top Set with no connection at all doesn't work today. Real offline
+support is on the [roadmap](#roadmap).
 
 ---
 
@@ -222,7 +250,11 @@ installed on the home screen.
 
 ## Roadmap
 
-Accounts and sync are the obvious next step, and the schema for it already exists
+**Short term:** real offline support. There is no service worker yet (see
+[Installing on a phone](#installing-on-a-phone)) — that is next, ahead of
+anything below.
+
+**Longer term:** accounts and sync are the obvious next step, and the schema for it already exists
 and is tested — three relational tables (sessions → exercises → sets) with
 row-level security, rather than one JSON blob per user.
 
