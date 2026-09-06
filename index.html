@@ -9,13 +9,23 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Top Set">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Top Set">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:title" content="Top Set — carnet de musculation">
+<meta property="og:description" content="Note tes séances, tes séries et tes charges. Aucun compte, rien à installer, tout reste sur ton téléphone.">
+<meta property="og:url" content="https://topset.fr/">
+<meta property="og:image" content="https://topset.fr/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Top Set — carnet de musculation">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="canonical" href="https://topset.fr/">
 <link rel="icon" type="image/svg+xml" href="icon.svg">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="manifest" href="manifest.webmanifest">
-</head>
-<body>
 <title>Top Set</title>
 <style>
   /* Police servie depuis notre propre domaine : aucun appel a un tiers,
@@ -90,7 +100,7 @@
   /* Le wordmark : TOP clair, SET fonce, sur orange. Compose en texte reel
      plutot qu'en image — net a toute taille, et rien a telecharger. */
   .brand-mark{
-    flex:1;
+    flex:1;margin:0;
     background:var(--orange);
     border:2.5px solid var(--orange);
     box-shadow:4px 4px 0 var(--ink);
@@ -606,10 +616,12 @@
   .sheet-msg.err{border-color:var(--orange);color:var(--orange);}
 
 </style>
+</head>
 
+<body>
 <div class="app">
   <header class="brand">
-    <div class="brand-mark"><span class="wm-top">TOP</span><span class="wm-set">SET</span><span class="wm-app">app</span></div>
+    <h1 class="brand-mark"><span class="wm-top">TOP</span><span class="wm-set">SET</span><span class="wm-app">app</span></h1>
     <button type="button" class="brand-btn" id="dataBtn" aria-label="Sauvegarde de mes données">⇅</button>
     <div class="brand-date" id="brandDate"><b>—</b><span>—</span></div>
   </header>
@@ -694,7 +706,7 @@
       <label class="btn-sheet file">CHOISIR UN FICHIER<input type="file" id="dataFile" accept="application/json,.json"></label>
       <textarea id="dataPaste" class="sheet-paste" rows="3" placeholder="… ou colle ici le contenu de ta sauvegarde"></textarea>
       <button type="button" class="btn-sheet danger" id="dataImport">REMPLACER MES DONNÉES</button>
-      <button type="button" class="btn-sheet" id="dataRecover" hidden></button>
+      <button type="button" class="btn-sheet" id="dataRecover" aria-label="Récupérer la copie de secours" hidden></button>
       <div class="sheet-msg" id="dataMsg" hidden></div>
     </div>
   </div>
