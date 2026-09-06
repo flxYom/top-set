@@ -8,3 +8,6 @@
 
 # Outil local, pas une page du site
 set-domaine.mjs
+
+# Fichiers de depot, pas des pages du site
+README.md
