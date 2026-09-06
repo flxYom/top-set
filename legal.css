@@ -32,13 +32,18 @@ body{
 }
 .wrap{max-width:620px;margin:0 auto;}
 
-.back{
-  display:inline-block;margin:28px 0 22px;
-  font-size:12px;font-weight:700;letter-spacing:.04em;
-  color:var(--orange);text-decoration:none;
-  min-height:44px;line-height:44px;
+/* Retour a l'app. Bouton borde plutot que lien texte : sur telephone,
+   une cible de 46 px se vise, un lien de 12 px se manque. */
+.home-btn{
+  display:inline-flex;align-items:center;gap:9px;
+  margin:26px 0 24px;padding:0 16px;min-height:46px;
+  background:var(--orange);border:2.5px solid var(--orange);
+  box-shadow:4px 4px 0 var(--ink);
+  color:#0d0c0a;font-size:13px;font-weight:800;letter-spacing:.05em;
+  text-decoration:none;
 }
-.back:hover,.back:focus-visible{text-decoration:underline;}
+.home-btn:active{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--ink);}
+.home-btn svg{flex:none;}
 
 h1{
   font-size:clamp(26px,6vw,36px);font-weight:800;line-height:1.05;
@@ -78,6 +83,50 @@ a{color:var(--orange);}
   flex-wrap:wrap;padding:26px 0 0;margin-top:20px;
   border-top:2px solid var(--line);
 }
-.footer a{color:var(--dim);font-size:11px;text-decoration:none;letter-spacing:.03em;}
+/* 44 px de haut : un lien de pied de page doit rester tappable. */
+.footer a{
+  display:inline-flex;align-items:center;min-height:44px;padding:0 4px;
+  color:var(--dim);font-size:11px;text-decoration:none;letter-spacing:.03em;
+}
 .footer a:hover,.footer a:focus-visible{color:var(--ink);text-decoration:underline;}
 .footer .sep{color:var(--line);font-size:11px;}
+
+/* ---------------------------------------------------------------- guide */
+/* Les etapes sont numerotees parce qu'il y a un vrai ordre : on ne coche
+   pas une serie avant de l'avoir creee. Ailleurs, pas de numeros. */
+.etape{display:flex;gap:14px;margin-bottom:18px;}
+.etape:last-child{margin-bottom:0;}
+.etape .num{
+  flex:none;width:30px;height:30px;
+  background:var(--orange);color:#0d0c0a;
+  font-size:14px;font-weight:800;
+  display:flex;align-items:center;justify-content:center;
+}
+.etape .corps{flex:1;min-width:0;}
+.etape h3{font-size:15px;font-weight:800;margin:4px 0 6px;color:var(--ink);}
+.etape p{margin:0 0 6px;}
+
+/* Un bouton de l'app, cite dans le texte. */
+.touche{
+  display:inline-block;padding:2px 7px;
+  border:2px solid var(--ink);background:var(--bg);
+  font-size:12px;font-weight:800;letter-spacing:.03em;
+  white-space:nowrap;
+}
+.touche.orange{background:var(--orange);border-color:var(--orange);color:#0d0c0a;}
+
+.note{
+  border-left:3px solid var(--orange);
+  padding:2px 0 2px 13px;margin:14px 0 0;
+}
+.note p{margin:0;}
+
+/* Echelle RPE : deux colonnes qui s'alignent. */
+.echelle{width:100%;border-collapse:collapse;font-size:14px;}
+.echelle td{padding:7px 0;border-bottom:1px solid var(--line);vertical-align:top;}
+.echelle tr:last-child td{border-bottom:none;}
+.echelle .v{
+  width:52px;font-weight:800;color:var(--orange);
+  font-variant-numeric:tabular-nums;
+}
+.echelle .d{color:var(--ink);line-height:1.45;}

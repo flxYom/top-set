@@ -180,7 +180,7 @@
   /* Revenir a aujourd'hui apres avoir navigue. Discret quand on y est deja,
      orange des qu'on s'en est eloigne : le bouton signale qu'il sert. */
   .btn-today{
-    flex:none;height:38px;padding:0 10px;
+    flex:none;height:44px;padding:0 10px;
     border:2px solid var(--line);background:var(--bg);color:var(--dim);
     font-weight:800;font-size:11px;letter-spacing:.04em;cursor:pointer;
     white-space:nowrap;
@@ -595,7 +595,11 @@
     flex-wrap:wrap;padding:24px 0 28px;margin-top:14px;
     border-top:2px solid var(--line);
   }
-  .legal-footer a{color:var(--dim);font-size:11px;text-decoration:none;letter-spacing:.03em;}
+  /* 44 px de haut : un lien de pied de page doit rester tappable. */
+  .legal-footer a{
+    display:inline-flex;align-items:center;min-height:44px;padding:0 4px;
+    color:var(--dim);font-size:11px;text-decoration:none;letter-spacing:.03em;
+  }
   .legal-footer a:hover,.legal-footer a:focus-visible{color:var(--ink);text-decoration:underline;}
   .legal-footer .sep{color:var(--line);font-size:11px;}
   .sheet-msg.warn{border-color:var(--yellow);color:var(--yellow);}
@@ -652,6 +656,8 @@
   </section>
 
   <footer class="legal-footer">
+    <a href="guide.html">Comment ça marche</a>
+    <span class="sep">·</span>
     <a href="mentions-legales.html">Mentions légales</a>
     <span class="sep">·</span>
     <a href="confidentialite.html">Confidentialité</a>
