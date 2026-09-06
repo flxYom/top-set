@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+# REMPLACER topset.fr par ton vrai domaine une fois achete.
+Sitemap: https://topset.fr/sitemap.xml

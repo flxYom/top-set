@@ -1,0 +1,7 @@
+# Copies de securite locales : elles ne doivent jamais etre servies en ligne.
+# Sans ce fichier, index.html.before-backup serait accessible publiquement.
+*.before-*
+*.bak
+
+# Fichiers de travail
+*.zip

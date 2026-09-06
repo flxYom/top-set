@@ -1,0 +1,13 @@
+# Copies de securite locales : l'historique Git les remplace desormais.
+*.before-*
+*.bak
+
+# Archives de travail
+*.zip
+
+# Vercel
+.vercel
+
+# Systeme
+Thumbs.db
+.DS_Store

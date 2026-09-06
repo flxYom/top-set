@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Top Set">
+  <title>Top Set</title>
+  <!-- Palette de l'app : orange #ff5c38, creme #f0ece2, noir chaud #0d0c0a.
+       Le contraste clair / fonce reprend l'idee du wordmark (TOP clair,
+       SET fonce) dans une forme qui, elle, tient a 16 px. -->
+  <rect width="512" height="512" fill="#ff5c38"/>
+  <circle cx="256" cy="256" r="176" fill="#f0ece2"/>
+  <path d="M 256 256 L 256 80 A 176 176 0 0 1 432 256 Z" fill="#0d0c0a"/>
+  <circle cx="256" cy="256" r="54" fill="#ff5c38"/>
+</svg>
