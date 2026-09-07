@@ -595,6 +595,25 @@
     resize:vertical;
   }
   .sheet-paste:focus{outline:none;border-color:var(--blue);}
+  .sheet-input{
+    width:100%;box-sizing:border-box;min-height:48px;margin-bottom:8px;
+    background:var(--bg);color:var(--ink);
+    border:2px solid var(--line);
+    padding:9px 10px;
+    font-family:inherit;font-size:14px;
+  }
+  .sheet-input:focus{outline:none;border-color:var(--blue);}
+  .sheet-etat{
+    display:flex;align-items:center;gap:8px;
+    font-size:12.5px;font-weight:800;color:var(--dim);
+    margin-bottom:10px;line-height:1.4;
+  }
+  .sheet-etat .pastille{
+    width:9px;height:9px;border-radius:50%;background:var(--dim);flex:none;
+  }
+  .sheet-etat.ok .pastille{background:var(--green);}
+  .sheet-etat.attente .pastille{background:var(--yellow);}
+  .sheet-etat.hs .pastille{background:var(--orange);}
   .sheet-msg{
     font-size:12.5px;line-height:1.5;
     border:2px solid var(--line);padding:9px 10px;
@@ -694,6 +713,32 @@
       les efface définitivement. Garde une copie du fichier quelque part.
     </p>
 
+    <div class="sheet-section" id="compteSection" hidden>
+      <div class="sheet-label">TON COMPTE</div>
+      <div class="sheet-etat" id="compteEtat"><span class="pastille"></span><span id="compteEtatTexte">—</span></div>
+
+      <div id="compteDeco">
+        <input type="email" id="compteEmail" class="sheet-input" placeholder="ton@email.fr" autocomplete="email" inputmode="email" aria-label="Adresse email">
+        <input type="password" id="compteMdp" class="sheet-input" placeholder="mot de passe (8 caractères minimum)" autocomplete="current-password" aria-label="Mot de passe">
+        <button type="button" class="btn-sheet primary" id="compteConnexion">SE CONNECTER</button>
+        <button type="button" class="btn-sheet" id="compteInscription">CRÉER UN COMPTE</button>
+        <p class="sheet-note">
+          Un compte sert à retrouver tes séances sur un autre téléphone. Sans
+          compte, Top Set fonctionne exactement comme avant : tout reste sur
+          cet appareil, et rien n'est envoyé nulle part.
+        </p>
+      </div>
+
+      <div id="compteCo" hidden>
+        <button type="button" class="btn-sheet" id="compteMigrer" hidden></button>
+        <button type="button" class="btn-sheet" id="compteSync">SYNCHRONISER MAINTENANT</button>
+        <button type="button" class="btn-sheet" id="compteDeconnexion">SE DÉCONNECTER</button>
+        <p class="sheet-note" id="compteNote"></p>
+      </div>
+
+      <div class="sheet-msg" id="compteMsg" hidden></div>
+    </div>
+
     <div class="sheet-section">
       <div class="sheet-label">SAUVEGARDER</div>
       <button type="button" class="btn-sheet primary" id="dataDownload">SAUVEGARDE COMPLÈTE (.JSON)</button>
@@ -724,6 +769,9 @@
 
 <div class="toast" id="toast"></div>
 
+<!-- Coordonnees publiques du projet Supabase. Absent ou vide : l'app reste
+     en mode 100 % local, sans bouton mort ni erreur. -->
+<script src="supabase-config.js"></script>
 <script>
 (function(){
   "use strict";
@@ -885,8 +933,7 @@
     selectedDay:toDateStr(new Date()),
     view:'planning',
     recapPeriod:'semaine',
-    loading:true,
-    db:null
+    loading:true
   };
 
   function getOrCreateDay(ds){
@@ -1029,15 +1076,12 @@
     var run = function(){ persistDay(ds); };
     if (immediate) run(); else saveTimers[ds] = setTimeout(run, 500);
   }
+  // Le local d'abord, toujours, et immediatement : l'ecran ne doit jamais
+  // attendre le reseau. La journee est ensuite marquee pour le cloud, si un
+  // compte est connecte. Sans compte, la seconde ligne ne fait rien.
   function persistDay(ds){
-    var day = state.sessions[ds] || { date:ds, exercises:[] };
-    if (state.db){
-      state.db.collection('sessions').doc(ds).set({ date:ds, exercises:day.exercises }).catch(function(){
-        showToast('Sauvegarde impossible — réessaie');
-      });
-    } else {
-      saveLocal();
-    }
+    saveLocal();
+    if (Sync) Sync.marquerSale(ds);
   }
   var SAVE_KEY    = 'musculation_sessions';
   var SECOURS_KEY = 'musculation_sessions_secours';   // version precedente
@@ -1104,22 +1148,6 @@
       if (!best || p.series > best.series) best = { cle:k, texte:raw, jours:p.jours, series:p.series };
     });
     return best;
-  }
-
-  function subscribeSessions(db){
-    db.collection('sessions').orderBy('date').limit(1000).onSnapshot(function(snap){
-      snap.docChanges().forEach(function(change){
-        var id = change.doc.id;
-        if (change.type === 'removed'){ delete state.sessions[id]; return; }
-        var data = change.doc.data() || {};
-        var rawExercises = Array.isArray(data.exercises)?data.exercises:[];
-        state.sessions[id] = { date:data.date||id, exercises:rawExercises.map(normalizeExercise) };
-      });
-      state.loading = false;
-      renderAll();
-    }, function(){
-      showToast('Connexion au stockage perdue');
-    });
   }
 
   // ---------- toast ----------
@@ -1909,30 +1937,11 @@
   function init(){
     populateDatalist();
     renderPlanning(true);
-
-    if (window.claude && typeof window.claude.use === 'function'){
-      window.claude.use('db').then(function(db){
-        if (db){
-          state.db = db;
-          subscribeSessions(db);
-        } else {
-          var local = loadLocal();
-          if (local) state.sessions = normalizeLocal(local);
-          state.loading = false;
-          renderAll();
-        }
-      }).catch(function(){
-        var local = loadLocal();
-        if (local) state.sessions = normalizeLocal(local);
-        state.loading = false;
-        renderAll();
-      });
-    } else {
-      var local = loadLocal();
-      if (local) state.sessions = normalizeLocal(local);
-      state.loading = false;
-      renderAll();
-    }
+    var local = loadLocal();
+    if (local) state.sessions = normalizeLocal(local);
+    state.loading = false;
+    renderAll();
+    Sync.demarrer();
   }
 
 
@@ -2048,6 +2057,7 @@
 
   function refreshSheet(){
     majBoutonSecours();
+    Sync.majUI();
     var s = backupStats();
     var el = document.getElementById('dataStat');
     if (!s.jours){ el.textContent = 'Aucune donn\u00e9e enregistr\u00e9e pour l\'instant'; return; }
@@ -2207,6 +2217,434 @@
       '. Le fichier en contient ' + pendingBackupLabel +
       '. Confirmer effacera d\u00e9finitivement les donn\u00e9es actuelles.');
   });
+
+  // ==========================================================================
+  // COMPTE ET SYNCHRONISATION
+  // ==========================================================================
+  // Regle unique : le localStorage reste la source de verite de l'interface.
+  // Tout s'ecrit en local d'abord, immediatement ; l'ecran ne depend jamais du
+  // reseau. Supabase est une copie qui suit. Sans compte, ou hors ligne, l'app
+  // se comporte exactement comme avant.
+  //
+  // L'unite de synchro est la JOURNEE, parce que c'est deja l'unite de l'app :
+  // state.sessions est une carte date -> journee. pousser_jour() reecrit une
+  // journee entiere de facon atomique, ce qui elimine par construction les
+  // doublons, les fusions partielles et les series orphelines.
+
+  var SYNC_KEY      = 'topset_sync';
+  var CONFLITS_KEY  = 'topset_conflits';
+
+  var Sync = (function(){
+    var cfg = window.TOPSET_SUPABASE || null;
+    var sb = null, libPromise = null, clientPromise = null;
+    var user = null;
+    var enCours = false, minuteur = null, echec = '';
+
+    function dispo(){ return !!(cfg && cfg.url && cfg.anonKey); }
+
+    function lireMeta(){
+      try { return JSON.parse(localStorage.getItem(SYNC_KEY)) || {}; } catch(e){ return {}; }
+    }
+    function majMeta(f){
+      var m = lireMeta(); f(m);
+      try { localStorage.setItem(SYNC_KEY, JSON.stringify(m)); } catch(e){}
+      return m;
+    }
+    function sales(){ return lireMeta().sales || {}; }
+    function nbSales(){ return Object.keys(sales()).length; }
+
+    // Rien n'est jamais jete en silence : la version perdante d'un conflit est
+    // mise de cote plutot que remplacee. C'est ce qui permet de dire honnetement
+    // que la synchro ne peut pas faire perdre une seance.
+    function garderConflit(ds, contenu){
+      try {
+        var c = JSON.parse(localStorage.getItem(CONFLITS_KEY)) || {};
+        c[ds + '@' + new Date().toISOString()] = contenu;
+        localStorage.setItem(CONFLITS_KEY, JSON.stringify(c));
+      } catch(e){}
+    }
+
+    // Une session Supabase vit sous une cle sb-<ref>-auth-token. La reperer
+    // evite de telecharger 209 Ko de bibliotheque pour quelqu'un qui n'a pas de
+    // compte, c'est-a-dire l'immense majorite des visites.
+    function sessionStockee(){
+      try {
+        for (var i = 0; i < localStorage.length; i++){
+          var k = localStorage.key(i);
+          if (k && k.indexOf('sb-') === 0 && k.indexOf('-auth-token') > 0) return true;
+        }
+      } catch(e){}
+      return false;
+    }
+
+    function charger(){
+      if (window.supabase) return Promise.resolve();
+      if (libPromise) return libPromise;
+      libPromise = new Promise(function(res, rej){
+        var s = document.createElement('script');
+        s.src = 'supabase.umd.js';
+        s.onload = function(){ res(); };
+        s.onerror = function(){ libPromise = null; rej(new Error('Bibliotheque indisponible')); };
+        document.head.appendChild(s);
+      });
+      return libPromise;
+    }
+
+    function client(){
+      if (!dispo()) return Promise.reject(new Error('Comptes non configures'));
+      if (clientPromise) return clientPromise;
+      clientPromise = charger().then(function(){
+        sb = window.supabase.createClient(cfg.url, cfg.anonKey, {
+          auth: { persistSession:true, autoRefreshToken:true, detectSessionInUrl:false }
+        });
+        sb.auth.onAuthStateChange(function(_evt, session){
+          user = session ? session.user : null;
+          majUI();
+        });
+        return sb.auth.getSession().then(function(r){
+          user = (r.data && r.data.session) ? r.data.session.user : null;
+          return sb;
+        });
+      });
+      return clientPromise;
+    }
+
+    function jourLocal(ds){
+      return state.sessions[ds] || { date:ds, exercises:[] };
+    }
+    function jourDistant(ds, d){
+      return { date:ds, exercises:(d && d.exercises || []).map(normalizeExercise) };
+    }
+
+    // ------------------------------------------------------------ ecriture
+    function marquerSale(ds){
+      if (!dispo()) return;
+      majMeta(function(m){ m.sales = m.sales || {}; m.sales[ds] = 1; });
+      if (user) planifier(2500);
+      else majUI();
+    }
+
+    // On n'envoie pas une requete par frappe au clavier : la journee est
+    // marquee tout de suite, l'envoi attend deux secondes et demie de calme.
+    function planifier(delai){
+      if (!dispo() || !user) return;
+      clearTimeout(minuteur);
+      minuteur = setTimeout(function(){ pousser(); }, delai || 2500);
+    }
+
+    function pousser(){
+      if (!user || enCours) return Promise.resolve(0);
+      var dates = Object.keys(sales());
+      if (!dates.length) return Promise.resolve(0);
+      enCours = true; echec = ''; majUI();
+      return client().then(function(c){
+        var chaine = Promise.resolve();
+        dates.forEach(function(ds){
+          chaine = chaine.then(function(){
+            return c.rpc('pousser_jour', { p_date:ds, p_exercices:jourLocal(ds).exercises })
+              .then(function(r){
+                if (r.error) throw r.error;
+                // La journee ne quitte la file QUE si le serveur a confirme.
+                majMeta(function(m){
+                  if (m.sales) delete m.sales[ds];
+                  if (r.data && (!m.depuis || r.data > m.depuis)) m.depuis = r.data;
+                });
+              });
+          });
+        });
+        return chaine.then(function(){ return dates.length; });
+      }).then(function(n){
+        enCours = false; majUI();
+        return n;
+      }).catch(function(e){
+        // Rien n'est perdu : les journees restent marquees et repartiront.
+        enCours = false;
+        echec = messageErreur(e);
+        majUI();
+        planifier(30000);
+        return 0;
+      });
+    }
+
+    // ------------------------------------------------------------- lecture
+    function tirer(tout){
+      if (!user) return Promise.resolve(0);
+      return client().then(function(c){
+        var depuis = tout ? null : (lireMeta().depuis || null);
+        return c.rpc('tirer_jours', { p_depuis: depuis }).then(function(r){
+          if (r.error) throw r.error;
+          var distant = r.data || {};
+          var enAttente = sales(), adoptes = 0, maxMaj = lireMeta().depuis || null;
+          Object.keys(distant).forEach(function(ds){
+            var d = distant[ds];
+            if (d.updatedAt && (!maxMaj || d.updatedAt > maxMaj)) maxMaj = d.updatedAt;
+            // Une journee modifiee ici et pas encore envoyee gagne : c'est ce
+            // que l'utilisateur vient de taper. L'autre version est gardee.
+            if (enAttente[ds]){ garderConflit(ds, d); return; }
+            state.sessions[ds] = jourDistant(ds, d);
+            adoptes++;
+          });
+          if (adoptes){ saveLocal(); renderAll(); }
+          majMeta(function(m){ m.depuis = maxMaj; });
+          return adoptes;
+        });
+      });
+    }
+
+    function synchroniser(){
+      if (!user) return Promise.resolve();
+      return tirer(false).then(pousser).then(function(){ majUI(); })
+        .catch(function(e){ echec = messageErreur(e); majUI(); });
+    }
+
+    // ----------------------------------------------------------- migration
+    // Non destructive par construction : le local est le cache de l'app, donc
+    // rien n'y est jamais efface. Et la migration n'est declaree reussie
+    // qu'apres avoir relu le cloud et compte les series une a une.
+    function migrer(){
+      if (!user) return Promise.reject(new Error('Pas connecte'));
+      msgCompte('warn', 'Migration en cours…');
+      return client().then(function(c){ return c.rpc('tirer_jours', { p_depuis:null }); })
+        .then(function(r){
+          if (r.error) throw r.error;
+          var distant = r.data || {}, repris = 0;
+          Object.keys(distant).forEach(function(ds){
+            var cloud = jourDistant(ds, distant[ds]);
+            var local = state.sessions[ds];
+            // Journee presente des deux cotes : on garde la plus fournie, et
+            // on met l'autre de cote au lieu de l'ecraser.
+            if (!local || compterJour(cloud) > compterJour(local)){
+              if (local && compterJour(local)) garderConflit(ds, local);
+              state.sessions[ds] = cloud; repris++;
+            } else if (compterJour(cloud)) {
+              garderConflit(ds, distant[ds]);
+            }
+          });
+          saveLocal(); renderAll();
+          majMeta(function(m){
+            m.sales = m.sales || {};
+            Object.keys(state.sessions).forEach(function(ds){ m.sales[ds] = 1; });
+          });
+          return pousser().then(function(){ return repris; });
+        })
+        .then(function(repris){
+          if (nbSales()) throw new Error(nbSales() + ' journee(s) n ont pas pu partir');
+          return verifier().then(function(){ return repris; });
+        })
+        .then(function(repris){
+          majMeta(function(m){ m.migrePour = user.id; });
+          majUI();
+          msgCompte('ok', 'Migration verifiee. Tes seances sont sur ton compte' +
+            (repris ? ', et ' + repris + ' journee(s) du cloud ont ete reprises ici' : '') +
+            '. Rien n a ete efface sur cet appareil.');
+        })
+        .catch(function(e){
+          majUI();
+          msgCompte('err', 'Migration interrompue : ' + messageErreur(e) +
+            '. Aucune donnee locale n a ete touchee — tu peux reessayer.');
+        });
+    }
+
+    // Relit le cloud et compare serie par serie. Sans cette etape, « migre »
+    // ne voudrait dire que « les requetes n ont pas renvoye d erreur ».
+    function verifier(){
+      return client().then(function(c){ return c.rpc('tirer_jours', { p_depuis:null }); })
+        .then(function(r){
+          if (r.error) throw r.error;
+          var distant = r.data || {}, manquants = [];
+          Object.keys(state.sessions).forEach(function(ds){
+            var local = state.sessions[ds];
+            if (!compterJour(local)) return;
+            var d = distant[ds];
+            if (!d || compterJour(jourDistant(ds, d)) !== compterJour(local)) manquants.push(ds);
+          });
+          if (manquants.length){
+            throw new Error(manquants.length + ' journee(s) non confirmee(s) cote cloud');
+          }
+          return true;
+        });
+    }
+
+    // ---------------------------------------------------------------- auth
+    function messageErreur(e){
+      var m = (e && (e.message || e.error_description)) || 'erreur inconnue';
+      if (/fetch|network|Failed to fetch/i.test(m)) return 'pas de connexion';
+      if (/Invalid login credentials/i.test(m))     return 'email ou mot de passe incorrect';
+      if (/User already registered/i.test(m))       return 'un compte existe deja avec cet email';
+      if (/Password should be/i.test(m))            return 'mot de passe trop court (8 caracteres minimum)';
+      if (/Email (logins|signups) are disabled/i.test(m))
+        return 'la connexion par email n est pas encore activee cote serveur';
+      if (/Email not confirmed/i.test(m))            return 'confirme d abord ton adresse par email';
+      return m;
+    }
+    function msgCompte(kind, texte){
+      var el = document.getElementById('compteMsg');
+      if (!el) return;
+      el.className = 'sheet-msg ' + kind;
+      el.textContent = texte;
+      el.hidden = false;
+    }
+
+    function connecter(email, mdp){
+      return client().then(function(c){
+        return c.auth.signInWithPassword({ email:email, password:mdp });
+      }).then(function(r){
+        if (r.error) throw r.error;
+        user = r.data.user;
+        apresConnexion();
+      });
+    }
+    function inscrire(email, mdp){
+      return client().then(function(c){
+        return c.auth.signUp({ email:email, password:mdp });
+      }).then(function(r){
+        if (r.error) throw r.error;
+        if (!r.data.session){
+          msgCompte('warn', 'Compte cree. Confirme ton adresse par email, puis connecte-toi.');
+          return;
+        }
+        user = r.data.user;
+        apresConnexion();
+      });
+    }
+    function deconnecter(){
+      return client().then(function(c){ return c.auth.signOut(); }).then(function(){
+        user = null;
+        // Les seances restent sur l'appareil : c'est le mode local, pas une
+        // mise en cache jetable. Les effacer ici serait une perte de donnees.
+        majMeta(function(m){ m.depuis = null; });
+        majUI();
+        msgCompte('ok', 'Deconnecte. Tes seances restent sur cet appareil.');
+      });
+    }
+
+    function apresConnexion(){
+      var m = lireMeta();
+      var joursLocaux = Object.keys(state.sessions).filter(function(ds){
+        return compterJour(state.sessions[ds]) > 0;
+      }).length;
+      majMeta(function(x){ x.userId = user.id; });
+      majUI();
+      // Jamais de migration automatique : l'appareil a peut-etre servi a
+      // quelqu'un d'autre, et ses seances ne doivent pas atterrir ici.
+      if (m.migrePour !== user.id && joursLocaux){
+        msgCompte('warn', 'Connecte. ' + joursLocaux + ' journee(s) sont enregistrees sur cet appareil — ' +
+                          'appuie sur « ENVOYER … » pour les mettre sur ton compte.');
+        return;
+      }
+      majMeta(function(x){ x.migrePour = user.id; });
+      msgCompte('ok', 'Connecte. Recuperation de tes seances…');
+      tirer(true).then(function(n){
+        msgCompte('ok', n ? n + ' journee(s) recuperee(s) depuis ton compte.' : 'Tout est deja a jour.');
+        majUI();
+      }).catch(function(e){ msgCompte('err', messageErreur(e)); });
+    }
+
+    // ------------------------------------------------------------------ UI
+    function majUI(){
+      var sec = document.getElementById('compteSection');
+      if (!sec) return;
+      sec.hidden = !dispo();
+      if (!dispo()) return;
+
+      var etat  = document.getElementById('compteEtat');
+      var texte = document.getElementById('compteEtatTexte');
+      var deco  = document.getElementById('compteDeco');
+      var co    = document.getElementById('compteCo');
+      var mig   = document.getElementById('compteMigrer');
+      var note  = document.getElementById('compteNote');
+
+      deco.hidden = !!user;
+      co.hidden   = !user;
+
+      if (!user){
+        etat.className = 'sheet-etat';
+        texte.textContent = 'Pas de compte — tout reste sur cet appareil';
+        return;
+      }
+
+      var attente = nbSales();
+      if (echec)        { etat.className = 'sheet-etat hs';      texte.textContent = user.email + ' — ' + echec; }
+      else if (enCours) { etat.className = 'sheet-etat attente'; texte.textContent = user.email + ' — envoi en cours…'; }
+      else if (attente) { etat.className = 'sheet-etat attente'; texte.textContent = user.email + ' — ' + attente + ' journee(s) en attente d envoi'; }
+      else              { etat.className = 'sheet-etat ok';      texte.textContent = user.email + ' — tout est synchronise'; }
+
+      var joursLocaux = Object.keys(state.sessions).filter(function(ds){
+        return compterJour(state.sessions[ds]) > 0;
+      }).length;
+      var dejaMigre = lireMeta().migrePour === user.id;
+      mig.hidden = !(joursLocaux && !dejaMigre);
+      if (!mig.hidden){
+        mig.textContent = 'ENVOYER ' + joursLocaux + (joursLocaux > 1 ? ' JOURNÉES' : ' JOURNÉE') + ' SUR MON COMPTE';
+        mig.className = 'btn-sheet primary';
+      }
+      note.textContent = 'Tes séances restent aussi sur cet appareil : le compte ne les remplace pas, ' +
+                         'il en garde une copie pour tes autres téléphones.';
+    }
+
+    // -------------------------------------------------------------- demarrage
+    function demarrer(){
+      if (!dispo()) { majUI(); return; }
+      majUI();
+      if (!sessionStockee()) return;
+      client().then(function(){
+        majUI();
+        if (user) synchroniser();
+      }).catch(function(){ /* hors ligne au demarrage : le local suffit */ });
+
+      // La reconnexion relance ce qui attend. C'est tout le mecanisme de retry :
+      // rien n'est perdu entre-temps, la file vit dans localStorage.
+      window.addEventListener('online', function(){ echec = ''; if (user) synchroniser(); });
+      document.addEventListener('visibilitychange', function(){
+        if (!document.hidden && user) synchroniser();
+      });
+    }
+
+    return {
+      dispo:dispo, demarrer:demarrer, marquerSale:marquerSale, majUI:majUI,
+      synchroniser:synchroniser, migrer:migrer,
+      connecter:connecter, inscrire:inscrire, deconnecter:deconnecter,
+      messageErreur:messageErreur, msgCompte:msgCompte,
+      estConnecte:function(){ return !!user; }
+    };
+  })();
+
+  (function branchementsCompte(){
+    var sec = document.getElementById('compteSection');
+    if (!sec) return;
+    function lire(){
+      return {
+        email: (document.getElementById('compteEmail').value || '').trim(),
+        mdp:   document.getElementById('compteMdp').value || ''
+      };
+    }
+    function occupe(btn, texte, fn){
+      var avant = btn.textContent;
+      btn.disabled = true; btn.textContent = texte;
+      fn().catch(function(e){ Sync.msgCompte('err', Sync.messageErreur(e)); })
+          .then(function(){ btn.disabled = false; btn.textContent = avant; Sync.majUI(); });
+    }
+    document.getElementById('compteConnexion').addEventListener('click', function(){
+      var v = lire();
+      if (!v.email || !v.mdp){ Sync.msgCompte('err', 'Email et mot de passe requis.'); return; }
+      occupe(this, 'CONNEXION…', function(){ return Sync.connecter(v.email, v.mdp); });
+    });
+    document.getElementById('compteInscription').addEventListener('click', function(){
+      var v = lire();
+      if (!v.email || !v.mdp){ Sync.msgCompte('err', 'Email et mot de passe requis.'); return; }
+      if (v.mdp.length < 8){ Sync.msgCompte('err', 'Choisis un mot de passe d au moins 8 caracteres.'); return; }
+      occupe(this, 'CRÉATION…', function(){ return Sync.inscrire(v.email, v.mdp); });
+    });
+    document.getElementById('compteSync').addEventListener('click', function(){
+      occupe(this, 'SYNCHRONISATION…', function(){ return Sync.synchroniser(); });
+    });
+    document.getElementById('compteMigrer').addEventListener('click', function(){
+      occupe(this, 'ENVOI…', function(){ return Sync.migrer(); });
+    });
+    document.getElementById('compteDeconnexion').addEventListener('click', function(){
+      occupe(this, '…', function(){ return Sync.deconnecter(); });
+    });
+  })();
 
   init();
 })();
