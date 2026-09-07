@@ -39,7 +39,9 @@ repository is for right now.
 - [What it does](#what-it-does)
 - [Where your data lives](#where-your-data-lives)
 - [Backup and recovery](#backup-and-recovery)
+- [Migrating an existing logbook](#migrating-an-existing-logbook)
 - [Privacy by construction](#privacy-by-construction)
+- [Accounts and Supabase](#accounts-and-supabase)
 - [Stack](#stack)
 - [Project structure](#project-structure)
 - [Running it locally](#running-it-locally)
@@ -87,7 +89,8 @@ rejects it — the field empties and the set loses its weight. That field is
 
 ## Where your data lives
 
-In `localStorage`, on one device, in one browser. Nowhere else.
+**Without an account** — the default — in `localStorage`, on one device, in one
+browser. Nowhere else.
 
 **What that buys you:** no account, instant start, nothing to leak, no server
 bill.
@@ -95,8 +98,29 @@ bill.
 **What it costs you:** no sync between devices, and the logbook is *destroyed* by
 clearing site data, switching phones, or browsing in a private window.
 
-There is one storage key, `musculation_sessions`, holding a map of
-`YYYY-MM-DD` → session. Custom exercises live under `topset_custom_exercises`.
+**With an account**, a copy also lives in Postgres at Supabase, so the same
+logbook opens on any device. The phone keeps its copy either way: the account
+does not replace local storage, it backs it up.
+
+### How the sync works
+
+`localStorage` stays the source of truth for the UI. Every change is written
+locally first and immediately — the screen never waits for the network. Supabase
+is a copy that follows.
+
+The unit of sync is **the day**, because it is already the unit of the app:
+`state.sessions` is a `date → session` map. `pousser_jour()` rewrites a whole day
+atomically, which removes duplicates, partial merges and orphaned sets as a class
+of bug rather than handling them case by case.
+
+A change marks its day and the push waits 2.5 s of quiet, so typing does not fire
+a request per keystroke. Offline, the queue of pending days lives in
+`localStorage` and is replayed on the `online` event and when the tab regains
+focus. **A day only leaves the queue once the server has confirmed it.**
+
+Storage keys: `musculation_sessions` (the logbook), `topset_custom_exercises`
+(remembered exercises), `topset_sync` (queue and sync cursor), `topset_conflits`
+(the losing side of a conflict, never discarded silently).
 
 ---
 
@@ -124,18 +148,53 @@ that single call would erase everything, permanently and silently. So:
 
 ---
 
+## Migrating an existing logbook
+
+Someone who has been using the app locally and then creates an account is asked
+what to do — never migrated automatically, because the device may have belonged
+to someone else.
+
+```
+local data → detected → migration offered → pushed → verified
+```
+
+The migration is **non-destructive by construction**: local storage is the app's
+cache, so nothing there is ever deleted — that is a property of the design, not a
+promise. When a day exists on both sides, the fuller one wins and the other is
+kept aside in `topset_conflits`.
+
+It is **idempotent**: pushing the same day twice produces the same rows, because
+a day is replaced wholesale rather than appended to.
+
+It only reports success after re-reading the cloud and counting the sets one by
+one. Without that step, "migrated" would only mean "no request returned an
+error".
+
+---
+
 ## Privacy by construction
 
 The privacy policy claims nothing leaves your device. That claim is enforced,
 not just written:
 
-**No third-party requests.** Bricolage Grotesque and Chart.js used to load from
-Google Fonts and cdnjs, which sent every visitor's IP address to Google and
-Cloudflare on each page load. Both are now served from the site itself.
+**No third-party requests.** Bricolage Grotesque, Chart.js and supabase-js are all
+served from the site itself. Loading them from a CDN would send every visitor's IP
+address to Google or Cloudflare on each page load, whether or not they have an
+account.
 
-**A strict CSP** in `vercel.json` — `default-src 'self'`, `connect-src 'self'` —
-which is only possible *because* there are no external origins. It blocks
-exfiltration at the browser level.
+**A strict CSP** in `vercel.json` — `default-src 'self'`, and `connect-src` limited
+to `'self'` plus the project's own Supabase origin. Nothing else can be contacted,
+which blocks exfiltration at the browser level.
+
+**Nothing is downloaded for people who do not have an account.** supabase-js is
+209 KB and is fetched only when a session already exists or the account panel is
+opened.
+
+**Row Level Security on every table.** Each row carries its owner's id, and the
+database refuses any read or write that does not match the authenticated user.
+Foreign keys are composite `(user_id, id)`, so a row cannot even structurally
+belong to someone else's session. The client never sends a `user_id`: it comes
+from the JWT, server-side.
 
 **No cookies, no analytics, no trackers.** The only processing that exists is the
 host's own access logs, and the privacy page says so.
@@ -176,6 +235,10 @@ og-image.png             social preview, 1200×630
 manifest.webmanifest     PWA manifest
 vercel.json              security headers and cache policy
 robots.txt  sitemap.xml  indexing
+supabase.umd.js          supabase-js 2.115.0, loaded on demand
+supabase-config.js       project URL + public anon key (see Accounts)
+supabase/schema.sql      tables, RLS policies and sync functions
+supabase/test/           the schema's RLS test bench (PGlite)
 set-domaine.mjs          replaces the placeholder domain everywhere
 LICENSE  SECURITY.md  CONTRIBUTING.md  CHANGELOG.md
 .github/                 issue templates, PR template, CI workflow
@@ -184,6 +247,57 @@ LICENSE  SECURITY.md  CONTRIBUTING.md  CHANGELOG.md
 Icons and the social image are generated from geometry by a script rather than
 drawn by hand, so changing a brand colour means changing one value and re-running
 it.
+
+---
+
+## Accounts and Supabase
+
+Accounts are **optional**. Without `supabase-config.js` — or with
+`window.TOPSET_SUPABASE` set to `null` — the account panel disappears and the app
+is a pure local logbook. Nothing breaks, no dead buttons.
+
+There is **no build step and no runtime environment variables**: a static site has
+no server to read them. The two values live in `supabase-config.js`, committed to
+this repository, and that is correct — both are public by design:
+
+```js
+window.TOPSET_SUPABASE = {
+  url:     'https://<project-ref>.supabase.co',
+  anonKey: '<the anon / publishable key>'
+};
+```
+
+The anon key identifies the project, it does not grant access: every request is
+filtered by Row Level Security against the authenticated user. What must **never**
+appear here, or anywhere in Git, is the `service_role` (or `secret`) key, which
+bypasses RLS, and the database password.
+
+### Setting up your own project
+
+1. **supabase.com/dashboard → New project.** Pick a region close to your users.
+2. **SQL Editor → New query** → paste [`supabase/schema.sql`](supabase/schema.sql)
+   → Run. The script is idempotent: re-running it changes nothing and deletes
+   nothing.
+3. **Authentication → Sign In / Providers → Email**: enable the provider. Turn
+   *Confirm email* off while Supabase's default mailer is in use — it sends 2
+   messages an hour, which will block sign-ups. Turn it back on once a real SMTP
+   sender is configured.
+4. **Project Settings → API**: copy the Project URL and the anon key into
+   `supabase-config.js`.
+5. Add your Supabase origin to `connect-src` in `vercel.json`, otherwise the CSP
+   blocks every request — silently, as CSP does.
+
+### Testing the schema
+
+The database rules are tested against a real Postgres (PGlite), not mocked:
+
+```bash
+cd supabase/test && npm install && npm test
+```
+
+39 checks: writes, replaying a day without duplicates, incremental pull, isolation
+between two users, refusing to graft a row onto someone else's session, anonymous
+visitors getting nothing, cascade on account deletion.
 
 ---
 
@@ -254,17 +368,10 @@ support is on the [roadmap](#roadmap).
 [Installing on a phone](#installing-on-a-phone)) — that is next, ahead of
 anything below.
 
-**Longer term:** accounts and sync are the obvious next step, and the schema for it already exists
-and is tested — three relational tables (sessions → exercises → sets) with
-row-level security, rather than one JSON blob per user.
+**Shipped:** optional accounts and cloud sync, on Supabase.
 
-It is deliberately not wired up yet. The current version needs no account, which
-is the fastest way to find out whether people actually use the thing before
-adding a backend, a login and a privacy policy that has to describe real data
-processing.
-
-When it lands, the privacy policy is rewritten, its version incremented, and
-consent asked before anything leaves a device.
+**Still open:** password reset needs a real SMTP sender — Supabase's default
+service sends 2 messages an hour, which is not a production email service.
 
 ---
 

@@ -32,13 +32,18 @@
     ACCUEIL
   </a>
   <h1>Politique de confidentialité</h1>
-  <p class="maj">Version 1.0 — 6 septembre 2026</p>
+  <p class="maj">Version 2.0 — 7 septembre 2026</p>
 
   <section>
     <h2>En une phrase</h2>
     <p>
-      <strong>Tes séances ne quittent jamais ton téléphone.</strong> Il n'y a pas de
-      compte, pas d'inscription, et aucun serveur qui stocke ton entraînement.
+      <strong>Sans compte, tes séances ne quittent jamais ton téléphone.</strong>
+      C'est le fonctionnement par défaut : ni inscription, ni serveur.
+    </p>
+    <p>
+      Si <em>tu</em> décides de créer un compte, tes séances sont alors copiées sur un
+      serveur pour que tu les retrouves sur tes autres appareils. Rien n'est envoyé
+      avant cette décision, et elle se prend en une fois, explicitement.
     </p>
   </section>
 
@@ -50,20 +55,39 @@
       (technologie <em>localStorage</em>), sur l'appareil que tu utilises.
     </p>
     <p>
-      Ces données ne sont transmises à personne : ni à l'éditeur, ni à un hébergeur de
-      base de données, ni à un tiers. Elles ne sortent pas de l'appareil.
+      <strong>Sans compte</strong>, ces données ne sont transmises à personne : ni à
+      l'éditeur, ni à un hébergeur de base de données, ni à un tiers. Elles ne sortent
+      pas de l'appareil.
     </p>
     <p class="dim">
       Conséquence directe : elles ne se synchronisent pas entre tes appareils, et
       vider les données de navigation les efface. Utilise le bouton <strong>⇅</strong>
       de l'application pour en garder une copie.
     </p>
+    <p>
+      <strong>Avec un compte</strong>, une copie est en plus enregistrée chez
+      <strong>Supabase</strong>, notre hébergeur de base de données (serveurs situés
+      dans l'Union européenne). Sont alors transmis : ton adresse email, un mot de
+      passe chiffré, et le contenu de tes séances. Le téléphone garde sa copie : le
+      compte ne la remplace pas.
+    </p>
+    <p>
+      Chaque enregistrement porte l'identifiant de son propriétaire, et la base refuse
+      au niveau du moteur toute lecture ou écriture qui ne correspond pas au compte
+      connecté <em>(Row Level Security)</em>. Un utilisateur ne peut pas atteindre les
+      séances d'un autre, même en modifiant l'application dans son navigateur.
+    </p>
+    <p class="dim">
+      Base légale : ton consentement (article 6.1.a du RGPD), donné à la création du
+      compte. Tu peux le retirer à tout moment en supprimant ton compte ; tes séances
+      restent alors sur ton appareil.
+    </p>
   </section>
 
   <section>
     <h2>Ce qu'on ne fait pas</h2>
     <ul>
-      <li>Aucun compte, aucun mot de passe, aucune adresse email demandée.</li>
+      <li>Aucun compte imposé : il est facultatif, et l'application est complète sans lui.</li>
       <li>Aucun cookie — ni technique, ni publicitaire.</li>
       <li>Aucune mesure d'audience, aucun traceur, aucun outil d'analyse.</li>
       <li>Aucune publicité, aucune revente de données.</li>
@@ -115,13 +139,21 @@
   </section>
 
   <section>
-    <h2>Si ça change</h2>
+    <h2>Supprimer ton compte</h2>
     <p>
-      Une future version de Top Set pourra proposer un compte, pour synchroniser tes
-      séances entre plusieurs appareils. Ce serait un traitement de données
-      entièrement nouveau : cette politique serait alors réécrite, sa version
-      incrémentée, et <strong>ton accord explicite demandé avant toute création de
-      compte</strong>. Rien ne sera transféré sans que tu l'aies décidé.
+      La suppression d'un compte efface définitivement, côté serveur, tes séances, tes
+      exercices, tes séries et tes exercices mémorisés — la base est configurée pour
+      les effacer en cascade, rien ne survit à l'opération. Écris à l'adresse indiquée
+      dans les <a href="mentions-legales.html">mentions légales</a>.
+    </p>
+    <p class="dim">
+      Les données présentes sur ton téléphone ne sont pas touchées par cette
+      suppression : elles t'appartiennent et restent là où elles sont.
+    </p>
+    <p>
+      Cette page est en version 2.0. Top Set est en bêta et évolue vite : si un
+      traitement nouveau apparaît, cette politique sera mise à jour et sa version
+      incrémentée.
     </p>
   </section>
 

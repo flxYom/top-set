@@ -38,7 +38,9 @@ c'est exactement à ça que sert ce repo pour l'instant.
 - [Ce qu'il fait](#ce-quil-fait)
 - [Où vivent tes données](#où-vivent-tes-données)
 - [Sauvegarde et récupération](#sauvegarde-et-récupération)
+- [Migrer un carnet existant](#migrer-un-carnet-existant)
 - [La confidentialité par construction](#la-confidentialité-par-construction)
+- [Comptes et Supabase](#comptes-et-supabase)
 - [La pile technique](#la-pile-technique)
 - [Structure du projet](#structure-du-projet)
 - [Le lancer en local](#le-lancer-en-local)
@@ -90,7 +92,8 @@ que ce champ est en `type="text"` avec `inputmode="decimal"`.
 
 ## Où vivent tes données
 
-Dans le `localStorage`, sur un appareil, dans un navigateur. Nulle part ailleurs.
+**Sans compte** — le fonctionnement par défaut — dans le `localStorage`, sur un
+appareil, dans un navigateur. Nulle part ailleurs.
 
 **Ce que ça t'apporte :** aucun compte, démarrage immédiat, rien à faire fuiter,
 aucun serveur à payer.
@@ -99,9 +102,31 @@ aucun serveur à payer.
 *détruit* si tu vides les données du site, changes de téléphone, ou navigues en
 privé.
 
-Une seule clé de stockage, `musculation_sessions`, contient un dictionnaire
-`AAAA-MM-JJ` → séance. Les exercices personnels sont sous
-`topset_custom_exercises`.
+**Avec un compte**, une copie vit en plus dans Postgres chez Supabase, et le même
+carnet s'ouvre sur n'importe quel appareil. Le téléphone garde sa copie dans les
+deux cas : le compte ne remplace pas le stockage local, il le sauvegarde.
+
+### Comment marche la synchro
+
+Le `localStorage` reste la source de vérité de l'interface. Tout est écrit en
+local d'abord et immédiatement — l'écran n'attend jamais le réseau. Supabase est
+une copie qui suit.
+
+L'unité de synchro est **la journée**, parce que c'est déjà l'unité de l'app :
+`state.sessions` est un dictionnaire `date → séance`. `pousser_jour()` réécrit une
+journée entière de façon atomique, ce qui supprime les doublons, les fusions
+partielles et les séries orphelines en tant que classe de bugs, au lieu de les
+traiter cas par cas.
+
+Une modification marque sa journée et l'envoi attend 2,5 s de calme : taper au
+clavier ne déclenche pas une requête par frappe. Hors ligne, la file des journées
+en attente vit dans le `localStorage` et repart sur l'événement `online` et au
+retour sur l'onglet. **Une journée ne quitte la file que si le serveur a
+confirmé.**
+
+Clés de stockage : `musculation_sessions` (le carnet), `topset_custom_exercises`
+(exercices mémorisés), `topset_sync` (file d'attente et curseur de synchro),
+`topset_conflits` (la version perdante d'un conflit, jamais jetée en silence).
 
 ---
 
@@ -131,19 +156,53 @@ Donc :
 
 ---
 
+## Migrer un carnet existant
+
+Quelqu'un qui utilisait l'app en local et crée ensuite un compte se voit poser la
+question — jamais de migration automatique, parce que l'appareil a pu servir à
+quelqu'un d'autre.
+
+```
+données locales → détection → migration proposée → envoi → vérification
+```
+
+La migration est **non destructive par construction** : le local est le cache de
+l'app, donc rien n'y est jamais effacé — c'est une propriété de la conception, pas
+une promesse. Quand une journée existe des deux côtés, la plus fournie gagne et
+l'autre est mise de côté dans `topset_conflits`.
+
+Elle est **idempotente** : pousser deux fois la même journée produit les mêmes
+lignes, parce qu'une journée est remplacée en entier et non complétée.
+
+Elle ne se déclare réussie qu'après avoir relu le cloud et compté les séries une à
+une. Sans cette étape, « migré » ne voudrait dire que « aucune requête n'a renvoyé
+d'erreur ».
+
+---
+
 ## La confidentialité par construction
 
-La politique de confidentialité affirme que rien ne quitte ton appareil. Cette
-affirmation est **appliquée techniquement**, pas seulement écrite :
+Ce que la politique de confidentialité affirme est **appliqué techniquement**, pas
+seulement écrit :
 
-**Aucune requête vers un tiers.** Bricolage Grotesque et Chart.js étaient chargés
-depuis Google Fonts et cdnjs, ce qui envoyait l'adresse IP de chaque visiteur à
-Google et Cloudflare à chaque ouverture. Les deux sont désormais servis depuis le
-site lui-même.
+**Aucune requête vers un tiers.** Bricolage Grotesque, Chart.js et supabase-js
+sont tous servis depuis le site lui-même. Les charger depuis un CDN enverrait
+l'adresse IP de chaque visiteur à Google ou Cloudflare à chaque ouverture, qu'il
+ait un compte ou non.
 
-**Un CSP strict** dans `vercel.json` — `default-src 'self'`, `connect-src 'self'` —
-qui n'est possible *que parce qu'*il n'y a aucune origine externe. Il bloque
-l'exfiltration au niveau du navigateur.
+**Un CSP strict** dans `vercel.json` — `default-src 'self'`, et `connect-src`
+limité à `'self'` plus la seule origine Supabase du projet. Rien d'autre ne peut
+être contacté, ce qui bloque l'exfiltration au niveau du navigateur.
+
+**Rien n'est téléchargé pour qui n'a pas de compte.** supabase-js pèse 209 Ko et
+n'est chargé que si une session existe déjà ou si le panneau compte est ouvert.
+
+**Row Level Security sur toutes les tables.** Chaque ligne porte l'identifiant de
+son propriétaire, et la base refuse toute lecture ou écriture qui ne correspond
+pas à l'utilisateur connecté. Les clés étrangères sont composites
+`(user_id, id)` : une ligne ne peut même pas structurellement appartenir à la
+séance de quelqu'un d'autre. Le client n'envoie jamais de `user_id` — il vient du
+jeton, côté serveur.
 
 **Aucun cookie, aucune mesure d'audience, aucun traceur.** Le seul traitement qui
 existe, ce sont les journaux d'accès de l'hébergeur, et la page de confidentialité
@@ -187,6 +246,10 @@ og-image.png             aperçu de partage, 1200×630
 manifest.webmanifest     manifeste PWA
 vercel.json              en-têtes de sécurité et politique de cache
 robots.txt  sitemap.xml  indexation
+supabase.umd.js          supabase-js 2.115.0, chargé à la demande
+supabase-config.js       URL du projet + clé publique (voir Comptes)
+supabase/schema.sql      tables, politiques RLS et fonctions de synchro
+supabase/test/           le banc d'essai RLS du schéma (PGlite)
 set-domaine.mjs          remplace le domaine provisoire partout
 LICENSE  SECURITY.md  CONTRIBUTING.md  CHANGELOG.md
 .github/                 templates d'issues/PR, workflow de CI
@@ -195,6 +258,58 @@ LICENSE  SECURITY.md  CONTRIBUTING.md  CHANGELOG.md
 Les icônes et l'image de partage sont générées à partir de leur géométrie par un
 script plutôt que dessinées à la main : changer une couleur de marque, c'est
 changer une valeur et relancer.
+
+---
+
+## Comptes et Supabase
+
+Les comptes sont **facultatifs**. Sans `supabase-config.js` — ou avec
+`window.TOPSET_SUPABASE` à `null` — le panneau compte disparaît et l'app est un
+carnet purement local. Rien ne casse, aucun bouton mort.
+
+Il n'y a **ni étape de build ni variable d'environnement à l'exécution** : un site
+statique n'a pas de serveur pour les lire. Les deux valeurs vivent dans
+`supabase-config.js`, versionné dans ce dépôt, et c'est correct — les deux sont
+publiques par conception :
+
+```js
+window.TOPSET_SUPABASE = {
+  url:     'https://<ref-du-projet>.supabase.co',
+  anonKey: '<la clé anon / publishable>'
+};
+```
+
+La clé anon identifie le projet, elle ne donne pas d'accès : chaque requête est
+filtrée par le Row Level Security sur l'utilisateur connecté. Ce qui ne doit
+**jamais** figurer ici, ni nulle part dans Git : la clé `service_role` (ou
+`secret`), qui contourne RLS, et le mot de passe de la base.
+
+### Configurer son propre projet
+
+1. **supabase.com/dashboard → New project.** Choisis une région proche de tes
+   utilisateurs.
+2. **SQL Editor → New query** → colle [`supabase/schema.sql`](supabase/schema.sql)
+   → Run. Le script est idempotent : le relancer ne change rien et n'efface rien.
+3. **Authentication → Sign In / Providers → Email** : active le provider. Laisse
+   *Confirm email* désactivé tant que l'envoyeur par défaut de Supabase est en
+   place — il envoie 2 messages par heure, ce qui bloquerait les inscriptions.
+   Réactive-le une fois un vrai SMTP configuré.
+4. **Project Settings → API** : recopie l'URL du projet et la clé anon dans
+   `supabase-config.js`.
+5. Ajoute ton origine Supabase au `connect-src` de `vercel.json`, sinon le CSP
+   bloque toutes les requêtes — en silence, comme le fait un CSP.
+
+### Tester le schéma
+
+Les règles de la base sont testées contre un vrai Postgres (PGlite), pas simulées :
+
+```bash
+cd supabase/test && npm install && npm test
+```
+
+39 vérifications : écriture, journée rejouée sans doublon, tirage incrémental,
+isolation entre deux utilisateurs, refus de greffer une ligne sur la séance d'un
+autre, visiteur anonyme sans accès, cascade à la suppression du compte.
 
 ---
 
@@ -268,18 +383,11 @@ ne marche pas aujourd'hui. Le vrai hors-ligne est sur [la suite](#la-suite).
 [L'installer sur un téléphone](#linstaller-sur-un-téléphone)) — c'est la prochaine
 chose à corriger, avant tout le reste.
 
-**Plus tard :** les comptes et la synchronisation sont l'étape suivante évidente, et le schéma
-existe déjà et est testé — trois tables relationnelles (séances → exercices →
-séries) avec sécurité au niveau de la ligne, plutôt qu'un gros bloc JSON par
-utilisateur.
+**Livré :** les comptes optionnels et la synchronisation cloud, sur Supabase.
 
-Il n'est délibérément pas branché. La version actuelle ne demande aucun compte,
-ce qui est le moyen le plus rapide de savoir si les gens s'en servent vraiment
-avant d'ajouter un backend, une connexion et une politique de confidentialité qui
-doit décrire un vrai traitement de données.
-
-Le jour où ça arrive : politique réécrite, version incrémentée, et consentement
-demandé avant que quoi que ce soit ne quitte un appareil.
+**Encore ouvert :** la réinitialisation du mot de passe demande un vrai envoyeur
+SMTP — le service par défaut de Supabase envoie 2 messages par heure, ce qui
+n'est pas un service d'emails de production.
 
 ---
 

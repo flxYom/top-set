@@ -603,6 +603,12 @@
     font-family:inherit;font-size:14px;
   }
   .sheet-input:focus{outline:none;border-color:var(--blue);}
+  .sheet-check{
+    display:flex;align-items:flex-start;gap:9px;
+    margin:2px 0 10px;font-size:12.5px;line-height:1.45;color:var(--dim);
+  }
+  .sheet-check input{width:20px;height:20px;flex:none;margin:1px 0 0;accent-color:var(--orange);}
+  .sheet-check a{color:var(--orange);}
   .sheet-etat{
     display:flex;align-items:center;gap:8px;
     font-size:12.5px;font-weight:800;color:var(--dim);
@@ -720,6 +726,12 @@
       <div id="compteDeco">
         <input type="email" id="compteEmail" class="sheet-input" placeholder="ton@email.fr" autocomplete="email" inputmode="email" aria-label="Adresse email">
         <input type="password" id="compteMdp" class="sheet-input" placeholder="mot de passe (8 caractères minimum)" autocomplete="current-password" aria-label="Mot de passe">
+        <div class="sheet-check">
+          <input type="checkbox" id="compteConsent">
+          <label for="compteConsent">Pour créer un compte : j'ai lu et j'accepte la
+            <a href="confidentialite.html" target="_blank" rel="noopener">politique de confidentialité</a>
+            et les <a href="cgu.html" target="_blank" rel="noopener">CGU</a>.</label>
+        </div>
         <button type="button" class="btn-sheet primary" id="compteConnexion">SE CONNECTER</button>
         <button type="button" class="btn-sheet" id="compteInscription">CRÉER UN COMPTE</button>
         <p class="sheet-note">
@@ -2231,6 +2243,9 @@
   // journee entiere de facon atomique, ce qui elimine par construction les
   // doublons, les fusions partielles et les series orphelines.
 
+  // Version de la politique de confidentialite acceptee a l'inscription. La
+  // changer implique de redemander l'accord : c'est ce que la page promet.
+  var VERSION_POLITIQUE = '2.0';
   var SYNC_KEY      = 'topset_sync';
   var CONFLITS_KEY  = 'topset_conflits';
 
@@ -2494,6 +2509,17 @@
         apresConnexion();
       });
     }
+    // La politique de confidentialite promet un accord explicite avant toute
+    // creation de compte. Une promesse ecrite dans un document juridique se
+    // tient : la case est obligatoire, et l'accord est date en base.
+    function enregistrerConsentement(){
+      if (!sb || !user) return Promise.resolve();
+      return sb.from('consentements').insert({
+        user_id: user.id, type:'compte-et-synchronisation',
+        version_politique: VERSION_POLITIQUE
+      }).then(function(){}, function(){ /* l'inscription reste valide */ });
+    }
+
     function inscrire(email, mdp){
       return client().then(function(c){
         return c.auth.signUp({ email:email, password:mdp });
@@ -2504,7 +2530,7 @@
           return;
         }
         user = r.data.user;
-        apresConnexion();
+        return enregistrerConsentement().then(apresConnexion);
       });
     }
     function deconnecter(){
@@ -2563,17 +2589,23 @@
         return;
       }
 
-      var attente = nbSales();
-      if (echec)        { etat.className = 'sheet-etat hs';      texte.textContent = user.email + ' — ' + echec; }
-      else if (enCours) { etat.className = 'sheet-etat attente'; texte.textContent = user.email + ' — envoi en cours…'; }
-      else if (attente) { etat.className = 'sheet-etat attente'; texte.textContent = user.email + ' — ' + attente + ' journee(s) en attente d envoi'; }
-      else              { etat.className = 'sheet-etat ok';      texte.textContent = user.email + ' — tout est synchronise'; }
-
       var joursLocaux = Object.keys(state.sessions).filter(function(ds){
         return compterJour(state.sessions[ds]) > 0;
       }).length;
       var dejaMigre = lireMeta().migrePour === user.id;
-      mig.hidden = !(joursLocaux && !dejaMigre);
+      var aMigrer = joursLocaux && !dejaMigre;
+
+      // « Tout est synchronise » ne se dit que si c'est vrai. Une migration en
+      // attente doit se voir : c'est justement le moment ou l'utilisateur croit
+      // etre a l'abri alors que ses seances ne sont encore que sur le telephone.
+      var attente = nbSales();
+      if (echec)        { etat.className = 'sheet-etat hs';      texte.textContent = user.email + ' — ' + echec; }
+      else if (enCours) { etat.className = 'sheet-etat attente'; texte.textContent = user.email + ' — envoi en cours…'; }
+      else if (aMigrer) { etat.className = 'sheet-etat attente'; texte.textContent = user.email + ' — ' + joursLocaux + ' journée(s) pas encore envoyée(s) sur ton compte'; }
+      else if (attente) { etat.className = 'sheet-etat attente'; texte.textContent = user.email + ' — ' + attente + ' journée(s) en attente d’envoi'; }
+      else              { etat.className = 'sheet-etat ok';      texte.textContent = user.email + ' — tout est synchronisé'; }
+
+      mig.hidden = !aMigrer;
       if (!mig.hidden){
         mig.textContent = 'ENVOYER ' + joursLocaux + (joursLocaux > 1 ? ' JOURNÉES' : ' JOURNÉE') + ' SUR MON COMPTE';
         mig.className = 'btn-sheet primary';
@@ -2633,6 +2665,10 @@
       var v = lire();
       if (!v.email || !v.mdp){ Sync.msgCompte('err', 'Email et mot de passe requis.'); return; }
       if (v.mdp.length < 8){ Sync.msgCompte('err', 'Choisis un mot de passe d au moins 8 caracteres.'); return; }
+      if (!document.getElementById('compteConsent').checked){
+        Sync.msgCompte('err', 'Coche la case : creer un compte envoie tes seances sur un serveur.');
+        return;
+      }
       occupe(this, 'CRÉATION…', function(){ return Sync.inscrire(v.email, v.mdp); });
     });
     document.getElementById('compteSync').addEventListener('click', function(){
