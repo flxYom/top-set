@@ -2296,6 +2296,10 @@
         rebuildLower();
       }
       saveLocal();
+      // Un import remplace tout le carnet. Sans marquer les journees, elles
+      // resteraient sur ce seul appareil : l'utilisateur croirait avoir
+      // restaure sur son compte alors que rien n'est parti.
+      Object.keys(state.sessions).forEach(function(ds){ Sync.marquerSale(ds); });
       populateDatalist();
       renderPlanning(true);
       disarmImport();
