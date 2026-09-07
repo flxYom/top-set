@@ -11,3 +11,6 @@
 # Systeme
 Thumbs.db
 .DS_Store
+
+# Config locale du serveur de preview
+.claude/

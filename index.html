@@ -696,9 +696,19 @@
 
     <div class="sheet-section">
       <div class="sheet-label">SAUVEGARDER</div>
-      <button type="button" class="btn-sheet primary" id="dataDownload">TÉLÉCHARGER LE FICHIER</button>
+      <button type="button" class="btn-sheet primary" id="dataDownload">SAUVEGARDE COMPLÈTE (.JSON)</button>
       <button type="button" class="btn-sheet" id="dataShare" hidden>ENVOYER / PARTAGER</button>
       <button type="button" class="btn-sheet" id="dataCopy">COPIER LE TEXTE</button>
+      <p class="sheet-note">C'est ce fichier — et lui seul — qui sait tout remettre en place.</p>
+    </div>
+
+    <div class="sheet-section">
+      <div class="sheet-label">OUVRIR DANS UN TABLEUR</div>
+      <button type="button" class="btn-sheet" id="dataCsv">EXPORTER EN TABLEUR (.CSV)</button>
+      <p class="sheet-note">
+        Une ligne par série, à ouvrir dans Excel, Numbers ou Google Sheets.
+        Pratique pour analyser ou imprimer — mais ce fichier ne se réimporte pas.
+      </p>
     </div>
 
     <div class="sheet-section">
@@ -1937,6 +1947,43 @@
   function backupJSON(){ return JSON.stringify(backupPayload(), null, 2); }
   function backupFilename(){ return 'topset-' + toDateStr(new Date()) + '.json'; }
 
+  // Le JSON est la sauvegarde : lui seul sait tout remettre en place. Le CSV
+  // ne sert qu'a relire ailleurs — une ligne par serie, point-virgule en
+  // separateur et virgule decimale, parce que c'est ce qu'attend un Excel
+  // configure en francais.
+  var CSV_COLONNES = ['Date','Jour','Exercice','Groupe','Serie','Poids (kg)',
+                      'Repetitions','RPE','Repos (s)','Volume (kg)','Fait'];
+  function csvChamp(v){
+    var t = (v == null) ? '' : String(v);
+    return /[";\r\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t;
+  }
+  function csvNombre(n){
+    return (typeof n === 'number' && !isNaN(n)) ? String(n).replace('.', ',') : '';
+  }
+  function csvContent(){
+    var lignes = [CSV_COLONNES.join(';')];
+    Object.keys(state.sessions).sort().forEach(function(ds){
+      var day = state.sessions[ds];
+      if (!day) return;
+      var d = new Date(ds + 'T00:00:00');
+      var jour = DAY_NAMES[(d.getDay() + 6) % 7] || '';
+      (day.exercises || []).forEach(function(ex){
+        var n = 0;
+        (ex.series || []).forEach(function(s){
+          if (!serieRemplie(s)) return;
+          n++;
+          lignes.push([ ds, jour, ex.nom || '', ex.groupe || '', n,
+                        csvNombre(s.poids), s.reps || '', csvNombre(s.rpe),
+                        s.repos || '', csvNombre(serieVolume(s)),
+                        s.fait ? 'oui' : 'non' ].map(csvChamp).join(';'));
+        });
+      });
+    });
+    // Sans ce BOM, Excel lit le fichier en ANSI et massacre les accents.
+    return '\ufeff' + lignes.join('\r\n') + '\r\n';
+  }
+  function csvFilename(){ return 'topset-' + toDateStr(new Date()) + '.csv'; }
+
   // Une ligne vierge n'est pas une donnee : le compteur doit dire la meme
   // chose que le recap, sinon il annonce des seances qui n'existent pas.
   function serieRemplie(s){
@@ -2041,17 +2088,34 @@
     if (e.key === 'Escape' && !document.getElementById('dataSheet').hidden) closeDataSheet();
   });
 
+  function telechargerTexte(texte, nom, mime){
+    var blob = new Blob([texte], { type:mime });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = nom;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+  }
+
   document.getElementById('dataDownload').addEventListener('click', function(){
     try {
-      var blob = new Blob([backupJSON()], { type:'application/json' });
-      var url = URL.createObjectURL(blob);
-      var a = document.createElement('a');
-      a.href = url; a.download = backupFilename();
-      document.body.appendChild(a); a.click(); a.remove();
-      setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+      telechargerTexte(backupJSON(), backupFilename(), 'application/json');
       showToast('Sauvegarde t\u00e9l\u00e9charg\u00e9e');
     } catch(e){
       sheetMsg('err', "Le t\u00e9l\u00e9chargement a echoue. Utilise \u00ab COPIER LE TEXTE \u00bb.");
+    }
+  });
+
+  document.getElementById('dataCsv').addEventListener('click', function(){
+    try {
+      if (!backupStats().jours){
+        sheetMsg('warn', 'Aucune s\u00e9rie \u00e0 exporter pour l\'instant.');
+        return;
+      }
+      telechargerTexte(csvContent(), csvFilename(), 'text/csv;charset=utf-8');
+      showToast('Tableur t\u00e9l\u00e9charg\u00e9');
+    } catch(e){
+      sheetMsg('err', "L'export tableur a \u00e9chou\u00e9.");
     }
   });
 
