@@ -72,12 +72,6 @@ strong{font-weight:800;}
 a{color:var(--orange);}
 .dim{color:var(--dim);font-size:13px;line-height:1.6;}
 
-/* Ce qui reste à compléter — impossible à manquer. */
-.todo{
-  background:var(--yellow);color:#0d0c0a;
-  font-weight:800;padding:1px 6px;
-}
-
 .footer{
   display:flex;align-items:center;justify-content:center;gap:10px;
   flex-wrap:wrap;padding:26px 0 0;margin-top:20px;
