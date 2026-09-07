@@ -14,3 +14,6 @@ Thumbs.db
 
 # Config locale du serveur de preview
 .claude/
+
+# Dependances de test du schema
+node_modules/
