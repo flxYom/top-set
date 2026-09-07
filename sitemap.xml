@@ -1,32 +1,32 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- REMPLACER top-set-yom-nutrition.vercel.app par ton vrai domaine une fois achete. -->
+<!-- REMPLACER www.topset.be par ton vrai domaine une fois achete. -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://top-set-yom-nutrition.vercel.app/</loc>
+    <loc>https://www.topset.be/</loc>
     <lastmod>2026-09-06</lastmod>
     <changefreq>monthly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://top-set-yom-nutrition.vercel.app/guide</loc>
+    <loc>https://www.topset.be/guide</loc>
     <lastmod>2026-09-06</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://top-set-yom-nutrition.vercel.app/mentions-legales</loc>
+    <loc>https://www.topset.be/mentions-legales</loc>
     <lastmod>2026-09-06</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://top-set-yom-nutrition.vercel.app/confidentialite</loc>
+    <loc>https://www.topset.be/confidentialite</loc>
     <lastmod>2026-09-06</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://top-set-yom-nutrition.vercel.app/cgu</loc>
+    <loc>https://www.topset.be/cgu</loc>
     <lastmod>2026-09-06</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>

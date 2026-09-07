@@ -1,5 +1,5 @@
 User-agent: *
 Allow: /
 
-# REMPLACER top-set-yom-nutrition.vercel.app par ton vrai domaine une fois achete.
-Sitemap: https://top-set-yom-nutrition.vercel.app/sitemap.xml
+# REMPLACER www.topset.be par ton vrai domaine une fois achete.
+Sitemap: https://www.topset.be/sitemap.xml
