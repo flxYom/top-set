@@ -10,7 +10,20 @@ import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
 const ICI = dirname(fileURLToPath(import.meta.url));
-const ACTUEL = 'topset.fr';
+
+// Le domaine en place est lu dans le lien canonique d'index.html plutot
+// qu'ecrit en dur ici : une constante a mettre a jour a la main est une
+// constante qu'on oublie de mettre a jour.
+function domaineActuel() {
+  const html = readFileSync(join(ICI, 'index.html'), 'utf8');
+  const m = html.match(/<link rel="canonical" href="https?:\/\/([^/"]+)/i);
+  if (!m) {
+    console.error("Domaine actuel introuvable : aucun <link rel=\"canonical\"> dans index.html.");
+    process.exit(1);
+  }
+  return m[1];
+}
+const ACTUEL = domaineActuel();
 
 const arg = process.argv[2];
 if (!arg) {
@@ -50,5 +63,5 @@ if (!total) {
   console.log(`Aucune occurrence de « ${ACTUEL} » trouvee — deja fait ?`);
 } else {
   console.log(`\n${total} occurrences dans ${touches} fichiers -> ${nouveau}`);
-  console.log('\nPense a mettre a jour ACTUEL dans ce script si tu changes encore de domaine.');
+  console.log('Relance la commande le jour ou le domaine change : rien a modifier ici.');
 }
