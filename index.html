@@ -609,6 +609,73 @@
   }
   .sheet-check input{width:20px;height:20px;flex:none;margin:1px 0 0;accent-color:var(--orange);}
   .sheet-check a{color:var(--orange);}
+
+  /* Ecran d'accueil : premiere visite, avant d'entrer dans l'app. */
+  .accueil{
+    position:fixed;inset:0;z-index:80;
+    background:var(--bg);
+    display:flex;align-items:center;justify-content:center;
+    padding:18px;overflow-y:auto;
+  }
+  .accueil[hidden]{display:none;}
+  .accueil-carte{
+    width:100%;max-width:420px;
+    display:flex;flex-direction:column;
+  }
+  .accueil-marque{
+    margin:0 0 16px;
+    background:var(--orange);
+    border:2.5px solid var(--orange);
+    box-shadow:5px 5px 0 var(--ink);
+    padding:15px 16px;
+    display:flex;align-items:baseline;
+    font-size:27px;font-weight:800;letter-spacing:-.03em;
+  }
+  .accueil-marque .wm-top{color:var(--ink);}
+  .accueil-marque .wm-set{color:#0d0c0a;}
+  .accueil-marque .wm-app{
+    font-size:13px;font-weight:800;color:#0d0c0a;
+    margin-left:4px;align-self:flex-start;position:relative;top:1px;
+  }
+  .accueil-titre{
+    margin:0 0 6px;font-size:15px;font-weight:800;letter-spacing:-.01em;
+  }
+  .accueil-sous{
+    margin:0 0 18px;font-size:13px;line-height:1.5;color:var(--dim);
+  }
+  .lien-discret{
+    display:block;width:100%;margin-top:14px;padding:12px 0;
+    background:none;border:none;
+    font-family:inherit;font-size:12.5px;font-weight:800;letter-spacing:.04em;
+    color:var(--dim);text-decoration:underline;text-underline-offset:3px;
+    cursor:pointer;min-height:44px;
+  }
+  .lien-discret:active{color:var(--ink);}
+
+  /* Chargement : entre « compte cree » et l'app utilisable. */
+  .loader{
+    position:fixed;inset:0;z-index:90;
+    background:var(--bg);
+    display:flex;align-items:center;justify-content:center;padding:24px;
+  }
+  .loader[hidden]{display:none;}
+  .loader-boite{width:100%;max-width:300px;text-align:center;}
+  .loader-barre{
+    height:14px;border:2.5px solid var(--ink);background:var(--panel2);
+    overflow:hidden;margin-bottom:12px;
+  }
+  .loader-barre span{
+    display:block;height:100%;width:40%;background:var(--orange);
+    animation:va-et-vient 1.1s ease-in-out infinite;
+  }
+  @keyframes va-et-vient{
+    0%   { transform:translateX(-100%); }
+    100% { transform:translateX(250%); }
+  }
+  .loader-texte{margin:0;font-size:13px;font-weight:800;color:var(--dim);}
+  @media (prefers-reduced-motion: reduce){
+    .loader-barre span{animation-duration:2.4s;}
+  }
   .sheet-etat{
     display:flex;align-items:center;gap:8px;
     font-size:12.5px;font-weight:800;color:var(--dim);
@@ -724,16 +791,7 @@
       <div class="sheet-etat" id="compteEtat"><span class="pastille"></span><span id="compteEtatTexte">—</span></div>
 
       <div id="compteDeco">
-        <input type="email" id="compteEmail" class="sheet-input" placeholder="ton@email.fr" autocomplete="email" inputmode="email" aria-label="Adresse email">
-        <input type="password" id="compteMdp" class="sheet-input" placeholder="mot de passe (8 caractères minimum)" autocomplete="current-password" aria-label="Mot de passe">
-        <div class="sheet-check">
-          <input type="checkbox" id="compteConsent">
-          <label for="compteConsent">Pour créer un compte : j'ai lu et j'accepte la
-            <a href="confidentialite.html" target="_blank" rel="noopener">politique de confidentialité</a>
-            et les <a href="cgu.html" target="_blank" rel="noopener">CGU</a>.</label>
-        </div>
-        <button type="button" class="btn-sheet primary" id="compteConnexion">SE CONNECTER</button>
-        <button type="button" class="btn-sheet" id="compteInscription">CRÉER UN COMPTE</button>
+        <button type="button" class="btn-sheet primary" id="compteOuvrirAccueil">SE CONNECTER OU CRÉER UN COMPTE</button>
         <p class="sheet-note">
           Un compte sert à retrouver tes séances sur un autre téléphone. Sans
           compte, Top Set fonctionne exactement comme avant : tout reste sur
@@ -748,7 +806,6 @@
         <p class="sheet-note" id="compteNote"></p>
       </div>
 
-      <div class="sheet-msg" id="compteMsg" hidden></div>
     </div>
 
     <div class="sheet-section">
@@ -776,6 +833,41 @@
       <button type="button" class="btn-sheet" id="dataRecover" aria-label="Récupérer la copie de secours" hidden></button>
       <div class="sheet-msg" id="dataMsg" hidden></div>
     </div>
+  </div>
+</div>
+
+<div class="accueil" id="accueil" hidden>
+  <div class="accueil-carte" role="dialog" aria-modal="true" aria-labelledby="accueilTitre">
+    <p class="accueil-marque"><span class="wm-top">TOP</span><span class="wm-set">SET</span><span class="wm-app">app</span></p>
+    <h1 class="accueil-titre" id="accueilTitre">Ton carnet de musculation</h1>
+    <p class="accueil-sous">
+      Crée un compte pour retrouver tes séances sur tous tes appareils, et ne
+      jamais les perdre si tu changes de téléphone.
+    </p>
+
+    <input type="email" id="compteEmail" class="sheet-input" placeholder="ton@email.fr" autocomplete="email" inputmode="email" aria-label="Adresse email">
+    <input type="password" id="compteMdp" class="sheet-input" placeholder="mot de passe (8 caractères minimum)" autocomplete="current-password" aria-label="Mot de passe">
+
+    <div class="sheet-check">
+      <input type="checkbox" id="compteConsent">
+      <label for="compteConsent">Pour créer un compte : j'ai lu et j'accepte la
+        <a href="confidentialite.html" target="_blank" rel="noopener">politique de confidentialité</a>
+        et les <a href="cgu.html" target="_blank" rel="noopener">CGU</a>.</label>
+    </div>
+
+    <button type="button" class="btn-sheet primary" id="compteInscription">CRÉER UN COMPTE</button>
+    <button type="button" class="btn-sheet" id="compteConnexion">J'AI DÉJÀ UN COMPTE</button>
+
+    <div class="sheet-msg" id="compteMsg" hidden></div>
+
+    <button type="button" class="lien-discret" id="accueilSansCompte">Continuer sans compte, sur cet appareil</button>
+  </div>
+</div>
+
+<div class="loader" id="loader" hidden>
+  <div class="loader-boite">
+    <div class="loader-barre"><span></span></div>
+    <p class="loader-texte" id="loaderTexte">Un instant…</p>
   </div>
 </div>
 
@@ -2492,22 +2584,51 @@
       if (/Email not confirmed/i.test(m))            return 'confirme d abord ton adresse par email';
       return m;
     }
+    // Entre « compte cree » et une app utilisable, il y a un aller-retour
+    // reseau. Sans ce voile, l'utilisateur voit un ecran vide et croit que
+    // ses seances ont disparu.
+    function loader(texte){
+      var el = document.getElementById('loader');
+      if (!el) return;
+      document.getElementById('loaderTexte').textContent = texte || 'Un instant…';
+      el.hidden = false;
+    }
+    function cacherLoader(){
+      var el = document.getElementById('loader');
+      if (el) el.hidden = true;
+    }
+    function montrerAccueil(){
+      var el = document.getElementById('accueil');
+      if (el) el.hidden = false;
+    }
+    function fermerAccueil(){
+      var el = document.getElementById('accueil');
+      if (el) el.hidden = true;
+      majMeta(function(m){ m.accueilVu = true; });
+    }
+
+    // Le seul emplacement de message est dans l'ecran d'accueil. Une fois
+    // celui-ci ferme, ecrire dedans revient a ne rien dire : on bascule sur
+    // le toast, qui est visible partout dans l'app.
     function msgCompte(kind, texte){
       var el = document.getElementById('compteMsg');
-      if (!el) return;
+      var ac = document.getElementById('accueil');
+      if (!el || !ac || ac.hidden){ showToast(texte); return; }
       el.className = 'sheet-msg ' + kind;
       el.textContent = texte;
       el.hidden = false;
     }
 
     function connecter(email, mdp){
+      loader('Connexion…');
       return client().then(function(c){
         return c.auth.signInWithPassword({ email:email, password:mdp });
       }).then(function(r){
         if (r.error) throw r.error;
         user = r.data.user;
-        apresConnexion();
-      });
+        return apresConnexion();
+      }).then(function(){ cacherLoader(); fermerAccueil(); },
+              function(e){ cacherLoader(); throw e; });
     }
     // La politique de confidentialite promet un accord explicite avant toute
     // creation de compte. Une promesse ecrite dans un document juridique se
@@ -2521,17 +2642,22 @@
     }
 
     function inscrire(email, mdp){
+      loader('Création de ton compte…');
       return client().then(function(c){
         return c.auth.signUp({ email:email, password:mdp });
       }).then(function(r){
         if (r.error) throw r.error;
         if (!r.data.session){
+          cacherLoader();
           msgCompte('warn', 'Compte cree. Confirme ton adresse par email, puis connecte-toi.');
           return;
         }
         user = r.data.user;
-        return enregistrerConsentement().then(apresConnexion);
-      });
+        loader('Préparation de ton carnet…');
+        return enregistrerConsentement().then(apresConnexion).then(function(){
+          cacherLoader(); fermerAccueil();
+        });
+      }, function(e){ cacherLoader(); throw e; });
     }
     function deconnecter(){
       return client().then(function(c){ return c.auth.signOut(); }).then(function(){
@@ -2556,11 +2682,15 @@
       if (m.migrePour !== user.id && joursLocaux){
         msgCompte('warn', 'Connecte. ' + joursLocaux + ' journee(s) sont enregistrees sur cet appareil — ' +
                           'appuie sur « ENVOYER … » pour les mettre sur ton compte.');
-        return;
+        // Le bouton est dans le panneau. Dire « appuie sur ENVOYER » sans
+        // montrer ce bouton, c'est envoyer quelqu'un chercher une porte
+        // fermee : on ouvre le panneau a sa place.
+        setTimeout(openDataSheet, 400);
+        return Promise.resolve();
       }
       majMeta(function(x){ x.migrePour = user.id; });
-      msgCompte('ok', 'Connecte. Recuperation de tes seances…');
-      tirer(true).then(function(n){
+      loader('Récupération de tes séances…');
+      return tirer(true).then(function(n){
         msgCompte('ok', n ? n + ' journee(s) recuperee(s) depuis ton compte.' : 'Tout est deja a jour.');
         majUI();
       }).catch(function(e){ msgCompte('err', messageErreur(e)); });
@@ -2618,6 +2748,13 @@
     function demarrer(){
       if (!dispo()) { majUI(); return; }
       majUI();
+      // L'ecran d'accueil ne s'affiche qu'a la toute premiere visite : ni pour
+      // qui est deja connecte, ni pour qui a deja un carnet ici, ni pour qui a
+      // deja choisi. Le reproposer a chaque ouverture serait du harcelement.
+      if (!sessionStockee() && !lireMeta().accueilVu &&
+          !Object.keys(state.sessions).length){
+        montrerAccueil();
+      }
       if (!sessionStockee()) return;
       client().then(function(){
         majUI();
@@ -2634,6 +2771,7 @@
 
     return {
       dispo:dispo, demarrer:demarrer, marquerSale:marquerSale, majUI:majUI,
+      montrerAccueil:montrerAccueil, fermerAccueil:fermerAccueil,
       synchroniser:synchroniser, migrer:migrer,
       connecter:connecter, inscrire:inscrire, deconnecter:deconnecter,
       messageErreur:messageErreur, msgCompte:msgCompte,
@@ -2670,6 +2808,13 @@
         return;
       }
       occupe(this, 'CRÉATION…', function(){ return Sync.inscrire(v.email, v.mdp); });
+    });
+    document.getElementById('accueilSansCompte').addEventListener('click', function(){
+      Sync.fermerAccueil();
+    });
+    document.getElementById('compteOuvrirAccueil').addEventListener('click', function(){
+      closeDataSheet();
+      Sync.montrerAccueil();
     });
     document.getElementById('compteSync').addEventListener('click', function(){
       occupe(this, 'SYNCHRONISATION…', function(){ return Sync.synchroniser(); });
