@@ -3384,8 +3384,109 @@
       });
     }
 
+    // ------------------------------------------------ un carnet par compte
+    // Le carnet local vit sous une seule cle, partagee par tout l'appareil.
+    // Tant qu'une personne egale un appareil, ca ne se voit pas. Des que deux
+    // comptes se connectent sur le meme telephone, le second voit le carnet du
+    // premier — et l'app lui propose meme de l'envoyer sur SON compte, ce qui
+    // en change le proprietaire pour de bon.
+    //
+    // La regle est donc : le carnet suit le compte, pas l'appareil. Quand on
+    // se connecte avec un autre compte que le dernier, le carnet present est
+    // mis de cote sous l'identifiant de son proprietaire, et celui du nouvel
+    // arrivant est repris s'il en avait un ici.
+    //
+    // Rien n'est efface. Un carnet range est range sous une cle nouvelle, que
+    // seul son proprietaire retrouvera en se reconnectant — ce qui est aussi
+    // la bonne regle de confidentialite : l'autre compte ne doit pas pouvoir
+    // le recuperer.
+    function clePark(id){ return 'topset_carnet_' + id; }
+
+    function joursRemplis(sessions){
+      return Object.keys(sessions || {}).filter(function(ds){
+        return compterJour(sessions[ds]) > 0;
+      }).length;
+    }
+
+    function rangerCarnet(id){
+      var m = lireMeta();
+      var jours = joursRemplis(state.sessions);
+      // Ne jamais ecraser un rangement plus riche : si quelqu'un enchaine les
+      // connexions, la premiere mise de cote est celle qui contient tout.
+      try {
+        var deja = JSON.parse(localStorage.getItem(clePark(id)) || 'null');
+        if (deja && (deja.jours || 0) > jours) return deja.jours || 0;
+      } catch(e){}
+      try {
+        localStorage.setItem(clePark(id), JSON.stringify({
+          sessions: state.sessions,
+          custom:   customExercises,
+          sales:    m.sales  || {},
+          titres:   m.titres || {},
+          depuis:   m.depuis || null,
+          jours:    jours,
+          range_le: new Date().toISOString()
+        }));
+      } catch(e){ return 0; }
+      return jours;
+    }
+
+    function reprendreCarnet(id){
+      var p = null;
+      try { p = JSON.parse(localStorage.getItem(clePark(id)) || 'null'); } catch(e){ return 0; }
+      if (!p || !p.sessions || typeof p.sessions !== 'object') return 0;
+      state.sessions = normalizeLocal(p.sessions);
+      customExercises = (p.custom && typeof p.custom === 'object') ? p.custom : {};
+      saveLocal(); saveCustom(); rebuildLower(); populateDatalist();
+      majMeta(function(m){
+        m.sales  = p.sales  || {};
+        m.titres = p.titres || {};
+        m.depuis = p.depuis || null;
+      });
+      try { localStorage.removeItem(clePark(id)); } catch(e){}
+      return joursRemplis(state.sessions);
+    }
+
+    function viderCarnet(){
+      state.sessions = {};
+      customExercises = {};
+      saveLocal(); saveCustom(); rebuildLower(); populateDatalist();
+      // La file d'envoi et le curseur appartiennent au carnet qu'on vient de
+      // ranger : les garder ferait pousser les journees d'un compte vers
+      // l'autre a la premiere synchro.
+      majMeta(function(m){ m.sales = {}; m.titres = {}; m.depuis = null; });
+    }
+
     function apresConnexion(){
       var m = lireMeta();
+
+      // Un autre compte s'est connecte ici avant. Le carnet affiche n'est pas
+      // celui de la personne qui arrive : on echange avant tout le reste, et
+      // surtout avant que la proposition d'envoi ne s'affiche.
+      if (m.userId && m.userId !== user.id){
+        var ranges = rangerCarnet(m.userId);
+        viderCarnet();
+        var repris = reprendreCarnet(user.id);
+        majMeta(function(x){ x.userId = user.id; x.migrePour = user.id; });
+        toucherProfil().then(majUI);
+        renderAll();
+        var mot = ranges
+          ? 'Le carnet qui etait sur cet appareil appartient a un autre compte : ' +
+            ranges + ' journee(s) mises de cote, rien n\'est perdu. '
+          : '';
+        mot += repris
+          ? 'Ton carnet local est revenu (' + repris + ' journee(s)).'
+          : 'Recuperation de tes seances…';
+        msgCompte('ok', mot);
+        loader('Récupération de tes séances…');
+        return tirerExos().then(pousserExos).catch(function(){ /* les seances priment */ })
+          .then(function(){ return tirer(true); }).then(function(n){
+            cacherLoader();
+            msgCompte('ok', mot + (n ? ' ' + n + ' journee(s) recuperee(s) depuis ton compte.' : ''));
+            majUI();
+          }).catch(function(e){ cacherLoader(); msgCompte('err', messageErreur(e)); });
+      }
+
       var joursLocaux = Object.keys(state.sessions).filter(function(ds){
         return compterJour(state.sessions[ds]) > 0;
       }).length;

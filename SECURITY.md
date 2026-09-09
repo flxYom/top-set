@@ -32,6 +32,35 @@ Classes of issue that matter here:
 Cosmetic bugs, broken layout, or feature requests are not security
 issues — please open a regular [issue](../../issues) for those instead.
 
+## Accepted linter warnings
+
+Supabase's database linter reports five warnings that are deliberate. They are
+recorded here so they are not re-investigated every time the report is read.
+
+**`toucher_profil` is `SECURITY DEFINER` and callable by signed-in users.** It
+has to cross RLS to read `auth.users.created_at` and create the profile row. It
+never writes anywhere but `auth.uid()` — the identity comes from the token, not
+from a parameter. Making it `SECURITY INVOKER` would require an `INSERT` and an
+`UPDATE` policy on `profils` plus column-level grants to stop someone writing
+`role = 'admin'` — trading one narrow, tested door for two open ones.
+
+**The four `admin_*` functions are `SECURITY DEFINER` and callable by signed-in
+users.** They have to cross RLS to read beyond a single logbook, and they have to
+live in `public` to be reachable from a static site with no server. Each one
+refuses non-administrators as its first statement, and
+`supabase/test/test-rls.mjs` asserts that refusal on every run. The check belongs
+in the function, not in whether the function is visible: a hidden function
+without a role check would be strictly worse than a visible one that refuses.
+
+**Leaked password protection is off.** It requires the Pro plan.
+
+What would *not* be acceptable, and what the test suite guards against: a new
+`SECURITY DEFINER` function appearing without justification, a sync function
+switching from `INVOKER` to `DEFINER` (it would bypass every policy above it),
+or any function without a pinned `search_path`.
+
+---
+
 ## Supported versions
 
 This project has no long-term-support branches. Only the code currently
