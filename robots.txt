@@ -1,5 +1,4 @@
 User-agent: *
 Allow: /
 
-# REMPLACER www.topset.be par ton vrai domaine une fois achete.
-Sitemap: https://www.topset.be/sitemap.xml
+Sitemap: https://www.top-set.fr/sitemap.xml
