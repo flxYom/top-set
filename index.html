@@ -3554,14 +3554,23 @@
             }
           });
           saveLocal(); renderAll();
+          // Migrer, c'est envoyer TOUT le carnet, pas seulement les series.
+          // Les titres et les noms d'exercices inventes n'avaient jamais ete
+          // marques — ils ne partaient donc jamais, et quelqu'un qui utilisait
+          // l'app depuis des mois les perdait en creant son compte.
           majMeta(function(m){
             m.sales = m.sales || {};
             Object.keys(state.sessions).forEach(function(ds){ m.sales[ds] = 1; });
+            m.titres = m.titres || {};
+            titresLocaux().forEach(function(ds){ m.titres[ds] = 1; });
+            m.exosSales = true;
           });
           return pousser().then(function(){ return repris; });
         })
         .then(function(repris){
           if (nbSales()) throw new Error(nbSales() + ' journee(s) n ont pas pu partir');
+          var titresEnAttente = Object.keys(lireMeta().titres || {}).length;
+          if (titresEnAttente) throw new Error(titresEnAttente + ' titre(s) n ont pas pu partir');
           return verifier().then(function(){ return repris; });
         })
         .then(function(repris){
