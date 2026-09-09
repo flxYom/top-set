@@ -360,6 +360,38 @@ Le droit d'écriture est limité à la colonne `lu` — encore la même leçon :
 filtre des lignes, pas des colonnes, et sans ce droit restreint la policy
 `update` laisserait réécrire le corps d'un message déjà envoyé.
 
+#### Ce qui en fait une conversation et pas un formulaire
+
+Le fil s'ouvre **même vide**. Ça paraît un détail d'affichage ; c'en était un de
+fonctionnement. Tant qu'il se cachait faute de messages, personne ne pouvait
+écrire le premier : la conversation ne pouvait commencer que si elle avait déjà
+commencé. Un fil vide affiche maintenant une invitation, et la zone de saisie
+avec.
+
+Le reste tient en quatre gestes, tous empruntés à ce que fait n'importe quelle
+messagerie et qu'on ne remarque que par leur absence :
+
+- **Les bulles s'alignent par auteur** — les siennes à droite, celles d'en face
+  à gauche, avec un liseré orange sur les siennes. Sans ça il faut relire
+  l'étiquette à chaque bulle pour savoir qui parle.
+- **Le nom ne s'affiche qu'au-dessus de ce que dit l'autre.** Au-dessus des
+  siens il n'apprend rien et double la hauteur du fil.
+- **Une bulle d'attente** apparaît quand le dernier message est du membre. Elle
+  n'est pas stockée : elle est fabriquée à l'affichage et disparaît d'elle-même
+  dès qu'une réponse arrive, puisqu'alors le dernier message n'est plus de lui.
+- **Entrée envoie, Maj+Entrée va à la ligne**, des deux côtés. Le bouton reste
+  pour le téléphone.
+
+Le fil descend tout seul via `scrollTo` **sur le conteneur** — pas sur la page,
+qui ne doit pas bouger — et l'animation est coupée pour qui a réglé son système
+sur `prefers-reduced-motion`.
+
+Enfin une **pastille** s'allume dans le pied de page quand une réponse attend.
+Sans elle, une réponse pouvait dormir indéfiniment dans une feuille que personne
+n'ouvre par habitude. Elle est obtenue par un comptage `head:true` — un nombre,
+pas trois cents messages — et rend zéro en cas d'erreur : une pastille ne doit
+jamais empêcher une page de s'afficher.
+
 ### Les notifications
 
 Une table sans **aucune** policy d'insertion : personne ne peut en fabriquer une

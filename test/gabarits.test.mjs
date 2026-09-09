@@ -185,5 +185,64 @@ console.log('\n== 10. Pas de secret dans ce qui est servi ==');
   ok('aucun secret de forme ' + i, !re.test(SRC));
 });
 
+console.log('\n== 11. La conversation se comporte comme une conversation ==');
+// Le fil etait cache tant qu'il etait vide. C'est le genre de bug qui ne se
+// voit pas en relisant le code : chaque ligne est correcte, et pourtant
+// personne ne peut ecrire le premier message — la conversation ne pouvait
+// commencer que si elle avait deja commence. Ce qui suit fige les cinq
+// comportements qui font la difference entre un chat et un formulaire.
+
+const CONV = corps('function chargerConversation(', 'document.getElementById(\'messageCorps\')');
+
+ok('le fil s ouvre avant de savoir s il est vide',
+   CONV.indexOf('bloc.hidden = false') > -1
+   && CONV.indexOf('if (!rows.length)') === -1,
+   'un fil vide doit rester ouvert, sinon le premier message est impossible');
+
+ok('mais il reste ferme si la base ne repond pas',
+   CONV.indexOf('}, function(){ bloc.hidden = true; });') > -1);
+
+ok('la bulle d attente existe et n est pas stockee',
+   SRC.indexOf('function attenteHTML(') > -1
+   && SRC.indexOf('rows[rows.length - 1].auteur !== \'membre\'') > -1
+   && CONV.indexOf('attenteHTML(rows)') > -1);
+
+ok('le fil descend sans emporter la page',
+   SRC.indexOf('function filEnBas(') > -1
+   && SRC.indexOf('fil.scrollTo({ top: fil.scrollHeight') > -1
+   && SRC.indexOf('window.scrollTo(0, fil') === -1);
+
+ok('et il ne s anime pas pour qui a demande le calme',
+   corps('function filEnBas(', 'function majPastilleRetour(')
+     .indexOf('prefers-reduced-motion') > -1);
+
+ok('Entree envoie, Maj+Entree va a la ligne',
+   SRC.indexOf('e.key === \'Enter\' && !e.shiftKey') > -1);
+
+// Les deux cotes, pas seulement celui du membre : le meme fil se lit dans
+// l'autre sens dans l'espace admin, et un seul parametre change.
+ok('des deux cotes',
+   (SRC.match(/e\.key === 'Enter' && !e\.shiftKey/g) || []).length >= 2);
+
+ok('le nom ne se met qu au-dessus de ce que dit l autre',
+   corps('function bullesHTML(', 'function attenteHTML(')
+     .indexOf("(moi ? '' : esc(autre)") > -1);
+
+ok('la pastille compte sans rapatrier le fil',
+   SRC.indexOf("{ count:'exact', head:true }") > -1
+   && SRC.indexOf('function majPastilleRetour(') > -1);
+
+ok('et elle ne casse jamais la page',
+   corps('nonLus:function()', 'adminFils:function()')
+     .indexOf('function(){ return 0; }') > -1,
+   'une erreur de comptage doit rendre zero, pas rejeter');
+
+ok('la pastille est un element vide, pas du texte injecte',
+   HTML.indexOf('<span\n      class="pastille" id="retourPastille" hidden></span>') > -1
+   || HTML.indexOf('id="retourPastille" hidden></span>') > -1);
+
+ok('et hidden la cache vraiment malgre display:inline-block',
+   HTML.indexOf('.pastille[hidden]{display:none;}') > -1);
+
 console.log(`\n${pass} reussis, ${fail} echoues`);
 process.exit(fail ? 1 : 0);

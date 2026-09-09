@@ -23,6 +23,17 @@ while it stays below `1.0.0`, breaking changes (in particular to the
   version of "re-read the source instead of trusting the request body", obtained
   without a server.
 - 31 more RLS tests (168 → 199).
+- **The thread now behaves like a thread.** It opens even when empty — while it
+  hid itself for lack of messages, nobody could write the first one, so the
+  conversation could only start if it had already started. Sender-aligned
+  bubbles, the other party's name only above their own messages, a waiting
+  bubble while no reply has come (built at render time, never stored), Enter to
+  send and Shift+Enter for a new line on both sides, container-scoped smooth
+  scrolling that honours `prefers-reduced-motion`, and a dot in the footer when
+  a reply is waiting — counted with `head:true`, and returning zero on error,
+  because a badge must never keep a page from rendering.
+- 12 more static guards (68 → 80), one of them verified to fail when the
+  hidden-empty-thread bug is put back.
 - **The coach ↔ client link.** A coach generates an 8-character code, the
   client enters it, the coach accepts — the link exists only once both sides
   acted. The coach then *reads* the client's logbook: sessions, exercises, sets,

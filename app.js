@@ -2546,16 +2546,51 @@
   // Deux voix, deux cotes. « moi » depend de qui regarde : dans l'espace
   // admin le meme fil se lit dans l'autre sens, et c'est le seul parametre
   // qui change.
-  function bullesHTML(rows, moiEstAdmin){
-    if (!rows.length) return '<div class="fil-vide">Rien encore. Écris quelque chose, on te répondra ici.</div>';
+  function bullesHTML(rows, moiEstAdmin, nomAutre){
+    if (!rows.length){
+      return '<div class="fil-vide">Un souci, une question, une idée ? Écris ici, '
+           + 'on te répond dans cette conversation.</div>';
+    }
+    // Le nom ne se met qu'au-dessus de ce que dit l'autre : au-dessus des
+    // siens il n'apprend rien, et il double la hauteur du fil pour rien.
+    var autre = nomAutre || (moiEstAdmin ? 'Membre' : 'Top Set');
     return rows.map(function(m){
       var moi = moiEstAdmin ? (m.auteur === 'admin') : (m.auteur === 'membre');
       return '<div class="bulle ' + (moi ? 'moi' : '') + '">'
         + '<div class="bulle-corps">' + esc(m.corps) + '</div>'
-        + '<div class="bulle-quand">' + (moi ? '' : (m.auteur === 'admin' ? 'Top Set · ' : ''))
+        + '<div class="bulle-quand">' + (moi ? '' : esc(autre) + ' · ')
         + esc(quandCourt(m.cree_le)) + '</div>'
         + '</div>';
     }).join('');
+  }
+
+  // Fabriquee, jamais stockee : elle disparait d'elle-meme des qu'une reponse
+  // arrive, parce qu'alors le dernier message n'est plus du membre.
+  function attenteHTML(rows){
+    if (!rows.length || rows[rows.length - 1].auteur !== 'membre') return '';
+    return '<div class="bulle bulle-attente"><div class="bulle-corps">'
+         + 'On te répond dès que possible.</div></div>';
+  }
+
+  // Le fil descend, pas la page : scrollTo sur le conteneur ne touche pas au
+  // defilement du document. Et on n'anime rien pour qui a demande le calme.
+  function filEnBas(fil){
+    if (!fil) return;
+    var calme = window.matchMedia
+             && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (fil.scrollTo) fil.scrollTo({ top: fil.scrollHeight, behavior: calme ? 'auto' : 'smooth' });
+    else fil.scrollTop = fil.scrollHeight;
+  }
+
+  // Une reponse attend dans une feuille que personne n'ouvre par habitude.
+  function majPastilleRetour(){
+    var p = document.getElementById('retourPastille');
+    if (!p) return;
+    if (!Sync.estConnecte()){ p.hidden = true; return; }
+    Sync.nonLus().then(function(n){
+      p.hidden = !n;
+      p.title = n ? (n + ' réponse' + (n > 1 ? 's' : '') + ' non lue' + (n > 1 ? 's' : '')) : '';
+    });
   }
 
   function chargerConversation(){
@@ -2563,17 +2598,31 @@
     var fil  = document.getElementById('filMessages');
     if (!Sync.estConnecte()){ bloc.hidden = true; return; }
     Sync.lireFil().then(function(rows){
-      if (!rows.length){ bloc.hidden = true; return; }
+      // Le fil s'affiche meme vide. Le cacher tant qu'il n'y a rien rendait le
+      // premier message impossible a ecrire : la conversation ne pouvait
+      // commencer que si elle avait deja commence.
       bloc.hidden = false;
-      fil.innerHTML = bullesHTML(rows, false);
-      fil.scrollTop = fil.scrollHeight;
+      fil.innerHTML = bullesHTML(rows, false) + attenteHTML(rows);
+      filEnBas(fil);
       // Ouvrir le fil, c'est l'avoir lu : on ne marque que les messages de
       // l'administrateur, pas les siens.
       var aLire = rows.filter(function(m){ return m.auteur === 'admin' && !m.lu; })
                       .map(function(m){ return m.id; });
-      if (aLire.length) Sync.marquerLus(aLire);
+      if (aLire.length) Sync.marquerLus(aLire).then(majPastilleRetour, majPastilleRetour);
+      else majPastilleRetour();
+      // Si la base n'a pas encore la table, on n'affiche pas une erreur au
+      // milieu d'un formulaire de retour qui, lui, fonctionne.
     }, function(){ bloc.hidden = true; });
   }
+
+  // Entree envoie, Maj+Entree va a la ligne : c'est la convention de toutes
+  // les messageries, et sur telephone le bouton reste la pour qui prefere.
+  document.getElementById('messageCorps').addEventListener('keydown', function(e){
+    if (e.key === 'Enter' && !e.shiftKey){
+      e.preventDefault();
+      document.getElementById('messageEnvoyer').click();
+    }
+  });
 
   document.getElementById('messageEnvoyer').addEventListener('click', function(){
     var champ = document.getElementById('messageCorps');
@@ -2932,10 +2981,10 @@
             '<div class="admin-carte-tete"><span class="admin-qui">'
           +   (adminFil.pseudo ? esc(adminFil.pseudo) : '<span class="anon">sans pseudo</span>')
           + '</span><button type="button" class="admin-action" id="filRetour">← TOUS LES FILS</button></div>'
-          + '<div class="fil">' + bullesHTML(rows, true) + '</div>'
+          + '<div class="fil">' + bullesHTML(rows, true, adminFil.pseudo || 'Membre') + '</div>'
           + '<textarea id="adminMessageCorps" class="sheet-paste" rows="2" maxlength="4000" placeholder="Répondre…"></textarea>'
           + '<button type="button" class="admin-action" id="adminMessageEnvoyer">ENVOYER LA RÉPONSE</button>';
-        var f = fils.querySelector('.fil'); if (f) f.scrollTop = f.scrollHeight;
+        filEnBas(fils.querySelector('.fil'));
         var aLire = rows.filter(function(m){ return m.auteur === 'membre' && !m.lu; })
                         .map(function(m){ return m.id; });
         if (aLire.length) Sync.marquerLus(aLire);
@@ -2985,6 +3034,14 @@
     var b = this; b.disabled = true;
     Sync.notifsLues().then(renderAdmin, function(e){ showToast(Sync.messageErreur(e)); })
         .then(function(){ b.disabled = false; });
+  });
+
+  document.getElementById('adminFilsListe').addEventListener('keydown', function(e){
+    if (e.key === 'Enter' && !e.shiftKey && e.target.id === 'adminMessageCorps'){
+      e.preventDefault();
+      var b = document.getElementById('adminMessageEnvoyer');
+      if (b) b.click();
+    }
   });
 
   document.getElementById('adminFilsListe').addEventListener('click', function(e){
@@ -3916,6 +3973,7 @@
 
       deco.hidden = !!user;
       co.hidden   = !user;
+      if (typeof majPastilleRetour === 'function') majPastilleRetour();
 
       var ou = document.getElementById('dataOu');
       if (!user){
@@ -4141,6 +4199,18 @@
         return client().then(function(c){
           return c.from('messages_support').update({ lu:true }).in('id', ids);
         }).then(function(r){ if (r.error) throw r.error; });
+      },
+      // Un comptage, pas une lecture : la pastille n'a besoin que d'un nombre,
+      // et « head » evite de rapatrier trois cents messages pour l'obtenir.
+      // Elle ne doit jamais casser la page : en cas d'erreur elle rend zero.
+      nonLus:function(){
+        if (!user) return Promise.resolve(0);
+        return client().then(function(c){
+          return c.from('messages_support')
+                  .select('id', { count:'exact', head:true })
+                  .eq('user_id', user.id).eq('auteur', 'admin').eq('lu', false);
+        }).then(function(r){ return r.error ? 0 : (r.count || 0); },
+                function(){ return 0; });
       },
       adminFils:function(){ return rpcAdmin('admin_fils'); },
       lireNotifs:function(){
