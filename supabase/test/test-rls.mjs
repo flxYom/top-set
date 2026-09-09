@@ -522,8 +522,23 @@ ok('il y a bien des fonctions a verifier', r.rows.length >= 10, r.rows.length + 
 // nouvelle ne s'ajoute pas sans qu'on s'en apercoive.
 const definers = r.rows.filter(x => x.prosecdef).map(x => x.proname).sort();
 ok('la liste des fonctions SECURITY DEFINER est celle attendue',
-   definers.join(',') === 'admin_apercu,admin_marquer_retour,admin_membres,admin_retours,est_admin,toucher_profil',
+   definers.join(',') === [
+     'admin_apercu', 'admin_marquer_retour', 'admin_membres', 'admin_retours',
+     // Le lien coach : les deux verdicts (recursion de policy) et les quatre
+     // ecritures, qui verifient de quel cote du lien se trouve l'appelant.
+     'cesser_coach', 'coach_de', 'demander_coach', 'devenir_coach',
+     'est_admin', 'mon_coach_id', 'repondre_demande', 'revoquer_lien',
+     'toucher_profil'
+   ].join(','),
    definers.join(','));
+
+// Les trois lectures du cote coach sont volontairement en INVOKER : elles ne
+// verifient aucun droit, c'est RLS qui filtre. Si l'une passait en DEFINER,
+// elle rendrait le carnet de n'importe qui a n'importe qui.
+['tirer_jours_de', 'mes_coaches', 'mon_coach'].forEach(function(nom){
+  const f = r.rows.find(x => x.proname === nom);
+  ok(nom + ' reste en SECURITY INVOKER', !!f && f.prosecdef === false, JSON.stringify(f));
+});
 
 // Les fonctions de synchro doivent rester en SECURITY INVOKER : en DEFINER,
 // elles contourneraient tout le RLS des sections 1 a 4.
@@ -534,7 +549,149 @@ ok('la liste des fonctions SECURITY DEFINER est celle attendue',
   });
 
 
-console.log('\n== 21. Suppression du compte ==');
+console.log('\n== 21. Le lien coach ↔ coache ==');
+
+// C est la seule ouverture du mur : on l attaque des deux cotes.
+// A sera le coach, B le coache. C, un tiers, ne doit jamais rien voir.
+const C = '33333333-3333-3333-3333-333333333333';
+await db.query('insert into auth.users (id, email, created_at) values ($1,$2,$3)',
+  [C, 'c@exemple.fr', '2026-07-01T08:00:00Z']);
+await as(C, `select public.toucher_profil($1)`, ['Carole']);
+
+// B a un carnet : c'est lui qu'on protege.
+await as(B, `select public.pousser_jour('2026-10-01'::date, $1::jsonb)`, [JSON.stringify([
+  { id: 'bx1', nom: 'Squat', groupe: 'Jambes', series: [{ poids: 140, reps: '3', rpe: 9 }] }
+])]);
+
+console.log('  -- avant tout lien');
+let rr = await as(A, `select public.tirer_jours_de($1) j`, [B]);
+ok('sans lien, le coach ne tire rien', Object.keys(rr.rows[0].j).length === 0, JSON.stringify(rr.rows[0].j));
+rr = await as(A, `select count(*)::int n from public.seances where user_id = $1`, [B]);
+ok('sans lien, aucune seance visible', rr.rows[0].n === 0, 'n=' + rr.rows[0].n);
+
+console.log('  -- devenir coach');
+rr = await as(A, `select public.devenir_coach() code`);
+const CODE = rr.rows[0].code;
+ok('le code fait 8 caracteres', typeof CODE === 'string' && CODE.length === 8, String(CODE));
+ok('le code evite les caracteres ambigus', !/[O0I1]/.test(CODE), String(CODE));
+rr = await as(A, `select public.devenir_coach() code`);
+ok('redemander ne change pas le code', rr.rows[0].code === CODE, rr.rows[0].code + ' vs ' + CODE);
+
+console.log('  -- demander un coach');
+await refuse('un code inconnu est refuse', () => as(B, `select public.demander_coach('ZZZZZZZZ')`));
+await refuse('on ne peut pas se coacher soi-meme', () => as(A, `select public.demander_coach($1)`, [CODE]));
+
+rr = await as(B, `select public.demander_coach($1) d`, [CODE]);
+const LIEN = rr.rows[0].d.lien;
+ok('la demande cree un lien', !!LIEN, JSON.stringify(rr.rows[0].d));
+ok('elle nomme le coach', rr.rows[0].d.coach === 'AutreNom' || typeof rr.rows[0].d.coach === 'string',
+   JSON.stringify(rr.rows[0].d.coach));
+
+rr = await db.query(`select count(*)::int n from public.consentements where user_id = $1 and type = 'coaching'`, [B]);
+ok('le consentement du coache est trace', rr.rows[0].n === 1, 'n=' + rr.rows[0].n);
+
+// Le lien n'est pas encore accepte : rien ne doit filtrer.
+rr = await as(A, `select public.tirer_jours_de($1) j`, [B]);
+ok('en attente, le coach ne voit toujours rien', Object.keys(rr.rows[0].j).length === 0);
+
+rr = await as(B, `select public.demander_coach($1) d`, [CODE]);
+ok('redemander ne cree pas de doublon', rr.rows[0].d.lien === LIEN, rr.rows[0].d.lien + ' vs ' + LIEN);
+
+console.log('  -- accepter');
+await refuse('un tiers ne peut pas repondre a la demande', () =>
+  as(C, `select public.repondre_demande($1, true)`, [LIEN]));
+await refuse('le coache non plus ne peut pas s auto-accepter', () =>
+  as(B, `select public.repondre_demande($1, true)`, [LIEN]));
+
+await as(A, `select public.repondre_demande($1, true)`, [LIEN]);
+
+rr = await as(A, `select public.tirer_jours_de($1) j`, [B]);
+// B a plusieurs journees, dont une posee par une section precedente : le coach
+// doit voir TOUT le carnet, pas seulement la derniere.
+ok('une fois accepte, le coach lit le carnet',
+   Object.keys(rr.rows[0].j).length >= 2 && !!rr.rows[0].j['2026-10-01'],
+   JSON.stringify(Object.keys(rr.rows[0].j)));
+ok('et il voit bien les series',
+   rr.rows[0].j['2026-10-01'].exercises[0].series[0].poids === '140.00' ||
+   Number(rr.rows[0].j['2026-10-01'].exercises[0].series[0].poids) === 140,
+   JSON.stringify(rr.rows[0].j['2026-10-01'].exercises[0].series[0]));
+
+rr = await as(A, `select pseudo from public.profils where user_id = $1`, [B]);
+ok('le coach voit le pseudo de son coache', rr.rows.length === 1, JSON.stringify(rr.rows));
+rr = await as(B, `select pseudo from public.profils where user_id = $1`, [A]);
+ok('le coache voit le pseudo de son coach', rr.rows.length === 1, JSON.stringify(rr.rows));
+
+console.log('  -- ce que le coach ne peut PAS faire');
+rr = await as(A, `update public.seances set titre = 'pirate' where user_id = $1 returning 1`, [B]);
+ok('le coach ne modifie pas une seance', rr.rows.length === 0, rr.rows.length + ' ligne(s)');
+rr = await as(A, `delete from public.seances where user_id = $1 returning 1`, [B]);
+ok('le coach n efface pas une seance', rr.rows.length === 0, rr.rows.length + ' ligne(s)');
+rr = await as(A, `delete from public.series where user_id = $1 returning 1`, [B]);
+ok('ni une serie', rr.rows.length === 0, rr.rows.length + ' ligne(s)');
+rr = await as(A, `select count(*)::int n from public.consentements where user_id = $1`, [B]);
+ok('le coach ne lit pas les consentements de son coache', rr.rows[0].n === 0, 'n=' + rr.rows[0].n);
+rr = await as(A, `select count(*)::int n from public.retours where user_id = $1`, [B]);
+ok('ni ses retours', rr.rows[0].n === 0, 'n=' + rr.rows[0].n);
+await refuse('le coach ne pousse pas de journee chez son coache', () =>
+  as(A, `insert into public.seances (user_id, date) values ($1, '2026-11-01')`, [B]));
+
+console.log('  -- le tiers reste dehors');
+rr = await as(C, `select public.tirer_jours_de($1) j`, [B]);
+ok('un tiers ne tire rien du carnet de B', Object.keys(rr.rows[0].j).length === 0);
+rr = await as(C, `select count(*)::int n from public.seances where user_id = $1`, [B]);
+ok('un tiers ne voit aucune seance de B', rr.rows[0].n === 0, 'n=' + rr.rows[0].n);
+rr = await as(C, `select count(*)::int n from public.liens_coach`);
+ok('un tiers ne voit aucun lien', rr.rows[0].n === 0, 'n=' + rr.rows[0].n);
+rr = await as(C, `select public.coach_de($1) c`, [B]);
+ok('coach_de repond non a un tiers', rr.rows[0].c === false);
+
+console.log('  -- un seul coach actif');
+rr = await as(C, `select public.devenir_coach() code`);
+await refuse('B ne peut pas prendre un second coach', () =>
+  as(B, `select public.demander_coach($1)`, [rr.rows[0].code]));
+
+console.log('  -- revoquer');
+await refuse('un tiers ne revoque pas le lien', () => as(C, `select public.revoquer_lien($1)`, [LIEN]));
+await as(B, `select public.revoquer_lien($1)`, [LIEN]);
+
+rr = await as(A, `select public.tirer_jours_de($1) j`, [B]);
+ok('apres revocation, le coach ne lit plus rien', Object.keys(rr.rows[0].j).length === 0,
+   JSON.stringify(rr.rows[0].j));
+rr = await as(A, `select count(*)::int n from public.seances where user_id = $1`, [B]);
+ok('et plus aucune seance', rr.rows[0].n === 0, 'n=' + rr.rows[0].n);
+rr = await as(A, `select count(*)::int n from public.profils where user_id = $1`, [B]);
+ok('ni le profil de son ancien coache', rr.rows[0].n === 0, 'n=' + rr.rows[0].n);
+
+rr = await db.query(`select statut, fini_le is not null date from public.liens_coach where id = $1`, [LIEN]);
+ok('le lien est marque revoque et date', rr.rows[0].statut === 'revoque' && rr.rows[0].date === true,
+   JSON.stringify(rr.rows[0]));
+
+// Apres revocation, B peut reprendre un coach : la contrainte ne visait que
+// les liens actifs.
+rr = await as(B, `select public.demander_coach($1) d`, [CODE]);
+ok('B peut redemander un coach apres revocation', !!rr.rows[0].d.lien);
+await as(A, `select public.repondre_demande($1, true)`, [rr.rows[0].d.lien]);
+
+console.log('  -- cesser d etre coach coupe tout');
+await as(A, `select public.cesser_coach()`);
+rr = await as(A, `select public.tirer_jours_de($1) j`, [B]);
+ok('un coach qui arrete ne lit plus rien', Object.keys(rr.rows[0].j).length === 0);
+rr = await db.query(`select est_coach, code_coach from public.profils where user_id = $1`, [A]);
+ok('son code est rendu', rr.rows[0].est_coach === false && rr.rows[0].code_coach === null,
+   JSON.stringify(rr.rows[0]));
+
+console.log('  -- anon dehors partout');
+await refuse('anon ne lit pas les liens', () => asAnon(`select * from public.liens_coach`));
+await refuse('anon n appelle pas devenir_coach', () => asAnon(`select public.devenir_coach()`));
+await refuse('anon n appelle pas demander_coach', () => asAnon(`select public.demander_coach('X')`));
+await refuse('anon n appelle pas tirer_jours_de', () => asAnon(`select public.tirer_jours_de($1)`, [B]));
+
+
+console.log('\n== 22. Suppression du compte ==');
+// Compte avant, compare apres : un nombre en dur se perime des qu'une section
+// precedente ajoute une journee, et le test se met alors a mentir.
+const avantB = (await db.query(
+  "select count(*)::int n from public.seances where user_id = $1", [B])).rows[0].n;
 await db.query('delete from auth.users where id = $1', [A]);
 r = await db.query(`select (select count(*) from public.seances   where user_id = $1)::int s,
                            (select count(*) from public.exercices where user_id = $1)::int e,
@@ -543,7 +700,8 @@ r = await db.query(`select (select count(*) from public.seances   where user_id 
 const z = r.rows[0];
 ok('tout est efface en cascade', z.s === 0 && z.e === 0 && z.se === 0 && z.p === 0, JSON.stringify(z));
 r = await db.query(`select count(*)::int n from public.seances where user_id = $1`, [B]);
-ok('les donnees de B sont intactes', r.rows[0].n === 1, 'n=' + r.rows[0].n);
+ok('les donnees de B sont intactes', r.rows[0].n === avantB && avantB > 0,
+   r.rows[0].n + ' vs ' + avantB);
 
 // Le profil part avec le compte, le retour reste mais devient anonyme :
 // quelqu'un qui s'en va a le droit de disparaitre, pas celui d'effacer un

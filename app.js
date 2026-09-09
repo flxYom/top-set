@@ -1713,6 +1713,7 @@
     else if (state.view === 'seances') renderSeances();
     else if (state.view === 'seance') renderSeanceDetail();
     else if (state.view === 'exercice') renderExerciceDetail();
+    else if (state.view === 'coach') renderCoach();
     else if (state.view === 'admin') renderAdmin();
     else renderRecap();
   }
@@ -1723,7 +1724,7 @@
   // donnerait l'impression d'avoir perdu sa place.
   var seancesOnglet = 'mes';
 
-  var VUES = ['planning','seances','seance','exercice','recap','admin'];
+  var VUES = ['planning','seances','seance','exercice','recap','coach','admin'];
   function montrerVue(vue){
     state.view = vue;
     // La fiche n'a pas d'onglet : c'est une page ou l'on entre depuis la
@@ -2585,6 +2586,223 @@
     }).then(function(){
       btn.disabled = false; btn.textContent = avant;
     });
+  });
+
+  // ==================================================================
+  // COACH
+  // ==================================================================
+  // Deux directions, et il ne faut jamais les confondre : « mon coach »
+  // (quelqu'un lit MON carnet) et « mes coaches » (je lis le carnet de
+  // quelqu'un). L'ecran les separe franchement pour la meme raison.
+  var coachClient = null;   // le coache dont on lit le carnet, ou null
+
+  function msgCoach(genre, texte){
+    var el = document.getElementById('coachMsg');
+    if (!el) return;
+    el.className = 'sheet-msg ' + genre;
+    el.textContent = texte;
+    el.hidden = false;
+  }
+
+  function majCoachUI(){
+    var sec = document.getElementById('coachEtat');
+    if (!sec || !Sync.estConnecte()) return;
+
+    // --- etre coach
+    var estC = Sync.estCoach();
+    var code = Sync.codeCoach();
+    document.getElementById('coachDevenir').hidden = estC;
+    document.getElementById('coachOuvrir').hidden  = !estC;
+    document.getElementById('coachCesser').hidden  = !estC;
+    sec.innerHTML = estC && code
+      ? '<div class="coach-code">' + esc(code) + '</div>'
+        + '<p class="coach-code-aide">Donne ce code à la personne que tu coaches. '
+        + 'Elle le saisit de son côté, et tu recevras sa demande ici.</p>'
+      : '';
+
+    // --- avoir un coach
+    Sync.monCoach().then(function(rows){
+      var etat   = document.getElementById('monCoachEtat');
+      var saisie = document.getElementById('monCoachSaisie');
+      var l = rows && rows[0];
+      if (!l){
+        etat.innerHTML = '';
+        saisie.hidden = false;
+        return;
+      }
+      saisie.hidden = true;
+      var nom = l.pseudo ? esc(l.pseudo) : 'ton coach';
+      etat.innerHTML =
+        '<div class="coach-etat ' + (l.statut === 'actif' ? 'actif' : 'attente') + '">'
+        + '<span class="pastille"></span>'
+        + '<span>' + (l.statut === 'actif'
+            ? '<b>' + nom + '</b> lit ce carnet'
+            : 'Demande envoyée à <b>' + nom + '</b>, en attente de sa réponse')
+        + '</span></div>'
+        + '<button type="button" class="btn-sheet danger" data-couper="' + esc(l.lien_id) + '">'
+        + (l.statut === 'actif' ? 'COUPER L\'ACCÈS' : 'ANNULER LA DEMANDE') + '</button>';
+    }, function(){ /* le SQL n'est peut-etre pas encore passe */ });
+  }
+
+  document.getElementById('coachDevenir').addEventListener('click', function(){
+    var b = this, avant = b.textContent;
+    b.disabled = true; b.textContent = 'CRÉATION…';
+    Sync.devenirCoach().then(function(code){
+      msgCoach('ok', 'Te voilà coach. Ton code : ' + code);
+      majCoachUI();
+    }, function(e){ msgCoach('err', Sync.messageErreur(e)); })
+     .then(function(){ b.disabled = false; b.textContent = avant; });
+  });
+
+  document.getElementById('coachCesser').addEventListener('click', function(){
+    if (!confirm('Ne plus être coach ? Tous tes liens en cours seront coupés, et tes coachés en seront avertis à leur prochaine ouverture.')) return;
+    Sync.cesserCoach().then(function(){
+      msgCoach('ok', 'Tu n\'es plus coach. Les liens sont coupés.');
+      majCoachUI();
+    }, function(e){ msgCoach('err', Sync.messageErreur(e)); });
+  });
+
+  document.getElementById('coachDemander').addEventListener('click', function(){
+    var champ = document.getElementById('coachCode');
+    var code = champ.value.toUpperCase().trim();
+    if (code.length !== 8){ msgCoach('err', 'Le code fait 8 caractères.'); champ.focus(); return; }
+    var b = this, avant = b.textContent;
+    b.disabled = true; b.textContent = 'ENVOI…';
+    Sync.demanderCoach(code).then(function(d){
+      champ.value = '';
+      msgCoach('ok', 'Demande envoyée à ' + (d && d.coach ? d.coach : 'ton coach') + '. Il doit l\'accepter.');
+      majCoachUI();
+    }, function(e){ msgCoach('err', Sync.messageErreur(e)); })
+     .then(function(){ b.disabled = false; b.textContent = avant; });
+  });
+
+  document.getElementById('monCoachEtat').addEventListener('click', function(e){
+    var b = e.target.closest('[data-couper]'); if (!b) return;
+    if (!confirm('Couper l\'accès ? Ton coach ne verra plus rien immédiatement.')) return;
+    Sync.revoquerLien(b.dataset.couper).then(function(){
+      msgCoach('ok', 'Accès coupé.');
+      majCoachUI();
+    }, function(err){ msgCoach('err', Sync.messageErreur(err)); });
+  });
+
+  document.getElementById('coachOuvrir').addEventListener('click', function(){
+    closeDataSheet();
+    coachClient = null;
+    montrerVue('coach');
+    window.scrollTo(0, 0);
+  });
+
+  // ------------------------------------------------------------ la vue
+  function renderCoach(){
+    var zone  = document.getElementById('coachContenu');
+    var titre = document.getElementById('coachTitre');
+
+    if (coachClient){
+      titre.textContent = (coachClient.pseudo || 'CARNET').toUpperCase();
+      zone.innerHTML = '<div class="admin-vide">Lecture du carnet…</div>';
+      Sync.tirerJoursDe(coachClient.client_id).then(function(jours){
+        var dates = Object.keys(jours || {}).sort().reverse();
+        if (!dates.length){
+          zone.innerHTML = '<div class="admin-vide">Aucune séance loguée pour l\'instant.</div>';
+          return;
+        }
+        zone.innerHTML = dates.map(function(ds){
+          var j = jours[ds];
+          var d = fromDateStr(ds);
+          var quand = DAY_NAMES[(d.getDay()+6)%7] + ' ' + d.getDate() + ' ' +
+                      MONTH_NAMES[d.getMonth()] + ' ' + d.getFullYear();
+          var exos = (j.exercises || []).map(function(ex){
+            var top = TS.calculerTopSet(ex.series || []);
+            var series = (ex.series || []).map(function(s){
+              var t = TS.typeSerie(s);
+              var classe = (top && s === top) ? 'top' : (t !== TS.TYPES.TRAVAIL ? t : '');
+              var p = (s.poids != null && s.poids !== '') ? formatWeight(Number(s.poids)) + ' kg' : '';
+              var r = s.reps ? String(s.reps) : '';
+              var txt = (p && r) ? p + ' × ' + r : (p || r || '—');
+              if (s.rpe != null) txt += ' · RPE ' + s.rpe;
+              return '<span class="lect-serie ' + classe + '">' + esc(txt) + '</span>';
+            }).join('');
+            return '<div class="lect-exo">'
+              + '<div class="lect-nom">' + esc(ex.nom || 'Sans nom') + '</div>'
+              + '<div class="lect-series">' + (series || '<span class="lect-serie">aucune série</span>') + '</div>'
+              + '</div>';
+          }).join('');
+          return '<div class="lect-jour">'
+            + '<div class="lect-date">' + esc(quand.toUpperCase()) + (j.titre ? ' · ' + esc(j.titre) : '') + '</div>'
+            + exos + '</div>';
+        }).join('');
+      }, function(e){
+        zone.innerHTML = '<div class="admin-vide">' + esc(Sync.messageErreur(e)) + '</div>';
+      });
+      return;
+    }
+
+    titre.textContent = 'MES COACHÉS';
+    zone.innerHTML = '<div class="admin-vide">Chargement…</div>';
+    Sync.mesCoaches().then(function(rows){
+      if (!rows || !rows.length){
+        zone.innerHTML = '<div class="admin-vide">Personne pour l\'instant. '
+          + 'Donne ton code à quelqu\'un : sa demande apparaîtra ici.</div>';
+        return;
+      }
+      zone.innerHTML = rows.map(function(c){
+        var nom = c.pseudo ? esc(c.pseudo) : '<span class="anon">sans pseudo</span>';
+        var attente = c.statut === 'en_attente';
+        var derniere = c.derniere ? (function(){
+          var d = fromDateStr(c.derniere);
+          return d.getDate() + ' ' + MONTH_ABBR[d.getMonth()];
+        })() : '—';
+        return '<div class="coache-carte ' + (attente ? 'attente' : '') + '"'
+          + (attente ? '' : ' data-ouvrir-coache="' + esc(c.client_id) + '" data-pseudo="' + esc(c.pseudo || '') + '"')
+          + ' role="' + (attente ? 'group' : 'button') + '" tabindex="0">'
+          + '<div class="coache-tete">'
+          +   '<span class="coache-nom">' + nom + '</span>'
+          +   (attente ? '<span class="coache-badge">DEMANDE</span>' : '')
+          +   '<span class="coache-chiffres">' + (attente ? '' :
+                c.nb_seances + ' séance' + (c.nb_seances > 1 ? 's' : '') + '<br>dernière ' + esc(derniere)) + '</span>'
+          + '</div>'
+          + (attente
+              ? '<div class="coache-actions">'
+                + '<button type="button" class="coache-action oui" data-repondre="' + esc(c.lien_id) + '" data-oui="1">ACCEPTER</button>'
+                + '<button type="button" class="coache-action non" data-repondre="' + esc(c.lien_id) + '" data-oui="">REFUSER</button>'
+                + '</div>'
+              : '<div class="coache-actions">'
+                + '<button type="button" class="coache-action non" data-couper-coache="' + esc(c.lien_id) + '">METTRE FIN AU SUIVI</button>'
+                + '</div>')
+          + '</div>';
+      }).join('');
+    }, function(e){
+      zone.innerHTML = '<div class="admin-vide">' + esc(Sync.messageErreur(e)) + '</div>';
+    });
+  }
+
+  document.getElementById('coachRetourBtn').addEventListener('click', function(){
+    if (coachClient){ coachClient = null; renderCoach(); window.scrollTo(0,0); return; }
+    montrerVue('planning');
+  });
+  document.getElementById('coachRafraichir').addEventListener('click', renderCoach);
+
+  document.getElementById('coachContenu').addEventListener('click', function(e){
+    var rep = e.target.closest('[data-repondre]');
+    if (rep){
+      rep.disabled = true;
+      Sync.repondreDemande(rep.dataset.repondre, !!rep.dataset.oui)
+          .then(renderCoach, function(err){ rep.disabled = false; showToast(Sync.messageErreur(err)); });
+      return;
+    }
+    var fin = e.target.closest('[data-couper-coache]');
+    if (fin){
+      if (!confirm('Mettre fin au suivi ? Tu ne verras plus son carnet.')) return;
+      Sync.revoquerLien(fin.dataset.couperCoache)
+          .then(renderCoach, function(err){ showToast(Sync.messageErreur(err)); });
+      return;
+    }
+    var carte = e.target.closest('[data-ouvrir-coache]');
+    if (carte){
+      coachClient = { client_id: carte.dataset.ouvrirCoache, pseudo: carte.dataset.pseudo };
+      renderCoach();
+      window.scrollTo(0, 0);
+    }
   });
 
   // ==================================================================
@@ -3599,6 +3817,7 @@
       // en base. Ici on evite juste d'afficher un bouton qui echouerait.
       var boutonAdmin = document.getElementById('compteAdmin');
       if (boutonAdmin) boutonAdmin.hidden = !estAdmin();
+      if (typeof majCoachUI === 'function') majCoachUI();
 
       var joursLocaux = Object.keys(state.sessions).filter(function(ds){
         return compterJour(state.sessions[ds]) > 0;
@@ -3742,6 +3961,30 @@
     return {
       dispo:dispo, demarrer:demarrer, marquerSale:marquerSale, majUI:majUI,
       toucherProfil:toucherProfil, estAdmin:estAdmin,
+      profil:function(){ return profil; },
+      estCoach:function(){ return !!(profil && profil.est_coach); },
+      codeCoach:function(){ return profil && profil.code_coach; },
+      devenirCoach:function(){
+        return rpcAdmin('devenir_coach').then(function(code){
+          if (profil) profil.est_coach = true, profil.code_coach = code;
+          return code;
+        });
+      },
+      cesserCoach:function(){
+        return rpcAdmin('cesser_coach').then(function(){
+          if (profil) profil.est_coach = false, profil.code_coach = null;
+        });
+      },
+      demanderCoach:function(code){
+        return rpcAdmin('demander_coach', { p_code: String(code || '').toUpperCase().trim() });
+      },
+      repondreDemande:function(lien, oui){
+        return rpcAdmin('repondre_demande', { p_lien: lien, p_accepte: !!oui });
+      },
+      revoquerLien:function(lien){ return rpcAdmin('revoquer_lien', { p_lien: lien }); },
+      mesCoaches:function(){ return rpcAdmin('mes_coaches'); },
+      monCoach:function(){ return rpcAdmin('mon_coach'); },
+      tirerJoursDe:function(client){ return rpcAdmin('tirer_jours_de', { p_client: client }); },
       envoyerRetour:envoyerRetour, mesRetours:mesRetours,
       adminApercu:function(){ return rpcAdmin('admin_apercu'); },
       adminMembres:function(){ return rpcAdmin('admin_membres'); },

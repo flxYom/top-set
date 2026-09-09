@@ -41,6 +41,7 @@ c'est exactement à ça que sert ce repo pour l'instant.
 - [Migrer un carnet existant](#migrer-un-carnet-existant)
 - [La confidentialité par construction](#la-confidentialité-par-construction)
 - [Comptes et Supabase](#comptes-et-supabase)
+- [Le lien coach ↔ coaché](#le-lien-coach--coaché)
 - [Retours et administration](#retours-et-administration)
 - [La pile technique](#la-pile-technique)
 - [Structure du projet](#structure-du-projet)
@@ -287,6 +288,44 @@ administrateur depuis la console de son navigateur. Tout passe par
 **Aucun cookie, aucune mesure d'audience, aucun traceur.** Le seul traitement qui
 existe, ce sont les journaux d'accès de l'hébergeur, et la page de confidentialité
 le dit.
+
+---
+
+## Le lien coach ↔ coaché
+
+C'est la seule ouverture du mur des carnets, et elle tient en quatre policies
+`SELECT` ajoutées **à côté** des policies existantes, sans les toucher : deux
+policies permissives se cumulent, donc le propriétaire garde tous ses droits et
+le coach n'obtient que la lecture.
+
+**Le lien n'existe que si les deux parties ont agi.** Le coach génère un code de
+8 caractères (alphabet sans `O`/`0` ni `I`/`1` — il se lit à voix haute), le
+coaché le saisit, le coach accepte. Un pseudo tapé à la main donnerait un carnet
+entier à un inconnu sur une faute de frappe ; un code est faux ou juste, jamais
+« presque ».
+
+**Ce que le coach peut :** lire les séances, exercices, séries et exercices
+mémorisés de son coaché, et voir son pseudo.
+**Ce qu'il ne peut pas :** modifier ou effacer quoi que ce soit, voir l'email,
+les consentements ou les retours. Il n'existe aucune fonction pour.
+
+**Un seul coach actif** par personne, garanti par un index unique partiel et non
+par une règle applicative qu'on pourrait oublier. **Révocable des deux côtés**,
+avec effet immédiat : la policy relit le statut à chaque requête, il n'y a ni
+jeton à expirer ni cache à vider. Le **consentement** du coaché est daté et
+versionné dans `consentements` au moment où il fait la demande.
+
+### Le point de conception qui compte
+
+`tirer_jours_de(client)` est en `security invoker` et **ne vérifie aucun droit**.
+Elle demande les séances de ce client, et RLS répond. Sans lien actif le résultat
+est vide — pas parce qu'un `if` l'a décidé, mais parce que la base n'a rien à
+montrer. Il n'y a donc aucun contrôle à oublier dans cette fonction, et un test
+vérifie qu'elle ne passe jamais en `security definer`.
+
+47 tests couvrent ce seul mécanisme : avant lien, en attente, après accord, ce
+que le coach ne peut pas faire, le tiers qui n'est ni l'un ni l'autre, le second
+coach refusé, la révocation, l'arrêt du coaching, et `anon` partout.
 
 ---
 

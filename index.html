@@ -995,6 +995,9 @@
     font-family:inherit;font-size:14px;
   }
   .sheet-input:focus{outline:none;border-color:var(--blue);}
+  /* Un intertitre qui suit un bloc, pas le haut d'une section. */
+  .sheet-label.espace{margin-top:16px;}
+
   .sheet-check{
     display:flex;align-items:flex-start;gap:9px;
     margin:2px 0 10px;font-size:12.5px;line-height:1.45;color:var(--dim);
@@ -1118,6 +1121,80 @@
   .retour-statut{white-space:nowrap;}
   .retour-statut.traite{color:var(--green);}
   .retour-statut.vu{color:var(--yellow);}
+
+  /* ---- Coach --------------------------------------------------------- */
+  /* Le code se lit a voix haute et se recopie a la main : gros, espace, et
+     une seule casse. C'est le seul champ de l'app ou l'on tape quelque chose
+     qu'on n'a pas invente soi-meme. */
+  .coach-code{
+    font:800 22px/1 ui-monospace,SFMono-Regular,Menlo,monospace;
+    letter-spacing:.22em;color:var(--yellow);
+    background:var(--panel2);border:2px dashed var(--line-fort,#4a443b);
+    border-radius:10px;padding:14px 10px;text-align:center;margin:8px 0 10px;
+    user-select:all;
+  }
+  .coach-code-aide{font-size:11.5px;font-weight:700;color:var(--dim);margin:0 0 12px;}
+  #coachCode{text-transform:uppercase;letter-spacing:.18em;font-weight:800;text-align:center;}
+
+  .coach-etat{
+    display:flex;align-items:center;gap:9px;
+    border:1px solid var(--line);border-radius:9px;
+    padding:11px 13px;margin-bottom:9px;background:var(--panel2);
+    font-size:12.5px;font-weight:700;
+  }
+  .coach-etat .pastille{width:9px;height:9px;border-radius:50%;flex:none;background:var(--dim);}
+  .coach-etat.actif   .pastille{background:var(--green);}
+  .coach-etat.attente .pastille{background:var(--yellow);}
+  .coach-etat b{color:var(--ink);}
+
+  .coache-carte{
+    display:block;width:100%;text-align:left;
+    background:var(--panel);border:1px solid var(--line);border-radius:10px;
+    padding:13px 15px;margin-bottom:8px;color:inherit;font:inherit;cursor:pointer;
+  }
+  .coache-carte.attente{border-left:3px solid var(--yellow);}
+  .coache-tete{display:flex;align-items:baseline;gap:9px;margin-bottom:5px;}
+  .coache-nom{font-size:15px;font-weight:800;}
+  .coache-nom .anon{color:var(--dim);font-weight:600;font-style:italic;}
+  .coache-badge{
+    font-size:9px;font-weight:800;letter-spacing:.07em;
+    color:var(--bg);background:var(--yellow);border-radius:4px;padding:2px 5px;
+  }
+  .coache-chiffres{
+    font-size:11px;font-weight:700;color:var(--dim);
+    font-variant-numeric:tabular-nums;margin-left:auto;text-align:right;
+  }
+  .coache-actions{display:flex;gap:7px;margin-top:10px;}
+  .coache-action{
+    flex:1;min-height:38px;background:var(--panel2);color:var(--ink);
+    border:1px solid var(--line);border-radius:8px;
+    font:800 11px/1 inherit;letter-spacing:.05em;cursor:pointer;
+  }
+  .coache-action.oui{border-color:var(--green);color:var(--green);}
+  .coache-action.non{border-color:var(--orange);color:var(--orange);}
+
+  /* Lecture du carnet d'un coache : volontairement different d'une saisie.
+     On ne doit jamais croire qu'on peut modifier ce qu'on regarde. */
+  .lect-jour{
+    border:1px solid var(--line);border-radius:10px;
+    background:var(--panel);padding:12px 14px;margin-bottom:9px;
+  }
+  .lect-date{
+    font-size:10.5px;font-weight:800;letter-spacing:.08em;color:var(--dim);
+    margin-bottom:8px;
+  }
+  .lect-exo{margin-bottom:9px;}
+  .lect-exo:last-child{margin-bottom:0;}
+  .lect-nom{font-size:13.5px;font-weight:800;margin-bottom:4px;}
+  .lect-series{display:flex;flex-wrap:wrap;gap:5px;}
+  .lect-serie{
+    font-size:11.5px;font-weight:700;
+    background:var(--panel2);border:1px solid var(--line);border-radius:6px;
+    padding:4px 8px;font-variant-numeric:tabular-nums;
+  }
+  .lect-serie.top{border-color:var(--yellow);color:var(--yellow);}
+  .lect-serie.echauffement{opacity:.62;}
+  .lect-serie.backoff{border-color:var(--blue);}
 
   /* ---- Administration ------------------------------------------------ */
   .admin-tete{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
@@ -1319,6 +1396,15 @@
     <div class="recap-groups" id="recapGroups"></div>
   </section>
 
+  <section class="view" id="view-coach" hidden>
+    <div class="admin-tete">
+      <button type="button" class="icon-btn" id="coachRetourBtn" aria-label="Revenir">&lsaquo;</button>
+      <h2 id="coachTitre">MES COACHÉS</h2>
+      <button type="button" class="icon-btn" id="coachRafraichir" aria-label="Rafraîchir">&#8635;</button>
+    </div>
+    <div id="coachContenu"></div>
+  </section>
+
   <section class="view" id="view-admin" hidden>
     <div class="admin-tete">
       <button type="button" class="icon-btn" id="adminRetourBtn" aria-label="Revenir">&lsaquo;</button>
@@ -1392,6 +1478,28 @@
         <input type="text" id="compteMonPseudo" class="sheet-input" placeholder="ton pseudo" autocomplete="nickname" maxlength="24" aria-label="Ton pseudo">
         <button type="button" class="btn-sheet" id="comptePseudoOk">ENREGISTRER LE PSEUDO</button>
         <button type="button" class="btn-sheet" id="compteMigrer" hidden></button>
+        <div class="sheet-label espace">MON COACH</div>
+        <div id="monCoachEtat"></div>
+        <div id="monCoachSaisie">
+          <input type="text" id="coachCode" class="sheet-input" placeholder="CODE DU COACH"
+                 maxlength="8" autocomplete="off" autocapitalize="characters"
+                 spellcheck="false" aria-label="Code de ton coach">
+          <button type="button" class="btn-sheet" id="coachDemander">DEMANDER CE COACH</button>
+          <p class="sheet-note">
+            Ton coach te donne un code de 8 caractères. Il devra accepter ta
+            demande : tant qu'il ne l'a pas fait, il ne voit rien. Ensuite il
+            pourra <strong>lire</strong> ton carnet — pas le modifier — et tu
+            peux couper à tout moment.
+          </p>
+        </div>
+
+        <div class="sheet-label espace">ÊTRE COACH</div>
+        <div id="coachEtat"></div>
+        <button type="button" class="btn-sheet" id="coachDevenir">DEVENIR COACH</button>
+        <button type="button" class="btn-sheet" id="coachOuvrir" hidden>MES COACHÉS</button>
+        <button type="button" class="btn-sheet danger" id="coachCesser" hidden>NE PLUS ÊTRE COACH</button>
+        <div class="sheet-msg" id="coachMsg" hidden></div>
+
         <button type="button" class="btn-sheet" id="compteAdmin" hidden>ADMINISTRATION</button>
         <button type="button" class="btn-sheet" id="compteSync">SYNCHRONISER MAINTENANT</button>
         <button type="button" class="btn-sheet" id="compteDeconnexion">SE DÉCONNECTER</button>
