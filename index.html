@@ -1143,6 +1143,7 @@
 
 <!-- Coordonnees publiques du projet Supabase. Absent ou vide : l'app reste
      en mode 100 % local, sans bouton mort ni erreur. -->
+<script src="intelligence.js"></script>
 <script src="supabase-config.js"></script>
 <script>
 (function(){
@@ -1427,22 +1428,38 @@
     return vol;
   }
 
-  // Poids max par séance pour un exercice donné, dans l'ordre chronologique — alimente le
-  // graphique de progression (une séance sans poids logué pour cet exercice n'apparaît pas,
-  // plutôt que d'afficher un faux zéro).
-  function exerciseHistory(exNom){
-    var norm = exNom && exNom.trim() ? normalizeName(exNom) : null;
+  // Toutes les séances où cet exercice apparaît, alias résolus, dans l'ordre
+  // chronologique, sous la forme attendue par intelligence.js. Une seule
+  // façon de reconstruire l'historique d'un exercice — donc une seule façon
+  // de se tromper, et elle se corrige à un seul endroit.
+  //
+  // La comparaison passe par cleCanonique() et non par le nom brut : sans ça
+  // « dead » et « soulevé de terre » resteraient deux exercices distincts
+  // dans les courbes alors que l'utilisateur a explicitement dit le contraire.
+  function seancesDeLExo(exNom){
+    var norm = exNom && exNom.trim() ? cleCanonique(exNom) : null;
     if (!norm) return [];
     var out = [];
     Object.keys(state.sessions).sort().forEach(function(ds){
-      var maxPoids = null;
+      var series = [];
       state.sessions[ds].exercises.forEach(function(e){
-        if (!e.nom || normalizeName(e.nom) !== norm) return;
-        (e.series||[]).forEach(function(s){
-          if (typeof s.poids === 'number' && s.poids > 0 && (maxPoids===null || s.poids>maxPoids)) maxPoids = s.poids;
-        });
+        if (!e.nom || cleCanonique(e.nom) !== norm) return;
+        (e.series||[]).forEach(function(s){ if (hasData(s)) series.push(s); });
       });
-      if (maxPoids !== null) out.push({ date:ds, poids:maxPoids });
+      if (series.length) out.push({ date:ds, series:series });
+    });
+    return out;
+  }
+
+  // Le point porté par la courbe est le TOP SET de la séance, pas le poids le
+  // plus lourd toutes séries confondues : un échauffement lourd ne doit pas
+  // faire un pic de progression.
+  function exerciseHistory(exNom){
+    var out = [];
+    seancesDeLExo(exNom).forEach(function(j){
+      var top = TS.calculerTopSet(j.series);
+      if (!top || typeof top.poids !== 'number' || !(top.poids > 0)) return;
+      out.push({ date:j.date, poids:top.poids, reps:top.reps, rpe:top.rpe });
     });
     return out;
   }
@@ -1743,13 +1760,10 @@
     return '<div class="stat-tile"><div class="stat-num">'+value+'</div><div class="stat-label">'+label+'</div></div>';
   }
 
-  // Volume = somme (poids x reps) sur les series ou LES DEUX sont renseignes.
-  // Une serie sans reps ne contribue pas : on ne devine pas une valeur manquante.
-  function serieVolume(s){
-    var reps = parseFloat(s.reps);
-    if (typeof s.poids !== 'number' || isNaN(s.poids) || isNaN(reps)) return 0;
-    return s.poids * reps;
-  }
+  // Volume = somme (poids x reps) sur les séries où LES DEUX sont renseignés.
+  // La définition vit dans intelligence.js et nulle part ailleurs : deux
+  // définitions du volume, c'est deux chiffres différents pour la même séance.
+  function serieVolume(s){ return TS.volumeSerie(s); }
   function dayVolume(ds){
     var day = state.sessions[ds];
     if (!day) return 0;
