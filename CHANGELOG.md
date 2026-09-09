@@ -11,6 +11,21 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ### Added
 
+- **The coach ↔ client link.** A coach generates an 8-character code, the
+  client enters it, the coach accepts — the link exists only once both sides
+  acted. The coach then *reads* the client's logbook: sessions, exercises, sets,
+  RPE. They cannot change or delete anything, and never see the email address,
+  the consent records or the feedback. One active coach per person, enforced by
+  a partial unique index. Revocable from either side, effective immediately
+  because the policy re-reads the status on every query. The client's consent is
+  dated and versioned when they make the request.
+- Three interfaces: `MON COACH` and `ÊTRE COACH` in the ⇅ panel, and a coach
+  view listing pending requests and clients, with a read-only rendering of a
+  client's logbook — deliberately unlike the editor, so nobody thinks they can
+  change what they are looking at.
+- 47 RLS tests for this mechanism alone (121 → 168): before the link, while
+  pending, after acceptance, what the coach cannot do, the third party, the
+  rejected second coach, revocation, ending the coaching, and `anon` throughout.
 - SÉANCES view split into two tabs: *Mes séances* (not-yet-logged sessions,
   today's, and upcoming, oldest first, with the *Créer ma séance* box) and
   *Historique* (logged sessions, newest first, grouped by month).
@@ -162,7 +177,7 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ### Changed
 
-- Service worker cache version `topset-v2` → `topset-v9`.
+- Service worker cache version `topset-v2` → `topset-v10`.
 - Offline, a clean URL (`/guide`, produced by Vercel's `cleanUrls`) fell back
   to the app instead of the requested page. The navigation fallback now retries
   once with `.html` before giving up.

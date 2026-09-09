@@ -43,6 +43,7 @@ repository is for right now.
 - [Privacy by construction](#privacy-by-construction)
 - [Accounts and Supabase](#accounts-and-supabase)
 - [Sessions: two tabs](#sessions-two-tabs)
+- [The coach link](#the-coach-link)
 - [Feedback and administration](#feedback-and-administration)
 - [Stack](#stack)
 - [Project structure](#project-structure)
@@ -274,6 +275,42 @@ grouped by month.
 The boundary is whether the session has been logged, not the date alone: a
 session logged today stays in *Mes séances* until tomorrow, because it is still
 the one being worked on.
+
+---
+
+## The coach link
+
+The only opening in the logbook wall, and it is four `SELECT` policies added
+*beside* the existing ones rather than modifying them: two permissive policies
+add up, so the owner keeps every right and the coach gets read access only.
+
+**The link exists only if both sides acted.** The coach generates an 8-character
+code (alphabet without `O`/`0` or `I`/`1` — it gets read out loud), the client
+enters it, the coach accepts. A hand-typed nickname would hand a whole logbook to
+a stranger on one typo; a code is either right or wrong, never almost.
+
+**What a coach can do:** read their client's sessions, exercises, sets and
+remembered exercises, and see their nickname.
+**What they cannot:** change or delete anything, see the email address, the
+consent records or the feedback. There is no function for it.
+
+**One active coach** per person, enforced by a partial unique index rather than
+an application rule someone could forget. **Revocable from both sides**, taking
+effect immediately: the policy re-reads the status on every query, so there is no
+token to expire and no cache to clear. The client's **consent** is dated and
+versioned in `consentements` at the moment they make the request.
+
+### The design point that matters
+
+`tirer_jours_de(client)` is `security invoker` and **checks no permission at
+all**. It asks for that client's sessions and RLS answers. With no active link
+the result is empty — not because an `if` decided so, but because the database
+has nothing to show. There is no check to forget in that function, and a test
+asserts it never becomes `security definer`.
+
+47 tests cover this mechanism alone: before the link, while pending, after
+acceptance, what the coach cannot do, the third party who is neither side, the
+rejected second coach, revocation, ending the coaching, and `anon` throughout.
 
 ---
 

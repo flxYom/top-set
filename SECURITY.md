@@ -52,6 +52,21 @@ refuses non-administrators as its first statement, and
 in the function, not in whether the function is visible: a hidden function
 without a role check would be strictly worse than a visible one that refuses.
 
+**Six coach-link functions are `SECURITY DEFINER`.** `coach_de` and
+`mon_coach_id` are called *from the policies*, so they must be executable by
+`authenticated` — a policy is evaluated with the caller's privileges, and
+revoking them makes every logbook read fail, including your own. Neither takes a
+parameter that lets you ask about someone else's relationship. The four writes
+(`devenir_coach`, `cesser_coach`, `demander_coach`, `repondre_demande`,
+`revoquer_lien`) each check which side of the link the caller is on as their
+first statement.
+
+The three coach *reads* — `tirer_jours_de`, `mes_coaches`, `mon_coach` — are
+deliberately `SECURITY INVOKER` and check nothing at all: they ask for the rows
+and RLS answers. Without an active link the result is empty, not because an
+`if` decided so but because the database has nothing to show. A test asserts
+they never become `DEFINER`.
+
 **Leaked password protection is off.** It requires the Pro plan.
 
 What would *not* be acceptable, and what the test suite guards against: a new

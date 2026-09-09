@@ -627,7 +627,11 @@ begin
   return jsonb_build_object(
     'pseudo',  v_ligne.pseudo,
     'role',    v_ligne.role,
-    'cree_le', v_ligne.cree_le
+    'cree_le', v_ligne.cree_le,
+    -- Le statut de coach part avec le profil : l'app le sait des l'ouverture
+    -- et n'a pas a le redemander pour decider quoi afficher.
+    'est_coach',  coalesce(v_ligne.est_coach, false),
+    'code_coach', v_ligne.code_coach
   );
 end;
 $$;
