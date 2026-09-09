@@ -304,6 +304,37 @@
     font-size:13px;font-weight:800;text-align:left;cursor:pointer;
   }
   .alias-choix:active{background:var(--yellow);color:#0d0c0a;}
+  .btn-reprendre{
+    width:100%;margin-top:8px;min-height:48px;padding:0 12px;
+    background:transparent;
+    border:2.5px solid var(--line);
+    color:var(--dim);
+    font-family:inherit;font-size:12.5px;font-weight:800;letter-spacing:.05em;
+    cursor:pointer;
+  }
+  .btn-reprendre:active{border-color:var(--yellow);color:var(--yellow);}
+
+  /* Une seance passee, telle qu'on la relit pour la refaire. Le contenu
+     prime sur la date : c'est aux exercices qu'on reconnait sa seance,
+     pas au 27 aout. */
+  .seance-item{
+    border:2px solid var(--line);background:var(--panel2);
+    padding:11px 12px;margin-top:10px;
+  }
+  .seance-quand{
+    font-size:12px;font-weight:800;letter-spacing:.04em;
+    color:var(--yellow);text-transform:uppercase;
+  }
+  .seance-exos{
+    margin:5px 0 3px;font-size:14px;font-weight:700;line-height:1.45;color:var(--ink);
+  }
+  .seance-chiffres{font-size:11.5px;font-weight:700;color:var(--dim);letter-spacing:.03em;}
+  .seance-item .btn-sheet{margin-top:9px;}
+  .seances-vide{
+    margin-top:14px;padding:16px;border:2px dashed var(--line);
+    font-size:13px;line-height:1.55;color:var(--dim);text-align:center;
+  }
+
   .pseudo-label{margin-top:4px;}
 
   .alias-liste{display:flex;flex-direction:column;gap:7px;}
@@ -831,6 +862,7 @@
       <div class="day-panel-header"><h2 id="dayTitle">—</h2></div>
       <div class="ex-list" id="exList"></div>
       <button type="button" class="btn-add" id="addExerciseBtn">+ AJOUTER UN EXERCICE</button>
+      <button type="button" class="btn-reprendre" id="reprendreBtn">⟳ REPRENDRE UNE SÉANCE</button>
     </div>
   </section>
 
@@ -860,6 +892,16 @@
 </div>
 
 <datalist id="exerciseList"></datalist>
+<div class="sheet" id="seancesSheet" hidden>
+  <div class="sheet-card" role="dialog" aria-modal="true" aria-labelledby="seancesTitre">
+    <div class="sheet-head">
+      <h2 id="seancesTitre">REPRENDRE UNE SÉANCE</h2>
+      <button type="button" class="icon-btn" id="seancesClose" aria-label="Fermer">×</button>
+    </div>
+    <p class="sheet-note" id="seancesNote"></p>
+    <div id="seancesListe"></div>
+  </div>
+</div>
 <div class="sheet" id="dataSheet" hidden>
   <div class="sheet-card" role="dialog" aria-modal="true" aria-labelledby="dataSheetTitle">
     <div class="sheet-head">
@@ -1837,6 +1879,103 @@
     (day.exercises || []).forEach(function(e){ if (e.bloc && compte[e.bloc] < 2) delete e.bloc; });
   }
 
+  // ---------- reprendre une seance ----------
+  function seriesRemplies(ex){
+    return (ex && ex.series || []).filter(serieRemplie);
+  }
+
+  // Les journees qui ont vraiment servi, de la plus recente a la plus
+  // ancienne. Le jour affiche est exclu : se recopier sur soi-meme
+  // doublerait la seance en cours.
+  function seancesReprenables(){
+    return Object.keys(state.sessions)
+      .filter(function(ds){ return ds !== state.selectedDay && compterJour(state.sessions[ds]) > 0; })
+      .sort().reverse()
+      .map(function(ds){
+        var day = state.sessions[ds];
+        var exos = (day.exercises || []).filter(function(e){ return seriesRemplies(e).length; });
+        return {
+          date: ds,
+          noms: exos.map(function(e){ return normalizeName(e.nom) || 'Sans nom'; }),
+          exos: exos.length,
+          series: compterJour(day)
+        };
+      });
+  }
+
+  // Recopie les exercices et leurs series, valeurs comprises : c'est la
+  // seance de la semaine derniere qui sert de point de depart, on ne
+  // retape que ce qui a bouge. « fait » repart a faux — refaire le
+  // travail, ce n'est pas heriter de la coche.
+  function reprendreSeance(ds){
+    var source = state.sessions[ds];
+    if (!source) return 0;
+    var jour = getOrCreateDay(state.selectedDay);
+    var blocs = {}, n = 0;
+    (source.exercises || []).forEach(function(ex){
+      var series = seriesRemplies(ex);
+      if (!series.length) return;
+      var bloc;
+      if (ex.bloc){
+        // Un identifiant de bloc neuf : sans ca, reprendre deux fois la meme
+        // seance fusionnerait les deux supersets en un seul.
+        if (!blocs[ex.bloc]) blocs[ex.bloc] = genId();
+        bloc = blocs[ex.bloc];
+      }
+      jour.exercises.push({
+        id: genId(), nom: ex.nom || '', groupe: ex.groupe || 'Autre',
+        repos: ex.repos || '', bloc: bloc,
+        series: series.map(function(s){
+          return { id:genSerieId(), poids:s.poids, reps:s.reps, rpe:s.rpe,
+                   repos:s.repos || '', fait:false };
+        })
+      });
+      n++;
+    });
+    return n;
+  }
+
+  function renderSeances(){
+    var liste = document.getElementById('seancesListe');
+    var note  = document.getElementById('seancesNote');
+    var seances = seancesReprenables();
+    var jour = state.sessions[state.selectedDay];
+    var occupe = jour ? compterJour(jour) > 0 : false;
+    var d = fromDateStr(state.selectedDay);
+    var quand = DAY_NAMES[(d.getDay()+6)%7].toLowerCase() + ' ' + d.getDate() + ' ' + MONTH_NAMES[d.getMonth()];
+
+    if (!seances.length){
+      note.textContent = '';
+      liste.innerHTML = '<div class="seances-vide">Aucune séance à reprendre pour l\'instant. ' +
+        'Note-en une, et elle apparaîtra ici la fois d\'après.</div>';
+      return;
+    }
+    note.textContent = occupe
+      ? 'Les exercices s\'ajouteront à ta séance du ' + quand + ', sans rien effacer.'
+      : 'Les exercices et les charges de la séance choisie sont recopiés sur ' + quand + '. Tu n\'as plus qu\'à corriger ce qui a bougé.';
+
+    liste.innerHTML = seances.map(function(s){
+      var sd = fromDateStr(s.date);
+      var quandS = DAY_NAMES[(sd.getDay()+6)%7] + ' ' + sd.getDate() + ' ' +
+                   MONTH_ABBR[sd.getMonth()] + ' ' + sd.getFullYear();
+      var noms = s.noms.slice(0, 6).join(' · ') + (s.noms.length > 6 ? ' · +' + (s.noms.length - 6) : '');
+      return '<div class="seance-item">'
+        + '<div class="seance-quand">' + esc(quandS) + '</div>'
+        + '<div class="seance-exos">' + esc(noms) + '</div>'
+        + '<div class="seance-chiffres">' + s.exos + (s.exos > 1 ? ' exercices' : ' exercice')
+        + ' · ' + s.series + (s.series > 1 ? ' séries' : ' série') + '</div>'
+        + '<button type="button" class="btn-sheet primary" data-reprendre="' + esc(s.date) + '">'
+        + (occupe ? 'AJOUTER À CE JOUR' : 'REPRENDRE CETTE SÉANCE') + '</button>'
+        + '</div>';
+    }).join('');
+  }
+
+  function openSeancesSheet(){
+    renderSeances();
+    document.getElementById('seancesSheet').hidden = false;
+  }
+  function closeSeancesSheet(){ document.getElementById('seancesSheet').hidden = true; }
+
   function renderDayPanel(force){
     var panel = document.querySelector('.day-panel');
     var ae = document.activeElement;
@@ -2413,6 +2552,25 @@
     if (corps && apres) corps.insertBefore(box, apres.nextSibling);
     else if (corps) corps.appendChild(box);
   }
+
+  document.getElementById('reprendreBtn').addEventListener('click', openSeancesSheet);
+  document.getElementById('seancesClose').addEventListener('click', closeSeancesSheet);
+  document.getElementById('seancesSheet').addEventListener('click', function(e){
+    if (e.target === this) closeSeancesSheet();
+  });
+  document.getElementById('seancesListe').addEventListener('click', function(e){
+    var b = e.target.closest('[data-reprendre]');
+    if (!b) return;
+    var n = reprendreSeance(b.dataset.reprendre);
+    if (!n){ showToast('Cette séance est vide'); return; }
+    scheduleSave(state.selectedDay, true);
+    populateDatalist();
+    renderDayPanel(true);
+    renderDayPills();
+    renderWeekStats();
+    closeSeancesSheet();
+    showToast(n + (n > 1 ? ' exercices repris' : ' exercice repris'));
+  });
 
   document.getElementById('addExerciseBtn').addEventListener('click', function(){
     var day = getOrCreateDay(state.selectedDay);
