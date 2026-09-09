@@ -13,8 +13,13 @@
 
 import { readFileSync } from 'fs';
 
-const SRC = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
-const SW  = readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
+// Le JS de l'app vit dans app.js depuis qu'on a retire 'unsafe-inline' de la
+// CSP : sans etape de build, un script externe est le seul moyen de se passer
+// de cette permission sur un hebergement statique.
+const SRC  = readFileSync(new URL('../app.js', import.meta.url), 'utf8');
+const HTML = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+const SW   = readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
+const CFG  = readFileSync(new URL('../vercel.json', import.meta.url), 'utf8');
 
 let pass = 0, fail = 0;
 function ok(label, cond, detail = ''){
@@ -85,7 +90,29 @@ ok('les anciens caches sont supprimes a l activation',
 ok('Supabase n est jamais mis en cache', /url\.origin !== self\.location\.origin/.test(SW));
 ok('la page passe par le reseau d abord', SW.indexOf('estNavigation(req)') > -1);
 
-console.log('\n== 8. Pas de secret dans ce qui est servi ==');
+console.log('\n== 8. La CSP peut rester stricte ==');
+// 'unsafe-inline' sur script-src laissait passer exactement le XSS trouve plus
+// haut : l'attribut onmouseover injecte s'executait. Sans cette permission, le
+// navigateur l'aurait refuse meme sans le correctif. On veut les deux, pas l'un.
+ok('script-src ne contient plus unsafe-inline',
+   !/script-src[^;]*unsafe-inline/.test(CFG), (CFG.match(/script-src[^;]*/) || [])[0]);
+ok('style-src garde unsafe-inline, et c est assume',
+   /style-src[^;]*unsafe-inline/.test(CFG));
+ok('aucun script inline dans index.html', !/<script>/.test(HTML));
+ok('aucun gestionnaire inline dans index.html', !/<[a-z]+[^>]* on[a-z]+=/i.test(HTML));
+ok('aucune URL javascript:', HTML.indexOf('javascript:') === -1);
+ok('app.js est precache par le service worker', SW.indexOf("'app.js'") > -1);
+ok('frame-ancestors none', CFG.indexOf("frame-ancestors 'none'") > -1);
+ok('object-src none', CFG.indexOf("object-src 'none'") > -1);
+[['X-Content-Type-Options', 'nosniff'],
+ ['X-Frame-Options', 'DENY'],
+ ['Strict-Transport-Security', 'max-age'],
+ ['Referrer-Policy', 'strict-origin'],
+ ['Permissions-Policy', 'camera=()']].forEach(function(x){
+  ok('en-tete ' + x[0], CFG.indexOf(x[0]) > -1 && CFG.indexOf(x[1]) > -1);
+});
+
+console.log('\n== 9. Pas de secret dans ce qui est servi ==');
 [/service_role\s*[:=]\s*['"]/, /sb_secret_[A-Za-z0-9]/, /SUPABASE_SERVICE_ROLE_KEY\s*=/].forEach((re, i) => {
   ok('aucun secret de forme ' + i, !re.test(SRC));
 });
