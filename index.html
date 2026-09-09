@@ -1001,6 +1001,10 @@
   }
   .sheet-check input{width:20px;height:20px;flex:none;margin:1px 0 0;accent-color:var(--orange);}
   .sheet-check a{color:var(--orange);}
+  /* Quand on a refuse l'inscription faute de consentement : la case sort du
+     gris, pour qu'on la voie avant de relire le message. */
+  .sheet-check.manque{color:var(--ink);}
+  .sheet-check.manque input{outline:2px solid var(--orange);outline-offset:3px;border-radius:3px;}
 
   /* Ecran d'accueil : premiere visite, avant d'entrer dans l'app. */
   .accueil{
@@ -1475,7 +1479,7 @@
       <input type="email" id="compteEmail" class="sheet-input" placeholder="ton@email.fr" autocomplete="email" inputmode="email" aria-label="Adresse email">
       <input type="password" id="compteMdp" class="sheet-input" placeholder="mot de passe (8 caractères minimum)" autocomplete="current-password" aria-label="Mot de passe">
 
-      <div class="sheet-check">
+      <div class="sheet-check" id="blocConsent">
         <input type="checkbox" id="compteConsent">
         <label for="compteConsent">Pour créer un compte : j'ai lu et j'accepte la
           <a href="confidentialite.html" target="_blank" rel="noopener">politique de confidentialité</a>
