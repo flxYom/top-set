@@ -11,6 +11,18 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ### Added
 
+- **Support messaging.** One thread per person, the same from both sides. The
+  insert policy checks that the declared author matches the caller's real role,
+  so a member cannot post a message signed `admin` even by hand-crafting the
+  request. Write access is restricted to the `lu` column, so nobody rewrites the
+  body of a message already sent.
+- **Admin notifications**, written by triggers on `profils`, `messages_support`,
+  `retours` and `liens_coach`. The table has *no* insert policy at all: nothing
+  in the browser can fabricate one. The triggers read nothing from the client —
+  what they record, they take from the row just written. That is the database
+  version of "re-read the source instead of trusting the request body", obtained
+  without a server.
+- 31 more RLS tests (168 → 199).
 - **The coach ↔ client link.** A coach generates an 8-character code, the
   client enters it, the coach accepts — the link exists only once both sides
   acted. The coach then *reads* the client's logbook: sessions, exercises, sets,
@@ -177,7 +189,7 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ### Changed
 
-- Service worker cache version `topset-v2` → `topset-v10`.
+- Service worker cache version `topset-v2` → `topset-v11`.
 - Offline, a clean URL (`/guide`, produced by Vercel's `cleanUrls`) fell back
   to the app instead of the requested page. The navigation fallback now retries
   once with `.html` before giving up.

@@ -2543,6 +2543,51 @@
     }, function(){ bloc.hidden = true; });
   }
 
+  // Deux voix, deux cotes. « moi » depend de qui regarde : dans l'espace
+  // admin le meme fil se lit dans l'autre sens, et c'est le seul parametre
+  // qui change.
+  function bullesHTML(rows, moiEstAdmin){
+    if (!rows.length) return '<div class="fil-vide">Rien encore. Écris quelque chose, on te répondra ici.</div>';
+    return rows.map(function(m){
+      var moi = moiEstAdmin ? (m.auteur === 'admin') : (m.auteur === 'membre');
+      return '<div class="bulle ' + (moi ? 'moi' : '') + '">'
+        + '<div class="bulle-corps">' + esc(m.corps) + '</div>'
+        + '<div class="bulle-quand">' + (moi ? '' : (m.auteur === 'admin' ? 'Top Set · ' : ''))
+        + esc(quandCourt(m.cree_le)) + '</div>'
+        + '</div>';
+    }).join('');
+  }
+
+  function chargerConversation(){
+    var bloc = document.getElementById('conversation');
+    var fil  = document.getElementById('filMessages');
+    if (!Sync.estConnecte()){ bloc.hidden = true; return; }
+    Sync.lireFil().then(function(rows){
+      if (!rows.length){ bloc.hidden = true; return; }
+      bloc.hidden = false;
+      fil.innerHTML = bullesHTML(rows, false);
+      fil.scrollTop = fil.scrollHeight;
+      // Ouvrir le fil, c'est l'avoir lu : on ne marque que les messages de
+      // l'administrateur, pas les siens.
+      var aLire = rows.filter(function(m){ return m.auteur === 'admin' && !m.lu; })
+                      .map(function(m){ return m.id; });
+      if (aLire.length) Sync.marquerLus(aLire);
+    }, function(){ bloc.hidden = true; });
+  }
+
+  document.getElementById('messageEnvoyer').addEventListener('click', function(){
+    var champ = document.getElementById('messageCorps');
+    var corps = champ.value.trim();
+    if (!corps){ champ.focus(); return; }
+    var b = this, avant = b.textContent;
+    b.disabled = true; b.textContent = 'ENVOI…';
+    Sync.envoyerMessage(corps).then(function(){
+      champ.value = '';
+      chargerConversation();
+    }, function(e){ msgRetour('err', Sync.messageErreur(e)); })
+     .then(function(){ b.disabled = false; b.textContent = avant; });
+  });
+
   function ouvrirRetour(){
     document.getElementById('retourMsg').hidden = true;
     majResteRetour();
@@ -2554,6 +2599,7 @@
       env.disabled = false;
     }
     chargerMesRetours();
+    chargerConversation();
     document.getElementById('retourSheet').hidden = false;
   }
   function fermerRetour(){ document.getElementById('retourSheet').hidden = true; }
@@ -2581,6 +2627,7 @@
       majResteRetour();
       msgRetour('ok', 'Reçu. Merci — c\'est vraiment utile.');
       chargerMesRetours();
+      chargerConversation();
     }, function(e){
       msgRetour('err', Sync.messageErreur(e));
     }).then(function(){
@@ -2829,7 +2876,9 @@
         + tuile(a.seances,          'SÉANCES')
         + tuile(a.seances_7j,       'SÉANCES 7 J')
         + tuile(a.series,           'SÉRIES')
-        + tuile(a.retours_nouveaux, 'RETOURS');
+        + tuile(a.retours_nouveaux, 'RETOURS')
+        + tuile(a.messages_nouveaux == null ? 0 : a.messages_nouveaux, 'MESSAGES')
+        + tuile(a.notifs_nouvelles  == null ? 0 : a.notifs_nouvelles,  'NOTIFS');
     }, function(e){
       tuiles.innerHTML = '<div class="admin-vide">' + esc(Sync.messageErreur(e)) + '</div>';
     });
@@ -2861,6 +2910,53 @@
       retours.innerHTML = '<div class="admin-vide">' + esc(Sync.messageErreur(e)) + '</div>';
     });
 
+    // --- notifications
+    var notifs = document.getElementById('adminNotifsListe');
+    Sync.lireNotifs().then(function(rows){
+      if (!rows.length){ notifs.innerHTML = '<div class="admin-vide">Rien de neuf.</div>'; return; }
+      notifs.innerHTML = rows.map(function(n){
+        return '<div class="notif-ligne ' + (n.lu ? '' : 'neuf') + '">'
+          + '<span class="notif-type ' + esc(n.type) + '">' + esc(n.type.toUpperCase()) + '</span>'
+          + '<span class="notif-corps">' + esc(n.contenu || '') + '</span>'
+          + '<span class="notif-quand">' + esc(quandCourt(n.cree_le)) + '</span>'
+          + '</div>';
+      }).join('');
+    }, function(e){ notifs.innerHTML = '<div class="admin-vide">' + esc(Sync.messageErreur(e)) + '</div>'; });
+
+    // --- fils de discussion
+    var fils = document.getElementById('adminFilsListe');
+    if (adminFil){
+      fils.innerHTML = '<div class="admin-vide">Chargement…</div>';
+      Sync.lireFil(adminFil.user_id).then(function(rows){
+        fils.innerHTML =
+            '<div class="admin-carte-tete"><span class="admin-qui">'
+          +   (adminFil.pseudo ? esc(adminFil.pseudo) : '<span class="anon">sans pseudo</span>')
+          + '</span><button type="button" class="admin-action" id="filRetour">← TOUS LES FILS</button></div>'
+          + '<div class="fil">' + bullesHTML(rows, true) + '</div>'
+          + '<textarea id="adminMessageCorps" class="sheet-paste" rows="2" maxlength="4000" placeholder="Répondre…"></textarea>'
+          + '<button type="button" class="admin-action" id="adminMessageEnvoyer">ENVOYER LA RÉPONSE</button>';
+        var f = fils.querySelector('.fil'); if (f) f.scrollTop = f.scrollHeight;
+        var aLire = rows.filter(function(m){ return m.auteur === 'membre' && !m.lu; })
+                        .map(function(m){ return m.id; });
+        if (aLire.length) Sync.marquerLus(aLire);
+      }, function(e){ fils.innerHTML = '<div class="admin-vide">' + esc(Sync.messageErreur(e)) + '</div>'; });
+    } else {
+      Sync.adminFils().then(function(rows){
+        if (!rows.length){ fils.innerHTML = '<div class="admin-vide">Aucune conversation.</div>'; return; }
+        fils.innerHTML = rows.map(function(f){
+          return '<div class="admin-carte ' + (Number(f.non_lus) ? 'nouveau' : '') + '"'
+            + ' data-fil="' + esc(f.user_id) + '" data-pseudo="' + esc(f.pseudo || '') + '" role="button" tabindex="0">'
+            + '<div class="admin-carte-tete">'
+            +   '<span class="admin-qui">' + (f.pseudo ? esc(f.pseudo) : '<span class="anon">sans pseudo</span>') + '</span>'
+            +   (Number(f.non_lus) ? '<span class="admin-badge">' + f.non_lus + ' NON LU</span>' : '')
+            +   '<span class="admin-quand">' + esc(quandCourt(f.dernier_le)) + '</span>'
+            + '</div>'
+            + '<div class="admin-corps">' + esc(String(f.dernier || '').slice(0, 140)) + '</div>'
+            + '</div>';
+        }).join('');
+      }, function(e){ fils.innerHTML = '<div class="admin-vide">' + esc(Sync.messageErreur(e)) + '</div>'; });
+    }
+
     Sync.adminMembres().then(function(rows){
       if (!rows.length){
         membres.innerHTML = '<div class="admin-vide">Personne encore.</div>';
@@ -2883,7 +2979,35 @@
     });
   }
 
+  var adminFil = null;   // le fil ouvert dans l'espace admin, ou null
+
+  document.getElementById('adminNotifsLues').addEventListener('click', function(){
+    var b = this; b.disabled = true;
+    Sync.notifsLues().then(renderAdmin, function(e){ showToast(Sync.messageErreur(e)); })
+        .then(function(){ b.disabled = false; });
+  });
+
+  document.getElementById('adminFilsListe').addEventListener('click', function(e){
+    if (e.target.closest('#filRetour')){ adminFil = null; renderAdmin(); return; }
+    if (e.target.closest('#adminMessageEnvoyer')){
+      var champ = document.getElementById('adminMessageCorps');
+      var corps = champ.value.trim();
+      if (!corps){ champ.focus(); return; }
+      var b = e.target.closest('#adminMessageEnvoyer');
+      b.disabled = true;
+      Sync.envoyerMessage(corps, adminFil.user_id, true)
+          .then(renderAdmin, function(err){ b.disabled = false; showToast(Sync.messageErreur(err)); });
+      return;
+    }
+    var carte = e.target.closest('[data-fil]');
+    if (carte){
+      adminFil = { user_id: carte.dataset.fil, pseudo: carte.dataset.pseudo };
+      renderAdmin();
+    }
+  });
+
   document.getElementById('adminRetourBtn').addEventListener('click', function(){
+    if (adminFil){ adminFil = null; renderAdmin(); return; }
     montrerVue('planning');
   });
   document.getElementById('adminRafraichir').addEventListener('click', renderAdmin);
@@ -3986,6 +4110,52 @@
       monCoach:function(){ return rpcAdmin('mon_coach'); },
       tirerJoursDe:function(client){ return rpcAdmin('tirer_jours_de', { p_client: client }); },
       envoyerRetour:envoyerRetour, mesRetours:mesRetours,
+
+      // Le fil appartient au membre des deux cotes : quand l'administrateur
+      // repond, la ligne porte quand meme le user_id du membre. C'est pour ca
+      // que la fonction prend une cible explicite.
+      lireFil:function(cible){
+        var qui = cible || (user && user.id);
+        if (!qui) return Promise.resolve([]);
+        return client().then(function(c){
+          return c.from('messages_support')
+                  .select('id,auteur,corps,lu,cree_le')
+                  .eq('user_id', qui)
+                  .order('cree_le', { ascending:true })
+                  .limit(300);
+        }).then(function(r){ if (r.error) throw r.error; return r.data || []; });
+      },
+      envoyerMessage:function(corps, cible, commeAdmin){
+        var qui = cible || (user && user.id);
+        if (!qui) return Promise.reject(new Error('Connecte-toi pour ecrire.'));
+        return client().then(function(c){
+          return c.from('messages_support').insert({
+            user_id: qui,
+            auteur:  commeAdmin ? 'admin' : 'membre',
+            corps:   String(corps || '').trim().slice(0, 4000)
+          });
+        }).then(function(r){ if (r.error) throw r.error; });
+      },
+      marquerLus:function(ids){
+        if (!ids || !ids.length) return Promise.resolve();
+        return client().then(function(c){
+          return c.from('messages_support').update({ lu:true }).in('id', ids);
+        }).then(function(r){ if (r.error) throw r.error; });
+      },
+      adminFils:function(){ return rpcAdmin('admin_fils'); },
+      lireNotifs:function(){
+        return client().then(function(c){
+          return c.from('notifications_admin')
+                  .select('id,type,user_id,contenu,lu,cree_le')
+                  .order('cree_le', { ascending:false })
+                  .limit(100);
+        }).then(function(r){ if (r.error) throw r.error; return r.data || []; });
+      },
+      notifsLues:function(){
+        return client().then(function(c){
+          return c.from('notifications_admin').update({ lu:true }).eq('lu', false);
+        }).then(function(r){ if (r.error) throw r.error; });
+      },
       adminApercu:function(){ return rpcAdmin('admin_apercu'); },
       adminMembres:function(){ return rpcAdmin('admin_membres'); },
       adminRetours:function(s){ return rpcAdmin('admin_retours', { p_statut: s || null }); },
