@@ -36,6 +36,19 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ### Security
 
+- **Two accounts on one device shared a logbook.** The local logbook lives under
+  a single key for the whole device, and `tirer()` merges the cloud into it
+  rather than replacing it — so signing in with a second account showed the
+  first account's sessions, and the app then offered to upload them to the
+  second account, changing their owner for good. The logbook now follows the
+  account: on sign-in with a different id, the one present is filed under
+  `topset_carnet_<user_id>` and the arriving account's own is restored. Nothing
+  is deleted, the outbound queue travels with the logbook, and a filed logbook
+  is only retrievable by its owner. Nine new guards assert the ordering — filing
+  before clearing, clearing before restoring, and the swap happening before the
+  upload prompt.
+- `SECURITY.md` now records the five accepted Supabase linter warnings with the
+  reason each is deliberate, so they are not re-investigated on every report.
 - Supabase's database linter flagged `uuid_ou_neuf()` and `maintenant()` as
   having a mutable `search_path`. A function without one resolves its names
   using the caller's path, so anyone able to create an object in a schema ahead
@@ -143,7 +156,7 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ### Changed
 
-- Service worker cache version `topset-v2` → `topset-v7`.
+- Service worker cache version `topset-v2` → `topset-v8`.
 - Offline, a clean URL (`/guide`, produced by Vercel's `cleanUrls`) fell back
   to the app instead of the requested page. The navigation fallback now retries
   once with `.html` before giving up.

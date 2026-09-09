@@ -131,6 +131,30 @@ autre. Deux sont venues après :
   retour, ça le rend anonyme (`on delete set null`) : partir est un droit,
   effacer un bug signalé n'en est pas un.
 
+### Un carnet par compte
+
+Le carnet local vit sous une seule clé, partagée par tout l'appareil. Tant
+qu'une personne égale un appareil, ça ne se voit pas. Dès que deux comptes se
+connectent sur le même téléphone, le second voyait le carnet du premier — et
+l'app lui proposait de l'envoyer sur *son* compte, ce qui en changeait le
+propriétaire pour de bon.
+
+La règle est donc&nbsp;: **le carnet suit le compte, pas l'appareil.** À la
+connexion, si le carnet présent appartient à un autre identifiant, il est rangé
+sous `topset_carnet_<user_id>` et celui du nouvel arrivant est repris s'il en
+avait un ici. Le format ne change pas, la clé `musculation_sessions` non plus&nbsp;:
+c'est son contenu qui est échangé.
+
+Trois propriétés valent d'être notées&nbsp;:
+
+- **Rien n'est effacé.** Le rangement précède toujours le vidage, et un
+  rangement plus riche n'est jamais écrasé par un plus pauvre.
+- **La file d'envoi part avec le carnet.** La garder ferait pousser les journées
+  d'un compte vers l'autre à la première synchro.
+- **Un carnet rangé n'est récupérable que par son propriétaire.** C'est aussi la
+  bonne règle de confidentialité&nbsp;: l'autre compte ne doit pas pouvoir le
+  reprendre.
+
 ### Comment marche la synchro
 
 Le `localStorage` reste la source de vérité de l'interface. Tout est écrit en

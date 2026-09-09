@@ -90,7 +90,36 @@ ok('les anciens caches sont supprimes a l activation',
 ok('Supabase n est jamais mis en cache', /url\.origin !== self\.location\.origin/.test(SW));
 ok('la page passe par le reseau d abord', SW.indexOf('estNavigation(req)') > -1);
 
-console.log('\n== 8. La CSP peut rester stricte ==');
+console.log('\n== 8. Un carnet par compte ==');
+// Le carnet local etait partage par tout l'appareil : deux comptes sur le meme
+// telephone voyaient le meme carnet, et l'app proposait au second de l'envoyer
+// sur SON compte. Ce qui suit verifie l'ordre des operations de l'echange —
+// c'est la seule chose qui peut casser ici, et une inversion ferait perdre des
+// donnees pour de bon.
+ok('les trois operations existent',
+   SRC.indexOf('function rangerCarnet(') > -1 &&
+   SRC.indexOf('function viderCarnet(') > -1 &&
+   SRC.indexOf('function reprendreCarnet(') > -1);
+
+const iRanger   = SRC.indexOf('var ranges = rangerCarnet(m.userId)');
+const iVider    = SRC.indexOf('viderCarnet();');
+const iReprendre= SRC.indexOf('var repris = reprendreCarnet(user.id)');
+const iMeta     = SRC.indexOf('x.userId = user.id; x.migrePour = user.id;');
+const iPrompt   = SRC.indexOf("if (m.migrePour !== user.id && joursLocaux)");
+
+ok('on range AVANT de vider', iRanger > -1 && iVider > iRanger, iRanger + ' / ' + iVider);
+ok('on vide AVANT de reprendre', iReprendre > iVider, iVider + ' / ' + iReprendre);
+ok('la bascule se fait AVANT la proposition d envoi', iPrompt > -1 && iMeta > -1 && iMeta < iPrompt,
+   iMeta + ' / ' + iPrompt);
+ok('l echange marque migrePour, sinon on proposerait d envoyer le carnet d autrui', iMeta > -1);
+ok('la file d envoi est remise a zero avec le carnet',
+   SRC.indexOf('m.sales = {}; m.titres = {}; m.depuis = null;') > -1);
+ok('un rangement plus riche n est jamais ecrase', SRC.indexOf('deja.jours || 0) > jours') > -1);
+ok('le carnet range est indexe par proprietaire', SRC.indexOf("'topset_carnet_' + id") > -1);
+ok('rien n est efface : le rangement precede toujours le vidage',
+   SRC.indexOf('localStorage.removeItem(clePark(id))') > SRC.indexOf('function reprendreCarnet('));
+
+console.log('\n== 9. La CSP peut rester stricte ==');
 // 'unsafe-inline' sur script-src laissait passer exactement le XSS trouve plus
 // haut : l'attribut onmouseover injecte s'executait. Sans cette permission, le
 // navigateur l'aurait refuse meme sans le correctif. On veut les deux, pas l'un.
@@ -112,7 +141,7 @@ ok('object-src none', CFG.indexOf("object-src 'none'") > -1);
   ok('en-tete ' + x[0], CFG.indexOf(x[0]) > -1 && CFG.indexOf(x[1]) > -1);
 });
 
-console.log('\n== 9. Pas de secret dans ce qui est servi ==');
+console.log('\n== 10. Pas de secret dans ce qui est servi ==');
 [/service_role\s*[:=]\s*['"]/, /sb_secret_[A-Za-z0-9]/, /SUPABASE_SERVICE_ROLE_KEY\s*=/].forEach((re, i) => {
   ok('aucun secret de forme ' + i, !re.test(SRC));
 });

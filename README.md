@@ -116,6 +116,28 @@ Two came later:
   feedback, it anonymises it (`on delete set null`): leaving is a right,
   erasing a bug you reported is not.
 
+### One logbook per account
+
+The local logbook lives under a single key, shared by the whole device. As long
+as one person means one device, that is invisible. The moment two accounts sign
+in on the same phone, the second one saw the first one's logbook — and the app
+offered to upload it to *their* account, which changed its owner for good.
+
+So: **the logbook follows the account, not the device.** On sign-in, if the
+logbook present belongs to a different id, it is filed away under
+`topset_carnet_<user_id>` and the arriving account's own logbook is restored if
+it had one here. The format does not change, and neither does the
+`musculation_sessions` key — its contents are swapped.
+
+Three properties worth noting:
+
+- **Nothing is deleted.** Filing always precedes clearing, and a richer filed
+  logbook is never overwritten by a poorer one.
+- **The outbound queue travels with the logbook.** Keeping it would push one
+  account's days into the other's on the next sync.
+- **A filed logbook can only be retrieved by its owner.** That is also the right
+  privacy rule: the other account must not be able to take it back.
+
 ### How the sync works
 
 `localStorage` stays the source of truth for the UI. Every change is written
