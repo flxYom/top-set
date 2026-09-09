@@ -25,6 +25,9 @@ jobs:
             node -e "JSON.parse(require('fs').readFileSync('$f', 'utf8'))"
           done
 
+      - name: Business logic tests
+        run: node test/intelligence.test.mjs
+
       - name: Lint HTML
         run: npx --yes html-validate "*.html"
 

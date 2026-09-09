@@ -309,6 +309,39 @@ ok('B ne voit pas les titres de A', !r.rows[0].j['2026-09-08'], JSON.stringify(O
 await refuse('anon ne peut pas appeler pousser_titre', () =>
   asAnon(`select public.pousser_titre('2026-09-08'::date, 'pirate')`));
 
+console.log('\n== 16. Type de serie : echauffement, top set, travail, back-off ==');
+await as(A, `select public.pousser_jour('2026-09-22'::date, $1::jsonb)`, [JSON.stringify([
+  { id: 't1', nom: 'Bench', groupe: 'Pectoraux', series: [
+    { id: 'ts1', poids: 40,   reps: '10', type: 'echauffement' },
+    { id: 'ts2', poids: 72.5, reps: '5',  type: 'top', rpe: 8 },
+    { id: 'ts3', poids: 62.5, reps: '10', type: 'backoff' },
+    { id: 'ts4', poids: 62.5, reps: '10' }
+  ] }
+])]);
+r = await as(A, `select public.tirer_jours(null) as j`);
+const ser = r.rows[0].j['2026-09-22'].exercises[0].series;
+ok('l echauffement fait l aller-retour', ser[0].type === 'echauffement', JSON.stringify(ser[0].type));
+ok('le top set fait l aller-retour',     ser[1].type === 'top',          JSON.stringify(ser[1].type));
+ok('le back-off fait l aller-retour',    ser[2].type === 'backoff',      JSON.stringify(ser[2].type));
+ok('une serie sans type revient a null', ser[3].type === null,           JSON.stringify(ser[3].type));
+ok('l ordre des series est conserve',
+   ser.map(x => Number(x.poids)).join(',') === '40,72.5,62.5,62.5',
+   ser.map(x => x.poids).join(','));
+
+// Un type vide envoye par un client casse ne doit pas faire echouer la
+// journee entiere : la serie part sans type plutot que de bloquer la synchro.
+await as(A, `select public.pousser_jour('2026-09-23'::date, $1::jsonb)`, [JSON.stringify([
+  { id: 'u1', nom: 'Squat', groupe: 'Jambes', series: [{ poids: 100, reps: '3', type: '' }] }
+])]);
+r = await as(A, `select public.tirer_jours(null) as j`);
+ok('un type vide devient null, la journee passe quand meme',
+   r.rows[0].j['2026-09-23'].exercises[0].series[0].type === null,
+   JSON.stringify(r.rows[0].j['2026-09-23'].exercises[0].series[0].type));
+
+await refuse('la base refuse un type inconnu', () =>
+  db.query(`insert into public.series (exercice_id, user_id, poids, reps, type)
+            select id, user_id, 50, '5', 'nimportequoi' from public.exercices limit 1`));
+
 console.log('\n== 12. Suppression du compte ==');
 await db.query('delete from auth.users where id = $1', [A]);
 r = await db.query(`select (select count(*) from public.seances   where user_id = $1)::int s,

@@ -77,6 +77,23 @@ create table if not exists public.series (
 -- base — il changerait avec la seance sans qu'on l'ait demande.
 alter table public.seances add column if not exists titre text;
 
+-- Type d'une serie : echauffement, top set, charge de travail ou back-off.
+-- Nullable, et c'est voulu : « charge de travail » est la valeur par defaut,
+-- et c'est l'etat de toutes les series enregistrees avant ce champ. Ecrire
+-- 'travail' partout ne dirait rien de plus et reecrirait tout l'historique.
+alter table public.series add column if not exists type text;
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint where conname = 'series_type_connu'
+  ) then
+    alter table public.series
+      add constraint series_type_connu
+      check (type is null or type in ('echauffement','top','travail','backoff'));
+  end if;
+end $$;
+
 -- Superset : les exercices qui portent le meme « bloc » se font ensemble. La
 -- colonne est nullable parce que l'immense majorite des exercices sont seuls,
 -- et qu'un exercice seul ne doit rien avoir a porter.
@@ -266,12 +283,15 @@ begin
     j := 0;
     for v_se in select * from jsonb_array_elements(coalesce(v_ex -> 'series', '[]'::jsonb))
     loop
-      insert into public.series (id, exercice_id, user_id, ordre, poids, reps, rpe, repos, fait)
+      insert into public.series (id, exercice_id, user_id, ordre, poids, reps, rpe, repos, type, fait)
       values (public.uuid_ou_neuf(v_se ->> 'id'), v_ex_id, v_user, j,
               nullif(v_se ->> 'poids', '')::numeric,
               coalesce(v_se ->> 'reps', ''),
               nullif(v_se ->> 'rpe', '')::numeric,
               coalesce(v_se ->> 'repos', ''),
+              -- Un type inconnu vaut mieux perdu que stocke : la contrainte
+              -- refuserait la ligne entiere et la journee ne partirait plus.
+              nullif(v_se ->> 'type', ''),
               coalesce((v_se ->> 'fait')::boolean, false));
       j := j + 1;
     end loop;
@@ -349,6 +369,7 @@ as $$
                     'reps',  coalesce(se.reps, ''),
                     'rpe',   se.rpe,
                     'repos', coalesce(se.repos, ''),
+                    'type',  se.type,
                     'fait',  se.fait
                   ) order by se.ordre)
                 from public.series se where se.user_id = e.user_id and se.exercice_id = e.id
