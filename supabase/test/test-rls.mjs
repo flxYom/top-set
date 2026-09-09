@@ -274,6 +274,41 @@ await refuse('anon ne peut pas appeler pousser_exos_perso', () =>
 await refuse('anon ne peut pas appeler tirer_exos_perso', () =>
   asAnon(`select public.tirer_exos_perso()`));
 
+console.log('\n== 15. Le titre de seance ==');
+await as(A, `select public.pousser_titre('2026-09-08'::date, '  Pecs et dos  ')`);
+r = await as(A, `select public.tirer_jours(null) as j`);
+ok('le titre est rendu, espaces retires',
+   r.rows[0].j['2026-09-08'].titre === 'Pecs et dos',
+   JSON.stringify(r.rows[0].j['2026-09-08'].titre));
+
+// Renvoyer la journee ne doit pas effacer le titre : ce sont deux appels
+// distincts, et l'un ne connait pas l'autre.
+await as(A, `select public.pousser_jour('2026-09-08'::date, $1::jsonb)`, [JSON.stringify([
+  { id: 'c1', nom: 'Bench', groupe: 'Pectoraux', series: [{ poids: 80, reps: '5' }] }
+])]);
+r = await as(A, `select public.tirer_jours(null) as j`);
+ok('pousser une journee ne perd pas son titre',
+   r.rows[0].j['2026-09-08'].titre === 'Pecs et dos',
+   JSON.stringify(r.rows[0].j['2026-09-08'].titre));
+
+await as(A, `select public.pousser_titre('2026-09-08'::date, '   ')`);
+r = await as(A, `select public.tirer_jours(null) as j`);
+ok('un titre vide revient a pas de titre',
+   r.rows[0].j['2026-09-08'].titre === null,
+   JSON.stringify(r.rows[0].j['2026-09-08'].titre));
+
+// Un titre sur une date jamais vue cree la seance : on peut nommer une
+// journee avant d'y avoir note quoi que ce soit.
+await as(A, `select public.pousser_titre('2026-09-20'::date, 'Jambes')`);
+r = await as(A, `select count(*)::int n from public.seances where date = '2026-09-20'`);
+ok('titrer une date vide cree la seance', r.rows[0].n === 1, 'n=' + r.rows[0].n);
+
+r = await as(B, `select public.tirer_jours(null) as j`);
+ok('B ne voit pas les titres de A', !r.rows[0].j['2026-09-08'], JSON.stringify(Object.keys(r.rows[0].j)));
+
+await refuse('anon ne peut pas appeler pousser_titre', () =>
+  asAnon(`select public.pousser_titre('2026-09-08'::date, 'pirate')`));
+
 console.log('\n== 12. Suppression du compte ==');
 await db.query('delete from auth.users where id = $1', [A]);
 r = await db.query(`select (select count(*) from public.seances   where user_id = $1)::int s,

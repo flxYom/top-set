@@ -126,13 +126,13 @@
   .brand-date span{font-size:17px;font-weight:800;line-height:1;}
 
   .topbar{position:sticky;top:0;z-index:20;background:var(--bg);padding:14px 0 12px;}
-  .topbar-inner{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}
+  .topbar-inner{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;}
   .topbar-tab{
     border:2px solid var(--line);
     background:transparent;
     color:var(--dim);
-    font-weight:800;font-size:12.5px;letter-spacing:.06em;
-    padding:14px 8px;
+    font-weight:800;font-size:12px;letter-spacing:.04em;
+    padding:14px 4px;
     cursor:pointer;
   }
   .topbar-tab.active{
@@ -304,6 +304,115 @@
     font-size:13px;font-weight:800;text-align:left;cursor:pointer;
   }
   .alias-choix:active{background:var(--yellow);color:#0d0c0a;}
+  .btn-retour{
+    align-self:flex-start;min-height:44px;padding:0 14px;
+    background:transparent;border:2px solid var(--line);
+    color:var(--dim);font-family:inherit;
+    font-size:11.5px;font-weight:800;letter-spacing:.06em;cursor:pointer;
+  }
+  .btn-retour:active{border-color:var(--ink);color:var(--ink);}
+  .btn-recap-jour{
+    width:100%;margin-top:8px;min-height:48px;padding:0 12px;
+    background:var(--panel2);border:2.5px solid var(--line);
+    color:var(--ink);font-family:inherit;
+    font-size:12.5px;font-weight:800;letter-spacing:.05em;cursor:pointer;
+  }
+  .btn-recap-jour:active{border-color:var(--orange);color:var(--orange);}
+
+  /* La fiche d'une seance. Le titre est en haut, en grand : c'est ce qu'on
+     cherche des yeux quand on compare deux seances. */
+  .fiche-tete{
+    background:var(--card-color,var(--orange));color:#0d0c0a;
+    border:2.5px solid var(--ink);box-shadow:5px 5px 0 var(--ink);
+    padding:13px 14px;
+  }
+  .fiche-titre-ligne{display:flex;align-items:center;gap:8px;}
+  .fiche-titre{
+    flex:1;min-width:0;background:transparent;border:none;padding:0;
+    color:#0d0c0a;font-family:inherit;text-align:left;cursor:pointer;
+    font-size:21px;font-weight:800;letter-spacing:-.02em;line-height:1.1;
+  }
+  .fiche-titre-champ{
+    flex:1;min-width:0;height:40px;
+    background:rgba(13,12,10,.14);border:2px solid #0d0c0a;
+    color:#0d0c0a;font-family:inherit;font-size:19px;font-weight:800;padding:0 8px;
+  }
+  .fiche-quand{margin-top:5px;font-size:11.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;opacity:.75;}
+  .fiche-defaut{margin-top:6px;font-size:11px;font-weight:700;opacity:.7;}
+
+  .fiche-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;}
+  .fiche-exo{
+    border:2px solid var(--line);background:var(--panel2);
+    border-left:4px solid var(--exo-color,var(--orange));
+    padding:10px 11px;
+  }
+  .fiche-exo-nom{font-size:14.5px;font-weight:800;color:var(--ink);}
+  .fiche-exo-groupe{font-size:10.5px;font-weight:800;letter-spacing:.07em;color:var(--dim);text-transform:uppercase;margin-top:2px;}
+  .fiche-series{margin-top:7px;display:flex;flex-wrap:wrap;gap:5px;}
+  .fiche-serie{
+    border:2px solid var(--line);padding:3px 7px;
+    font-size:12px;font-weight:800;color:var(--ink);
+  }
+  .fiche-serie.fait{border-color:var(--green);}
+  .fiche-delta{margin-top:7px;font-size:11.5px;font-weight:700;line-height:1.4;color:var(--dim);}
+  .fiche-delta b{font-weight:800;}
+  .fiche-delta.hausse b{color:var(--green);}
+  .fiche-delta.baisse b{color:var(--orange);}
+
+  /* Combien de fois, et combien de series : le meilleur poids seul ne dit
+     pas si l'exercice a ete travaille une fois ou quatre. */
+  .recap-freq{
+    display:block;margin-top:2px;
+    font-size:10.5px;font-weight:700;letter-spacing:.04em;color:var(--dim);
+    text-transform:uppercase;
+  }
+
+  .seances-cible{
+    border-left:3px solid var(--orange);padding-left:10px;
+    font-size:12.5px;line-height:1.5;color:var(--dim);
+  }
+  .seance-mois{
+    margin:22px 0 2px;
+    font-size:11px;font-weight:800;letter-spacing:.1em;
+    color:var(--dim);text-transform:uppercase;
+  }
+  .seance-mois:first-child{margin-top:6px;}
+
+  .seance-carte{
+    display:block;width:100%;text-align:left;
+    border:2.5px solid var(--ink);
+    box-shadow:4px 4px 0 var(--card-color,var(--orange));
+    background:var(--panel);
+    margin-top:12px;padding:0;
+    font-family:inherit;cursor:pointer;
+  }
+  .seance-carte:active{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--card-color,var(--orange));}
+  .seance-tete{
+    background:var(--card-color,var(--orange));color:#0d0c0a;
+    padding:9px 12px;display:flex;align-items:center;gap:8px;
+  }
+  .seance-titre{
+    flex:1;min-width:0;
+    font-size:15px;font-weight:800;letter-spacing:-.01em;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  }
+  .seance-fleche{flex:none;font-size:19px;font-weight:800;line-height:1;}
+  .seance-crayon{
+    flex:none;width:34px;height:34px;
+    border:2px solid #0d0c0a;background:transparent;color:#0d0c0a;
+    font-size:13px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .seance-corps{padding:10px 12px 12px;display:flex;flex-direction:column;gap:7px;}
+  .seance-quand{font-size:11.5px;font-weight:800;letter-spacing:.05em;color:var(--dim);text-transform:uppercase;}
+  .seance-exos{font-size:13.5px;font-weight:700;line-height:1.5;color:var(--ink);}
+  .seance-quand,.seance-exos{display:block;}
+  .seance-chiffres{display:flex;flex-wrap:wrap;gap:6px;}
+  .seance-chip{
+    border:2px solid var(--line);background:var(--panel2);
+    padding:4px 8px;font-size:11px;font-weight:800;letter-spacing:.03em;color:var(--dim);
+  }
+
   .btn-reprendre{
     width:100%;margin-top:8px;min-height:48px;padding:0 12px;
     background:transparent;
@@ -841,6 +950,7 @@
   <nav class="topbar">
     <div class="topbar-inner" id="mainTabs">
       <button type="button" class="topbar-tab active" data-view="planning">PLANNING</button>
+      <button type="button" class="topbar-tab" data-view="seances">SÉANCES</button>
       <button type="button" class="topbar-tab" data-view="recap">RÉCAP</button>
     </div>
   </nav>
@@ -862,8 +972,20 @@
       <div class="day-panel-header"><h2 id="dayTitle">—</h2></div>
       <div class="ex-list" id="exList"></div>
       <button type="button" class="btn-add" id="addExerciseBtn">+ AJOUTER UN EXERCICE</button>
-      <button type="button" class="btn-reprendre" id="reprendreBtn">⟳ REPRENDRE UNE SÉANCE</button>
+      <button type="button" class="btn-reprendre" id="reprendreBtn">⟳ SÉLECTIONNER UNE SÉANCE</button>
+      <button type="button" class="btn-recap-jour" id="recapJourBtn">VOIR LE RÉCAP DE CETTE SÉANCE ›</button>
     </div>
+  </section>
+
+  <section class="view" id="view-seances" hidden>
+    <div class="day-panel-header"><h2>Mes séances</h2></div>
+    <div class="seances-cible" id="seancesCible"></div>
+    <div id="seancesListe"></div>
+  </section>
+
+  <section class="view" id="view-seance" hidden>
+    <button type="button" class="btn-retour" id="seanceRetour">‹ RETOUR</button>
+    <div id="seanceDetail"></div>
   </section>
 
   <section class="view" id="view-recap" hidden>
@@ -892,16 +1014,6 @@
 </div>
 
 <datalist id="exerciseList"></datalist>
-<div class="sheet" id="seancesSheet" hidden>
-  <div class="sheet-card" role="dialog" aria-modal="true" aria-labelledby="seancesTitre">
-    <div class="sheet-head">
-      <h2 id="seancesTitre">REPRENDRE UNE SÉANCE</h2>
-      <button type="button" class="icon-btn" id="seancesClose" aria-label="Fermer">×</button>
-    </div>
-    <p class="sheet-note" id="seancesNote"></p>
-    <div id="seancesListe"></div>
-  </div>
-</div>
 <div class="sheet" id="dataSheet" hidden>
   <div class="sheet-card" role="dialog" aria-modal="true" aria-labelledby="dataSheetTitle">
     <div class="sheet-head">
@@ -1234,6 +1346,7 @@
     planningWeekStart:startOfWeek(new Date()),
     selectedDay:toDateStr(new Date()),
     view:'planning',
+    seanceOuverte:null,
     recapPeriod:'semaine',
     loading:true
   };
@@ -1579,7 +1692,7 @@
     });
 
     var totalSeries = 0, totalVolume = 0;
-    var byNorm = {};
+    var byNorm = {}, byJour = {};
     days.forEach(function(d){
       state.sessions[d].exercises.forEach(function(ex){
         var validSeries = (ex.series||[]).filter(hasData);
@@ -1589,6 +1702,8 @@
         // Le nom n'est jamais requis pour compter — seule la donnée saisie (poids/reps) l'est.
         var norm = ex.nom && ex.nom.trim() ? nomCanonique(ex.nom) : 'Exercice sans nom';
         if (!byNorm[norm]) byNorm[norm] = [];
+        if (!byJour[norm]) byJour[norm] = {};
+        byJour[norm][d] = 1;
         validSeries.forEach(function(s){ byNorm[norm].push({ poids:s.poids, reps:s.reps, groupe:ex.groupe }); });
       });
     });
@@ -1608,7 +1723,10 @@
         repsAtMax = repsNums2.length ? Math.max.apply(null,repsNums2) : '?';
       }
       var groupe = mostCommon(entries.map(function(e){return e.groupe;})) || 'Autre';
-      return { nom:norm, groupe:groupe, maxPoids:maxPoids, repsAtMax:repsAtMax, bodyweight:bodyweight };
+      return { nom:norm, groupe:groupe, maxPoids:maxPoids, repsAtMax:repsAtMax,
+               bodyweight:bodyweight,
+               fois:Object.keys(byJour[norm] || {}).length,
+               series:entries.length };
     });
 
     items.sort(function(a,b){
@@ -1642,6 +1760,13 @@
   function formatVolume(kg){
     if (kg >= 1000) return { num:String(Math.round(kg/100)/10).replace('.',','), unit:'T' };
     return { num:String(Math.round(kg)), unit:'KG' };
+  }
+  // formatVolume sert les tuiles de stats, qui composent le nombre et l'unite
+  // separement. Ailleurs on veut une chaine simple.
+  function volumeTexte(kg){
+    if (!kg) return '';
+    var v = formatVolume(kg);
+    return v.num + ' ' + v.unit;
   }
   function groupCountsIn(startStr, endStr){
     var counts = {};
@@ -1889,7 +2014,7 @@
   // doublerait la seance en cours.
   function seancesReprenables(){
     return Object.keys(state.sessions)
-      .filter(function(ds){ return ds !== state.selectedDay && compterJour(state.sessions[ds]) > 0; })
+      .filter(function(ds){ return compterJour(state.sessions[ds]) > 0; })
       .sort().reverse()
       .map(function(ds){
         var day = state.sessions[ds];
@@ -1907,7 +2032,7 @@
   // seance de la semaine derniere qui sert de point de depart, on ne
   // retape que ce qui a bouge. « fait » repart a faux — refaire le
   // travail, ce n'est pas heriter de la coche.
-  function reprendreSeance(ds){
+  function selectionnerSeance(ds){
     var source = state.sessions[ds];
     if (!source) return 0;
     var jour = getOrCreateDay(state.selectedDay);
@@ -1935,46 +2060,238 @@
     return n;
   }
 
+  // ---------- le titre d'une seance ----------
+  // Rang chronologique parmi TOUTES les seances, pas seulement celles sans
+  // titre : sinon nommer une seance renumeroterait les autres, et un numero
+  // qui bouge n'est plus un repere.
+  function numeroSeance(ds){
+    var toutes = Object.keys(state.sessions).filter(function(d){
+      return compterJour(state.sessions[d]) > 0;
+    }).sort();
+    var i = toutes.indexOf(ds);
+    return i < 0 ? null : i + 1;
+  }
+
+  // Les deux groupes les plus travailles ce jour-la, mesures en series.
+  // « Autre » ne compte pas : c'est la valeur par defaut de l'app, donc
+  // l'absence de reponse, pas une reponse.
+  function groupesPrincipaux(ds){
+    var day = state.sessions[ds];
+    if (!day) return [];
+    var compte = {};
+    (day.exercises || []).forEach(function(e){
+      var n = seriesRemplies(e).length;
+      if (!n) return;
+      var g = e.groupe || 'Autre';
+      if (g === 'Autre') return;
+      compte[g] = (compte[g] || 0) + n;
+    });
+    return Object.keys(compte).sort(function(a, b){
+      if (compte[b] !== compte[a]) return compte[b] - compte[a];
+      // A egalite, l'ordre de la liste des groupes : deux seances identiques
+      // ne doivent pas s'appeler differemment selon l'ordre de saisie.
+      return GROUPS.indexOf(a) - GROUPS.indexOf(b);
+    }).slice(0, 2);
+  }
+
+  function titreParDefaut(ds){
+    var g = groupesPrincipaux(ds);
+    if (g.length) return g.join(' · ');
+    var n = numeroSeance(ds);
+    return n ? 'Séance ' + n : 'Séance';
+  }
+  function titreChoisi(ds){
+    var day = state.sessions[ds];
+    var t = day && day.titre;
+    return (typeof t === 'string' && t.trim()) ? t.trim() : '';
+  }
+  function titreSeance(ds){ return titreChoisi(ds) || titreParDefaut(ds); }
+
+  function definirTitre(ds, titre){
+    var day = getOrCreateDay(ds);
+    var v = String(titre == null ? '' : titre).trim().slice(0, 60);
+    // Effacer un titre n'est pas mettre un titre vide : c'est revenir au
+    // titre calcule.
+    if (v) day.titre = v; else delete day.titre;
+    persistDay(ds);
+    if (typeof Sync !== 'undefined' && Sync.marquerTitre) Sync.marquerTitre(ds);
+  }
+
+  // Combien de fois cette seance a-t-elle ete faite ? Deux seances sont « la
+  // meme » quand elles portent le meme nom — celui qu'on a choisi, ou celui
+  // que l'app calcule. C'est le seul critere que l'utilisateur controle.
+  function foisFaite(ds){
+    var t = titreSeance(ds).toLowerCase();
+    return Object.keys(state.sessions).filter(function(d){
+      return compterJour(state.sessions[d]) > 0 && titreSeance(d).toLowerCase() === t;
+    }).length;
+  }
+
+  // ---------- la page Mes seances ----------
   function renderSeances(){
     var liste = document.getElementById('seancesListe');
-    var note  = document.getElementById('seancesNote');
+    var cible = document.getElementById('seancesCible');
     var seances = seancesReprenables();
-    var jour = state.sessions[state.selectedDay];
-    var occupe = jour ? compterJour(jour) > 0 : false;
-    var d = fromDateStr(state.selectedDay);
-    var quand = DAY_NAMES[(d.getDay()+6)%7].toLowerCase() + ' ' + d.getDate() + ' ' + MONTH_NAMES[d.getMonth()];
 
     if (!seances.length){
-      note.textContent = '';
-      liste.innerHTML = '<div class="seances-vide">Aucune séance à reprendre pour l\'instant. ' +
-        'Note-en une, et elle apparaîtra ici la fois d\'après.</div>';
+      cible.textContent = '';
+      liste.innerHTML = '<div class="seances-vide">Aucune séance enregistrée pour l\'instant. ' +
+        'Note-en une dans le planning, et elle apparaîtra ici.</div>';
       return;
     }
-    note.textContent = occupe
-      ? 'Les exercices s\'ajouteront à ta séance du ' + quand + ', sans rien effacer.'
-      : 'Les exercices et les charges de la séance choisie sont recopiés sur ' + quand + '. Tu n\'as plus qu\'à corriger ce qui a bougé.';
+    cible.textContent = 'Ouvre une séance pour la renommer, voir son récap, ou la sélectionner pour un autre jour.';
 
-    liste.innerHTML = seances.map(function(s){
+    var moisVu = '', html = '';
+    seances.forEach(function(s){
       var sd = fromDateStr(s.date);
-      var quandS = DAY_NAMES[(sd.getDay()+6)%7] + ' ' + sd.getDate() + ' ' +
-                   MONTH_ABBR[sd.getMonth()] + ' ' + sd.getFullYear();
-      var noms = s.noms.slice(0, 6).join(' · ') + (s.noms.length > 6 ? ' · +' + (s.noms.length - 6) : '');
-      return '<div class="seance-item">'
-        + '<div class="seance-quand">' + esc(quandS) + '</div>'
-        + '<div class="seance-exos">' + esc(noms) + '</div>'
-        + '<div class="seance-chiffres">' + s.exos + (s.exos > 1 ? ' exercices' : ' exercice')
-        + ' · ' + s.series + (s.series > 1 ? ' séries' : ' série') + '</div>'
-        + '<button type="button" class="btn-sheet primary" data-reprendre="' + esc(s.date) + '">'
-        + (occupe ? 'AJOUTER À CE JOUR' : 'REPRENDRE CETTE SÉANCE') + '</button>'
-        + '</div>';
-    }).join('');
+      var mois = MONTH_NAMES[sd.getMonth()] + ' ' + sd.getFullYear();
+      if (mois !== moisVu){
+        moisVu = mois;
+        html += '<div class="seance-mois">' + esc(mois) + '</div>';
+      }
+      var couleur = GROUP_COLORS[groupesPrincipaux(s.date)[0]] || GROUP_COLORS['Autre'];
+      var quandS = DAY_NAMES[(sd.getDay()+6)%7] + ' ' + sd.getDate() + ' ' + MONTH_ABBR[sd.getMonth()];
+      var noms = s.noms.slice(0, 5).join(' · ') + (s.noms.length > 5 ? ' · +' + (s.noms.length - 5) : '');
+      var vol = volumeTexte(dayVolume(s.date));
+      html += '<button type="button" class="seance-carte" data-ouvrir="' + esc(s.date) + '" style="--card-color:' + couleur + '">'
+        + '<span class="seance-tete"><span class="seance-titre">' + esc(titreSeance(s.date)) + '</span><span class="seance-fleche">›</span></span>'
+        + '<span class="seance-corps">'
+        +   '<span class="seance-quand">' + esc(quandS) + '</span>'
+        +   '<span class="seance-exos">' + esc(noms) + '</span>'
+        +   '<span class="seance-chiffres">'
+        +     '<span class="seance-chip">' + s.exos + (s.exos > 1 ? ' EXOS' : ' EXO') + '</span>'
+        +     '<span class="seance-chip">' + s.series + (s.series > 1 ? ' SÉRIES' : ' SÉRIE') + '</span>'
+        +     (vol ? '<span class="seance-chip">' + esc(vol) + '</span>' : '')
+        +   '</span>'
+        + '</span>'
+        + '</button>';
+    });
+    liste.innerHTML = html;
   }
 
-  function openSeancesSheet(){
-    renderSeances();
-    document.getElementById('seancesSheet').hidden = false;
+  // ---------- la fiche d'une seance ----------
+  function ouvrirSeance(ds){
+    state.seanceOuverte = ds;
+    montrerVue('seance');
+    window.scrollTo(0, 0);
   }
-  function closeSeancesSheet(){ document.getElementById('seancesSheet').hidden = true; }
+
+  function ligneProgression(nom, ds, meilleure){
+    var prev = findPreviousOccurrence(nom, ds);
+    if (!prev || typeof prev.poids !== 'number' || typeof meilleure !== 'number') return '';
+    var pd = fromDateStr(prev.date);
+    var quand = pd.getDate() + ' ' + MONTH_ABBR[pd.getMonth()];
+    var delta = Math.round((meilleure - prev.poids) * 100) / 100;
+    var classe = delta > 0 ? ' hausse' : (delta < 0 ? ' baisse' : '');
+    var signe = delta > 0 ? '+' : '';
+    var txt = delta === 0
+      ? 'Même charge que le ' + quand
+      : '<b>' + signe + formatWeight(delta) + ' kg</b> par rapport au ' + quand +
+        ' (' + formatWeight(prev.poids) + ' kg)';
+    return '<div class="fiche-delta' + classe + '">' + txt + '</div>';
+  }
+
+  function renderSeanceDetail(){
+    var hote = document.getElementById('seanceDetail');
+    var ds = state.seanceOuverte;
+    if (!ds){ hote.innerHTML = ''; return; }
+    var day = state.sessions[ds];
+    var exos = day ? (day.exercises || []).filter(function(e){ return seriesRemplies(e).length; }) : [];
+    var d = fromDateStr(ds);
+    var quand = DAY_NAMES[(d.getDay()+6)%7] + ' ' + d.getDate() + ' ' + MONTH_NAMES[d.getMonth()] + ' ' + d.getFullYear();
+    var couleur = GROUP_COLORS[groupesPrincipaux(ds)[0]] || GROUP_COLORS['Autre'];
+    var perso = titreChoisi(ds);
+    var fois = foisFaite(ds);
+
+    var html = '<div class="fiche-tete" style="--card-color:' + couleur + '">'
+      + '<div class="fiche-titre-ligne">'
+      +   '<button type="button" class="fiche-titre" id="ficheTitre" title="Renommer">' + esc(titreSeance(ds)) + '</button>'
+      +   '<button type="button" class="seance-crayon" id="ficheCrayon" aria-label="Renommer la séance">✎</button>'
+      + '</div>'
+      + '<div class="fiche-quand">' + esc(quand) + '</div>'
+      + (perso ? '' : '<div class="fiche-defaut">Titre calculé — appuie dessus pour le tien</div>')
+      + '</div>';
+
+    if (!exos.length){
+      html += '<div class="seances-vide">Rien de noté ce jour-là.</div>';
+      hote.innerHTML = html;
+      return;
+    }
+
+    html += '<div class="fiche-stats">'
+      + statTile(exos.length, exos.length > 1 ? 'EXOS' : 'EXO')
+      + statTile(compterJour(day), compterJour(day) > 1 ? 'SÉRIES' : 'SÉRIE')
+      + statTile(volumeTexte(dayVolume(ds)) || '—', 'VOLUME')
+      + '</div>';
+
+    html += '<div class="fiche-stats" style="grid-template-columns:1fr;">'
+      + statTile(fois + '×', fois > 1 ? 'FOIS CETTE SÉANCE' : 'PREMIÈRE FOIS')
+      + '</div>';
+
+    exos.forEach(function(e){
+      var series = seriesRemplies(e);
+      var pesees = series.filter(function(s){ return typeof s.poids === 'number' && s.poids > 0; });
+      var meilleure = pesees.length ? Math.max.apply(null, pesees.map(function(s){ return s.poids; })) : null;
+      html += '<div class="fiche-exo" style="--exo-color:' + (GROUP_COLORS[e.groupe] || GROUP_COLORS['Autre']) + '">'
+        + '<div class="fiche-exo-nom">' + esc(normalizeName(e.nom) || 'Sans nom') + '</div>'
+        + '<div class="fiche-exo-groupe">' + esc(e.groupe || 'Autre') + '</div>'
+        + '<div class="fiche-series">'
+        + series.map(function(s){
+            var v = (typeof s.poids === 'number' ? formatWeight(s.poids) + ' kg' : '') +
+                    (typeof s.poids === 'number' && s.reps ? ' × ' : '') + (s.reps || '');
+            return '<span class="fiche-serie' + (s.fait ? ' fait' : '') + '">' + esc(v || '—') + '</span>';
+          }).join('')
+        + '</div>'
+        + ligneProgression(e.nom, ds, meilleure)
+        + '</div>';
+    });
+
+    var meme = (ds === state.selectedDay);
+    html += '<button type="button" class="btn-add" id="ficheSelectionner"' + (meme ? ' disabled' : '') + '>'
+      + (meme ? 'C\'EST LA SÉANCE DU JOUR AFFICHÉ' : 'SÉLECTIONNER POUR LE JOUR AFFICHÉ')
+      + '</button>';
+    hote.innerHTML = html;
+  }
+
+  // Le titre s'edite sur place : ouvrir un panneau pour trois mots ferait
+  // perdre de vue la seance qu'on est en train de nommer.
+  function editerTitreFiche(){
+    var ds = state.seanceOuverte;
+    var ligne = document.querySelector('.fiche-titre-ligne');
+    if (!ds || !ligne || ligne.querySelector('.fiche-titre-champ')) return;
+    var champ = document.createElement('input');
+    champ.type = 'text';
+    champ.className = 'fiche-titre-champ';
+    champ.maxLength = 60;
+    champ.value = titreChoisi(ds);
+    champ.placeholder = titreParDefaut(ds);
+    champ.setAttribute('aria-label', 'Titre de la séance');
+    ligne.innerHTML = '';
+    ligne.appendChild(champ);
+    champ.focus();
+    champ.select();
+
+    var fini = false;
+    function valider(){
+      if (fini) return;
+      fini = true;
+      definirTitre(ds, champ.value);
+      renderSeanceDetail();
+    }
+    champ.addEventListener('blur', valider);
+    champ.addEventListener('keydown', function(e){
+      if (e.key === 'Enter'){ e.preventDefault(); champ.blur(); }
+      if (e.key === 'Escape'){ fini = true; renderSeanceDetail(); }
+    });
+  }
+
+  function allerAuJour(ds){
+    state.selectedDay = ds;
+    state.planningWeekStart = startOfWeek(fromDateStr(ds));
+    montrerVue('planning');
+    renderPlanning(true);
+    window.scrollTo(0, 0);
+  }
 
   function renderDayPanel(force){
     var panel = document.querySelector('.day-panel');
@@ -2068,8 +2385,11 @@
         + '<div class="recap-rows">'
         + byGroup[g].map(function(it){
             var valueTxt = (it.bodyweight ? 'PDC' : formatWeight(it.maxPoids)+' kg') + ' × ' + it.repsAtMax;
+            var freq = it.fois + (it.fois > 1 ? ' séances' : ' séance') + ' · ' +
+                       it.series + (it.series > 1 ? ' séries' : ' série');
             return '<button type="button" class="recap-row" data-recap-name="'+esc(it.nom)+'" aria-expanded="false">'
-              +   '<span class="recap-name"><span class="chev" aria-hidden="true">›</span>'+esc(it.nom)+'</span>'
+              +   '<span class="recap-name"><span class="chev" aria-hidden="true">›</span>'+esc(it.nom)
+              +     '<span class="recap-freq">'+esc(freq)+'</span></span>'
               +   '<span class="recap-value">'+esc(valueTxt)+'</span>'
               + '</button>'
               + '<div class="recap-chart-wrap" data-chart-for="'+esc(it.nom)+'" hidden></div>';
@@ -2151,18 +2471,28 @@
   });
 
   function renderAll(){
-    if (state.view==='planning') renderPlanning(false);
+    if (state.view === 'planning') renderPlanning(false);
+    else if (state.view === 'seances') renderSeances();
+    else if (state.view === 'seance') renderSeanceDetail();
     else renderRecap();
   }
 
   // ---------- event wiring ----------
+  var VUES = ['planning','seances','seance','recap'];
+  function montrerVue(vue){
+    state.view = vue;
+    // La fiche n'a pas d'onglet : c'est une page ou l'on entre depuis la
+    // liste, et l'onglet SEANCES reste allume pendant qu'on y est.
+    var actif = (vue === 'seance') ? 'seances' : vue;
+    document.querySelectorAll('.topbar-tab').forEach(function(b){
+      b.classList.toggle('active', b.dataset.view === actif);
+    });
+    VUES.forEach(function(v){ document.getElementById('view-' + v).hidden = (v !== vue); });
+    renderAll();
+  }
   document.getElementById('mainTabs').addEventListener('click', function(e){
     var btn = e.target.closest('.topbar-tab'); if (!btn) return;
-    state.view = btn.dataset.view;
-    document.querySelectorAll('.topbar-tab').forEach(function(b){ b.classList.toggle('active', b===btn); });
-    document.getElementById('view-planning').hidden = state.view!=='planning';
-    document.getElementById('view-recap').hidden = state.view!=='recap';
-    renderAll();
+    montrerVue(btn.dataset.view);
   });
 
   document.getElementById('subTabs').addEventListener('click', function(e){
@@ -2553,23 +2883,37 @@
     else if (corps) corps.appendChild(box);
   }
 
-  document.getElementById('reprendreBtn').addEventListener('click', openSeancesSheet);
-  document.getElementById('seancesClose').addEventListener('click', closeSeancesSheet);
-  document.getElementById('seancesSheet').addEventListener('click', function(e){
-    if (e.target === this) closeSeancesSheet();
+  document.getElementById('reprendreBtn').addEventListener('click', function(){
+    montrerVue('seances');
+    window.scrollTo(0, 0);
+  });
+  document.getElementById('recapJourBtn').addEventListener('click', function(){
+    ouvrirSeance(state.selectedDay);
+  });
+  document.getElementById('seanceRetour').addEventListener('click', function(){
+    montrerVue('seances');
+    window.scrollTo(0, 0);
   });
   document.getElementById('seancesListe').addEventListener('click', function(e){
-    var b = e.target.closest('[data-reprendre]');
-    if (!b) return;
-    var n = reprendreSeance(b.dataset.reprendre);
+    var o = e.target.closest('[data-ouvrir]');
+    if (o) ouvrirSeance(o.dataset.ouvrir);
+  });
+  document.getElementById('seanceDetail').addEventListener('click', function(e){
+    if (e.target.closest('#ficheTitre') || e.target.closest('#ficheCrayon')){
+      editerTitreFiche();
+      return;
+    }
+    if (!e.target.closest('#ficheSelectionner')) return;
+    var ds = state.seanceOuverte;
+    if (!ds || ds === state.selectedDay) return;
+    var n = selectionnerSeance(ds);
     if (!n){ showToast('Cette séance est vide'); return; }
     scheduleSave(state.selectedDay, true);
     populateDatalist();
-    renderDayPanel(true);
-    renderDayPills();
-    renderWeekStats();
-    closeSeancesSheet();
-    showToast(n + (n > 1 ? ' exercices repris' : ' exercice repris'));
+    montrerVue('planning');
+    renderPlanning(true);
+    window.scrollTo(0, 0);
+    showToast(n + (n > 1 ? ' exercices ajoutés' : ' exercice ajouté'));
   });
 
   document.getElementById('addExerciseBtn').addEventListener('click', function(){
@@ -2991,7 +3335,9 @@
       return state.sessions[ds] || { date:ds, exercises:[] };
     }
     function jourDistant(ds, d){
-      return { date:ds, exercises:(d && d.exercises || []).map(normalizeExercise) };
+      var j = { date:ds, exercises:(d && d.exercises || []).map(normalizeExercise) };
+      if (d && typeof d.titre === 'string' && d.titre.trim()) j.titre = d.titre.trim();
+      return j;
     }
 
     // ------------------------------------------------------------ ecriture
@@ -3036,6 +3382,7 @@
           .then(function(){
             return lireMeta().exosSales ? pousserExos().catch(function(){}) : null;
           })
+          .then(function(){ return pousserTitres().catch(function(){}); })
           .then(function(){ return dates.length; });
       }).then(function(n){
         enCours = false; majUI();
@@ -3129,6 +3476,42 @@
       });
     }
 
+    // Les titres partent a part, comme les noms d'exercices : un appel
+    // separe echoue seul, et les journees passent quand meme.
+    function titresLocaux(){
+      return Object.keys(state.sessions).filter(function(ds){
+        var t = state.sessions[ds].titre;
+        return typeof t === 'string' && t.trim();
+      });
+    }
+
+    function pousserTitres(){
+      if (!user) return Promise.resolve();
+      var m = lireMeta();
+      var dates = Object.keys(m.titres || {});
+      if (!dates.length) return Promise.resolve();
+      return client().then(function(c){
+        var chaine = Promise.resolve();
+        dates.forEach(function(ds){
+          chaine = chaine.then(function(){
+            var t = (state.sessions[ds] && state.sessions[ds].titre) || null;
+            return c.rpc('pousser_titre', { p_date:ds, p_titre:t }).then(function(r){
+              if (r.error) throw r.error;
+              // La date ne quitte la file qu'apres confirmation du serveur.
+              majMeta(function(x){ if (x.titres) delete x.titres[ds]; });
+            });
+          });
+        });
+        return chaine;
+      });
+    }
+
+    function marquerTitre(ds){
+      if (!dispo()) return;
+      majMeta(function(m){ m.titres = m.titres || {}; m.titres[ds] = 1; });
+      if (user) planifier(2500);
+    }
+
     function marquerExos(){
       if (!dispo()) return;
       majMeta(function(m){ m.exosSales = true; });
@@ -3142,6 +3525,7 @@
         .then(function(){
           return lireMeta().exosSales ? pousserExos().catch(function(){}) : null;
         })
+        .then(function(){ return pousserTitres().catch(function(){}); })
         .then(function(){ majUI(); })
         .catch(function(e){ echec = messageErreur(e); majUI(); });
     }
@@ -3464,7 +3848,7 @@
       // « Tout est synchronise » ne se dit que si c'est vrai. Une migration en
       // attente doit se voir : c'est justement le moment ou l'utilisateur croit
       // etre a l'abri alors que ses seances ne sont encore que sur le telephone.
-      var attente = nbSales();
+      var attente = nbSales() + Object.keys(lireMeta().titres || {}).length;
       if (echec)        { etat.className = 'sheet-etat hs';      texte.textContent = qui + ' — ' + echec; }
       else if (enCours) { etat.className = 'sheet-etat attente'; texte.textContent = qui + ' — envoi en cours…'; }
       else if (aMigrer) { etat.className = 'sheet-etat attente'; texte.textContent = qui + ' — ' + joursLocaux + ' journée(s) pas encore envoyée(s) sur ton compte'; }
@@ -3532,6 +3916,7 @@
     return {
       dispo:dispo, demarrer:demarrer, marquerSale:marquerSale, majUI:majUI,
       marquerExos:marquerExos, pousserExos:pousserExos, tirerExos:tirerExos,
+      marquerTitre:marquerTitre, pousserTitres:pousserTitres,
       enregistrerPseudo:enregistrerPseudo, envoyerLienMdp:envoyerLienMdp,
       changerMdp:changerMdp, modeAccueil:modeAccueil, nomAffiche:nomAffiche,
       montrerAccueil:montrerAccueil, fermerAccueil:fermerAccueil,
