@@ -263,6 +263,74 @@
   .ex-del:active{background:#0d0c0a;color:var(--ink);}
 
   .ex-body{padding:8px 12px 12px;display:flex;flex-direction:column;gap:8px;}
+
+  /* Superset : deux exercices ou plus qu'on enchaine sans repos entre eux.
+     Le cadre doit se lire d'un coup d'oeil au milieu d'exercices simples,
+     sinon la distinction ne sert a rien. */
+  .superset{
+    border:2.5px dashed var(--yellow);
+    box-shadow:4px 4px 0 rgba(255,210,63,.22);
+    padding:9px;
+    display:flex;flex-direction:column;gap:9px;
+    background:rgba(255,210,63,.04);
+  }
+  .superset-tag{
+    display:flex;align-items:center;gap:7px;
+    font-size:10.5px;font-weight:800;letter-spacing:.09em;
+    color:var(--yellow);
+  }
+  .superset-tag::after{
+    content:'';flex:1;height:2px;background:rgba(255,210,63,.28);
+  }
+  /* A l'interieur, les cartes perdent leur ombre : deux niveaux de relief
+     imbriques donnent une bouillie visuelle. Le cadre du bloc suffit. */
+  .superset .ex-card{box-shadow:none;border-width:2px;}
+
+  /* Les deux actions de bas de carte. « + SERIE » reste la principale ;
+     le lien superset est volontairement plus discret, on s'en sert rarement. */
+  /* Proposition de rattachement d'un nom inconnu. Elle s'affiche dans la
+     carte, sous le nom : une bulle flottante se ferait rater sur telephone. */
+  .alias-prompt{
+    border:2px solid var(--yellow);
+    background:rgba(255,210,63,.07);
+    padding:10px;display:flex;flex-direction:column;gap:7px;
+  }
+  .alias-prompt p{font-size:12.5px;line-height:1.45;color:var(--ink);margin:0;}
+  .alias-prompt b{font-weight:800;color:var(--yellow);}
+  .alias-choix{
+    width:100%;min-height:44px;padding:0 12px;
+    background:var(--panel2);border:2px solid var(--yellow);
+    color:var(--ink);font-family:inherit;
+    font-size:13px;font-weight:800;text-align:left;cursor:pointer;
+  }
+  .alias-choix:active{background:var(--yellow);color:#0d0c0a;}
+  .pseudo-label{margin-top:4px;}
+
+  .alias-liste{display:flex;flex-direction:column;gap:7px;}
+  .alias-select{
+    width:100%;min-height:44px;padding:0 30px 0 10px;
+    background:var(--panel2);border:2px solid var(--line);
+    color:var(--ink);font-family:inherit;font-size:13px;font-weight:700;
+    appearance:none;-webkit-appearance:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%239a9184'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-position:right 10px center;
+  }
+  .alias-non{
+    width:100%;min-height:40px;
+    background:none;border:none;color:var(--dim);
+    font-family:inherit;font-size:11.5px;font-weight:800;letter-spacing:.04em;
+    text-decoration:underline;text-underline-offset:3px;cursor:pointer;
+  }
+
+  .ex-actions{display:flex;flex-direction:column;gap:6px;}
+  .btn-lien{
+    width:100%;min-height:40px;padding:0 10px;
+    background:none;border:2px dashed var(--line);
+    color:var(--dim);
+    font-family:inherit;font-size:11px;font-weight:800;letter-spacing:.05em;
+    cursor:pointer;
+  }
+  .btn-lien:active{border-color:var(--yellow);color:var(--yellow);}
   .ex-groupe{
     width:100%;
     background:var(--panel2);
@@ -707,6 +775,27 @@
   .sheet-msg.warn{border-color:var(--yellow);color:var(--yellow);}
   .sheet-msg.err{border-color:var(--orange);color:var(--orange);}
 
+  /* Sous 380 px — iPhone SE, petits Android — la ligne de serie compte
+     169 px de boutons fixes avant les deux champs. Dans un superset, qui
+     mange 23 px de plus, le poids et les reps se retrouvaient rognes a une
+     poignee de pixels : le chiffre saisi devenait illisible. On reprend sur
+     les boutons, pas sur les champs, parce que c'est la valeur qui compte. */
+  @media (max-width:380px){
+    .superset{padding:6px;}
+    .serie-check{width:44px;height:44px;}
+    .step-btn{width:30px;height:44px;font-size:17px;}
+    .serie-poids,.serie-reps{height:44px;font-size:15px;padding:0 1px;}
+    .serie-main{gap:4px;}
+    /* L'etoile de record passe en bord de carte : dans la ligne, elle coutait
+       vingt pixels aux deux seuls champs qui portent une valeur. */
+    .serie-pr{position:absolute;top:3px;right:3px;}
+    .serie-card{position:relative;}
+    /* Le numero de serie est deja porte par l'ordre des lignes : c'est ce
+       qu'on sacrifie en premier pour qu'un poids a trois chiffres reste
+       lisible. Il reste dans l'etiquette lue par les lecteurs d'ecran. */
+    .serie-num{display:none;}
+  }
+
 </style>
 </head>
 
@@ -780,7 +869,7 @@
 
     <div class="sheet-stat" id="dataStat">—</div>
 
-    <p class="sheet-note">
+    <p class="sheet-note" id="dataOu">
       Tes séances sont stockées dans ce navigateur, sur cet appareil uniquement.
       Vider les données du site, changer de téléphone ou désinstaller l'app
       les efface définitivement. Garde une copie du fichier quelque part.
@@ -800,6 +889,9 @@
       </div>
 
       <div id="compteCo" hidden>
+        <label class="sheet-label pseudo-label" for="compteMonPseudo">TON PSEUDO</label>
+        <input type="text" id="compteMonPseudo" class="sheet-input" placeholder="ton pseudo" autocomplete="nickname" maxlength="24" aria-label="Ton pseudo">
+        <button type="button" class="btn-sheet" id="comptePseudoOk">ENREGISTRER LE PSEUDO</button>
         <button type="button" class="btn-sheet" id="compteMigrer" hidden></button>
         <button type="button" class="btn-sheet" id="compteSync">SYNCHRONISER MAINTENANT</button>
         <button type="button" class="btn-sheet" id="compteDeconnexion">SE DÉCONNECTER</button>
@@ -845,18 +937,40 @@
       jamais les perdre si tu changes de téléphone.
     </p>
 
-    <input type="email" id="compteEmail" class="sheet-input" placeholder="ton@email.fr" autocomplete="email" inputmode="email" aria-label="Adresse email">
-    <input type="password" id="compteMdp" class="sheet-input" placeholder="mot de passe (8 caractères minimum)" autocomplete="current-password" aria-label="Mot de passe">
+    <div id="modeConnexion">
+      <input type="text" id="comptePseudo" class="sheet-input" placeholder="ton pseudo (facultatif)" autocomplete="nickname" maxlength="24" aria-label="Pseudo">
+      <input type="email" id="compteEmail" class="sheet-input" placeholder="ton@email.fr" autocomplete="email" inputmode="email" aria-label="Adresse email">
+      <input type="password" id="compteMdp" class="sheet-input" placeholder="mot de passe (8 caractères minimum)" autocomplete="current-password" aria-label="Mot de passe">
 
-    <div class="sheet-check">
-      <input type="checkbox" id="compteConsent">
-      <label for="compteConsent">Pour créer un compte : j'ai lu et j'accepte la
-        <a href="confidentialite.html" target="_blank" rel="noopener">politique de confidentialité</a>
-        et les <a href="cgu.html" target="_blank" rel="noopener">CGU</a>.</label>
+      <div class="sheet-check">
+        <input type="checkbox" id="compteConsent">
+        <label for="compteConsent">Pour créer un compte : j'ai lu et j'accepte la
+          <a href="confidentialite.html" target="_blank" rel="noopener">politique de confidentialité</a>
+          et les <a href="cgu.html" target="_blank" rel="noopener">CGU</a>.</label>
+      </div>
+
+      <button type="button" class="btn-sheet primary" id="compteInscription">CRÉER UN COMPTE</button>
+      <button type="button" class="btn-sheet" id="compteConnexion">J'AI DÉJÀ UN COMPTE</button>
+      <button type="button" class="lien-discret" id="accueilOubli">Mot de passe oublié&nbsp;?</button>
     </div>
 
-    <button type="button" class="btn-sheet primary" id="compteInscription">CRÉER UN COMPTE</button>
-    <button type="button" class="btn-sheet" id="compteConnexion">J'AI DÉJÀ UN COMPTE</button>
+    <div id="modeOubli" hidden>
+      <p class="accueil-sous">
+        Donne l'adresse de ton compte : tu recevras un lien pour choisir un
+        nouveau mot de passe. Ouvre-le depuis ce même téléphone.
+      </p>
+      <input type="email" id="oubliEmail" class="sheet-input" placeholder="ton@email.fr" autocomplete="email" inputmode="email" aria-label="Adresse email du compte">
+      <button type="button" class="btn-sheet primary" id="oubliEnvoyer">ENVOYER LE LIEN</button>
+      <button type="button" class="lien-discret" id="oubliRetour">Revenir à la connexion</button>
+    </div>
+
+    <div id="modeNouveau" hidden>
+      <p class="accueil-sous">
+        Choisis ton nouveau mot de passe. Il remplace l'ancien tout de suite.
+      </p>
+      <input type="password" id="nouveauMdp" class="sheet-input" placeholder="nouveau mot de passe (8 caractères minimum)" autocomplete="new-password" aria-label="Nouveau mot de passe">
+      <button type="button" class="btn-sheet primary" id="nouveauValider">ENREGISTRER</button>
+    </div>
 
     <div class="sheet-msg" id="compteMsg" hidden></div>
 
@@ -931,11 +1045,27 @@
     try { localStorage.setItem(CUSTOM_KEY, JSON.stringify(customExercises)); } catch(e){}
   }
 
+  // Un exercice memorise s'ecrivait « nom: groupe ». Il porte maintenant aussi
+  // un alias, donc un objet. Les deux formes se lisent : une sauvegarde
+  // exportee l'an dernier doit se relire telle quelle.
+  function infoExo(valeur, nom){
+    if (typeof valeur === 'string') return { nom:nom, groupe:valeur, alias:null };
+    return { nom:(valeur && valeur.nom) || nom,
+             groupe:(valeur && valeur.groupe) || 'Autre',
+             alias:(valeur && valeur.alias) || null };
+  }
+
   var EXERCISE_DB_LOWER = {};
+  var CUSTOM_PAR_CLE = {};
   function rebuildLower(){
     EXERCISE_DB_LOWER = {};
+    CUSTOM_PAR_CLE = {};
     Object.keys(EXERCISE_DB).forEach(function(k){ EXERCISE_DB_LOWER[k.toLowerCase()] = EXERCISE_DB[k]; });
-    Object.keys(customExercises).forEach(function(k){ EXERCISE_DB_LOWER[k.toLowerCase()] = customExercises[k]; });
+    Object.keys(customExercises).forEach(function(k){
+      var info = infoExo(customExercises[k], k);
+      EXERCISE_DB_LOWER[k.toLowerCase()] = info.groupe;
+      CUSTOM_PAR_CLE[cleExo(k)] = { nom:info.nom || k, groupe:info.groupe, alias:info.alias };
+    });
   }
   rebuildLower();
 
@@ -946,15 +1076,38 @@
     if (clean.length < 2) return false;
     var key = clean.toLowerCase();
     if (Object.prototype.hasOwnProperty.call(EXERCISE_DB, clean)) return false;
-    var connuMemeGroupe = customExercises[clean] === (groupe || 'Autre');
-    if (connuMemeGroupe) return false;
+    var ancien = CUSTOM_PAR_CLE[cleExo(clean)];
+    if (ancien && ancien.nom === clean && ancien.groupe === (groupe || 'Autre')) return false;
     // Un nom deja connu sous une autre casse ne cree pas de doublon.
     var existant = Object.keys(customExercises).filter(function(k){ return k.toLowerCase() === key; });
     existant.forEach(function(k){ if (k !== clean) delete customExercises[k]; });
-    customExercises[clean] = groupe || 'Autre';
+    // Changer le groupe d'un exercice ne doit pas effacer son rattachement.
+    customExercises[clean] = { nom:clean, groupe:groupe || 'Autre',
+                               alias:(ancien && ancien.alias) || null };
     saveCustom();
     rebuildLower();
+    if (typeof Sync !== 'undefined' && Sync.marquerExos) Sync.marquerExos();
     return true;
+  }
+
+  // « dead » est le souleve de terre de son auteur, pas celui d'un
+  // dictionnaire : le rattachement est une decision de l'utilisateur, jamais
+  // une deduction de l'app.
+  function definirAlias(nom, cleCible){
+    var clean = String(nom || '').trim();
+    if (!clean) return;
+    var cle = cleExo(clean);
+    if (cleCible && cleCible === cle) return;   // rien ne se rattache a soi
+    var ancien = CUSTOM_PAR_CLE[cle];
+    var groupe = (ancien && ancien.groupe) || 'Autre';
+    if (cleCible){
+      var g = groupeCanonique(cleCible);
+      if (g) groupe = g;
+    }
+    customExercises[clean] = { nom:clean, groupe:groupe, alias:cleCible || null };
+    saveCustom();
+    rebuildLower();
+    if (typeof Sync !== 'undefined' && Sync.marquerExos) Sync.marquerExos();
   }
 
   var DAY_NAMES = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
@@ -1018,8 +1171,11 @@
   }
 
   function normalizeExercise(ex){
+    // bloc reste undefined quand il n'y en a pas : un exercice seul ne porte
+    // rien, et le JSON envoye au cloud n'a pas de champ vide a transporter.
+    var bloc = (ex && ex.bloc) ? String(ex.bloc) : undefined;
     if (ex && Array.isArray(ex.series)){
-      return { id:ex.id, nom:ex.nom||'', groupe:ex.groupe||'Autre', repos:ex.repos||'', series:ex.series.map(function(s){
+      return { id:ex.id, nom:ex.nom||'', groupe:ex.groupe||'Autre', repos:ex.repos||'', bloc:bloc, series:ex.series.map(function(s){
         return normalizeSerie(s, ex.repos);
       }) };
     }
@@ -1027,7 +1183,7 @@
     if (ex && (ex.poids!=null || (ex.reps!=null && String(ex.reps).trim()!==''))){
       series.push(normalizeSerie({ poids:ex.poids, reps:ex.reps }, ex.repos));
     }
-    return { id:(ex&&ex.id)||genId(), nom:(ex&&ex.nom)||'', groupe:(ex&&ex.groupe)||'Autre', repos:(ex&&ex.repos)||'', series:series };
+    return { id:(ex&&ex.id)||genId(), nom:(ex&&ex.nom)||'', groupe:(ex&&ex.groupe)||'Autre', repos:(ex&&ex.repos)||'', bloc:bloc, series:series };
   }
 
   // ---------- state ----------
@@ -1069,12 +1225,12 @@
   // d'une séance passée.
   function isNewRecord(serie, exNom){
     if (typeof serie.poids !== 'number' || !(serie.poids > 0)) return false;
-    var norm = exNom && exNom.trim() ? normalizeName(exNom) : null;
+    var norm = exNom && exNom.trim() ? cleCanonique(exNom) : null;
     if (!norm) return false;
     var best = 0;
     Object.keys(state.sessions).forEach(function(ds){
       state.sessions[ds].exercises.forEach(function(e){
-        if (!e.nom || normalizeName(e.nom) !== norm) return;
+        if (!e.nom || cleCanonique(e.nom) !== norm) return;
         (e.series||[]).forEach(function(s){
           if (s.id === serie.id) return;
           if (typeof s.poids === 'number' && s.poids > best) best = s.poids;
@@ -1086,13 +1242,13 @@
 
   // Meilleure série de la dernière séance antérieure à `beforeDate` sur ce même exercice.
   function findPreviousOccurrence(exNom, beforeDate){
-    var norm = exNom && exNom.trim() ? normalizeName(exNom) : null;
+    var norm = exNom && exNom.trim() ? cleCanonique(exNom) : null;
     if (!norm) return null;
     var bestDate = null, bestEx = null;
     Object.keys(state.sessions).forEach(function(ds){
       if (ds >= beforeDate) return;
       state.sessions[ds].exercises.forEach(function(e){
-        if (!e.nom || normalizeName(e.nom) !== norm) return;
+        if (!e.nom || cleCanonique(e.nom) !== norm) return;
         if (!(e.series||[]).some(hasData)) return;
         if (!bestDate || ds > bestDate){ bestDate = ds; bestEx = e; }
       });
@@ -1266,7 +1422,97 @@
 
   // ---------- recap computation ----------
   function normalizeName(nom){
-    return nom.replace(/\([^)]*\)/g,'').replace(/\s+/g,' ').trim();
+    return String(nom == null ? '' : nom).replace(/\([^)]*\)/g,'').replace(/\s+/g,' ').trim();
+  }
+  // La cle ignore la casse et les parentheses : « Bench (top set) » et
+  // « bench » sont le meme mouvement, et doivent le rester d'un jour a l'autre.
+  function cleExo(nom){ return normalizeName(nom).toLowerCase(); }
+
+  // Un alias ne pointe jamais vers un alias — la base l'interdit et l'app ne
+  // le propose pas — donc une seule etape de resolution suffit, sans boucle.
+  function cleCanonique(nom){
+    var k = cleExo(nom);
+    var info = CUSTOM_PAR_CLE[k];
+    return (info && info.alias) ? info.alias : k;
+  }
+  // Nom a afficher pour un exercice, alias resolu. Sert de cle de regroupement
+  // dans le recap : deux noms rattaches produisent la meme chaine, donc une
+  // seule ligne.
+  function nomCanonique(nom){
+    var k = cleExo(nom);
+    var info = CUSTOM_PAR_CLE[k];
+    if (!info || !info.alias) return normalizeName(nom);
+    var cible = CUSTOM_PAR_CLE[info.alias];
+    if (cible && cible.nom) return normalizeName(cible.nom);
+    var dansBase = Object.keys(EXERCISE_DB).filter(function(n){ return cleExo(n) === info.alias; })[0];
+    return dansBase || info.alias;
+  }
+
+  // Rattacher, c'est dire « c'est le meme exercice ». Le groupe musculaire
+  // suit donc la cible : sans ca, le recap compterait la meme serie une fois
+  // en Dos et une fois en Autre.
+  function groupeCanonique(nom){
+    var cle = cleCanonique(nom);
+    var info = CUSTOM_PAR_CLE[cle];
+    if (info && info.groupe) return info.groupe;
+    var dansBase = Object.keys(EXERCISE_DB).filter(function(n){ return cleExo(n) === cle; })[0];
+    return dansBase ? EXERCISE_DB[dansBase] : null;
+  }
+
+  // Les noms deja utilises, du plus recent au plus ancien, puis les noms
+  // memorises, puis la base integree. L'ordre compte : on propose d'abord ce
+  // qu'il a vraiment fait.
+  function candidatsAlias(saisi){
+    var k = cleExo(saisi);
+    if (k.length < 2) return [];
+    var vus = {}, out = [];
+    function ajouter(nom, quand){
+      var c = cleExo(nom);
+      if (!c || c === k || vus[c]) return;
+      // Prefixe dans un sens ou dans l'autre : « dead » trouve « deadlift »,
+      // et « deadlift » retrouve « dead ». A partir de trois lettres on
+      // accepte aussi le milieu du mot, pas avant : « cu » ramenerait la
+      // moitie de la base.
+      var colle = c.indexOf(k) === 0 || k.indexOf(c) === 0 ||
+                  (k.length >= 3 && c.indexOf(k) > 0);
+      if (!colle) return;
+      vus[c] = 1;
+      out.push({ cle:c, nom:normalizeName(nom), quand:quand || null });
+    }
+    Object.keys(state.sessions).sort().reverse().forEach(function(ds){
+      (state.sessions[ds].exercises || []).forEach(function(e){
+        if (e.nom && (e.series||[]).some(hasData)) ajouter(e.nom, ds);
+      });
+    });
+    Object.keys(customExercises).forEach(function(n){ ajouter(n); });
+    Object.keys(EXERCISE_DB).forEach(function(n){ ajouter(n); });
+    return out.slice(0, 3);
+  }
+
+  // Aucun algorithme ne devinera que « dead » est un souleve de terre : les
+  // deux mots n'ont pas une lettre en commun. Quand la proposition automatique
+  // ne trouve rien, on donne la liste et c'est l'utilisateur qui tranche.
+  function tousLesExos(saufCle){
+    var vus = {}, out = [];
+    function ajouter(nom){
+      var c = cleExo(nom);
+      if (!c || c === saufCle || vus[c]) return;
+      // Un alias ne pointe jamais vers un alias : proposer une cible deja
+      // rattachee creerait une chaine que la base refuse.
+      var info = CUSTOM_PAR_CLE[c];
+      if (info && info.alias) return;
+      vus[c] = 1;
+      out.push({ cle:c, nom:normalizeName(nom) });
+    }
+    Object.keys(state.sessions).forEach(function(ds){
+      (state.sessions[ds].exercises || []).forEach(function(e){
+        if (e.nom && (e.series||[]).some(hasData)) ajouter(e.nom);
+      });
+    });
+    Object.keys(customExercises).forEach(ajouter);
+    Object.keys(EXERCISE_DB).forEach(ajouter);
+    out.sort(function(a,b){ return a.nom.localeCompare(b.nom,'fr'); });
+    return out;
   }
   function mostCommon(arr){
     var counts = {}, best=null, bestCount=0;
@@ -1299,7 +1545,7 @@
         totalSeries += validSeries.length;
         validSeries.forEach(function(s){ totalVolume += serieVolume(s); });
         // Le nom n'est jamais requis pour compter — seule la donnée saisie (poids/reps) l'est.
-        var norm = ex.nom && ex.nom.trim() ? normalizeName(ex.nom) : 'Exercice sans nom';
+        var norm = ex.nom && ex.nom.trim() ? nomCanonique(ex.nom) : 'Exercice sans nom';
         if (!byNorm[norm]) byNorm[norm] = [];
         validSeries.forEach(function(s){ byNorm[norm].push({ poids:s.poids, reps:s.reps, groupe:ex.groupe }); });
       });
@@ -1520,7 +1766,7 @@
       +     '<select class="serie-rpe'+(s.rpe==null?' vide':'')+'" data-field="rpe" data-serie-id="'+s.id+'" title="'+(s.rpe==null?'Reps en réserve : 10 = à l\'échec, 9 = 1 rep en réserve':esc(rpeLabel(s.rpe)))+'" aria-label="RPE série '+num+'">'+rpeOptions+'</select>'
       +   '</label>'
       +   '<label class="meta-field"><span>REPOS</span>'
-      +     '<input type="text" class="serie-repos" placeholder="90s" data-field="repos" data-serie-id="'+s.id+'" aria-label="Repos après la série '+num+'" value="'+esc(s.repos||'')+'">'
+      +     '<input type="text" inputmode="numeric" enterkeyhint="done" class="serie-repos" placeholder="90s" data-field="repos" data-serie-id="'+s.id+'" aria-label="Repos après la série '+num+'" value="'+esc(s.repos||'')+'">'
       +   '</label>'
       +   '<button type="button" class="serie-del" data-action="del-serie" data-serie-id="'+s.id+'" aria-label="Supprimer la série '+num+'">×</button>'
       + '</div>'
@@ -1553,9 +1799,42 @@
       +   '<select class="ex-groupe" data-field="groupe" data-id="'+ex.id+'">'+groupOptions+'</select>'
       +   hintHTML
       +   '<div class="series-list">'+seriesHTML+'</div>'
-      +   '<button type="button" class="btn-add-serie" data-action="add-serie" data-id="'+ex.id+'">+ SÉRIE'+(series.length?' (reprend la précédente)':'')+'</button>'
+      +   '<div class="ex-actions">'
+      +     '<button type="button" class="btn-add-serie" data-action="add-serie" data-id="'+ex.id+'">+ SÉRIE'+(series.length?' (reprend la précédente)':'')+'</button>'
+      +     (ex.bloc
+              ? '<button type="button" class="btn-lien" data-action="detacher" data-id="'+ex.id+'">⇄ SORTIR DU SUPERSET</button>'
+              : '<button type="button" class="btn-lien" data-action="superset" data-id="'+ex.id+'">⇄ AJOUTER UN EXERCICE EN SUPERSET</button>')
+      +   '</div>'
       + '</div>'
       + '</div>';
+  }
+
+  // Les exercices d'un meme bloc sont contigus dans la liste : il suffit de
+  // regrouper les suites. Rien a trier, donc rien qui puisse se desynchroniser
+  // entre l'ordre affiche et l'ordre enregistre.
+  function exercisesHTML(exercises){
+    var out = '', i = 0;
+    while (i < exercises.length){
+      var bloc = exercises[i].bloc;
+      if (!bloc){ out += exerciseCardHTML(exercises[i]); i++; continue; }
+      var groupe = [];
+      while (i < exercises.length && exercises[i].bloc === bloc){ groupe.push(exercises[i]); i++; }
+      // Un bloc reduit a un seul exercice n'est plus un superset : on l'affiche
+      // comme un exercice normal plutot que d'encadrer une carte toute seule.
+      if (groupe.length < 2){ out += exerciseCardHTML(groupe[0]); continue; }
+      out += '<div class="superset"><div class="superset-tag">SUPERSET</div>'
+           + groupe.map(exerciseCardHTML).join('')
+           + '</div>';
+    }
+    return out;
+  }
+
+  // Un bloc qui ne compte plus qu'un membre doit disparaitre des donnees, pas
+  // seulement de l'affichage : sans ca, il ressortirait sur un autre appareil.
+  function nettoyerBlocs(day){
+    var compte = {};
+    (day.exercises || []).forEach(function(e){ if (e.bloc) compte[e.bloc] = (compte[e.bloc]||0) + 1; });
+    (day.exercises || []).forEach(function(e){ if (e.bloc && compte[e.bloc] < 2) delete e.bloc; });
   }
 
   function renderDayPanel(force){
@@ -1577,7 +1856,7 @@
     if (!exercises.length){
       list.innerHTML = '<div class="empty-state">Aucun exercice noté pour ce jour.<br>Ajoute ta première série ci-dessous.</div>';
     } else {
-      list.innerHTML = exercises.map(exerciseCardHTML).join('');
+      list.innerHTML = exercisesHTML(exercises);
     }
   }
 
@@ -1934,6 +2213,45 @@
       var id = delBtn.dataset.id;
       var day = getOrCreateDay(state.selectedDay);
       day.exercises = day.exercises.filter(function(x){ return x.id!==id; });
+      nettoyerBlocs(day);
+      scheduleSave(state.selectedDay,true);
+      renderDayPanel(true);
+      renderDayPills();
+      renderWeekStats();
+      return;
+    }
+
+    var supBtn = e.target.closest('[data-action="superset"]');
+    if (supBtn){
+      var dayS = getOrCreateDay(state.selectedDay);
+      var idx = -1;
+      for (var k=0;k<dayS.exercises.length;k++){ if (dayS.exercises[k].id===supBtn.dataset.id){ idx=k; break; } }
+      if (idx < 0) return;
+      var source = dayS.exercises[idx];
+      if (!source.bloc) source.bloc = genId();
+      // Insere juste apres, jamais a la fin : un superset dont les membres sont
+      // separes par trois autres exercices n'a plus aucun sens a l'ecran.
+      var suivant = { id:genId(), nom:'', groupe:'Autre', repos:'', bloc:source.bloc,
+                      series:[{ id:genSerieId(), poids:null, reps:'', rpe:null, repos:'', fait:false }] };
+      dayS.exercises.splice(idx + 1, 0, suivant);
+      scheduleSave(state.selectedDay,true);
+      renderDayPanel(true);
+      renderDayPills();
+      renderWeekStats();
+      requestAnimationFrame(function(){
+        var el = exListEl.querySelector('.ex-name[data-id="'+suivant.id+'"]');
+        if (el) el.focus();
+      });
+      return;
+    }
+
+    var detBtn = e.target.closest('[data-action="detacher"]');
+    if (detBtn){
+      var dayD = getOrCreateDay(state.selectedDay);
+      var exD = findExercise(dayD, detBtn.dataset.id);
+      if (!exD) return;
+      delete exD.bloc;
+      nettoyerBlocs(dayD);
       scheduleSave(state.selectedDay,true);
       renderDayPanel(true);
       renderDayPills();
@@ -2005,8 +2323,96 @@
     var day = getOrCreateDay(state.selectedDay);
     var ex = findExercise(day, t.dataset.id);
     if (!ex || !ex.nom) return;
+    // Le nom est-il deja connu AVANT qu'on l'enregistre ? C'est la seule
+    // fenetre ou la question « c'est le meme exercice ? » a un sens.
+    var etaitConnu = !!CUSTOM_PAR_CLE[cleExo(ex.nom)] ||
+                     !!EXERCISE_DB_LOWER[String(ex.nom).trim().toLowerCase()];
     if (rememberExercise(ex.nom, ex.groupe)) populateDatalist();
+    if (!etaitConnu) proposerRattachement(t.closest('.ex-card'), ex);
   });
+
+  // Affiche la proposition dans la carte, sans re-render : re-dessiner ferait
+  // perdre le focus et la position de scroll au moment precis ou l'utilisateur
+  // est en train de saisir.
+  function proposerRattachement(card, ex){
+    if (!card) return;
+    var vieux = card.querySelector('.alias-prompt');
+    if (vieux) vieux.remove();
+    var choix = candidatsAlias(ex.nom);
+    var liste = tousLesExos(cleExo(ex.nom));
+    if (!choix.length && !liste.length) return;
+
+    var box = document.createElement('div');
+    box.className = 'alias-prompt';
+    var html;
+    if (choix.length){
+      html = '<p><b>« ' + esc(normalizeName(ex.nom)) + ' »</b> — c\'est le même exercice que&nbsp;?</p>';
+      choix.forEach(function(c){
+        var quand = '';
+        if (c.quand){
+          var d = fromDateStr(c.quand);
+          quand = ' <span style="color:var(--dim);font-weight:700;">· ' + d.getDate() + ' ' + MONTH_ABBR[d.getMonth()] + '</span>';
+        }
+        html += '<button type="button" class="alias-choix" data-cle="' + esc(c.cle) + '">' + esc(c.nom) + quand + '</button>';
+      });
+      html += '<button type="button" class="alias-non">NON, C\'EST UN NOUVEL EXERCICE</button>';
+    } else {
+      // Rien ne ressemble : le nom est deja retenu, on ne pose pas de question
+      // pour le plaisir. Le rattachement reste disponible, replie.
+      html = '<p><b>« ' + esc(normalizeName(ex.nom)) + ' »</b> est ajouté à tes exercices.</p>'
+           + '<button type="button" class="alias-non" data-action="ouvrir-liste">LE RATTACHER À UN EXERCICE EXISTANT</button>';
+    }
+    html += '<div class="alias-liste" hidden>'
+         +   '<select class="alias-select" aria-label="Exercice auquel rattacher ce nom">'
+         +     '<option value="">Choisis l\'exercice…</option>'
+         +     liste.map(function(c){ return '<option value="' + esc(c.cle) + '">' + esc(c.nom) + '</option>'; }).join('')
+         +   '</select>'
+         +   '<button type="button" class="alias-choix" data-action="rattacher">RATTACHER</button>'
+         + '</div>';
+    box.innerHTML = html;
+
+    box.addEventListener('click', function(e){
+      var b = e.target.closest('.alias-choix[data-cle]');
+      if (b){
+        definirAlias(ex.nom, b.dataset.cle);
+        var g1 = groupeCanonique(ex.nom); if (g1) ex.groupe = g1;
+        scheduleSave(state.selectedDay, true);
+        box.remove();
+        // L'historique change de sens d'un coup : « derniere fois », records et
+        // recap doivent refleter le rattachement tout de suite.
+        renderDayPanel(true);
+        renderWeekStats();
+        showToast('« ' + normalizeName(ex.nom) +' » rejoint ton historique');
+        return;
+      }
+      if (e.target.closest('[data-action="ouvrir-liste"]')){
+        box.querySelector('.alias-liste').hidden = false;
+        e.target.closest('[data-action="ouvrir-liste"]').hidden = true;
+        return;
+      }
+      if (e.target.closest('[data-action="rattacher"]')){
+        var sel = box.querySelector('.alias-select');
+        if (!sel.value){ sel.focus(); return; }
+        definirAlias(ex.nom, sel.value);
+        var g2 = groupeCanonique(ex.nom); if (g2) ex.groupe = g2;
+        scheduleSave(state.selectedDay, true);
+        box.remove();
+        renderDayPanel(true);
+        renderWeekStats();
+        showToast('« ' + normalizeName(ex.nom) + ' » rejoint ton historique');
+        return;
+      }
+      if (e.target.closest('.alias-non')){
+        definirAlias(ex.nom, null);
+        box.remove();
+      }
+    });
+
+    var corps = card.querySelector('.ex-body');
+    var apres = card.querySelector('.ex-groupe');
+    if (corps && apres) corps.insertBefore(box, apres.nextSibling);
+    else if (corps) corps.appendChild(box);
+  }
 
   document.getElementById('addExerciseBtn').addEventListener('click', function(){
     var day = getOrCreateDay(state.selectedDay);
@@ -2405,8 +2811,11 @@
       if (!dispo()) return Promise.reject(new Error('Comptes non configures'));
       if (clientPromise) return clientPromise;
       clientPromise = charger().then(function(){
+        // detectSessionInUrl etait a false parce que rien n'arrivait par URL.
+        // Le lien « mot de passe oublie » en est un : sans ca, le code repartait
+        // avec la page sans jamais ouvrir de session.
         sb = window.supabase.createClient(cfg.url, cfg.anonKey, {
-          auth: { persistSession:true, autoRefreshToken:true, detectSessionInUrl:false }
+          auth: { persistSession:true, autoRefreshToken:true, detectSessionInUrl:true }
         });
         sb.auth.onAuthStateChange(function(_evt, session){
           user = session ? session.user : null;
@@ -2463,7 +2872,13 @@
               });
           });
         });
-        return chaine.then(function(){ return dates.length; });
+        // Les noms memorises ne doivent jamais retenir les seances en otage :
+        // un echec ici laisse le drapeau leve, et repartira au prochain envoi.
+        return chaine
+          .then(function(){
+            return lireMeta().exosSales ? pousserExos().catch(function(){}) : null;
+          })
+          .then(function(){ return dates.length; });
       }).then(function(n){
         enCours = false; majUI();
         return n;
@@ -2502,9 +2917,74 @@
       });
     }
 
+    // ------------------------------------------------ exercices memorises
+    // La liste est minuscule — quelques dizaines de noms — donc on l'envoie
+    // entiere plutot que de tenir une file par nom. Un diff ici couterait
+    // plus de code qu'il n'economise d'octets.
+    function exosLocaux(){
+      return Object.keys(customExercises).map(function(nom){
+        var info = infoExo(customExercises[nom], nom);
+        return { cle:cleExo(nom), nom:info.nom || nom, groupe:info.groupe, alias:info.alias };
+      }).filter(function(e){ return e.cle; });
+    }
+
+    function pousserExos(){
+      if (!user) return Promise.resolve();
+      var liste = exosLocaux();
+      if (!liste.length){ majMeta(function(m){ m.exosSales = false; }); return Promise.resolve(); }
+      return client().then(function(c){
+        return c.rpc('pousser_exos_perso', { p_exos: liste });
+      }).then(function(r){
+        if (r.error) throw r.error;
+        // Le drapeau ne tombe qu'apres confirmation du serveur.
+        majMeta(function(m){ m.exosSales = false; });
+      });
+    }
+
+    function tirerExos(){
+      if (!user) return Promise.resolve(0);
+      return client().then(function(c){
+        return c.rpc('tirer_exos_perso');
+      }).then(function(r){
+        if (r.error) throw r.error;
+        var distants = r.data || [], nouveaux = 0;
+        distants.forEach(function(d){
+          if (!d || !d.cle) return;
+          var local = CUSTOM_PAR_CLE[d.cle];
+          // Le local gagne quand il porte un rattachement et pas le distant :
+          // un choix explicite ne doit pas etre efface par un appareil qui ne
+          // l'a jamais vu.
+          if (local && local.alias && !d.alias) return;
+          if (local && local.nom === d.nom && local.groupe === d.groupe &&
+              (local.alias || null) === (d.alias || null)) return;
+          if (local && local.nom !== d.nom) delete customExercises[local.nom];
+          customExercises[d.nom] = { nom:d.nom, groupe:d.groupe || 'Autre', alias:d.alias || null };
+          nouveaux++;
+        });
+        if (nouveaux){
+          saveCustom();
+          rebuildLower();
+          populateDatalist();
+          renderDayPanel(true);
+        }
+        return nouveaux;
+      });
+    }
+
+    function marquerExos(){
+      if (!dispo()) return;
+      majMeta(function(m){ m.exosSales = true; });
+      if (user) planifier(2500);
+    }
+
     function synchroniser(){
       if (!user) return Promise.resolve();
-      return tirer(false).then(pousser).then(function(){ majUI(); })
+      return tirer(false)
+        .then(pousser)
+        .then(function(){
+          return lireMeta().exosSales ? pousserExos().catch(function(){}) : null;
+        })
+        .then(function(){ majUI(); })
         .catch(function(e){ echec = messageErreur(e); majUI(); });
     }
 
@@ -2577,6 +3057,76 @@
     }
 
     // ---------------------------------------------------------------- auth
+    // Le pseudo vit dans les metadonnees du compte : une table de plus pour
+    // une chaine de 24 caracteres serait une surface a securiser pour rien.
+    function pseudoDe(u){
+      var m = u && u.user_metadata;
+      var p = m && m.pseudo;
+      return (typeof p === 'string' && p.trim()) ? p.trim() : '';
+    }
+    function nomAffiche(){
+      if (!user) return '';
+      return pseudoDe(user) || user.email;
+    }
+    function enregistrerPseudo(p){
+      if (!user) return Promise.reject(new Error('Pas connecte'));
+      var v = String(p || '').trim().slice(0, 24);
+      return client().then(function(c){
+        return c.auth.updateUser({ data:{ pseudo:v } });
+      }).then(function(r){
+        if (r.error) throw r.error;
+        user = r.data.user;
+        majUI();
+        showToast(v ? 'Salut ' + v + ' !' : 'Pseudo retire');
+      });
+    }
+
+    // ------------------------------------------------- mot de passe oublie
+    function envoyerLienMdp(email){
+      loader('Envoi du lien…');
+      return client().then(function(c){
+        // Le lien doit revenir sur cette page exacte, pas sur une autre : la
+        // preuve PKCE est dans le stockage de ce navigateur.
+        return c.auth.resetPasswordForEmail(String(email || '').trim(), {
+          redirectTo: location.origin + location.pathname
+        });
+      }).then(function(r){
+        cacherLoader();
+        if (r.error) throw r.error;
+        msgCompte('ok', 'Lien envoye. Regarde ta boite mail, et tes indesirables.');
+      }, function(e){ cacherLoader(); throw e; });
+    }
+    function changerMdp(mdp){
+      loader('Enregistrement…');
+      return client().then(function(c){
+        return c.auth.updateUser({ password: String(mdp || '') });
+      }).then(function(r){
+        if (r.error) throw r.error;
+        user = r.data.user;
+        return apresConnexion();
+      }).then(function(){
+        cacherLoader();
+        modeAccueil('connexion');
+        fermerAccueil();
+        showToast('Mot de passe change');
+      }, function(e){ cacherLoader(); throw e; });
+    }
+
+    // L'ecran d'accueil sert trois formulaires. Un seul est visible a la fois :
+    // trois panneaux empiles feraient defiler l'utilisateur pour rien.
+    function modeAccueil(mode){
+      ['Connexion','Oubli','Nouveau'].forEach(function(m){
+        var el = document.getElementById('mode' + m);
+        if (el) el.hidden = (m.toLowerCase() !== mode);
+      });
+      var msg = document.getElementById('compteMsg');
+      if (msg) msg.hidden = true;
+      var sans = document.getElementById('accueilSansCompte');
+      // Pendant un changement de mot de passe, « continuer sans compte »
+      // abandonnerait l'operation a mi-chemin.
+      if (sans) sans.hidden = (mode === 'nouveau');
+    }
+
     function messageErreur(e){
       var m = (e && (e.message || e.error_description)) || 'erreur inconnue';
       if (/fetch|network|Failed to fetch/i.test(m)) return 'pas de connexion';
@@ -2586,6 +3136,14 @@
       if (/Email (logins|signups) are disabled/i.test(m))
         return 'la connexion par email n est pas encore activee cote serveur';
       if (/Email not confirmed/i.test(m))            return 'confirme d abord ton adresse par email';
+      if (/Error sending/i.test(m))
+        return 'le mail n a pas pu partir — l envoyeur n est pas encore configure';
+      if (/For security purposes|rate limit|Too many requests|over_email_send_rate/i.test(m))
+        return 'trop de tentatives — reessaie dans quelques minutes';
+      if (/same as the old password|should be different/i.test(m))
+        return 'choisis un mot de passe different de l ancien';
+      if (/Auth session missing|session_not_found/i.test(m))
+        return 'ce lien a expire — redemande-en un';
       return m;
     }
     // Entre « compte cree » et une app utilisable, il y a un aller-retour
@@ -2645,10 +3203,11 @@
       }).then(function(){}, function(){ /* l'inscription reste valide */ });
     }
 
-    function inscrire(email, mdp){
+    function inscrire(email, mdp, pseudo){
       loader('Création de ton compte…');
       return client().then(function(c){
-        return c.auth.signUp({ email:email, password:mdp });
+        return c.auth.signUp({ email:email, password:mdp,
+                               options:{ data:{ pseudo:String(pseudo || '').trim().slice(0, 24) } } });
       }).then(function(r){
         if (r.error) throw r.error;
         if (!r.data.session){
@@ -2657,7 +3216,8 @@
           return;
         }
         user = r.data.user;
-        loader('Préparation de ton carnet…');
+        var p = pseudoDe(user);
+        loader(p ? 'Bienvenue ' + p + ' — préparation de ton carnet…' : 'Préparation de ton carnet…');
         return enregistrerConsentement().then(apresConnexion).then(function(){
           cacherLoader(); fermerAccueil();
         });
@@ -2694,7 +3254,8 @@
       }
       majMeta(function(x){ x.migrePour = user.id; });
       loader('Récupération de tes séances…');
-      return tirer(true).then(function(n){
+      return tirerExos().then(pousserExos).catch(function(){ /* les seances priment */ })
+        .then(function(){ return tirer(true); }).then(function(n){
         msgCompte('ok', n ? n + ' journee(s) recuperee(s) depuis ton compte.' : 'Tout est deja a jour.');
         majUI();
       }).catch(function(e){ msgCompte('err', messageErreur(e)); });
@@ -2717,11 +3278,24 @@
       deco.hidden = !!user;
       co.hidden   = !user;
 
+      var ou = document.getElementById('dataOu');
       if (!user){
         etat.className = 'sheet-etat';
         texte.textContent = 'Pas de compte — tout reste sur cet appareil';
+        if (ou) ou.textContent = 'Tes séances sont stockées dans ce navigateur, sur cet appareil ' +
+          'uniquement. Vider les données du site, changer de téléphone ou désinstaller ' +
+          'l\'app les efface définitivement. Garde une copie du fichier quelque part.';
         return;
       }
+      var qui = nomAffiche();
+      // Ce paragraphe affirmait « sur cet appareil uniquement » meme connecte.
+      // C'etait faux, et faux au pire endroit : celui ou l'on verifie si ses
+      // seances sont a l'abri.
+      if (ou) ou.textContent = 'Tes séances sont sur ton compte ' + user.email +
+        '. Reconnecte-toi depuis n\'importe quel téléphone et elles reviennent. ' +
+        'Une copie reste sur cet appareil pour que l\'app marche sans réseau.';
+      var champPseudo = document.getElementById('compteMonPseudo');
+      if (champPseudo && document.activeElement !== champPseudo) champPseudo.value = pseudoDe(user);
 
       var joursLocaux = Object.keys(state.sessions).filter(function(ds){
         return compterJour(state.sessions[ds]) > 0;
@@ -2733,11 +3307,11 @@
       // attente doit se voir : c'est justement le moment ou l'utilisateur croit
       // etre a l'abri alors que ses seances ne sont encore que sur le telephone.
       var attente = nbSales();
-      if (echec)        { etat.className = 'sheet-etat hs';      texte.textContent = user.email + ' — ' + echec; }
-      else if (enCours) { etat.className = 'sheet-etat attente'; texte.textContent = user.email + ' — envoi en cours…'; }
-      else if (aMigrer) { etat.className = 'sheet-etat attente'; texte.textContent = user.email + ' — ' + joursLocaux + ' journée(s) pas encore envoyée(s) sur ton compte'; }
-      else if (attente) { etat.className = 'sheet-etat attente'; texte.textContent = user.email + ' — ' + attente + ' journée(s) en attente d’envoi'; }
-      else              { etat.className = 'sheet-etat ok';      texte.textContent = user.email + ' — tout est synchronisé'; }
+      if (echec)        { etat.className = 'sheet-etat hs';      texte.textContent = qui + ' — ' + echec; }
+      else if (enCours) { etat.className = 'sheet-etat attente'; texte.textContent = qui + ' — envoi en cours…'; }
+      else if (aMigrer) { etat.className = 'sheet-etat attente'; texte.textContent = qui + ' — ' + joursLocaux + ' journée(s) pas encore envoyée(s) sur ton compte'; }
+      else if (attente) { etat.className = 'sheet-etat attente'; texte.textContent = qui + ' — ' + attente + ' journée(s) en attente d’envoi'; }
+      else              { etat.className = 'sheet-etat ok';      texte.textContent = qui + ' — tout est synchronisé'; }
 
       mig.hidden = !aMigrer;
       if (!mig.hidden){
@@ -2749,9 +3323,33 @@
     }
 
     // -------------------------------------------------------------- demarrage
+    // Un lien de recuperation arrive avec un code dans l'URL. Il faut le
+    // reconnaitre AVANT toute autre decision d'affichage : sinon on montre
+    // l'ecran de connexion a quelqu'un qui vient justement de cliquer sur
+    // « j'ai oublie mon mot de passe ».
+    function lienRecuperation(){
+      return /[?&]code=/.test(location.search) || /[#&]type=recovery/.test(location.hash);
+    }
+
     function demarrer(){
       if (!dispo()) { majUI(); return; }
       majUI();
+      if (lienRecuperation()){
+        montrerAccueil();
+        modeAccueil('nouveau');
+        loader('Vérification du lien…');
+        client().then(function(){
+          cacherLoader();
+          // L'URL garde le code apres usage : un rechargement le rejouerait
+          // et echouerait, ce qui ressemblerait a un lien casse.
+          history.replaceState(null, '', location.pathname);
+          if (!user) msgCompte('err', 'Ce lien a expiré ou a déjà servi. Redemande-en un.');
+        }, function(e){
+          cacherLoader();
+          msgCompte('err', messageErreur(e));
+        });
+        return;
+      }
       // L'ecran d'accueil ne s'affiche qu'a la toute premiere visite : ni pour
       // qui est deja connecte, ni pour qui a deja un carnet ici, ni pour qui a
       // deja choisi. Le reproposer a chaque ouverture serait du harcelement.
@@ -2775,6 +3373,9 @@
 
     return {
       dispo:dispo, demarrer:demarrer, marquerSale:marquerSale, majUI:majUI,
+      marquerExos:marquerExos, pousserExos:pousserExos, tirerExos:tirerExos,
+      enregistrerPseudo:enregistrerPseudo, envoyerLienMdp:envoyerLienMdp,
+      changerMdp:changerMdp, modeAccueil:modeAccueil, nomAffiche:nomAffiche,
       montrerAccueil:montrerAccueil, fermerAccueil:fermerAccueil,
       synchroniser:synchroniser, migrer:migrer,
       connecter:connecter, inscrire:inscrire, deconnecter:deconnecter,
@@ -2811,13 +3412,36 @@
         Sync.msgCompte('err', 'Coche la case : creer un compte envoie tes seances sur un serveur.');
         return;
       }
-      occupe(this, 'CRÉATION…', function(){ return Sync.inscrire(v.email, v.mdp); });
+      var pseudo = document.getElementById('comptePseudo').value;
+      occupe(this, 'CRÉATION…', function(){ return Sync.inscrire(v.email, v.mdp, pseudo); });
     });
     document.getElementById('accueilSansCompte').addEventListener('click', function(){
       Sync.fermerAccueil();
     });
+    document.getElementById('accueilOubli').addEventListener('click', function(){
+      document.getElementById('oubliEmail').value = document.getElementById('compteEmail').value;
+      Sync.modeAccueil('oubli');
+    });
+    document.getElementById('oubliRetour').addEventListener('click', function(){
+      Sync.modeAccueil('connexion');
+    });
+    document.getElementById('oubliEnvoyer').addEventListener('click', function(){
+      var mail = document.getElementById('oubliEmail').value.trim();
+      if (!mail){ Sync.msgCompte('err', 'Donne l adresse de ton compte.'); return; }
+      occupe(this, 'ENVOI…', function(){ return Sync.envoyerLienMdp(mail); });
+    });
+    document.getElementById('nouveauValider').addEventListener('click', function(){
+      var mdp = document.getElementById('nouveauMdp').value;
+      if (mdp.length < 8){ Sync.msgCompte('err', 'Choisis un mot de passe d au moins 8 caracteres.'); return; }
+      occupe(this, 'ENREGISTREMENT…', function(){ return Sync.changerMdp(mdp); });
+    });
+    document.getElementById('comptePseudoOk').addEventListener('click', function(){
+      var p = document.getElementById('compteMonPseudo').value;
+      occupe(this, '…', function(){ return Sync.enregistrerPseudo(p); });
+    });
     document.getElementById('compteOuvrirAccueil').addEventListener('click', function(){
       closeDataSheet();
+      Sync.modeAccueil('connexion');
       Sync.montrerAccueil();
     });
     document.getElementById('compteSync').addEventListener('click', function(){
@@ -2832,6 +3456,17 @@
   })();
 
   init();
+
+  // Le service worker rend l'app ouvrable dans une salle sans reseau. Il
+  // exige un contexte securise : en http, il n'y a rien a enregistrer, et
+  // c'est normal.
+  if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')){
+    window.addEventListener('load', function(){
+      navigator.serviceWorker.register('sw.js').catch(function(){
+        // Pas de worker : l'app fonctionne exactement comme avant, en ligne.
+      });
+    });
+  }
 })();
 </script>
 </body>

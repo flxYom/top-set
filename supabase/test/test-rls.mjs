@@ -209,6 +209,71 @@ ok('un consentement ne se reecrit pas', r.rows.length === 0, r.rows.length + ' l
 r = await as(A, `delete from public.consentements returning 1`);
 ok('un consentement ne s efface pas', r.rows.length === 0, r.rows.length + ' ligne(s)');
 
+console.log('\n== 13. Superset : le bloc fait l aller-retour ==');
+await as(A, `select public.pousser_jour('2026-09-08'::date, $1::jsonb)`, [JSON.stringify([
+  { id: 'b1', nom: 'Bench',   groupe: 'Pectoraux', bloc: 'bloc-1', series: [{ poids: 80,  reps: '5' }] },
+  { id: 'b2', nom: 'Souleve', groupe: 'Dos',       bloc: 'bloc-1', series: [{ poids: 100, reps: '5' }] },
+  { id: 'b3', nom: 'Curl',    groupe: 'Bras',                      series: [{ poids: 12,  reps: '10' }] }
+])]);
+r = await as(A, `select public.tirer_jours(null) as j`);
+const jour = r.rows[0].j['2026-09-08'].exercises;
+ok('les deux exercices du superset partagent le meme bloc',
+   jour[0].bloc === jour[1].bloc && jour[0].bloc !== null, JSON.stringify(jour.map(e => e.bloc)));
+ok('un exercice seul n a pas de bloc', jour[2].bloc === null, JSON.stringify(jour[2].bloc));
+ok('l ordre du bloc est conserve',
+   jour[0].nom === 'Bench' && jour[1].nom === 'Souleve', jour.map(e => e.nom).join(','));
+
+// Rejouer le meme jour sans bloc doit defaire le superset, pas en garder la trace.
+await as(A, `select public.pousser_jour('2026-09-08'::date, $1::jsonb)`, [JSON.stringify([
+  { id: 'b1', nom: 'Bench', groupe: 'Pectoraux', series: [{ poids: 80, reps: '5' }] }
+])]);
+r = await as(A, `select public.tirer_jours(null) as j`);
+ok('defaire le superset le retire vraiment',
+   r.rows[0].j['2026-09-08'].exercises[0].bloc === null,
+   JSON.stringify(r.rows[0].j['2026-09-08'].exercises[0].bloc));
+
+console.log('\n== 14. Les noms d exercices memorises suivent le compte ==');
+await as(A, `select public.pousser_exos_perso($1::jsonb)`, [JSON.stringify([
+  { cle: 'bench leger', nom: 'Bench leger', groupe: 'Pectoraux' },
+  { cle: 'dead',        nom: 'dead',        groupe: 'Dos', alias: 'souleve de terre' },
+  { cle: '',            nom: 'vide',        groupe: 'Autre' },
+  { cle: '   ',         nom: 'espaces',     groupe: 'Autre' }
+])]);
+r = await as(A, `select public.tirer_exos_perso() as e`);
+let exos = r.rows[0].e;
+// 'developpe couche' vient de la section 11 : trois noms, pas deux.
+ok('les noms valides sont enregistres', exos.length === 3, JSON.stringify(exos.map(e => e.cle)));
+ok('un nom vide est ignore', !exos.some(e => !e.cle.trim()), JSON.stringify(exos.map(e => e.cle)));
+ok('l alias est rendu tel quel',
+   exos.find(e => e.cle === 'dead').alias === 'souleve de terre',
+   JSON.stringify(exos.find(e => e.cle === 'dead')));
+ok('un exercice sans alias en rend null',
+   exos.find(e => e.cle === 'bench leger').alias === null,
+   JSON.stringify(exos.find(e => e.cle === 'bench leger').alias));
+
+// Deux appareils inventent le meme nom : on fusionne, on ne duplique pas.
+await as(A, `select public.pousser_exos_perso($1::jsonb)`, [JSON.stringify([
+  { cle: 'dead', nom: 'Dead', groupe: 'Dos', alias: null }
+])]);
+r = await as(A, `select public.tirer_exos_perso() as e`);
+exos = r.rows[0].e;
+ok('rejouer le meme nom ne cree pas de doublon', exos.length === 3, JSON.stringify(exos.map(e => e.cle)));
+ok('le dernier envoi gagne, alias compris',
+   exos.find(e => e.cle === 'dead').alias === null && exos.find(e => e.cle === 'dead').nom === 'Dead',
+   JSON.stringify(exos.find(e => e.cle === 'dead')));
+
+await refuse('un alias qui pointe sur lui-meme est refuse', () =>
+  as(A, `insert into public.exercices_perso (user_id, nom_cle, nom, alias_cle)
+         values (auth.uid(), 'boucle', 'boucle', 'boucle')`));
+
+r = await as(B, `select public.tirer_exos_perso() as e`);
+ok('B ne recupere aucun nom de A', r.rows[0].e.length === 0, JSON.stringify(r.rows[0].e));
+
+await refuse('anon ne peut pas appeler pousser_exos_perso', () =>
+  asAnon(`select public.pousser_exos_perso('[]'::jsonb)`));
+await refuse('anon ne peut pas appeler tirer_exos_perso', () =>
+  asAnon(`select public.tirer_exos_perso()`));
+
 console.log('\n== 12. Suppression du compte ==');
 await db.query('delete from auth.users where id = $1', [A]);
 r = await db.query(`select (select count(*) from public.seances   where user_id = $1)::int s,
