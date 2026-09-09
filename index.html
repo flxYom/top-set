@@ -492,6 +492,57 @@
      sur un ecran de 375px, donnent des cibles de 40px que personne n'arrive a
      viser en salle. L'essentiel (fait / poids / reps) tient la ligne du haut
      en 48px ; le detail (RPE / repos / suppression) passe en dessous. */
+  /* Historique : sobre, gris, en retrait. La saisie du jour reste l'élément
+     principal de la carte. */
+  .ex-prev{margin:2px 0 6px;}
+  .ex-prev-tete{
+    font-size:9.5px;font-weight:800;letter-spacing:.11em;
+    color:var(--dim);margin-bottom:5px;
+  }
+  .ex-prev-series{display:flex;flex-wrap:wrap;gap:5px;}
+  .perf{
+    display:flex;align-items:center;gap:5px;
+    min-height:36px;padding:0 8px;
+    background:var(--panel2);
+    border:1.5px dashed var(--line);
+    color:var(--ink);
+    font-family:inherit;font-size:12.5px;font-weight:800;
+    cursor:pointer;
+  }
+  .perf:active{background:var(--line);}
+  .perf.top{border-color:var(--yellow);border-style:solid;}
+  .perf-copie{font-size:12px;color:var(--dim);line-height:1;}
+  .perf.top .perf-copie{color:var(--yellow);}
+  .perf-tag{
+    font-size:8.5px;letter-spacing:.08em;color:var(--dim);
+    border-left:1px solid var(--line);padding-left:5px;
+  }
+
+  /* Suggestion : un autre registre, orange et étiqueté comme tel. On ne doit
+     jamais confondre ce qu'on a fait avec ce qu'on pourrait tenter. */
+  .ex-cible{
+    border:2px solid var(--orange);
+    background:rgba(255,92,56,.09);
+    padding:7px 9px;
+    margin:0 0 6px;
+  }
+  .ex-cible-ligne{display:flex;align-items:center;gap:8px;}
+  .ex-cible-tag{
+    flex:none;
+    font-size:8.5px;font-weight:800;letter-spacing:.11em;
+    color:#0d0c0a;background:var(--orange);
+    padding:2px 5px;
+  }
+  .ex-cible-val{flex:1;min-width:0;font-size:14px;font-weight:800;letter-spacing:-.01em;}
+  .ex-cible-copie{
+    flex:none;width:36px;height:36px;
+    background:transparent;border:1.5px solid var(--orange);
+    color:var(--orange);font-size:15px;font-weight:800;
+    padding:0;cursor:pointer;line-height:1;
+  }
+  .ex-cible-copie:active{background:var(--orange);color:#0d0c0a;}
+  .ex-cible-raison{margin-top:5px;font-size:11px;line-height:1.35;color:var(--dim);}
+
   .serie-card{
     border:2px solid var(--line);
     background:var(--panel);
@@ -2021,6 +2072,115 @@
       + '</div>';
   }
 
+  // Le bloc « derniere fois » : toutes les series de la derniere seance sur
+  // cet exercice, chacune recopiable d'un tap, plus la cible suggeree quand
+  // les donnees la justifient.
+  //
+  // Deux registres visuels distincts, et c'est volontaire : l'historique est
+  // sobre et gris, la suggestion est orange et etiquetee SUGGERE. On ne doit
+  // jamais pouvoir lire une recommandation comme une performance passee.
+  var TYPE_COURT = {};
+  TYPE_COURT[TS.TYPES.ECHAUFFEMENT] = 'ÉCH.';
+  TYPE_COURT[TS.TYPES.TOP] = 'TOP';
+  TYPE_COURT[TS.TYPES.BACKOFF] = 'B.O.';
+
+  function perfTexte(s){
+    var p = (typeof s.poids === 'number') ? formatWeight(s.poids) + ' kg' : '';
+    var r = s.reps ? String(s.reps) : '';
+    if (p && r) return p + ' × ' + r;
+    return p || r || '—';
+  }
+
+  function blocPrecedentHTML(ex){
+    var nom = ex && ex.nom;
+    if (!nom || !nom.trim()) return '';
+    var seances = seancesDeLExo(nom).filter(function(j){ return j.date !== state.selectedDay; });
+    var prec = TS.performancePrecedente(seances, state.selectedDay);
+    if (!prec) return '';
+
+    var d = fromDateStr(prec.date);
+    var quand = d.getDate() + ' ' + MONTH_ABBR[d.getMonth()];
+    var top = prec.topSet;
+
+    var puces = prec.series.map(function(s){
+      var estTop = top && s === top;
+      var tag = TYPE_COURT[TS.typeSerie(s)] || '';
+      var txt = perfTexte(s);
+      return '<button type="button" class="perf' + (estTop ? ' top' : '') + '"'
+        + ' data-copier="' + ex.id + '"'
+        + ' data-poids="' + (typeof s.poids === 'number' ? s.poids : '') + '"'
+        + ' data-reps="' + esc(s.reps || '') + '"'
+        + ' data-type="' + esc(s.type || '') + '"'
+        + ' aria-label="Recopier ' + esc(txt) + '">'
+        + '<span class="perf-copie" aria-hidden="true">↺</span>'
+        + '<span class="perf-val">' + esc(txt) + '</span>'
+        + (tag ? '<span class="perf-tag">' + tag + '</span>' : '')
+        + '</button>';
+    }).join('');
+
+    var html = '<div class="ex-prev">'
+      + '<div class="ex-prev-tete">DERNIÈRE FOIS · ' + esc(quand.toUpperCase()) + '</div>'
+      + '<div class="ex-prev-series">' + puces + '</div>'
+      + '</div>';
+
+    // La cible s'appuie sur tout l'historique et pas seulement sur la
+    // derniere seance : sans RPE note, c'est la tendance qui decide.
+    var cible = TS.suggererCible(seances);
+    if (cible){
+      var reps = (cible.repsHaut && cible.repsHaut !== cible.reps)
+        ? cible.reps + '–' + cible.repsHaut
+        : String(cible.reps);
+      var val = formatWeight(cible.poids) + ' kg × ' + reps;
+      html += '<div class="ex-cible">'
+        + '<div class="ex-cible-ligne">'
+        +   '<span class="ex-cible-tag">SUGGÉRÉ</span>'
+        +   '<span class="ex-cible-val">' + esc(val) + '</span>'
+        +   '<button type="button" class="ex-cible-copie" data-copier="' + ex.id + '"'
+        +     ' data-poids="' + cible.poids + '" data-reps="' + esc(String(cible.reps)) + '" data-type=""'
+        +     ' aria-label="Recopier la cible ' + esc(val) + '">↺</button>'
+        + '</div>'
+        + '<div class="ex-cible-raison">' + esc(cible.raison) + '</div>'
+        + '</div>';
+    }
+    return html;
+  }
+
+  // Recopier une performance ne valide rien : ca remplit la premiere serie
+  // encore vide, et n'en ajoute une que s'il n'en reste aucune. Aucune valeur
+  // deja saisie n'est ecrasee.
+  function copierPerf(exId, poids, reps, type){
+    var day = getOrCreateDay(state.selectedDay);
+    var ex = findExercise(day, exId);
+    if (!ex) return null;
+    if (!ex.series) ex.series = [];
+    var cible = null;
+    for (var i = 0; i < ex.series.length; i++){
+      if (!hasData(ex.series[i])){ cible = ex.series[i]; break; }
+    }
+    if (!cible){
+      var derniere = ex.series[ex.series.length - 1];
+      cible = { id:genSerieId(), poids:null, reps:'', rpe:null,
+                repos:(derniere && derniere.repos) || ex.repos || '', fait:false };
+      ex.series.push(cible);
+    }
+    cible.poids = poids;
+    cible.reps = reps;
+    // Le RPE ne se recopie pas : c'est ce qu'on ressentira aujourd'hui, pas
+    // ce qu'on a ressenti la semaine derniere.
+    cible.rpe = null;
+    if (type) cible.type = type; else delete cible.type;
+    return cible;
+  }
+
+  // Le HTML du bloc est produit a un seul endroit : le rendu initial et la
+  // mise a jour en direct ne peuvent pas diverger.
+  function majBlocPrecedent(card, ex){
+    if (!card) return;
+    var zone = card.querySelector('.ex-prev-zone');
+    if (!zone) return;
+    zone.innerHTML = blocPrecedentHTML(ex);
+  }
+
   function exerciseCardHTML(ex){
     var color = GROUP_COLORS[ex.groupe] || GROUP_COLORS['Autre'];
     var groupOptions = GROUPS.map(function(g){
@@ -2030,14 +2190,7 @@
     var seriesHTML = series.length
       ? series.map(function(s,idx){ return serieRowHTML(s, idx, ex.nom); }).join('')
       : '<div class="empty-state" style="padding:14px;font-size:12px;">Aucune série — ajoute la première ci-dessous.</div>';
-    var prev = findPreviousOccurrence(ex.nom, state.selectedDay);
-    var hintHTML = '';
-    if (prev){
-      var pd = fromDateStr(prev.date);
-      var when = pd.getDate()+' '+MONTH_ABBR[pd.getMonth()];
-      var valTxt = (prev.poids!=null ? formatWeight(prev.poids)+' kg' : '') + (prev.poids!=null && prev.reps ? ' × ' : '') + (prev.reps||'');
-      hintHTML = '<div class="ex-hint">Dernière fois ('+esc(when)+') : <b>'+esc(valTxt)+'</b></div>';
-    }
+    var hintHTML = blocPrecedentHTML(ex);
     return '<div class="ex-card" style="--card-color:'+color+'" data-id="'+ex.id+'">'
       + '<div class="ex-head">'
       +   '<input class="ex-name" type="text" list="exerciseList" placeholder="Nom de l\'exercice" value="'+esc(ex.nom||'')+'" data-field="nom" data-id="'+ex.id+'">'
@@ -2045,7 +2198,7 @@
       + '</div>'
       + '<div class="ex-body">'
       +   '<select class="ex-groupe" data-field="groupe" data-id="'+ex.id+'">'+groupOptions+'</select>'
-      +   hintHTML
+      +   '<div class="ex-prev-zone">' + hintHTML + '</div>'
       +   '<div class="series-list">'+seriesHTML+'</div>'
       +   '<div class="ex-actions">'
       +     '<button type="button" class="btn-add-serie" data-action="add-serie" data-id="'+ex.id+'">+ SÉRIE'+(series.length?' (reprend la précédente)':'')+'</button>'
@@ -2652,21 +2805,12 @@
       }
       else found.serie[field] = t.value;
 
-      // Le badge record se met à jour en direct, sans re-render complet (garde le focus).
-      if (field==='poids' || field==='reps'){
-        var row = t.closest('.serie-row');
-        if (row){
-          var existingPr = row.querySelector('.serie-pr');
-          var isPr = isNewRecord(found.serie, found.exercise.nom);
-          if (isPr && !existingPr){
-            var span = document.createElement('span');
-            span.className = 'serie-pr'; span.title = 'Nouveau record'; span.setAttribute('aria-label','Nouveau record');
-            span.textContent = '🏆';
-            row.querySelector('.serie-del').insertAdjacentElement('beforebegin', span);
-          } else if (!isPr && existingPr){
-            existingPr.remove();
-          }
-        }
+      // L'étoile de record suit la saisie sans reconstruire le panneau, qui
+      // ferait perdre le focus. Ce bloc visait « .serie-row », un sélecteur
+      // qui n'existe plus depuis que les séries sont des « .serie-card » :
+      // l'étoile ne bougeait donc jamais pendant la frappe.
+      if (field === 'poids' || field === 'reps'){
+        majEtoilesRecord(t.closest('.ex-card'));
       }
 
       scheduleSave(state.selectedDay);
@@ -2692,27 +2836,10 @@
         if (sel) sel.value = match;
         if (card) card.style.setProperty('--card-color', GROUP_COLORS[match]);
       }
-      // Le "dernière fois" ne se recalculait qu'au re-render complet — jamais pendant la
-      // saisie du nom, qui est justement le cas le plus courant. Mis à jour ici en direct.
-      if (card){
-        var hintEl = card.querySelector('.ex-hint');
-        var prev = findPreviousOccurrence(t.value, state.selectedDay);
-        if (prev){
-          var pd = fromDateStr(prev.date);
-          var when = pd.getDate()+' '+MONTH_ABBR[pd.getMonth()];
-          var valTxt = (prev.poids!=null ? formatWeight(prev.poids)+' kg' : '') + (prev.poids!=null && prev.reps ? ' × ' : '') + (prev.reps||'');
-          var html = 'Dernière fois ('+esc(when)+') : <b>'+esc(valTxt)+'</b>';
-          if (hintEl) hintEl.innerHTML = html;
-          else {
-            hintEl = document.createElement('div');
-            hintEl.className = 'ex-hint';
-            hintEl.innerHTML = html;
-            card.querySelector('.ex-groupe').insertAdjacentElement('afterend', hintEl);
-          }
-        } else if (hintEl){
-          hintEl.remove();
-        }
-      }
+      // Le bloc « dernière fois » ne se recalculait qu'au rendu complet —
+      // jamais pendant la saisie du nom, qui est justement le moment où il
+      // devient utile. Mis à jour ici, sans reconstruire la carte.
+      majBlocPrecedent(card, ex);
     }
     scheduleSave(state.selectedDay);
     renderDayPills();
@@ -2750,6 +2877,28 @@
     scheduleSave(state.selectedDay,true);
     renderDayPills();
     renderWeekStats();
+  });
+
+  // Recopier une performance : action volontairement discrete, jamais
+  // confondable avec la validation d'une serie.
+  exListEl.addEventListener('click', function(e){
+    var btn = e.target.closest('[data-copier]');
+    if (!btn) return;
+    var brut = btn.dataset.poids;
+    var poids = brut === '' ? null : Number(brut);
+    if (poids !== null && isNaN(poids)) poids = null;
+    var serie = copierPerf(btn.dataset.copier, poids, btn.dataset.reps || '', btn.dataset.type || '');
+    if (!serie) return;
+    scheduleSave(state.selectedDay, true);
+    renderDayPanel(true);
+    renderDayPills();
+    renderWeekStats();
+    showToast('Série remplie — à toi de valider');
+    requestAnimationFrame(function(){
+      var el = exListEl.querySelector('.serie-poids[data-serie-id="' + serie.id + '"]');
+      if (el) el.focus();
+    });
+    e.stopPropagation();
   });
 
   // Increments de poids : eviter d'ouvrir le clavier pour 2,5 kg.
