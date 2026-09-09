@@ -10,7 +10,7 @@
 // depuis un cache reviendrait a afficher des seances perimees en croyant
 // etre a jour. Le hors-ligne des donnees, c'est localStorage, pas ici.
 
-var VERSION = 'topset-v4';
+var VERSION = 'topset-v5';
 var COQUILLE = VERSION + '-coquille';
 var COURANT  = VERSION + '-courant';
 
@@ -83,7 +83,17 @@ self.addEventListener('fetch', function(e){
         return rep;
       }).catch(function(){
         return caches.match(req).then(function(r){
-          return r || caches.match('index.html') || caches.match('./');
+          if (r) return r;
+          // « cleanUrls » sert /guide, mais le cache contient guide.html :
+          // hors ligne, une adresse sans extension retombait sur l'app au lieu
+          // de la page demandee. On retente une fois avec l'extension.
+          var chemin = url.pathname.replace(/\/$/, '');
+          if (chemin && chemin.indexOf('.') === -1){
+            return caches.match(chemin.replace(/^\//, '') + '.html').then(function(r2){
+              return r2 || caches.match('index.html') || caches.match('./');
+            });
+          }
+          return caches.match('index.html') || caches.match('./');
         });
       })
     );

@@ -1662,9 +1662,41 @@
     return start.getDate()+' '+MONTH_ABBR[start.getMonth()]+' '+start.getFullYear()+' – '+end.getDate()+' '+MONTH_ABBR[end.getMonth()]+' '+end.getFullYear();
   }
 
+  // L'apostrophe compte autant que le guillemet : tous les attributs generes
+  // ici sont delimites par des guillemets doubles, mais il suffirait d'un seul
+  // attribut ecrit en simples quotes un jour pour rouvrir le trou. Le
+  // navigateur decode les entites en lisant un attribut, donc dataset.x rend
+  // toujours la valeur d'origine — echapper plus ne casse aucune comparaison.
   function esc(s){
-    return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    return String(s==null?'':s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
   }
+  // Un identifiant ne sert qu'a relier une ligne du DOM a son objet. Il n'a
+  // aucune raison de contenir autre chose que des lettres, des chiffres, un
+  // tiret ou un souligne.
+  //
+  // Ceux que l'app fabrique respectent deja ca — « x1a2b3c », « s1a2b3c », et
+  // les UUID venus du cloud. AUCUNE donnee existante n'est donc reecrite :
+  // le filtre n'attrape que ce qui vient d'ailleurs, c'est-a-dire d'un fichier
+  // importe. C'est exactement ce que fait deja uuid_ou_neuf() cote base, et
+  // pour la meme raison : on ne fait pas confiance au format d'un id qu'on n'a
+  // pas fabrique.
+  // Le groupe pilote une couleur et un menu deroulant, tous deux batis sur la
+  // liste GROUPS. Une valeur hors liste ne casse rien visuellement — les tables
+  // retombent sur « Autre » — mais elle rend le menu incoherent : il afficherait
+  // un groupe impossible a re-selectionner. Aucune valeur legitime n'est hors
+  // liste : le menu et EXERCISE_DB n'emettent que ces huit-la.
+  function groupeSur(g){
+    var v = String(g == null ? '' : g);
+    return GROUPS.indexOf(v) > -1 ? v : 'Autre';
+  }
+
+  var ID_SUR = /^[A-Za-z0-9_-]{1,64}$/;
+  function idSur(v, fabrique){
+    return ID_SUR.test(String(v == null ? '' : v)) ? String(v) : fabrique();
+  }
+
   function genId(){ return 'x'+Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
   function genSerieId(){ return 's'+Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
   function formatWeight(w){
@@ -1685,7 +1717,7 @@
   // l'exercice) deviennent une série unique. Ne perd aucune donnée existante.
   function normalizeSerie(s, reposHerite){
     return {
-      id: (s && s.id) || genSerieId(),
+      id: idSur(s && s.id, genSerieId),
       poids: (s && typeof s.poids==='number' && !isNaN(s.poids)) ? s.poids : null,
       reps: (s && s.reps) || '',
       // RPE sur l'echelle des reps en reserve : 10 = plus rien dans le
@@ -1707,7 +1739,7 @@
     // rien, et le JSON envoye au cloud n'a pas de champ vide a transporter.
     var bloc = (ex && ex.bloc) ? String(ex.bloc) : undefined;
     if (ex && Array.isArray(ex.series)){
-      return { id:ex.id, nom:ex.nom||'', groupe:ex.groupe||'Autre', repos:ex.repos||'', bloc:bloc, series:ex.series.map(function(s){
+      return { id:idSur(ex.id, genId), nom:ex.nom||'', groupe:groupeSur(ex.groupe), repos:ex.repos||'', bloc:bloc, series:ex.series.map(function(s){
         return normalizeSerie(s, ex.repos);
       }) };
     }
@@ -1715,7 +1747,7 @@
     if (ex && (ex.poids!=null || (ex.reps!=null && String(ex.reps).trim()!==''))){
       series.push(normalizeSerie({ poids:ex.poids, reps:ex.reps }, ex.repos));
     }
-    return { id:(ex&&ex.id)||genId(), nom:(ex&&ex.nom)||'', groupe:(ex&&ex.groupe)||'Autre', repos:(ex&&ex.repos)||'', bloc:bloc, series:series };
+    return { id:idSur(ex&&ex.id, genId), nom:(ex&&ex.nom)||'', groupe:groupeSur(ex&&ex.groupe), repos:(ex&&ex.repos)||'', bloc:bloc, series:series };
   }
 
   // ---------- state ----------
@@ -2312,7 +2344,7 @@
     var ex = findExercise(day, card.dataset.id);
     if (!ex) return;
     (ex.series || []).forEach(function(s){
-      var ligne = card.querySelector('.serie-card[data-serie-id="'+s.id+'"] .serie-main');
+      var ligne = card.querySelector('.serie-card[data-serie-id="'+ esc(s.id) +'"] .serie-main');
       if (!ligne) return;
       var actuelle = ligne.querySelector('.serie-pr');
       var doit = isNewRecord(s, ex.nom);
@@ -2333,27 +2365,27 @@
     var typeOptions = TYPE_LABELS.map(function(p){
       return '<option value="'+p[0]+'"'+(typeCourant===p[0]?' selected':'')+'>'+p[1]+'</option>';
     }).join('');
-    return '<div class="serie-card'+(s.fait?' fait':'')+'" data-serie-id="'+s.id+'"'
+    return '<div class="serie-card'+(s.fait?' fait':'')+'" data-serie-id="'+ esc(s.id) +'"'
       + (typeCourant ? ' data-type="'+typeCourant+'"' : '') + '>'
       + '<div class="serie-main">'
-      +   '<button type="button" class="serie-check'+(s.fait?' checked':'')+'" data-action="toggle-fait" data-serie-id="'+s.id+'" aria-pressed="'+(s.fait?'true':'false')+'" aria-label="Série '+num+' — '+(s.fait?'marquer comme non faite':'marquer comme faite')+'">'+(s.fait?'✓':'')+'</button>'
+      +   '<button type="button" class="serie-check'+(s.fait?' checked':'')+'" data-action="toggle-fait" data-serie-id="'+ esc(s.id) +'" aria-pressed="'+(s.fait?'true':'false')+'" aria-label="Série '+num+' — '+(s.fait?'marquer comme non faite':'marquer comme faite')+'">'+(s.fait?'✓':'')+'</button>'
       +   '<span class="serie-num" aria-hidden="true">'+num+'</span>'
-      +   '<button type="button" class="step-btn" data-action="step" data-delta="-2.5" data-serie-id="'+s.id+'" aria-label="Retirer 2,5 kg à la série '+num+'">−</button>'
-      +   '<input type="text" inputmode="decimal" enterkeyhint="next" class="serie-poids" placeholder="kg" aria-label="Poids série '+num+'" data-field="poids" data-serie-id="'+s.id+'" value="'+esc(poidsAffiche(s.poids))+'">'
-      +   '<button type="button" class="step-btn" data-action="step" data-delta="2.5" data-serie-id="'+s.id+'" aria-label="Ajouter 2,5 kg à la série '+num+'">+</button>'
+      +   '<button type="button" class="step-btn" data-action="step" data-delta="-2.5" data-serie-id="'+ esc(s.id) +'" aria-label="Retirer 2,5 kg à la série '+num+'">−</button>'
+      +   '<input type="text" inputmode="decimal" enterkeyhint="next" class="serie-poids" placeholder="kg" aria-label="Poids série '+num+'" data-field="poids" data-serie-id="'+ esc(s.id) +'" value="'+esc(poidsAffiche(s.poids))+'">'
+      +   '<button type="button" class="step-btn" data-action="step" data-delta="2.5" data-serie-id="'+ esc(s.id) +'" aria-label="Ajouter 2,5 kg à la série '+num+'">+</button>'
       +   '<span class="serie-x" aria-hidden="true">×</span>'
-      +   '<input type="text" inputmode="numeric" enterkeyhint="done" class="serie-reps" placeholder="reps" aria-label="Répétitions série '+num+'" data-field="reps" data-serie-id="'+s.id+'" value="'+esc(s.reps==null?'':s.reps)+'">'
+      +   '<input type="text" inputmode="numeric" enterkeyhint="done" class="serie-reps" placeholder="reps" aria-label="Répétitions série '+num+'" data-field="reps" data-serie-id="'+ esc(s.id) +'" value="'+esc(s.reps==null?'':s.reps)+'">'
       +   (pr ? ETOILE_PR : '')
       + '</div>'
       + '<div class="serie-meta">'
-      +   '<select class="serie-type" data-field="type" data-serie-id="'+s.id+'" aria-label="Type de la série '+num+'">'+typeOptions+'</select>'
+      +   '<select class="serie-type" data-field="type" data-serie-id="'+ esc(s.id) +'" aria-label="Type de la série '+num+'">'+typeOptions+'</select>'
       +   '<label class="meta-field"><span>RPE</span>'
-      +     '<select class="serie-rpe'+(s.rpe==null?' vide':'')+'" data-field="rpe" data-serie-id="'+s.id+'" title="'+(s.rpe==null?'Reps en réserve : 10 = à l\'échec, 9 = 1 rep en réserve':esc(rpeLabel(s.rpe)))+'" aria-label="RPE série '+num+'">'+rpeOptions+'</select>'
+      +     '<select class="serie-rpe'+(s.rpe==null?' vide':'')+'" data-field="rpe" data-serie-id="'+ esc(s.id) +'" title="'+(s.rpe==null?'Reps en réserve : 10 = à l\'échec, 9 = 1 rep en réserve':esc(rpeLabel(s.rpe)))+'" aria-label="RPE série '+num+'">'+rpeOptions+'</select>'
       +   '</label>'
       +   '<label class="meta-field"><span>REPOS</span>'
-      +     '<input type="text" inputmode="numeric" enterkeyhint="done" class="serie-repos" placeholder="90s" data-field="repos" data-serie-id="'+s.id+'" aria-label="Repos après la série '+num+'" value="'+esc(s.repos||'')+'">'
+      +     '<input type="text" inputmode="numeric" enterkeyhint="done" class="serie-repos" placeholder="90s" data-field="repos" data-serie-id="'+ esc(s.id) +'" aria-label="Repos après la série '+num+'" value="'+esc(s.repos||'')+'">'
       +   '</label>'
-      +   '<button type="button" class="serie-del" data-action="del-serie" data-serie-id="'+s.id+'" aria-label="Supprimer la série '+num+'">×</button>'
+      +   '<button type="button" class="serie-del" data-action="del-serie" data-serie-id="'+ esc(s.id) +'" aria-label="Supprimer la série '+num+'">×</button>'
       + '</div>'
       + '</div>';
   }
@@ -2393,7 +2425,7 @@
       var tag = TYPE_COURT[TS.typeSerie(s)] || '';
       var txt = perfTexte(s);
       return '<button type="button" class="perf' + (estTop ? ' top' : '') + '"'
-        + ' data-copier="' + ex.id + '"'
+        + ' data-copier="' + esc(ex.id) + '"'
         + ' data-poids="' + (typeof s.poids === 'number' ? s.poids : '') + '"'
         + ' data-reps="' + esc(s.reps || '') + '"'
         + ' data-type="' + esc(s.type || '') + '"'
@@ -2421,7 +2453,7 @@
         + '<div class="ex-cible-ligne">'
         +   '<span class="ex-cible-tag">SUGGÉRÉ</span>'
         +   '<span class="ex-cible-val">' + esc(val) + '</span>'
-        +   '<button type="button" class="ex-cible-copie" data-copier="' + ex.id + '"'
+        +   '<button type="button" class="ex-cible-copie" data-copier="' + esc(ex.id) + '"'
         +     ' data-poids="' + cible.poids + '" data-reps="' + esc(String(cible.reps)) + '" data-type=""'
         +     ' aria-label="Recopier la cible ' + esc(val) + '">↺</button>'
         + '</div>'
@@ -2477,20 +2509,20 @@
       ? series.map(function(s,idx){ return serieRowHTML(s, idx, ex.nom); }).join('')
       : '<div class="empty-state" style="padding:14px;font-size:12px;">Aucune série — ajoute la première ci-dessous.</div>';
     var hintHTML = blocPrecedentHTML(ex);
-    return '<div class="ex-card" style="--card-color:'+color+'" data-id="'+ex.id+'">'
+    return '<div class="ex-card" style="--card-color:'+color+'" data-id="'+ esc(ex.id) +'">'
       + '<div class="ex-head">'
-      +   '<input class="ex-name" type="text" list="exerciseList" placeholder="Nom de l\'exercice" value="'+esc(ex.nom||'')+'" data-field="nom" data-id="'+ex.id+'">'
-      +   '<button type="button" class="ex-del" data-id="'+ex.id+'" aria-label="Supprimer l\'exercice">×</button>'
+      +   '<input class="ex-name" type="text" list="exerciseList" placeholder="Nom de l\'exercice" value="'+esc(ex.nom||'')+'" data-field="nom" data-id="'+ esc(ex.id) +'">'
+      +   '<button type="button" class="ex-del" data-id="'+ esc(ex.id) +'" aria-label="Supprimer l\'exercice">×</button>'
       + '</div>'
       + '<div class="ex-body">'
-      +   '<select class="ex-groupe" data-field="groupe" data-id="'+ex.id+'">'+groupOptions+'</select>'
+      +   '<select class="ex-groupe" data-field="groupe" data-id="'+ esc(ex.id) +'">'+groupOptions+'</select>'
       +   '<div class="ex-prev-zone">' + hintHTML + '</div>'
       +   '<div class="series-list">'+seriesHTML+'</div>'
       +   '<div class="ex-actions">'
-      +     '<button type="button" class="btn-add-serie" data-action="add-serie" data-id="'+ex.id+'">+ SÉRIE'+(series.length?' (reprend la précédente)':'')+'</button>'
+      +     '<button type="button" class="btn-add-serie" data-action="add-serie" data-id="'+ esc(ex.id) +'">+ SÉRIE'+(series.length?' (reprend la précédente)':'')+'</button>'
       +     (ex.bloc
-              ? '<button type="button" class="btn-lien" data-action="detacher" data-id="'+ex.id+'">⇄ SORTIR DU SUPERSET</button>'
-              : '<button type="button" class="btn-lien" data-action="superset" data-id="'+ex.id+'">⇄ AJOUTER UN EXERCICE EN SUPERSET</button>')
+              ? '<button type="button" class="btn-lien" data-action="detacher" data-id="'+ esc(ex.id) +'">⇄ SORTIR DU SUPERSET</button>'
+              : '<button type="button" class="btn-lien" data-action="superset" data-id="'+ esc(ex.id) +'">⇄ AJOUTER UN EXERCICE EN SUPERSET</button>')
       +   '</div>'
       + '</div>'
       + '</div>';
@@ -3779,6 +3811,23 @@
     var t = (v == null) ? '' : String(v);
     return /[";\r\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t;
   }
+  // Excel et LibreOffice evaluent une cellule qui commence par = + - @ comme
+  // une formule. Un nom d'exercice est du texte : on le prefixe d'une
+  // apostrophe, que les deux tableurs lisent comme « ceci reste du texte ».
+  //
+  // Seules les colonnes de texte passent ici. Les colonnes numeriques sortent
+  // de csvNombre(), qui n'emet que des chiffres, un signe et une virgule :
+  // prefixer « -50 » en ferait du texte dans le tableur, et ce serait une
+  // regression pour une charge negative parfaitement legitime.
+  //
+  // Impact sur le format : une cellule dont le contenu commence reellement par
+  // l'un de ces caracteres s'affiche avec une apostrophe devant. Le CSV ne se
+  // reimporte pas dans Top Set, donc aucun aller-retour n'en depend.
+  function csvTexte(v){
+    var t = (v == null) ? '' : String(v);
+    if (/^[=+\-@\t\r]/.test(t)) t = "'" + t;
+    return csvChamp(t);
+  }
   function csvNombre(n){
     return (typeof n === 'number' && !isNaN(n)) ? String(n).replace('.', ',') : '';
   }
@@ -3794,10 +3843,15 @@
         (ex.series || []).forEach(function(s){
           if (!serieRemplie(s)) return;
           n++;
-          lignes.push([ ds, jour, ex.nom || '', ex.groupe || '', n,
-                        csvNombre(s.poids), s.reps || '', csvNombre(s.rpe),
-                        s.repos || '', csvNombre(serieVolume(s)),
-                        s.fait ? 'oui' : 'non' ].map(csvChamp).join(';'));
+          lignes.push([
+            csvChamp(ds), csvChamp(jour),
+            csvTexte(ex.nom || ''), csvTexte(ex.groupe || ''),
+            csvChamp(n),
+            csvChamp(csvNombre(s.poids)), csvTexte(s.reps || ''),
+            csvChamp(csvNombre(s.rpe)),
+            csvTexte(s.repos || ''), csvChamp(csvNombre(serieVolume(s))),
+            csvChamp(s.fait ? 'oui' : 'non')
+          ].join(';'));
         });
       });
     });
@@ -3830,8 +3884,49 @@
     return { jours:jours, series:series, ko:ko };
   }
 
+  // Les exercices memorises d'un fichier importe etaient recopies tels quels
+  // dans l'objet qui sert de dictionnaire a toute l'app : cles arbitraires,
+  // valeurs arbitraires. On les repasse au meme moule que ceux que l'app
+  // fabrique elle-meme.
+  //
+  // Le format legacy — « nom: 'Pectoraux' », une simple chaine — est conserve
+  // tel quel quand c'est ce qu'on recoit : infoExo() lit les deux formes, et
+  // reecrire la structure d'un ancien fichier n'apporterait rien.
+  function nettoyerCustom(brut){
+    var sortie = {};
+    if (!brut || typeof brut !== 'object') return sortie;
+    Object.keys(brut).forEach(function(k){
+      // JSON.parse fait de « __proto__ » une propriete propre et non le
+      // prototype, donc rien n'explose — mais ce n'est pas un nom d'exercice,
+      // et ca perturbe tout ce qui itere sur ce dictionnaire.
+      if (k === '__proto__' || k === 'constructor' || k === 'prototype') return;
+      // Un nom d'exercice devient une cle de ce dictionnaire et une entree de
+      // la liste de saisie. Sans borne, un fichier hostile y met un mega-octet.
+      var nom = String(k).trim().slice(0, 200);
+      if (!nom) return;
+      var v = brut[k];
+      if (typeof v === 'string'){ sortie[nom] = groupeSur(v); return; }
+      var info = infoExo(v, nom);
+      sortie[nom] = {
+        nom:    String(info.nom || nom).slice(0, 200),
+        groupe: groupeSur(info.groupe),
+        alias:  info.alias ? String(info.alias).slice(0, 200) : null
+      };
+    });
+    return sortie;
+  }
+
+  // Une sauvegarde de deux ans de seances pese moins d'un mega-octet. Huit
+  // laissent une marge confortable et arretent le fichier qui n'est la que
+  // pour figer l'onglet — le refus est explicite, pas un plantage.
+  var IMPORT_MAX = 8 * 1024 * 1024;
+
   // Tolere le fichier complet {app,version,sessions} comme une carte de seances nue.
   function parseBackup(text){
+    if (typeof text === 'string' && text.length > IMPORT_MAX){
+      return { error: 'Fichier trop volumineux (' + Math.round(text.length / 1048576) +
+                      ' Mo). La limite est de 8 Mo — une sauvegarde normale en fait moins d\'un.' };
+    }
     var data;
     try { data = JSON.parse(text); }
     catch(e){ return { error:"Fichier illisible : ce n'est pas du JSON valide." }; }
@@ -3849,7 +3944,8 @@
       if (n){ jours++; series += n; }
     });
     if (!Object.keys(clean).length) return { error:'Aucune s\u00e9ance exploitable dans ce fichier.' };
-    var custom = (data.customExercises && typeof data.customExercises === 'object') ? data.customExercises : null;
+    var custom = (data.customExercises && typeof data.customExercises === 'object')
+      ? nettoyerCustom(data.customExercises) : null;
     return { sessions:clean, jours:jours, series:series, customExercises:custom };
   }
 
@@ -4194,6 +4290,14 @@
   document.getElementById('dataFile').addEventListener('change', function(e){
     var f = e.target.files && e.target.files[0];
     if (!f) return;
+    // Refuser avant de lire : passe cette taille, c'est FileReader lui-meme
+    // qui fige l'onglet, et le message d'erreur n'arrive jamais.
+    if (f.size > IMPORT_MAX){
+      sheetMsg('err', 'Fichier trop volumineux (' + Math.round(f.size / 1048576) +
+                      ' Mo). La limite est de 8 Mo — une sauvegarde normale en fait moins d\'un.');
+      e.target.value = '';
+      return;
+    }
     var fr = new FileReader();
     fr.onload = function(){
       document.getElementById('dataPaste').value = String(fr.result);
