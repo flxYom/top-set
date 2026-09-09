@@ -72,6 +72,11 @@ create table if not exists public.series (
   foreign key (user_id, exercice_id) references public.exercices (user_id, id) on delete cascade
 );
 
+-- Le titre d'une seance. Nullable : sans titre choisi, l'app en calcule un
+-- a partir des groupes travailles, et un titre calcule n'a rien a faire en
+-- base — il changerait avec la seance sans qu'on l'ait demande.
+alter table public.seances add column if not exists titre text;
+
 -- Superset : les exercices qui portent le meme « bloc » se font ensemble. La
 -- colonne est nullable parce que l'immense majorite des exercices sont seuls,
 -- et qu'un exercice seul ne doit rien avoir a porter.
@@ -281,6 +286,35 @@ begin
 end;
 $$;
 
+-- Le titre part separement de la journee. Le mettre dans pousser_jour aurait
+-- change la signature de la fonction, donc casse la synchro de tous les
+-- appareils tant que ce fichier n'est pas relance. Un appel a part echoue
+-- seul, et la journee passe quand meme.
+create or replace function public.pousser_titre(p_date date, p_titre text)
+returns timestamptz
+language plpgsql
+security invoker
+set search_path = public
+as $$
+declare
+  v_user uuid := auth.uid();
+  v_maj  timestamptz;
+begin
+  if v_user is null then
+    raise exception 'Aucune session : connexion requise.';
+  end if;
+
+  insert into public.seances (user_id, date, titre)
+  values (v_user, p_date, nullif(trim(coalesce(p_titre, '')), ''))
+  on conflict (user_id, date) do update
+    set titre = nullif(trim(coalesce(p_titre, '')), ''),
+        updated_at = now()
+  returning updated_at into v_maj;
+
+  return v_maj;
+end;
+$$;
+
 -- Rend les journées dans la forme exacte que l'app utilise en local, pour que
 -- le client n'ait aucune conversion à faire. Sans argument : tout l'historique
 -- (nouvel appareil). Avec p_depuis : seulement ce qui a bougé depuis.
@@ -297,6 +331,7 @@ as $$
       s.date::text as jour_date,
       jsonb_build_object(
         'date', s.date::text,
+        'titre', s.titre,
         'updatedAt', s.updated_at,
         'exercises', coalesce((
           select jsonb_agg(
@@ -395,6 +430,9 @@ revoke execute on function public.pousser_exos_perso(jsonb) from anon, public;
 revoke execute on function public.tirer_exos_perso()        from anon, public;
 grant  execute on function public.pousser_exos_perso(jsonb) to authenticated;
 grant  execute on function public.tirer_exos_perso()        to authenticated;
+
+revoke execute on function public.pousser_titre(date, text) from anon, public;
+grant  execute on function public.pousser_titre(date, text) to authenticated;
 
 revoke execute on function public.pousser_jour(date, jsonb) from anon, public;
 revoke execute on function public.tirer_jours(timestamptz)  from anon, public;
