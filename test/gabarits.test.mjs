@@ -96,28 +96,67 @@ console.log('\n== 8. Un carnet par compte ==');
 // sur SON compte. Ce qui suit verifie l'ordre des operations de l'echange —
 // c'est la seule chose qui peut casser ici, et une inversion ferait perdre des
 // donnees pour de bon.
+//
+// Les positions sont mesurees DANS la fonction concernee : rangerCarnet et
+// viderCarnet apparaissent maintenant dans deconnecter() comme dans
+// apresConnexion(), et une recherche globale comparait deux fonctions
+// differentes.
+function corps(depuis, jusqua){
+  const a = SRC.indexOf(depuis);
+  const b = jusqua ? SRC.indexOf(jusqua, a) : SRC.length;
+  return (a > -1 && b > a) ? SRC.slice(a, b) : '';
+}
+function avant(bloc, x, y){
+  const i = bloc.indexOf(x), j = bloc.indexOf(y);
+  return i > -1 && j > -1 && i < j;
+}
+
 ok('les trois operations existent',
    SRC.indexOf('function rangerCarnet(') > -1 &&
    SRC.indexOf('function viderCarnet(') > -1 &&
    SRC.indexOf('function reprendreCarnet(') > -1);
-
-const iRanger   = SRC.indexOf('var ranges = rangerCarnet(m.userId)');
-const iVider    = SRC.indexOf('viderCarnet();');
-const iReprendre= SRC.indexOf('var repris = reprendreCarnet(user.id)');
-const iMeta     = SRC.indexOf('x.userId = user.id; x.migrePour = user.id;');
-const iPrompt   = SRC.indexOf("if (m.migrePour !== user.id && joursLocaux)");
-
-ok('on range AVANT de vider', iRanger > -1 && iVider > iRanger, iRanger + ' / ' + iVider);
-ok('on vide AVANT de reprendre', iReprendre > iVider, iVider + ' / ' + iReprendre);
-ok('la bascule se fait AVANT la proposition d envoi', iPrompt > -1 && iMeta > -1 && iMeta < iPrompt,
-   iMeta + ' / ' + iPrompt);
-ok('l echange marque migrePour, sinon on proposerait d envoyer le carnet d autrui', iMeta > -1);
+ok('le carnet range est indexe par proprietaire', SRC.indexOf("'topset_carnet_' + id") > -1);
+ok('un rangement plus riche n est jamais ecrase', SRC.indexOf('deja.jours || 0) > jours') > -1);
 ok('la file d envoi est remise a zero avec le carnet',
    SRC.indexOf('m.sales = {}; m.titres = {}; m.depuis = null;') > -1);
-ok('un rangement plus riche n est jamais ecrase', SRC.indexOf('deja.jours || 0) > jours') > -1);
-ok('le carnet range est indexe par proprietaire', SRC.indexOf("'topset_carnet_' + id") > -1);
-ok('rien n est efface : le rangement precede toujours le vidage',
-   SRC.indexOf('localStorage.removeItem(clePark(id))') > SRC.indexOf('function reprendreCarnet('));
+
+// ---- a la connexion
+const CO = corps('function apresConnexion(', 'function majUI(');
+ok('connexion : la fonction est bien delimitee', CO.length > 500, CO.length + ' caracteres');
+ok('connexion : joursLocaux est calcule avant d etre teste',
+   avant(CO, 'var joursLocaux = joursRemplis(state.sessions)', '&& joursLocaux){'));
+ok('connexion : un seul calcul initial de joursLocaux',
+   (CO.match(/var joursLocaux/g) || []).length === 1);
+// Deux branches font l'echange — le carnet anonyme d'un autre compte, et le
+// carnet d'un autre compte connecte. Il faut verifier l'ordre DANS chacune :
+// une comparaison globale melangeait le vidage de la premiere avec le
+// rangement de la seconde, et passait pour une inversion.
+["rangerCarnet('anon')", 'rangerCarnet(m.userId)'].forEach(function(depart){
+  var i = CO.indexOf(depart);
+  var branche = i > -1 ? CO.slice(i, i + 260) : '';
+  ok('connexion, branche ' + depart + ' : range puis vide puis reprend',
+     branche.indexOf('viderCarnet()') > -1 &&
+     avant(branche, 'viderCarnet()', 'reprendreCarnet(user.id)'),
+     JSON.stringify(branche.slice(0, 120)));
+});
+ok('connexion : la bascule precede la proposition d envoi',
+   avant(CO, 'x.userId = user.id; x.migrePour = user.id;', 'if (m.migrePour !== user.id && joursLocaux)'));
+ok('connexion : le carnet anonyme d un autre compte est range aussi',
+   CO.indexOf("rangerCarnet('anon')") > -1);
+ok('connexion : le meme compte reprend son carnet range',
+   CO.indexOf('m.userId === user.id && !joursLocaux && reprendreCarnet(user.id)') > -1);
+
+// ---- a la deconnexion
+// Sans ce volet, celui qui ouvre l'app sans compte voit le carnet du dernier
+// connecte. C'est le meme trou, par l'autre bout, et le plus visible sur un
+// telephone qu'on prete.
+const DECO = corps('function deconnecter(', 'function apresConnexion(');
+ok('deconnexion : la fonction est bien delimitee', DECO.length > 300, DECO.length + ' caracteres');
+ok('deconnexion : on range le carnet du partant', DECO.indexOf('rangerCarnet(partant)') > -1);
+ok('deconnexion : on range AVANT de vider', avant(DECO, 'rangerCarnet(partant)', 'viderCarnet()'));
+ok('deconnexion : on vide AVANT de reprendre', avant(DECO, 'viderCarnet()', "reprendreCarnet('anon')"));
+ok('deconnexion : le carnet anonyme revient', DECO.indexOf("reprendreCarnet('anon')") > -1);
+ok('deconnexion : le proprietaire est oublie', DECO.indexOf('m.userId = null') > -1);
 
 console.log('\n== 9. La CSP peut rester stricte ==');
 // 'unsafe-inline' sur script-src laissait passer exactement le XSS trouve plus

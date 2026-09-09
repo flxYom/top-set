@@ -155,6 +155,14 @@ Trois propriétés valent d'être notées&nbsp;:
   bonne règle de confidentialité&nbsp;: l'autre compte ne doit pas pouvoir le
   reprendre.
 
+La déconnexion applique la même règle. Le commentaire du code disait que
+supprimer le carnet à la déconnexion serait une perte de données — c'était vrai
+tant qu'il n'existait aucun endroit où le mettre. Maintenant qu'il y en a un, se
+déconnecter range le carnet et rend l'app vierge&nbsp;: celui qui ouvre le
+téléphone ensuite, même sans compte, ne voit rien.
+
+Une adresse email = un carnet.
+
 ### Comment marche la synchro
 
 Le `localStorage` reste la source de vérité de l'interface. Tout est écrit en

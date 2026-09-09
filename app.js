@@ -3373,14 +3373,35 @@
       }, function(e){ cacherLoader(); throw e; });
     }
     function deconnecter(){
+      // Le carnet affiche appartient a celui qui part. Le laisser en place le
+      // montrerait au suivant — y compris a quelqu'un qui ouvre l'app sans
+      // compte du tout, ce qui est le cas le plus courant sur un telephone
+      // qu'on prete.
+      //
+      // Il etait ecrit ici que les effacer serait une perte de donnees. C'etait
+      // vrai tant qu'il n'existait aucun endroit ou les mettre : maintenant il
+      // y en a un. Range, pas efface — la reconnexion le ramene entier, y
+      // compris les journees jamais parties sur le compte.
+      var partant = lireMeta().userId || null;
+      var enAttente = nbSales();
       return client().then(function(c){ return c.auth.signOut(); }).then(function(){
         user = null;
         profil = null;
-        // Les seances restent sur l'appareil : c'est le mode local, pas une
-        // mise en cache jetable. Les effacer ici serait une perte de donnees.
-        majMeta(function(m){ m.depuis = null; });
+        var range = 0;
+        if (partant){
+          range = rangerCarnet(partant);
+          viderCarnet();
+          // Quelqu'un a pu se servir de l'app sans compte avant de se
+          // connecter : son carnet a lui revient.
+          reprendreCarnet('anon');
+          renderAll();
+        }
+        majMeta(function(m){ m.userId = null; m.depuis = null; });
         majUI();
-        msgCompte('ok', 'Deconnecte. Tes seances restent sur cet appareil.');
+        msgCompte('ok', range
+          ? 'Deconnecte. Ton carnet (' + range + ' journee(s)) est mis de cote sur cet appareil et revient a ta prochaine connexion' +
+            (enAttente ? ', les journees pas encore envoyees comprises.' : '.')
+          : 'Deconnecte.');
       });
     }
 
@@ -3459,10 +3480,28 @@
 
     function apresConnexion(){
       var m = lireMeta();
+      var joursLocaux = joursRemplis(state.sessions);
+
+      // Le carnet anonyme — celui de quelqu'un qui s'est servi de l'app sans
+      // compte — est mis de cote lui aussi quand un compte prend la main, mais
+      // seulement s'il a deja servi a un AUTRE compte auparavant. S'il s'agit
+      // de la premiere connexion de cette personne, ce carnet est le sien : le
+      // flux de migration existant lui propose de l'envoyer sur son compte, et
+      // c'est exactement ce qu'on veut.
+      if (!m.userId && m.migrePour && m.migrePour !== user.id && joursLocaux){
+        rangerCarnet('anon');
+        viderCarnet();
+        reprendreCarnet(user.id);
+        joursLocaux = joursRemplis(state.sessions);
+        majMeta(function(x){ x.userId = user.id; x.migrePour = user.id; });
+        renderAll();
+        m = lireMeta();
+      }
 
       // Un autre compte s'est connecte ici avant. Le carnet affiche n'est pas
       // celui de la personne qui arrive : on echange avant tout le reste, et
-      // surtout avant que la proposition d'envoi ne s'affiche.
+      // surtout avant que la proposition d'envoi ne s'affiche — sans quoi on
+      // proposerait a quelqu'un d'envoyer le carnet d'autrui sur son compte.
       if (m.userId && m.userId !== user.id){
         var ranges = rangerCarnet(m.userId);
         viderCarnet();
@@ -3487,9 +3526,13 @@
           }).catch(function(e){ cacherLoader(); msgCompte('err', messageErreur(e)); });
       }
 
-      var joursLocaux = Object.keys(state.sessions).filter(function(ds){
-        return compterJour(state.sessions[ds]) > 0;
-      }).length;
+      // Meme compte qu'avant, mais le carnet a ete range a la deconnexion :
+      // on le reprend avant de tirer le cloud, sinon les journees jamais
+      // envoyees seraient invisibles jusqu'a ce qu'on les retape.
+      if (m.userId === user.id && !joursLocaux && reprendreCarnet(user.id)){
+        joursLocaux = joursRemplis(state.sessions);
+        renderAll();
+      }
       majMeta(function(x){ x.userId = user.id; });
       // Sans attendre : le profil sert a l'administration et au futur lien
       // coach, jamais a afficher le carnet. Rien ne doit patienter dessus.

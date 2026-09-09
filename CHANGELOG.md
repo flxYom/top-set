@@ -36,6 +36,12 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ### Security
 
+- **Signing out left the logbook on the device.** Opening the app with no
+  account showed the last signed-in person's sessions — the same hole as below,
+  from the other end, and the one that shows up first on a shared phone. Signing
+  out now files the logbook under its owner and restores the anonymous one (or
+  none), so a fresh open is blank. Nothing is lost: signing back in brings it
+  back whole, unsent days included.
 - **Two accounts on one device shared a logbook.** The local logbook lives under
   a single key for the whole device, and `tirer()` merges the cloud into it
   rather than replacing it — so signing in with a second account showed the
@@ -156,7 +162,7 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ### Changed
 
-- Service worker cache version `topset-v2` → `topset-v8`.
+- Service worker cache version `topset-v2` → `topset-v9`.
 - Offline, a clean URL (`/guide`, produced by Vercel's `cleanUrls`) fell back
   to the app instead of the requested page. The navigation fallback now retries
   once with `.html` before giving up.
