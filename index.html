@@ -537,7 +537,33 @@
   .serie-x{flex:none;font-size:12px;color:var(--dim);font-weight:800;}
   .serie-pr{flex:none;display:flex;align-items:center;}
 
-  .serie-meta{display:flex;align-items:center;gap:6px;margin-top:6px;}
+  /* Le type se lit d'abord au liseré de la carte : on doit voir « ça c'est
+     mon top set » sans lire le menu déroulant. */
+  .serie-card[data-type="echauffement"]{border-color:var(--line);opacity:.72;}
+  .serie-card[data-type="top"]{border-color:var(--yellow);}
+  .serie-card[data-type="backoff"]{border-color:var(--blue);}
+  .serie-card.fait[data-type]{border-color:var(--green);}
+
+  .serie-meta{display:flex;align-items:center;gap:6px;margin-top:6px;flex-wrap:wrap;}
+  /* Ligne entiere : a 375 px, partager la rangee avec RPE et REPOS reduisait
+     les deux a des lucarnes inutilisables. Le type sert de bandeau de tete
+     de la serie, ce qui se lit mieux de toute facon. */
+  .serie-type{
+    flex:1 1 100%;min-width:0;height:34px;
+    background:var(--bg);
+    border:2px solid var(--line);
+    color:var(--dim);
+    font-family:inherit;
+    font-size:11px;font-weight:800;letter-spacing:.06em;
+    padding:0 20px 0 7px;
+    appearance:none;-webkit-appearance:none;-moz-appearance:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%239a9184'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;
+    background-position:right 6px center;
+    cursor:pointer;
+  }
+  .serie-card[data-type="top"] .serie-type{color:var(--yellow);border-color:var(--yellow);}
+  .serie-card[data-type="backoff"] .serie-type{color:var(--blue);border-color:var(--blue);}
   .meta-field{display:flex;align-items:center;gap:5px;flex:1;min-width:0;}
   .meta-field > span{
     flex:none;
@@ -1321,6 +1347,10 @@
       // Le repos etait porte par l'exercice ; il descend sur chaque serie.
       // Les anciennes donnees heritent de la valeur de l'exercice, rien n'est perdu.
       repos: (s && s.repos != null && s.repos !== '') ? String(s.repos) : (reposHerite || ''),
+      // Echauffement, top set, charge de travail ou back-off. Reste absent
+      // quand c'est une charge de travail : c'est la valeur par defaut, et
+      // toutes les series enregistrees avant ce champ en sont.
+      type: (s && TS.TYPES_VALIDES.indexOf(s.type) > -1 && s.type !== TS.TYPES.TRAVAIL) ? s.type : undefined,
       fait: !!(s && s.fait)
     };
   }
@@ -1381,6 +1411,8 @@
   // d'une séance passée.
   function isNewRecord(serie, exNom){
     if (typeof serie.poids !== 'number' || !(serie.poids > 0)) return false;
+    // Un echauffement ne fait pas record, meme lourd.
+    if (TS.typeSerie(serie) === TS.TYPES.ECHAUFFEMENT) return false;
     var norm = exNom && exNom.trim() ? cleCanonique(exNom) : null;
     if (!norm) return false;
     var best = 0;
@@ -1389,6 +1421,7 @@
         if (!e.nom || cleCanonique(e.nom) !== norm) return;
         (e.series||[]).forEach(function(s){
           if (s.id === serie.id) return;
+          if (TS.typeSerie(s) === TS.TYPES.ECHAUFFEMENT) return;
           if (typeof s.poids === 'number' && s.poids > best) best = s.poids;
         });
       });
@@ -1908,6 +1941,14 @@
 
   // RPE en reps en reserve : 10 = plus rien, 9 = une rep restante, etc.
   var RPE_VALUES = [10, 9.5, 9, 8.5, 8, 7.5, 7, 6.5, 6];
+  // Abrege pour tenir dans la ligne sans etiquette : le libelle se suffit,
+  // pas besoin d'ecrire « TYPE » a cote.
+  var TYPE_LABELS = [
+    ['', 'TRAVAIL'],
+    [TS.TYPES.ECHAUFFEMENT, 'ÉCHAUF.'],
+    [TS.TYPES.TOP, 'TOP SET'],
+    [TS.TYPES.BACKOFF, 'BACK-OFF']
+  ];
 
   // Affichage / lecture du poids avec la virgule francaise.
   function poidsAffiche(p){
@@ -1925,13 +1966,38 @@
     return 'RPE ' + v + ' — ' + (reste === 1 ? '1 rep en réserve' : reste + ' reps en réserve');
   }
 
+  // Repeint les etoiles de record d'une carte sans la reconstruire : le
+  // rendu complet ferait perdre le focus et la position de defilement.
+  function majEtoilesRecord(card){
+    if (!card) return;
+    var day = state.sessions[state.selectedDay];
+    if (!day) return;
+    var ex = findExercise(day, card.dataset.id);
+    if (!ex) return;
+    (ex.series || []).forEach(function(s){
+      var ligne = card.querySelector('.serie-card[data-serie-id="'+s.id+'"] .serie-main');
+      if (!ligne) return;
+      var actuelle = ligne.querySelector('.serie-pr');
+      var doit = isNewRecord(s, ex.nom);
+      if (doit && !actuelle) ligne.insertAdjacentHTML('beforeend', ETOILE_PR);
+      else if (!doit && actuelle) actuelle.remove();
+    });
+  }
+
+  var ETOILE_PR = '<span class="serie-pr" title="Nouveau record" aria-label="Nouveau record"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ffd23f" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.6 5.6 6.1.8-4.5 4.2 1.2 6-5.4-3-5.4 3 1.2-6L3.3 9.4l6.1-.8z"></path></svg></span>';
+
   function serieRowHTML(s, idx, exNom){
     var pr = isNewRecord(s, exNom);
     var num = idx + 1;
     var rpeOptions = '<option value="">RPE</option>' + RPE_VALUES.map(function(v){
       return '<option value="'+v+'"'+(s.rpe===v?' selected':'')+'>'+v+'</option>';
     }).join('');
-    return '<div class="serie-card'+(s.fait?' fait':'')+'" data-serie-id="'+s.id+'">'
+    var typeCourant = s.type || '';
+    var typeOptions = TYPE_LABELS.map(function(p){
+      return '<option value="'+p[0]+'"'+(typeCourant===p[0]?' selected':'')+'>'+p[1]+'</option>';
+    }).join('');
+    return '<div class="serie-card'+(s.fait?' fait':'')+'" data-serie-id="'+s.id+'"'
+      + (typeCourant ? ' data-type="'+typeCourant+'"' : '') + '>'
       + '<div class="serie-main">'
       +   '<button type="button" class="serie-check'+(s.fait?' checked':'')+'" data-action="toggle-fait" data-serie-id="'+s.id+'" aria-pressed="'+(s.fait?'true':'false')+'" aria-label="Série '+num+' — '+(s.fait?'marquer comme non faite':'marquer comme faite')+'">'+(s.fait?'✓':'')+'</button>'
       +   '<span class="serie-num" aria-hidden="true">'+num+'</span>'
@@ -1940,9 +2006,10 @@
       +   '<button type="button" class="step-btn" data-action="step" data-delta="2.5" data-serie-id="'+s.id+'" aria-label="Ajouter 2,5 kg à la série '+num+'">+</button>'
       +   '<span class="serie-x" aria-hidden="true">×</span>'
       +   '<input type="text" inputmode="numeric" enterkeyhint="done" class="serie-reps" placeholder="reps" aria-label="Répétitions série '+num+'" data-field="reps" data-serie-id="'+s.id+'" value="'+esc(s.reps==null?'':s.reps)+'">'
-      +   (pr ? '<span class="serie-pr" title="Nouveau record" aria-label="Nouveau record"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ffd23f" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.6 5.6 6.1.8-4.5 4.2 1.2 6-5.4-3-5.4 3 1.2-6L3.3 9.4l6.1-.8z"></path></svg></span>' : '')
+      +   (pr ? ETOILE_PR : '')
       + '</div>'
       + '<div class="serie-meta">'
+      +   '<select class="serie-type" data-field="type" data-serie-id="'+s.id+'" aria-label="Type de la série '+num+'">'+typeOptions+'</select>'
       +   '<label class="meta-field"><span>RPE</span>'
       +     '<select class="serie-rpe'+(s.rpe==null?' vide':'')+'" data-field="rpe" data-serie-id="'+s.id+'" title="'+(s.rpe==null?'Reps en réserve : 10 = à l\'échec, 9 = 1 rep en réserve':esc(rpeLabel(s.rpe)))+'" aria-label="RPE série '+num+'">'+rpeOptions+'</select>'
       +   '</label>'
@@ -2654,6 +2721,22 @@
 
   exListEl.addEventListener('change', function(e){
     var t = e.target;
+    if (t.classList.contains('serie-type')){
+      var jour = getOrCreateDay(state.selectedDay);
+      var trouve = findSerie(jour, t.dataset.serieId);
+      if (!trouve) return;
+      if (t.value) trouve.serie.type = t.value; else delete trouve.serie.type;
+      // On repeint la carte sur place plutot que de refaire le panneau :
+      // renderDayPanel refuse de se rejouer tant qu'un champ a le focus, et
+      // le select l'a encore a cet instant.
+      var carte = t.closest('.serie-card');
+      if (carte){
+        if (t.value) carte.dataset.type = t.value; else delete carte.dataset.type;
+      }
+      scheduleSave(state.selectedDay, true);
+      majEtoilesRecord(t.closest('.ex-card'));
+      return;
+    }
     if (!t.classList.contains('ex-groupe')) return;
     var id = t.dataset.id;
     var day = getOrCreateDay(state.selectedDay);
@@ -2752,8 +2835,11 @@
       // Recopie la derniere serie : sur 5 series identiques, on ne retape rien.
       // "fait" repart a faux, c'est le seul champ qui ne se duplique pas.
       var last = ex2.series[ex2.series.length - 1];
+      // Le type se recopie aussi — on enchaine deux echauffements, jamais
+      // deux top sets : apres un top set la serie suivante repart neutre.
+      var typeSuivant = (last && last.type && last.type !== TS.TYPES.TOP) ? last.type : undefined;
       var newSerie = last
-        ? { id:genSerieId(), poids:last.poids, reps:last.reps, rpe:last.rpe, repos:last.repos, fait:false }
+        ? { id:genSerieId(), poids:last.poids, reps:last.reps, rpe:last.rpe, repos:last.repos, type:typeSuivant, fait:false }
         : { id:genSerieId(), poids:null, reps:'', rpe:null, repos:'', fait:false };
       ex2.series.push(newSerie);
       scheduleSave(state.selectedDay,true);
