@@ -367,6 +367,85 @@
     text-transform:uppercase;
   }
 
+  /* Fiche d'un exercice : une page d'analyse, pas un tableau de bord. Chaque
+     bloc repond a une question, et les blocs sont separes par du vide plutot
+     que par des cadres empiles. */
+  .exo-tete{
+    border-left:5px solid var(--card-color,var(--orange));
+    padding:2px 0 2px 11px;margin-top:14px;
+  }
+  .exo-nom{font-size:23px;font-weight:800;letter-spacing:-.02em;line-height:1.1;}
+  .exo-groupe{
+    margin-top:3px;
+    font-size:10px;font-weight:800;letter-spacing:.12em;color:var(--dim);
+    text-transform:uppercase;
+  }
+  .exo-signal{
+    border:2px solid var(--line);
+    padding:9px 11px;margin-top:13px;
+  }
+  .exo-signal-tete{font-size:12px;font-weight:800;letter-spacing:.06em;}
+  .exo-signal-raison{margin-top:4px;font-size:12px;line-height:1.4;color:var(--dim);}
+  .exo-signal.sig-vert{border-color:var(--green);}
+  .exo-signal.sig-orange{border-color:var(--yellow);}
+  .exo-signal.sig-rouge{border-color:var(--orange);}
+  .exo-signal.sig-gris{border-color:var(--line);}
+
+  .exo-stats{
+    display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:7px;margin-top:13px;
+  }
+  .exo-stats .stat-tile:nth-child(5){grid-column:1 / -1;}
+
+  .exo-bloc{margin-top:20px;}
+  .exo-bloc-titre{
+    font-size:10px;font-weight:800;letter-spacing:.13em;color:var(--dim);
+    margin-bottom:8px;
+  }
+  .exo-periodes{display:flex;gap:5px;margin-bottom:9px;}
+  .exo-periode{
+    flex:1;min-width:0;height:36px;
+    background:var(--panel);border:2px solid var(--line);
+    color:var(--dim);
+    font-family:inherit;font-size:11px;font-weight:800;letter-spacing:.06em;
+    cursor:pointer;padding:0;
+  }
+  .exo-periode.actif{background:var(--orange);border-color:var(--ink);color:#0d0c0a;}
+  .exo-chart{min-height:180px;}
+
+  .exo-records{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;}
+  .exo-record{
+    display:flex;align-items:baseline;justify-content:space-between;gap:8px;
+    border:2px solid var(--line);background:var(--panel);
+    padding:8px 10px;
+  }
+  .exo-record-reps{font-size:11px;font-weight:800;letter-spacing:.05em;color:var(--dim);}
+  .exo-record-poids{font-size:15px;font-weight:800;letter-spacing:-.01em;}
+  .exo-note{margin-top:7px;font-size:11px;line-height:1.35;color:var(--dim);}
+
+  .exo-jour{
+    display:flex;align-items:center;gap:9px;width:100%;
+    background:var(--panel);border:2px solid var(--line);border-top:none;
+    color:var(--ink);font-family:inherit;text-align:left;
+    padding:9px 10px;cursor:pointer;
+  }
+  .exo-jour:first-of-type{border-top:2px solid var(--line);}
+  .exo-jour:active{background:var(--panel2);}
+  .exo-jour-date{
+    flex:none;width:52px;
+    font-size:11px;font-weight:800;letter-spacing:.03em;color:var(--dim);
+  }
+  .exo-jour-series{flex:1;min-width:0;display:flex;flex-wrap:wrap;gap:4px;}
+  .exo-jour-serie{
+    font-size:12px;font-weight:800;
+    border:1px solid var(--line);padding:2px 5px;
+  }
+  .exo-jour-serie.top{border-color:var(--yellow);color:var(--yellow);}
+  .exo-jour-fleche{flex:none;font-size:16px;font-weight:800;color:var(--dim);}
+
+  .fiche-exo{display:block;width:100%;text-align:left;font-family:inherit;cursor:pointer;}
+  .fiche-exo-fleche{float:right;color:var(--dim);font-weight:800;}
+
   .seance-creer{
     border:2px solid var(--line);
     background:var(--panel);
@@ -515,8 +594,6 @@
     background-repeat:no-repeat;
     background-position:right 11px center;
   }
-  .ex-hint{font-size:11px;font-weight:700;color:var(--dim);}
-  .ex-hint b{color:var(--ink);}
 
   .series-list{display:flex;flex-direction:column;gap:8px;}
 
@@ -808,12 +885,10 @@
   }
   .recap-row:last-of-type{border-bottom:none;}
   .recap-name{font-size:13.5px;font-weight:700;display:flex;align-items:center;gap:7px;}
-  .recap-name .chev{font-size:11px;color:var(--dim);transition:transform .15s ease;}
-  .recap-row[aria-expanded="true"] .chev{transform:rotate(90deg);}
+  .recap-name .chev{font-size:11px;color:var(--dim);}
   .recap-value{font-size:15px;font-weight:800;color:var(--yellow);white-space:nowrap;}
-  .recap-chart-wrap{padding:0 12px 12px;}
-  .recap-chart-wrap .chart-box{position:relative;width:100%;height:140px;}
   .recap-chart-empty{font-size:11.5px;font-weight:700;color:var(--dim);padding:8px 0;}
+  .exo-chart .chart-box{position:relative;width:100%;height:180px;}
 
   .toast{
     position:fixed;
@@ -1102,6 +1177,11 @@
   <section class="view" id="view-seance" hidden>
     <button type="button" class="btn-retour" id="seanceRetour">‹ RETOUR</button>
     <div id="seanceDetail"></div>
+  </section>
+
+  <section class="view" id="view-exercice" hidden>
+    <button type="button" class="btn-retour" id="exoRetour">‹ RETOUR</button>
+    <div id="exoDetail"></div>
   </section>
 
   <section class="view" id="view-recap" hidden>
@@ -1468,6 +1548,9 @@
     selectedDay:toDateStr(new Date()),
     view:'planning',
     seanceOuverte:null,
+    exoOuvert:null,
+    exoRetour:'recap',
+    exoPeriode:'tout',
     recapPeriod:'semaine',
     loading:true
   };
@@ -1570,19 +1653,6 @@
         (e.series||[]).forEach(function(s){ if (hasData(s)) series.push(s); });
       });
       if (series.length) out.push({ date:ds, series:series });
-    });
-    return out;
-  }
-
-  // Le point porté par la courbe est le TOP SET de la séance, pas le poids le
-  // plus lourd toutes séries confondues : un échauffement lourd ne doit pas
-  // faire un pic de progression.
-  function exerciseHistory(exNom){
-    var out = [];
-    seancesDeLExo(exNom).forEach(function(j){
-      var top = TS.calculerTopSet(j.series);
-      if (!top || typeof top.poids !== 'number' || !(top.poids > 0)) return;
-      out.push({ date:j.date, poids:top.poids, reps:top.reps, rpe:top.rpe });
     });
     return out;
   }
@@ -2529,8 +2599,8 @@
       var series = seriesRemplies(e);
       var pesees = series.filter(function(s){ return typeof s.poids === 'number' && s.poids > 0; });
       var meilleure = pesees.length ? Math.max.apply(null, pesees.map(function(s){ return s.poids; })) : null;
-      html += '<div class="fiche-exo" style="--exo-color:' + (GROUP_COLORS[e.groupe] || GROUP_COLORS['Autre']) + '">'
-        + '<div class="fiche-exo-nom">' + esc(normalizeName(e.nom) || 'Sans nom') + '</div>'
+      html += '<button type="button" class="fiche-exo" data-exo="' + esc(e.nom || '') + '" style="--exo-color:' + (GROUP_COLORS[e.groupe] || GROUP_COLORS['Autre']) + '">'
+        + '<div class="fiche-exo-nom">' + esc(normalizeName(e.nom) || 'Sans nom') + '<span class="fiche-exo-fleche">›</span></div>'
         + '<div class="fiche-exo-groupe">' + esc(e.groupe || 'Autre') + '</div>'
         + '<div class="fiche-series">'
         + series.map(function(s){
@@ -2540,7 +2610,7 @@
           }).join('')
         + '</div>'
         + ligneProgression(e.nom, ds, meilleure)
-        + '</div>';
+        + '</button>';
     });
 
     var meme = (ds === state.selectedDay);
@@ -2694,16 +2764,203 @@
             var valueTxt = (it.bodyweight ? 'PDC' : formatWeight(it.maxPoids)+' kg') + ' × ' + it.repsAtMax;
             var freq = it.fois + (it.fois > 1 ? ' séances' : ' séance') + ' · ' +
                        it.series + (it.series > 1 ? ' séries' : ' série');
-            return '<button type="button" class="recap-row" data-recap-name="'+esc(it.nom)+'" aria-expanded="false">'
+            return '<button type="button" class="recap-row" data-recap-name="'+esc(it.nom)+'">'
               +   '<span class="recap-name"><span class="chev" aria-hidden="true">›</span>'+esc(it.nom)
               +     '<span class="recap-freq">'+esc(freq)+'</span></span>'
               +   '<span class="recap-value">'+esc(valueTxt)+'</span>'
-              + '</button>'
-              + '<div class="recap-chart-wrap" data-chart-for="'+esc(it.nom)+'" hidden></div>';
+              + '</button>';
           }).join('')
         + '</div></div>';
     });
     groupsEl.innerHTML = html;
+  }
+
+  // ---------- fiche d'un exercice : progression, records, historique ----------
+  var PERIODES = [
+    { cle:'1m',   label:'1M',   jours:31 },
+    { cle:'3m',   label:'3M',   jours:92 },
+    { cle:'6m',   label:'6M',   jours:183 },
+    { cle:'1a',   label:'1A',   jours:366 },
+    { cle:'tout', label:'TOUT', jours:null }
+  ];
+
+  function periodeCourante(){
+    for (var i = 0; i < PERIODES.length; i++){
+      if (PERIODES[i].cle === state.exoPeriode) return PERIODES[i];
+    }
+    return PERIODES[PERIODES.length - 1];
+  }
+
+  function seancesFiltrees(seances){
+    var p = periodeCourante();
+    if (!p.jours) return seances;
+    var limite = toDateStr(addDays(new Date(), -p.jours));
+    return seances.filter(function(j){ return j.date >= limite; });
+  }
+
+  var SIGNAUX = {
+    progressing:  { pastille:'🟢', mot:'EN PROGRESSION', classe:'sig-vert' },
+    stable:       { pastille:'🟠', mot:'STABLE',         classe:'sig-orange' },
+    stagnating:   { pastille:'🟠', mot:'STAGNATION',     classe:'sig-orange' },
+    declining:    { pastille:'🔴', mot:'EN BAISSE',      classe:'sig-rouge' },
+    insufficient_data: { pastille:'⚪', mot:'PAS ASSEZ DE DONNÉES', classe:'sig-gris' }
+  };
+
+  function ouvrirExercice(nom, retour){
+    state.exoOuvert = nom;
+    state.exoRetour = retour || 'recap';
+    montrerVue('exercice');
+    window.scrollTo(0, 0);
+  }
+
+  function renderExerciceDetail(){
+    var hote = document.getElementById('exoDetail');
+    var nom = state.exoOuvert;
+    if (!nom){ hote.innerHTML = ''; return; }
+
+    var toutes = seancesDeLExo(nom);
+    var affiche = nomCanonique(nom) || nom;
+    var groupe = groupeCanonique(nom) || 'Autre';
+    var couleur = GROUP_COLORS[groupe] || GROUP_COLORS['Autre'];
+
+    var html = '<div class="exo-tete" style="--card-color:' + couleur + '">'
+      + '<div class="exo-nom">' + esc(affiche) + '</div>'
+      + '<div class="exo-groupe">' + esc(groupe) + '</div>'
+      + '</div>';
+
+    if (!toutes.length){
+      hote.innerHTML = html + '<div class="seances-vide">Aucune série notée sur cet exercice.</div>';
+      return;
+    }
+
+    // --- signal, sur tout l'historique : une fenetre courte inventerait des
+    // tendances a partir de deux points.
+    var sig = TS.detecterSignal(toutes);
+    var vue = SIGNAUX[sig.signal] || SIGNAUX.insufficient_data;
+    html += '<div class="exo-signal ' + vue.classe + '">'
+      + '<div class="exo-signal-tete">' + vue.pastille + ' ' + vue.mot + '</div>'
+      + '<div class="exo-signal-raison">' + esc(sig.raison) + '</div>'
+      + '</div>';
+
+    // --- chiffres cles, sur tout l'historique
+    var derniere = toutes[toutes.length - 1];
+    var top = TS.calculerTopSet(derniere.series);
+    var rm = TS.epleySerie(top);
+    var meilleur = TS.meilleurPoids(toutes);
+    var volume = toutes.reduce(function(t, j){ return t + TS.volumeTotal(j.series); }, 0);
+    var reps = 0;
+    toutes.forEach(function(j){
+      j.series.forEach(function(s){
+        if (TS.typeSerie(s) === TS.TYPES.ECHAUFFEMENT) return;
+        var r = TS.nombreReps(s.reps);
+        if (r !== null && r > reps) reps = r;
+      });
+    });
+
+    html += '<div class="exo-stats">'
+      + statTile(top ? esc(perfTexte(top)) : '—', 'Top set')
+      + statTile(rm === null ? '—' : formatWeight(rm) + ' kg', '1RM estimé')
+      + statTile(meilleur === null ? '—' : formatWeight(meilleur) + ' kg', 'Meilleur poids')
+      + statTile(reps || '—', 'Meilleures reps')
+      + statTile(volumeTexte(volume) || '—', 'Volume total')
+      + '</div>';
+
+    // --- courbe
+    html += '<div class="exo-bloc">'
+      + '<div class="exo-bloc-titre">TOP SET AU FIL DU TEMPS</div>'
+      + '<div class="exo-periodes">'
+      + PERIODES.map(function(p){
+          return '<button type="button" class="exo-periode' + (p.cle === state.exoPeriode ? ' actif' : '') + '"'
+            + ' data-periode="' + p.cle + '">' + p.label + '</button>';
+        }).join('')
+      + '</div>'
+      + '<div class="exo-chart" id="exoChart"><div class="recap-chart-empty">Chargement du graphique…</div></div>'
+      + '</div>';
+
+    // --- records par fourchette de reps
+    var records = TS.recordsParReps(toutes);
+    if (records.length){
+      html += '<div class="exo-bloc">'
+        + '<div class="exo-bloc-titre">RECORDS PERSONNELS</div>'
+        + '<div class="exo-records">'
+        + records.map(function(r){
+            return '<div class="exo-record">'
+              + '<span class="exo-record-reps">' + r.reps + (r.reps > 1 ? ' reps' : ' rep') + '</span>'
+              + '<span class="exo-record-poids">' + formatWeight(r.poids) + ' kg</span>'
+              + '</div>';
+          }).join('')
+        + '</div>'
+        + '<div class="exo-note">Le poids le plus lourd soulevé pour au moins ce nombre de répétitions.</div>'
+        + '</div>';
+    }
+
+    // --- historique, du plus recent au plus ancien
+    html += '<div class="exo-bloc">'
+      + '<div class="exo-bloc-titre">HISTORIQUE</div>'
+      + toutes.slice().reverse().map(function(j){
+          var d = fromDateStr(j.date);
+          var quand = d.getDate() + ' ' + MONTH_ABBR[d.getMonth()];
+          var jTop = TS.calculerTopSet(j.series);
+          return '<button type="button" class="exo-jour" data-jour="' + esc(j.date) + '">'
+            + '<span class="exo-jour-date">' + esc(quand) + '</span>'
+            + '<span class="exo-jour-series">'
+            + j.series.map(function(s){
+                var estTop = jTop && s === jTop;
+                return '<span class="exo-jour-serie' + (estTop ? ' top' : '') + '">' + esc(perfTexte(s)) + '</span>';
+              }).join('')
+            + '</span>'
+            + '<span class="exo-jour-fleche">›</span>'
+            + '</button>';
+        }).join('')
+      + '</div>';
+
+    hote.innerHTML = html;
+
+    var points = seancesFiltrees(toutes);
+    var zone = document.getElementById('exoChart');
+    loadChartLib().then(function(){ dessinerCourbeExo(zone, points); }).catch(function(){
+      zone.innerHTML = '<div class="recap-chart-empty">Graphique indisponible hors-ligne.</div>';
+    });
+  }
+
+  var courbeExo = null;
+  function dessinerCourbeExo(zone, seances){
+    if (courbeExo){ courbeExo.destroy(); courbeExo = null; }
+    var pts = TS.pointsTopSet(seances);
+    if (pts.length < 2){
+      zone.innerHTML = '<div class="recap-chart-empty">Pas encore assez de séances sur cette période pour tracer une courbe.</div>';
+      return;
+    }
+    zone.innerHTML = '<div class="chart-box"><canvas role="img" aria-label="1RM estimé du top set, ' + esc(state.exoOuvert) + '"></canvas></div>';
+    var labels = pts.map(function(p){ var d = fromDateStr(p.date); return d.getDate() + ' ' + MONTH_ABBR[d.getMonth()]; });
+    courbeExo = new Chart(zone.querySelector('canvas'), {
+      type:'line',
+      data:{ labels:labels, datasets:[{
+        data: pts.map(function(p){ return p.valeur; }),
+        borderColor:'#ff5c38',
+        backgroundColor:'rgba(255,92,56,.14)',
+        pointBackgroundColor:'#ffd23f',
+        pointBorderColor:'#0d0c0a',
+        pointBorderWidth:2, pointRadius:4, pointHitRadius:16,
+        borderWidth:2.5, tension:0, fill:true
+      }] },
+      options:{
+        responsive:true, maintainAspectRatio:false,
+        interaction:{ mode:'index', intersect:false },
+        plugins:{ legend:{display:false}, tooltip:{ callbacks:{
+          label:function(ctx){
+            var p = pts[ctx.dataIndex];
+            var t = p.topSet ? perfTexte(p.topSet) : '';
+            return formatWeight(p.valeur) + ' kg estimés' + (t ? ' — ' + t : '');
+          }
+        } } },
+        scales:{
+          x:{ grid:{display:false}, ticks:{ color:'#9a9184', font:{size:10,weight:'700'} } },
+          y:{ grid:{color:'#35312b'}, ticks:{ color:'#9a9184', font:{size:10,weight:'700'},
+              callback:function(v){ return v + 'kg'; } } }
+        }
+      }
+    });
   }
 
   // ---------- graphique de progression (chargé à la demande) ----------
@@ -2720,77 +2977,30 @@
     });
     return chartLibPromise;
   }
-  var openCharts = {};
-  function renderExerciseChart(wrap, exNom){
-    var points = exerciseHistory(exNom).slice(-12);
-    if (points.length < 2){
-      wrap.innerHTML = '<div class="recap-chart-empty">Pas encore assez de séances loguées pour tracer une courbe.</div>';
-      return;
-    }
-    wrap.innerHTML = '<div class="chart-box"><canvas role="img" aria-label="Évolution du poids maximal, '+esc(exNom)+'"></canvas></div>';
-    var canvas = wrap.querySelector('canvas');
-    var labels = points.map(function(p){ var d=fromDateStr(p.date); return d.getDate()+' '+MONTH_ABBR[d.getMonth()]; });
-    var chart = new Chart(canvas, {
-      type: 'line',
-      data: { labels: labels, datasets: [{
-        data: points.map(function(p){ return p.poids; }),
-        borderColor: '#ff5c38',
-        backgroundColor: 'rgba(255,92,56,.14)',
-        pointBackgroundColor: '#ffd23f',
-        pointBorderColor: '#0d0c0a',
-        pointBorderWidth: 2,
-        pointRadius: 4,
-        borderWidth: 2.5,
-        tension: 0,
-        fill: true,
-      }] },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        plugins: { legend:{display:false}, tooltip:{ callbacks:{ label:function(ctx){ return ctx.parsed.y+' kg'; } } } },
-        scales: {
-          x: { grid:{display:false}, ticks:{ color:'#9a9184', font:{size:10,weight:'700'} } },
-          y: { grid:{color:'#35312b'}, ticks:{ color:'#9a9184', font:{size:10,weight:'700'}, callback:function(v){ return v+'kg'; } } },
-        },
-      },
-    });
-    openCharts[exNom] = chart;
-  }
-
   document.getElementById('recapGroups').addEventListener('click', function(e){
     var btn = e.target.closest('.recap-row'); if (!btn) return;
-    var name = btn.dataset.recapName;
-    var wrap = btn.nextElementSibling;
-    if (!wrap || !wrap.classList.contains('recap-chart-wrap')) return;
-    var expanded = btn.getAttribute('aria-expanded') === 'true';
-    if (expanded){
-      btn.setAttribute('aria-expanded','false');
-      wrap.hidden = true;
-      if (openCharts[name]){ openCharts[name].destroy(); delete openCharts[name]; }
-      wrap.innerHTML = '';
-      return;
-    }
-    btn.setAttribute('aria-expanded','true');
-    wrap.hidden = false;
-    wrap.innerHTML = '<div class="recap-chart-empty">Chargement du graphique…</div>';
-    loadChartLib().then(function(){ renderExerciseChart(wrap, name); }).catch(function(){
-      wrap.innerHTML = '<div class="recap-chart-empty">Graphique indisponible hors-ligne.</div>';
-    });
+    ouvrirExercice(btn.dataset.recapName, 'recap');
   });
 
   function renderAll(){
     if (state.view === 'planning') renderPlanning(false);
     else if (state.view === 'seances') renderSeances();
     else if (state.view === 'seance') renderSeanceDetail();
+    else if (state.view === 'exercice') renderExerciceDetail();
     else renderRecap();
   }
 
   // ---------- event wiring ----------
-  var VUES = ['planning','seances','seance','recap'];
+  var VUES = ['planning','seances','seance','exercice','recap'];
   function montrerVue(vue){
     state.view = vue;
     // La fiche n'a pas d'onglet : c'est une page ou l'on entre depuis la
     // liste, et l'onglet SEANCES reste allume pendant qu'on y est.
-    var actif = (vue === 'seance') ? 'seances' : vue;
+    // La fiche d'un exercice n'a pas d'onglet : on garde allume celui d'ou
+    // l'on vient, sinon la barre du haut clignote sans rien dire d'utile.
+    var actif = vue;
+    if (vue === 'seance') actif = 'seances';
+    if (vue === 'exercice') actif = (state.exoRetour === 'seance') ? 'seances' : state.exoRetour;
     document.querySelectorAll('.topbar-tab').forEach(function(b){
       b.classList.toggle('active', b.dataset.view === actif);
     });
@@ -3212,6 +3422,22 @@
   document.getElementById('recapJourBtn').addEventListener('click', function(){
     ouvrirSeance(state.selectedDay);
   });
+  document.getElementById('exoRetour').addEventListener('click', function(){
+    montrerVue(state.exoRetour === 'seance' ? 'seance' : state.exoRetour);
+    window.scrollTo(0, 0);
+  });
+
+  document.getElementById('exoDetail').addEventListener('click', function(e){
+    var p = e.target.closest('[data-periode]');
+    if (p){
+      state.exoPeriode = p.dataset.periode;
+      renderExerciceDetail();
+      return;
+    }
+    var j = e.target.closest('[data-jour]');
+    if (j) ouvrirSeance(j.dataset.jour);
+  });
+
   document.getElementById('seanceRetour').addEventListener('click', function(){
     montrerVue('seances');
     window.scrollTo(0, 0);
@@ -3240,6 +3466,11 @@
     }
     if (e.target.closest('#ficheModifier')){
       modifierSeance(state.seanceOuverte);
+      return;
+    }
+    var exoBtn = e.target.closest('[data-exo]');
+    if (exoBtn && exoBtn.dataset.exo){
+      ouvrirExercice(exoBtn.dataset.exo, 'seance');
       return;
     }
     if (!e.target.closest('#ficheSelectionner')) return;
