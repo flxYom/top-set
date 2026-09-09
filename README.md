@@ -138,6 +138,13 @@ Three properties worth noting:
 - **A filed logbook can only be retrieved by its owner.** That is also the right
   privacy rule: the other account must not be able to take it back.
 
+Signing out applies the same rule. The code used to say that clearing the
+logbook on sign-out would lose data — true while there was nowhere to put it.
+Now there is: signing out files the logbook and leaves the app blank, so whoever
+opens the phone next, account or not, sees nothing.
+
+One email address, one logbook.
+
 ### How the sync works
 
 `localStorage` stays the source of truth for the UI. Every change is written
