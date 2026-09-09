@@ -42,6 +42,7 @@ repository is for right now.
 - [Migrating an existing logbook](#migrating-an-existing-logbook)
 - [Privacy by construction](#privacy-by-construction)
 - [Accounts and Supabase](#accounts-and-supabase)
+- [Feedback and administration](#feedback-and-administration)
 - [Stack](#stack)
 - [Project structure](#project-structure)
 - [Running it locally](#running-it-locally)
@@ -198,6 +199,49 @@ from the JWT, server-side.
 
 **No cookies, no analytics, no trackers.** The only processing that exists is the
 host's own access logs, and the privacy page says so.
+
+---
+
+## Feedback and administration
+
+### Feedback
+
+A "Nous faire un retour" link in the footer opens a sheet: three kinds — `bug`,
+`idee`, `question` — a body capped at 4,000 characters, and the list of what you
+already sent with its status. An account is required: that is what makes a reply
+possible, and what keeps a bot from filling the table.
+
+Sent along with the message: the current view, the screen size, the user agent
+truncated to 160 characters, and a "running as a PWA" flag. Enough to reproduce a
+bug, nothing from the logbook. The screen says so before you send.
+
+The bounds live in the database, not in the form — `check` constraints on the
+kind, the status, the body length and the context size. You do not defend a table
+with JavaScript.
+
+### The admin space
+
+Restricted to the `admin` role. Eight counters (sign-ups, new and active at 7 and
+30 days, sessions, sets, pending feedback), the feedback list with controls to
+mark items read or handled, and the member list sorted by last visit.
+
+**What it does not show:** no email address, and no logbook row. The four
+functions return aggregates only. An administrator sees *how many* sessions are
+logged, never what is in them — a direct `select` on `seances` is denied to them
+like to anyone else, and a test asserts it on every run.
+
+The role check lives **inside the functions**, as their first statement, not in
+the interface: hiding a button has never protected anything.
+
+### Granting yourself the admin role
+
+There is deliberately no function for it. It is done once, by hand, after opening
+the app at least once so the profile row exists — Supabase → SQL Editor:
+
+```sql
+update public.profils set role = 'admin'
+where user_id = (select id from auth.users where email = 'you@example.com');
+```
 
 ---
 

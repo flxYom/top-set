@@ -41,6 +41,7 @@ c'est exactement à ça que sert ce repo pour l'instant.
 - [Migrer un carnet existant](#migrer-un-carnet-existant)
 - [La confidentialité par construction](#la-confidentialité-par-construction)
 - [Comptes et Supabase](#comptes-et-supabase)
+- [Retours et administration](#retours-et-administration)
 - [La pile technique](#la-pile-technique)
 - [Structure du projet](#structure-du-projet)
 - [Le lancer en local](#le-lancer-en-local)
@@ -83,6 +84,11 @@ mois ou l'année.
 
 **Graphique de progression** par exercice, tracé depuis ton propre historique.
 
+**Faire un retour.** Un lien en bas de chaque écran ouvre un formulaire : un bug,
+une idée, une question. Ça part dans la base, pas dans une boîte mail, et tu peux
+relire ce que tu as déjà envoyé avec son statut. Il faut un compte — c'est ce qui
+permet de répondre, et ce qui évite qu'un robot remplisse la table.
+
 **Une virgule qui marche vraiment.** Le champ poids accepte `62,5` comme `62.5`.
 Un clavier français propose une virgule, et `<input type="number">` la refuse en
 silence : le champ se vide et la série perd son poids. C'est précisément pour ça
@@ -105,6 +111,18 @@ privé.
 **Avec un compte**, une copie vit en plus dans Postgres chez Supabase, et le même
 carnet s'ouvre sur n'importe quel appareil. Le téléphone garde sa copie dans les
 deux cas : le compte ne remplace pas le stockage local, il le sauvegarde.
+
+Sept tables au total. Cinq portent le carnet — `seances`, `exercices`, `series`,
+`exercices_perso`, `consentements` — et personne n'y voit jamais la ligne d'un
+autre. Deux sont venues après :
+
+- **`profils`** — pseudo, rôle, date d'inscription, date de dernière visite. Le
+  pseudo continue de vivre dans les métadonnées du compte : cette colonne n'en
+  est qu'un miroir interrogeable, parce que le schéma `auth` de Supabase n'est
+  pas lisible depuis un navigateur. Aucune donnée de carnet, aucun email.
+- **`retours`** — les retours utilisateurs. Supprimer son compte n'efface pas le
+  retour, ça le rend anonyme (`on delete set null`) : partir est un droit,
+  effacer un bug signalé n'en est pas un.
 
 ### Comment marche la synchro
 
@@ -204,9 +222,67 @@ pas à l'utilisateur connecté. Les clés étrangères sont composites
 séance de quelqu'un d'autre. Le client n'envoie jamais de `user_id` — il vient du
 jeton, côté serveur.
 
+**Deux couches de droits, pas une.** Supabase accorde par défaut tous les droits
+de table au rôle `authenticated` sur chaque table créée. Le schéma les révoque
+puis n'accorde que ce qui sert : un consentement et un retour peuvent être écrits
+et relus, jamais modifiés ni effacés. RLS le garantissait déjà ; le droit de table
+le redit, pour que la garantie ne tienne pas sur une seule couche.
+
+**Aucune policy `UPDATE` sur `profils`, et c'est délibéré.** RLS filtre des
+lignes, pas des colonnes : « chacun modifie son profil » aurait aussi autorisé
+`update profils set role = 'admin' where user_id = auth.uid()`. La ligne
+appartient bien à l'appelant, la policy passerait, et n'importe qui deviendrait
+administrateur depuis la console de son navigateur. Tout passe par
+`toucher_profil()`.
+
 **Aucun cookie, aucune mesure d'audience, aucun traceur.** Le seul traitement qui
 existe, ce sont les journaux d'accès de l'hébergeur, et la page de confidentialité
 le dit.
+
+---
+
+## Retours et administration
+
+### Les retours
+
+Un lien « Nous faire un retour » en pied de page ouvre une feuille : trois
+natures — `bug`, `idee`, `question` — un texte de 4 000 caractères maximum, et la
+liste de ce qu'on a déjà envoyé avec son statut.
+
+Ce qui part avec le message : la vue où l'on se trouvait, la taille de l'écran,
+le navigateur tronqué à 160 caractères, et un drapeau « installé en PWA ». De quoi
+reproduire un bug, et rien du carnet. L'écran le dit avant l'envoi.
+
+Les bornes sont dans la base, pas dans le formulaire : `check` sur le type, sur
+le statut, sur la longueur du corps et sur la taille du contexte. On ne défend pas
+une table avec du JavaScript.
+
+### L'espace administrateur
+
+Réservé au rôle `admin`. Il montre huit compteurs (inscrits, nouveaux et actifs à
+7 et 30 jours, séances, séries, retours en attente), la liste des retours avec de
+quoi les marquer lus ou traités, et la liste des inscrits triée par dernière
+visite.
+
+**Ce qu'il ne montre pas :** aucun email, et aucune ligne de carnet. Les quatre
+fonctions renvoient des agrégats. Un administrateur voit *combien* de séances sont
+loguées, jamais ce qu'il y a dedans — le `select` direct sur `seances` lui est
+refusé comme à tout le monde, et un test le vérifie à chaque exécution de la
+suite.
+
+Le contrôle du rôle est **dans les fonctions**, en première instruction, pas dans
+l'interface : cacher un bouton n'a jamais protégé personne.
+
+### Se nommer administrateur
+
+Il n'existe aucune fonction pour ça, volontairement. Ça se fait une fois à la
+main, après avoir ouvert l'app au moins une fois pour que la ligne de profil
+existe — Supabase → SQL Editor :
+
+```sql
+update public.profils set role = 'admin'
+where user_id = (select id from auth.users where email = 'ton@email.fr');
+```
 
 ---
 
@@ -379,15 +455,21 @@ ne marche pas aujourd'hui. Le vrai hors-ligne est sur [la suite](#la-suite).
 
 ## La suite
 
-**Court terme :** un vrai hors-ligne. Il n'y a pas encore de service worker (voir
-[L'installer sur un téléphone](#linstaller-sur-un-téléphone)) — c'est la prochaine
-chose à corriger, avant tout le reste.
+**Livré :** les comptes optionnels et la synchronisation cloud sur Supabase, le
+service worker et le hors-ligne, la logique métier testée dans `intelligence.js`,
+la page de progression par exercice, les retours utilisateurs et l'espace
+administrateur.
 
-**Livré :** les comptes optionnels et la synchronisation cloud, sur Supabase.
+**En cours :** la relation coach ↔ coaché. Un code d'invitation généré par le
+coach, accepté des deux côtés, consenti et révocable ; puis des modèles de séance
+rangés en dossiers, assignables dans le carnet d'un coaché ; puis un fil de
+discussion et un retour de séance. `profils` est le socle de tout ça — c'est pour
+elle qu'elle a été écrite en premier.
 
-**Encore ouvert :** la réinitialisation du mot de passe demande un vrai envoyeur
-SMTP — le service par défaut de Supabase envoie 2 messages par heure, ce qui
-n'est pas un service d'emails de production.
+**Encore ouvert :** le retour du lien de réinitialisation du mot de passe n'a
+jamais été exercé avec un vrai email. Les enregistrements DNS de Resend sont
+publiés sur `top-set.fr` ; il reste à brancher la clé API dans les réglages SMTP
+de Supabase et à faire le tour complet.
 
 ---
 

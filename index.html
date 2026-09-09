@@ -1084,6 +1084,114 @@
     border:2px solid var(--line);padding:9px 10px;
   }
   .sheet-msg.ok{border-color:var(--green);color:var(--green);}
+  /* ---- Retours ------------------------------------------------------- */
+  /* Trois choix, une ligne, des cibles de la taille d'un pouce. Un select
+     natif aurait tenu moins de place, mais il cache les options : ici on veut
+     que les trois natures soient lues avant d'ecrire, parce que « bug » et
+     « idee » n'appellent pas le meme texte. */
+  .retour-types{display:flex;gap:6px;margin-bottom:10px;}
+  .retour-type{
+    flex:1;min-height:42px;padding:0 4px;
+    background:var(--panel2);color:var(--dim);
+    border:2px solid var(--line);border-radius:9px;
+    font:800 10.5px/1.15 inherit;letter-spacing:.04em;cursor:pointer;
+  }
+  .retour-type.active{border-color:var(--orange);color:var(--ink);background:var(--panel);}
+  .retour-reste{
+    font-size:11px;font-weight:700;color:var(--dim);
+    text-align:right;margin:4px 2px 10px;font-variant-numeric:tabular-nums;
+  }
+  .retour-mien{
+    border:1px solid var(--line);border-radius:9px;
+    padding:10px 12px;margin-bottom:8px;background:var(--panel2);
+  }
+  .retour-mien-tete{
+    display:flex;justify-content:space-between;gap:10px;
+    font-size:10.5px;font-weight:800;letter-spacing:.06em;color:var(--dim);
+    margin-bottom:5px;
+  }
+  .retour-mien-corps{font-size:13px;line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere;}
+  .retour-statut{white-space:nowrap;}
+  .retour-statut.traite{color:var(--green);}
+  .retour-statut.vu{color:var(--yellow);}
+
+  /* ---- Administration ------------------------------------------------ */
+  .admin-tete{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+  .admin-tete h2{
+    flex:1;margin:0;font-size:15px;font-weight:800;letter-spacing:.08em;
+  }
+  /* Huit tuiles, donc deux ou quatre colonnes et jamais trois : une grille
+     en auto-fit en donnait trois sur un telephone, et la derniere rangee
+     restait a moitie vide. Huit se divise par 2 et par 4, pas par 3. */
+  .admin-tuiles{
+    display:grid;grid-template-columns:repeat(2,1fr);
+    gap:8px;margin-bottom:20px;
+  }
+  @media (min-width:560px){ .admin-tuiles{grid-template-columns:repeat(4,1fr);} }
+  .admin-tuile{
+    background:var(--panel);border:1px solid var(--line);border-radius:10px;
+    padding:10px 12px;
+  }
+  .admin-tuile-val{
+    font-size:22px;font-weight:800;color:var(--yellow);line-height:1.1;
+    font-variant-numeric:tabular-nums;
+  }
+  .admin-tuile-lib{
+    font-size:9.5px;font-weight:800;letter-spacing:.07em;color:var(--dim);
+    margin-top:3px;
+  }
+  .admin-bloc{margin-bottom:22px;}
+  .admin-bloc-tete{display:flex;align-items:center;gap:10px;margin-bottom:9px;flex-wrap:wrap;}
+  .admin-bloc h3{
+    margin:0;font-size:11px;font-weight:800;letter-spacing:.1em;color:var(--dim);
+  }
+  .admin-filtres{display:flex;gap:5px;margin-left:auto;}
+  .admin-filtre{
+    min-height:30px;padding:0 10px;background:var(--panel2);color:var(--dim);
+    border:1px solid var(--line);border-radius:7px;
+    font:800 10px/1 inherit;letter-spacing:.05em;cursor:pointer;
+  }
+  .admin-filtre.active{border-color:var(--orange);color:var(--ink);}
+  .admin-carte{
+    background:var(--panel);border:1px solid var(--line);border-radius:10px;
+    padding:12px 14px;margin-bottom:8px;
+  }
+  .admin-carte.nouveau{border-left:3px solid var(--orange);}
+  .admin-carte-tete{
+    display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;
+    font-size:10.5px;font-weight:800;letter-spacing:.06em;color:var(--dim);
+    margin-bottom:6px;
+  }
+  .admin-qui{color:var(--ink);}
+  .admin-quand{margin-left:auto;}
+  .admin-corps{font-size:13.5px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere;}
+  .admin-ctx{
+    font-size:10.5px;color:var(--dim);margin-top:7px;
+    overflow-wrap:anywhere;
+  }
+  .admin-actions{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;}
+  .admin-action{
+    min-height:32px;padding:0 11px;background:var(--panel2);color:var(--ink);
+    border:1px solid var(--line);border-radius:7px;
+    font:800 10px/1 inherit;letter-spacing:.05em;cursor:pointer;
+  }
+  .admin-ligne{
+    display:flex;align-items:center;gap:10px;
+    padding:9px 12px;border:1px solid var(--line);border-radius:9px;
+    margin-bottom:6px;background:var(--panel);
+  }
+  .admin-ligne-nom{flex:1;font-size:13px;font-weight:700;overflow-wrap:anywhere;}
+  .admin-ligne-nom .anon{color:var(--dim);font-weight:600;font-style:italic;}
+  .admin-badge{
+    font-size:9px;font-weight:800;letter-spacing:.07em;color:var(--bg);
+    background:var(--yellow);border-radius:4px;padding:2px 5px;
+  }
+  .admin-ligne-chiffres{
+    font-size:10.5px;font-weight:700;color:var(--dim);text-align:right;
+    white-space:nowrap;font-variant-numeric:tabular-nums;
+  }
+  .admin-vide{font-size:12.5px;font-weight:700;color:var(--dim);padding:10px 2px;}
+
   .legal-footer{
     display:flex;align-items:center;justify-content:center;gap:10px;
     flex-wrap:wrap;padding:24px 0 28px;margin-top:14px;
@@ -1198,7 +1306,35 @@
     <div class="recap-groups" id="recapGroups"></div>
   </section>
 
+  <section class="view" id="view-admin" hidden>
+    <div class="admin-tete">
+      <button type="button" class="icon-btn" id="adminRetourBtn" aria-label="Revenir">&lsaquo;</button>
+      <h2>ADMINISTRATION</h2>
+      <button type="button" class="icon-btn" id="adminRafraichir" aria-label="Rafraîchir">&#8635;</button>
+    </div>
+    <div class="admin-tuiles" id="adminTuiles"></div>
+
+    <div class="admin-bloc">
+      <div class="admin-bloc-tete">
+        <h3>RETOURS</h3>
+        <div class="admin-filtres" id="adminFiltres">
+          <button type="button" class="admin-filtre active" data-statut="">TOUT</button>
+          <button type="button" class="admin-filtre" data-statut="nouveau">NOUVEAUX</button>
+          <button type="button" class="admin-filtre" data-statut="traite">TRAITÉS</button>
+        </div>
+      </div>
+      <div id="adminRetoursListe"></div>
+    </div>
+
+    <div class="admin-bloc">
+      <div class="admin-bloc-tete"><h3>INSCRITS</h3></div>
+      <div id="adminMembresListe"></div>
+    </div>
+  </section>
+
   <footer class="legal-footer">
+    <a href="#" id="lienRetour">Nous faire un retour</a>
+    <span class="sep">·</span>
     <a href="guide.html">Comment ça marche</a>
     <span class="sep">·</span>
     <a href="mentions-legales.html">Mentions légales</a>
@@ -1243,6 +1379,7 @@
         <input type="text" id="compteMonPseudo" class="sheet-input" placeholder="ton pseudo" autocomplete="nickname" maxlength="24" aria-label="Ton pseudo">
         <button type="button" class="btn-sheet" id="comptePseudoOk">ENREGISTRER LE PSEUDO</button>
         <button type="button" class="btn-sheet" id="compteMigrer" hidden></button>
+        <button type="button" class="btn-sheet" id="compteAdmin" hidden>ADMINISTRATION</button>
         <button type="button" class="btn-sheet" id="compteSync">SYNCHRONISER MAINTENANT</button>
         <button type="button" class="btn-sheet" id="compteDeconnexion">SE DÉCONNECTER</button>
         <p class="sheet-note" id="compteNote"></p>
@@ -1274,6 +1411,43 @@
       <button type="button" class="btn-sheet danger" id="dataImport">REMPLACER MES DONNÉES</button>
       <button type="button" class="btn-sheet" id="dataRecover" aria-label="Récupérer la copie de secours" hidden></button>
       <div class="sheet-msg" id="dataMsg" hidden></div>
+    </div>
+  </div>
+</div>
+
+<div class="sheet" id="retourSheet" hidden>
+  <div class="sheet-card" role="dialog" aria-modal="true" aria-labelledby="retourTitre">
+    <div class="sheet-head">
+      <h2 id="retourTitre">FAIRE UN RETOUR</h2>
+      <button type="button" class="icon-btn" id="retourClose" aria-label="Fermer">×</button>
+    </div>
+
+    <p class="sheet-note">
+      Un truc qui marche pas, une idée, une question. C'est lu par la personne
+      qui fait l'app — pas par un robot, et pas forcément dans la minute.
+    </p>
+
+    <div class="sheet-section">
+      <div class="sheet-label">C'EST À QUEL SUJET&nbsp;?</div>
+      <div class="retour-types" id="retourTypes">
+        <button type="button" class="retour-type active" data-type="bug">ÇA MARCHE PAS</button>
+        <button type="button" class="retour-type" data-type="idee">UNE IDÉE</button>
+        <button type="button" class="retour-type" data-type="question">UNE QUESTION</button>
+      </div>
+      <textarea id="retourCorps" class="sheet-paste" rows="5" maxlength="4000"
+                placeholder="Raconte. Si c'est un bug : ce que tu faisais, et ce qui s'est passé à la place."></textarea>
+      <div class="retour-reste" id="retourReste"></div>
+      <button type="button" class="btn-sheet primary" id="retourEnvoyer">ENVOYER</button>
+      <p class="sheet-note">
+        On joint la page où tu étais et le nom de ton navigateur, pour pouvoir
+        reproduire le problème. Rien de ton carnet n'est envoyé.
+      </p>
+      <div class="sheet-msg" id="retourMsg" hidden></div>
+    </div>
+
+    <div class="sheet-section" id="retourMiens" hidden>
+      <div class="sheet-label">CE QUE TU AS DÉJÀ ENVOYÉ</div>
+      <div id="retourListe"></div>
     </div>
   </div>
 </div>
@@ -2987,11 +3161,12 @@
     else if (state.view === 'seances') renderSeances();
     else if (state.view === 'seance') renderSeanceDetail();
     else if (state.view === 'exercice') renderExerciceDetail();
+    else if (state.view === 'admin') renderAdmin();
     else renderRecap();
   }
 
   // ---------- event wiring ----------
-  var VUES = ['planning','seances','seance','exercice','recap'];
+  var VUES = ['planning','seances','seance','exercice','recap','admin'];
   function montrerVue(vue){
     state.view = vue;
     // La fiche n'a pas d'onglet : c'est une page ou l'on entre depuis la
@@ -3671,12 +3846,226 @@
   }
   function closeDataSheet(){ document.getElementById('dataSheet').hidden = true; }
 
+  // ==================================================================
+  // RETOURS
+  // ==================================================================
+  // Un retour n'est pas un ticket : personne ne s'engage a repondre sous
+  // 24 heures. C'est un mot laisse a celui qui fait l'app, et c'est ce que
+  // dit l'ecran.
+  var retourType = 'bug';
+
+  function contexteRetour(){
+    // Strictement de quoi reproduire un bug, et rien qui vienne du carnet.
+    // La contrainte de la table plafonne ce champ a 1000 caracteres : on
+    // reste tres en dessous.
+    return {
+      vue:    state.view || '',
+      ecran:  window.innerWidth + 'x' + window.innerHeight,
+      nav:    String(navigator.userAgent || '').slice(0, 160),
+      pwa:    (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) ? 1 : 0
+    };
+  }
+
+  function quandCourt(iso){
+    var d = new Date(iso);
+    if (isNaN(d)) return '';
+    return d.getDate() + ' ' + MONTH_ABBR[d.getMonth()] +
+           ' ' + String(d.getHours()).padStart(2, '0') +
+           'h' + String(d.getMinutes()).padStart(2, '0');
+  }
+
+  var RETOUR_MOT = { bug:'ÇA MARCHE PAS', idee:'IDÉE', question:'QUESTION' };
+  var STATUT_MOT = { nouveau:'EN ATTENTE', vu:'LU', traite:'TRAITÉ' };
+
+  function msgRetour(genre, texte){
+    var el = document.getElementById('retourMsg');
+    el.className = 'sheet-msg ' + genre;
+    el.textContent = texte;
+    el.hidden = false;
+  }
+
+  function majResteRetour(){
+    var t = document.getElementById('retourCorps');
+    var r = document.getElementById('retourReste');
+    var n = t.value.length;
+    r.textContent = n ? n + ' / 4000' : '';
+  }
+
+  function chargerMesRetours(){
+    var bloc  = document.getElementById('retourMiens');
+    var liste = document.getElementById('retourListe');
+    if (!Sync.estConnecte()){ bloc.hidden = true; return; }
+    Sync.mesRetours().then(function(rows){
+      if (!rows.length){ bloc.hidden = true; return; }
+      liste.innerHTML = rows.map(function(x){
+        var st = STATUT_MOT[x.statut] || x.statut;
+        return '<div class="retour-mien">'
+          + '<div class="retour-mien-tete">'
+          +   '<span>' + (RETOUR_MOT[x.type] || x.type) + ' · ' + esc(quandCourt(x.cree_le)) + '</span>'
+          +   '<span class="retour-statut ' + esc(x.statut) + '">' + st + '</span>'
+          + '</div>'
+          + '<div class="retour-mien-corps">' + esc(x.corps) + '</div>'
+          + '</div>';
+      }).join('');
+      bloc.hidden = false;
+    }, function(){ bloc.hidden = true; });
+  }
+
+  function ouvrirRetour(){
+    document.getElementById('retourMsg').hidden = true;
+    majResteRetour();
+    var env = document.getElementById('retourEnvoyer');
+    if (!Sync.estConnecte()){
+      env.disabled = true;
+      msgRetour('warn', 'Il faut un compte pour envoyer un retour : c\'est ce qui nous permet de te répondre, et d\'éviter les envois automatiques.');
+    } else {
+      env.disabled = false;
+    }
+    chargerMesRetours();
+    document.getElementById('retourSheet').hidden = false;
+  }
+  function fermerRetour(){ document.getElementById('retourSheet').hidden = true; }
+
+  document.getElementById('lienRetour').addEventListener('click', function(e){
+    e.preventDefault(); ouvrirRetour();
+  });
+  document.getElementById('retourClose').addEventListener('click', fermerRetour);
+  document.getElementById('retourSheet').addEventListener('click', function(e){
+    if (e.target === this) fermerRetour();
+  });
+  document.getElementById('retourTypes').addEventListener('click', function(e){
+    var b = e.target.closest('.retour-type'); if (!b) return;
+    retourType = b.dataset.type;
+    this.querySelectorAll('.retour-type').forEach(function(x){ x.classList.toggle('active', x === b); });
+  });
+  document.getElementById('retourCorps').addEventListener('input', majResteRetour);
+
+  document.getElementById('retourEnvoyer').addEventListener('click', function(){
+    var champ = document.getElementById('retourCorps');
+    var corps = champ.value.trim();
+    if (!corps){ msgRetour('err', 'Écris quelque chose avant d\'envoyer.'); champ.focus(); return; }
+    var btn = this, avant = btn.textContent;
+    btn.disabled = true; btn.textContent = 'ENVOI…';
+    Sync.envoyerRetour(retourType, corps, contexteRetour()).then(function(){
+      champ.value = '';
+      majResteRetour();
+      msgRetour('ok', 'Reçu. Merci — c\'est vraiment utile.');
+      chargerMesRetours();
+    }, function(e){
+      msgRetour('err', Sync.messageErreur(e));
+    }).then(function(){
+      btn.disabled = false; btn.textContent = avant;
+    });
+  });
+
+  // ==================================================================
+  // ADMINISTRATION
+  // ==================================================================
+  var adminFiltre = '';
+
+  function tuile(val, lib){
+    return '<div class="admin-tuile"><div class="admin-tuile-val">' + val +
+           '</div><div class="admin-tuile-lib">' + lib + '</div></div>';
+  }
+
+  function renderAdmin(){
+    var tuiles  = document.getElementById('adminTuiles');
+    var retours = document.getElementById('adminRetoursListe');
+    var membres = document.getElementById('adminMembresListe');
+
+    Sync.adminApercu().then(function(a){
+      tuiles.innerHTML =
+          tuile(a.inscrits,         'INSCRITS')
+        + tuile(a.inscrits_7j,      'NOUVEAUX 7 J')
+        + tuile(a.actifs_7j,        'ACTIFS 7 J')
+        + tuile(a.actifs_30j,       'ACTIFS 30 J')
+        + tuile(a.seances,          'SÉANCES')
+        + tuile(a.seances_7j,       'SÉANCES 7 J')
+        + tuile(a.series,           'SÉRIES')
+        + tuile(a.retours_nouveaux, 'RETOURS');
+    }, function(e){
+      tuiles.innerHTML = '<div class="admin-vide">' + esc(Sync.messageErreur(e)) + '</div>';
+    });
+
+    Sync.adminRetours(adminFiltre).then(function(rows){
+      if (!rows.length){
+        retours.innerHTML = '<div class="admin-vide">Rien ici pour le moment.</div>';
+        return;
+      }
+      retours.innerHTML = rows.map(function(x){
+        var qui = x.pseudo ? esc(x.pseudo) : '<span class="anon">compte supprimé</span>';
+        return '<div class="admin-carte ' + (x.statut === 'nouveau' ? 'nouveau' : '') + '">'
+          + '<div class="admin-carte-tete">'
+          +   '<span>' + (RETOUR_MOT[x.type] || esc(x.type)) + '</span>'
+          +   '<span class="admin-qui">' + qui + '</span>'
+          +   '<span class="admin-quand">' + esc(quandCourt(x.cree_le)) + '</span>'
+          + '</div>'
+          + '<div class="admin-corps">' + esc(x.corps) + '</div>'
+          + (x.contexte && Object.keys(x.contexte).length
+              ? '<div class="admin-ctx">' + esc(JSON.stringify(x.contexte)) + '</div>' : '')
+          + '<div class="admin-actions">'
+          +   (x.statut !== 'vu'      ? '<button type="button" class="admin-action" data-marquer="' + esc(x.id) + '" data-statut="vu">MARQUER LU</button>' : '')
+          +   (x.statut !== 'traite'  ? '<button type="button" class="admin-action" data-marquer="' + esc(x.id) + '" data-statut="traite">TRAITÉ</button>' : '')
+          +   (x.statut !== 'nouveau' ? '<button type="button" class="admin-action" data-marquer="' + esc(x.id) + '" data-statut="nouveau">ROUVRIR</button>' : '')
+          + '</div>'
+          + '</div>';
+      }).join('');
+    }, function(e){
+      retours.innerHTML = '<div class="admin-vide">' + esc(Sync.messageErreur(e)) + '</div>';
+    });
+
+    Sync.adminMembres().then(function(rows){
+      if (!rows.length){
+        membres.innerHTML = '<div class="admin-vide">Personne encore.</div>';
+        return;
+      }
+      membres.innerHTML = rows.map(function(x){
+        var nom = x.pseudo ? esc(x.pseudo) : '<span class="anon">sans pseudo</span>';
+        return '<div class="admin-ligne">'
+          + '<div class="admin-ligne-nom">' + nom
+          +   (x.role === 'admin' ? ' <span class="admin-badge">ADMIN</span>' : '')
+          + '</div>'
+          + '<div class="admin-ligne-chiffres">'
+          +   x.nb_seances + ' séance' + (x.nb_seances > 1 ? 's' : '') + '<br>'
+          +   'vu ' + esc(quandCourt(x.vu_le))
+          + '</div>'
+          + '</div>';
+      }).join('');
+    }, function(e){
+      membres.innerHTML = '<div class="admin-vide">' + esc(Sync.messageErreur(e)) + '</div>';
+    });
+  }
+
+  document.getElementById('adminRetourBtn').addEventListener('click', function(){
+    montrerVue('planning');
+  });
+  document.getElementById('adminRafraichir').addEventListener('click', renderAdmin);
+  document.getElementById('adminFiltres').addEventListener('click', function(e){
+    var b = e.target.closest('.admin-filtre'); if (!b) return;
+    adminFiltre = b.dataset.statut || '';
+    this.querySelectorAll('.admin-filtre').forEach(function(x){ x.classList.toggle('active', x === b); });
+    renderAdmin();
+  });
+  document.getElementById('adminRetoursListe').addEventListener('click', function(e){
+    var b = e.target.closest('[data-marquer]'); if (!b) return;
+    b.disabled = true;
+    Sync.adminMarquer(b.dataset.marquer, b.dataset.statut)
+        .then(renderAdmin, function(err){ b.disabled = false; showToast(Sync.messageErreur(err)); });
+  });
+
+  document.getElementById('compteAdmin').addEventListener('click', function(){
+    closeDataSheet();
+    montrerVue('admin');
+    window.scrollTo(0, 0);
+  });
+
   document.getElementById('dataBtn').addEventListener('click', openDataSheet);
   document.getElementById('dataClose').addEventListener('click', closeDataSheet);
   document.getElementById('dataSheet').addEventListener('click', function(e){
     if (e.target === this) closeDataSheet();
   });
   document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape' && !document.getElementById('retourSheet').hidden) fermerRetour();
     if (e.key === 'Escape' && !document.getElementById('dataSheet').hidden) closeDataSheet();
   });
 
@@ -4197,6 +4586,8 @@
       }).then(function(r){
         if (r.error) throw r.error;
         user = r.data.user;
+        return toucherProfil();
+      }).then(function(){
         majUI();
         showToast(v ? 'Salut ' + v + ' !' : 'Pseudo retire');
       });
@@ -4347,6 +4738,7 @@
     function deconnecter(){
       return client().then(function(c){ return c.auth.signOut(); }).then(function(){
         user = null;
+        profil = null;
         // Les seances restent sur l'appareil : c'est le mode local, pas une
         // mise en cache jetable. Les effacer ici serait une perte de donnees.
         majMeta(function(m){ m.depuis = null; });
@@ -4361,6 +4753,9 @@
         return compterJour(state.sessions[ds]) > 0;
       }).length;
       majMeta(function(x){ x.userId = user.id; });
+      // Sans attendre : le profil sert a l'administration et au futur lien
+      // coach, jamais a afficher le carnet. Rien ne doit patienter dessus.
+      toucherProfil().then(majUI);
       majUI();
       // Jamais de migration automatique : l'appareil a peut-etre servi a
       // quelqu'un d'autre, et ses seances ne doivent pas atterrir ici.
@@ -4417,6 +4812,12 @@
         'Une copie reste sur cet appareil pour que l\'app marche sans réseau.';
       var champPseudo = document.getElementById('compteMonPseudo');
       if (champPseudo && document.activeElement !== champPseudo) champPseudo.value = pseudoDe(user);
+
+      // L'entree n'apparait que pour un administrateur, mais ce n'est pas ce
+      // qui protege quoi que ce soit : les quatre fonctions verifient le role
+      // en base. Ici on evite juste d'afficher un bouton qui echouerait.
+      var boutonAdmin = document.getElementById('compteAdmin');
+      if (boutonAdmin) boutonAdmin.hidden = !estAdmin();
 
       var joursLocaux = Object.keys(state.sessions).filter(function(ds){
         return compterJour(state.sessions[ds]) > 0;
@@ -4492,8 +4893,72 @@
       });
     }
 
+    // ------------------------------------------------------------- profil
+    // Le pseudo continue de vivre dans les metadonnees du compte. La table
+    // profils n'en est qu'un miroir interrogeable, plus une date de derniere
+    // visite : auth.users n'est pas lisible depuis le navigateur, donc sans
+    // ce miroir personne ne peut savoir qui est revenu cette semaine, ni
+    // meme afficher le pseudo de quelqu'un d'autre.
+    var profil = null;
+    function toucherProfil(){
+      if (!user){ profil = null; return Promise.resolve(null); }
+      return client().then(function(c){
+        return c.rpc('toucher_profil', { p_pseudo: pseudoDe(user) || null });
+      }).then(function(r){
+        if (r.error) throw r.error;
+        profil = r.data || null;
+        return profil;
+      }).catch(function(){
+        // Le schema n'a peut-etre pas encore ete passe sur la base. Un profil
+        // absent ne doit rien empecher : le carnet et la synchro marchaient
+        // avant qu'il existe, ils doivent continuer sans lui.
+        profil = null;
+        return null;
+      });
+    }
+    function estAdmin(){ return !!(profil && profil.role === 'admin'); }
+
+    // ------------------------------------------------------------ retours
+    // Insertion directe plutot qu'une fonction : la policy WITH CHECK impose
+    // deja user_id = auth.uid(), et les contraintes de la table bornent le
+    // type et la longueur. Une fonction n'ajouterait aucune garantie.
+    function envoyerRetour(type, corps, contexte){
+      if (!user) return Promise.reject(new Error('Connecte-toi pour envoyer un retour.'));
+      return client().then(function(c){
+        return c.from('retours').insert({
+          user_id: user.id,
+          type:    type,
+          corps:   String(corps || '').trim().slice(0, 4000),
+          contexte: contexte || {}
+        });
+      }).then(function(r){ if (r.error) throw r.error; });
+    }
+    function mesRetours(){
+      if (!user) return Promise.resolve([]);
+      return client().then(function(c){
+        return c.from('retours')
+                .select('type,corps,statut,cree_le')
+                .order('cree_le', { ascending:false })
+                .limit(20);
+      }).then(function(r){ if (r.error) throw r.error; return r.data || []; });
+    }
+
+    // ----------------------------------------------------- administration
+    // Les quatre fonctions verifient elles-memes le role cote base. Ce qui
+    // suit n'est qu'un tuyau : cacher le bouton n'a jamais protege personne.
+    function rpcAdmin(nom, args){
+      return client().then(function(c){ return c.rpc(nom, args || {}); })
+        .then(function(r){ if (r.error) throw r.error; return r.data; });
+    }
+
     return {
       dispo:dispo, demarrer:demarrer, marquerSale:marquerSale, majUI:majUI,
+      toucherProfil:toucherProfil, estAdmin:estAdmin,
+      envoyerRetour:envoyerRetour, mesRetours:mesRetours,
+      adminApercu:function(){ return rpcAdmin('admin_apercu'); },
+      adminMembres:function(){ return rpcAdmin('admin_membres'); },
+      adminRetours:function(s){ return rpcAdmin('admin_retours', { p_statut: s || null }); },
+      adminMarquer:function(id, s){ return rpcAdmin('admin_marquer_retour', { p_id:id, p_statut:s }); },
       marquerExos:marquerExos, pousserExos:pousserExos, tirerExos:tirerExos,
       marquerTitre:marquerTitre, pousserTitres:pousserTitres,
       enregistrerPseudo:enregistrerPseudo, envoyerLienMdp:envoyerLienMdp,
