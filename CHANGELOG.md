@@ -34,8 +34,32 @@ while it stays below `1.0.0`, breaking changes (in particular to the
   back-off), the previous-performance block with one-tap copy, session
   create/edit, and the per-exercise progression page.
 
-### Fixed
+### Security
 
+- Supabase's database linter flagged `uuid_ou_neuf()` and `maintenant()` as
+  having a mutable `search_path`. A function without one resolves its names
+  using the caller's path, so anyone able to create an object in a schema ahead
+  of `public` could hijack what it thinks it is calling. Both now pin it, like
+  every other function in the file already did.
+- `est_admin()` is no longer executable by `authenticated`, so it is gone from
+  `/rest/v1/rpc`. The front end never called it — it reads the role returned by
+  `toucher_profil()` — and the four admin functions call it internally, where
+  they run as owner. One less callable surface.
+- The four `admin_*` functions stay callable by `authenticated`, deliberately.
+  They must live in `public` to be reachable from the app, and their first
+  statement refuses anyone who is not an administrator. The check belongs in the
+  function, not in whether it is exposed.
+- New test section asserting that *every* function in `public` pins its
+  `search_path`, that the SECURITY DEFINER list is exactly the six expected, and
+  that the sync functions stay SECURITY INVOKER — in DEFINER they would bypass
+  all of the RLS above them. 113 → 124 RLS tests.
+
+### Fixed
+- Three `meta description` tags still claimed data never leaves the phone and
+  that there is no account. The privacy policy's own body has distinguished the
+  two modes correctly since sync shipped; the tags had not been updated —
+  including the one on the privacy page itself, the worst possible place for a
+  stale claim.
 - **CI had never been green.** The `Check internal links` step (lychee-action)
   failed on every run going back weeks, and its failure could neither be
   reproduced locally nor read usefully from the log. Replaced by

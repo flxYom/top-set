@@ -241,7 +241,9 @@ grant  select, insert on public.consentements to authenticated;
 -- données locales ont des identifiants « x1a2b3c »). On ne fait pas confiance
 -- au format : ce qui n'est pas un UUID est remplacé par un neuf.
 create or replace function public.uuid_ou_neuf(p text)
-returns uuid language sql immutable as $$
+returns uuid language sql immutable
+set search_path = public
+as $$
   select case
     when p ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
     then p::uuid else gen_random_uuid() end;
@@ -398,7 +400,9 @@ $$;
 -- téléphone : un mobile déréglé de dix minutes sauterait des journées entières
 -- au prochain tirage.
 create or replace function public.maintenant()
-returns timestamptz language sql stable as $$ select now(); $$;
+returns timestamptz language sql stable
+set search_path = public
+as $$ select now(); $$;
 
 -- Les noms d'exercices memorises suivent le compte, comme les seances. Deux
 -- appareils peuvent en avoir invente chacun de leur cote : on fusionne au lieu
@@ -555,8 +559,7 @@ as $$
   );
 $$;
 
-revoke execute on function public.est_admin() from anon, public;
-grant  execute on function public.est_admin() to authenticated;
+revoke execute on function public.est_admin() from anon, public, authenticated;
 
 
 -- ------------------------------------------------------------ toucher_profil
@@ -820,6 +823,11 @@ begin
 end;
 $$;
 
+-- Ces quatre-la restent appelables par « authenticated », et le linter
+-- Supabase le signalera : c'est assume. Elles doivent etre dans « public »
+-- pour etre atteignables depuis l'app, et leur premiere instruction refuse
+-- quiconque n'est pas administrateur. Le controle est dans la fonction, pas
+-- dans l'exposition — c'est la seule barriere qui tienne.
 revoke execute on function public.admin_apercu()                 from anon, public;
 revoke execute on function public.admin_membres(int)             from anon, public;
 revoke execute on function public.admin_retours(text)            from anon, public;
