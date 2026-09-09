@@ -1038,7 +1038,7 @@
                                alias:(ancien && ancien.alias) || null };
     saveCustom();
     rebuildLower();
-    if (window.Sync && Sync.marquerExos) Sync.marquerExos();
+    if (typeof Sync !== 'undefined' && Sync.marquerExos) Sync.marquerExos();
     return true;
   }
 
@@ -1059,7 +1059,7 @@
     customExercises[clean] = { nom:clean, groupe:groupe, alias:cleCible || null };
     saveCustom();
     rebuildLower();
-    if (window.Sync && Sync.marquerExos) Sync.marquerExos();
+    if (typeof Sync !== 'undefined' && Sync.marquerExos) Sync.marquerExos();
   }
 
   var DAY_NAMES = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
@@ -2821,7 +2821,13 @@
               });
           });
         });
-        return chaine.then(function(){ return dates.length; });
+        // Les noms memorises ne doivent jamais retenir les seances en otage :
+        // un echec ici laisse le drapeau leve, et repartira au prochain envoi.
+        return chaine
+          .then(function(){
+            return lireMeta().exosSales ? pousserExos().catch(function(){}) : null;
+          })
+          .then(function(){ return dates.length; });
       }).then(function(n){
         enCours = false; majUI();
         return n;
@@ -2860,9 +2866,74 @@
       });
     }
 
+    // ------------------------------------------------ exercices memorises
+    // La liste est minuscule — quelques dizaines de noms — donc on l'envoie
+    // entiere plutot que de tenir une file par nom. Un diff ici couterait
+    // plus de code qu'il n'economise d'octets.
+    function exosLocaux(){
+      return Object.keys(customExercises).map(function(nom){
+        var info = infoExo(customExercises[nom], nom);
+        return { cle:cleExo(nom), nom:info.nom || nom, groupe:info.groupe, alias:info.alias };
+      }).filter(function(e){ return e.cle; });
+    }
+
+    function pousserExos(){
+      if (!user) return Promise.resolve();
+      var liste = exosLocaux();
+      if (!liste.length){ majMeta(function(m){ m.exosSales = false; }); return Promise.resolve(); }
+      return client().then(function(c){
+        return c.rpc('pousser_exos_perso', { p_exos: liste });
+      }).then(function(r){
+        if (r.error) throw r.error;
+        // Le drapeau ne tombe qu'apres confirmation du serveur.
+        majMeta(function(m){ m.exosSales = false; });
+      });
+    }
+
+    function tirerExos(){
+      if (!user) return Promise.resolve(0);
+      return client().then(function(c){
+        return c.rpc('tirer_exos_perso');
+      }).then(function(r){
+        if (r.error) throw r.error;
+        var distants = r.data || [], nouveaux = 0;
+        distants.forEach(function(d){
+          if (!d || !d.cle) return;
+          var local = CUSTOM_PAR_CLE[d.cle];
+          // Le local gagne quand il porte un rattachement et pas le distant :
+          // un choix explicite ne doit pas etre efface par un appareil qui ne
+          // l'a jamais vu.
+          if (local && local.alias && !d.alias) return;
+          if (local && local.nom === d.nom && local.groupe === d.groupe &&
+              (local.alias || null) === (d.alias || null)) return;
+          if (local && local.nom !== d.nom) delete customExercises[local.nom];
+          customExercises[d.nom] = { nom:d.nom, groupe:d.groupe || 'Autre', alias:d.alias || null };
+          nouveaux++;
+        });
+        if (nouveaux){
+          saveCustom();
+          rebuildLower();
+          populateDatalist();
+          renderDayPanel(true);
+        }
+        return nouveaux;
+      });
+    }
+
+    function marquerExos(){
+      if (!dispo()) return;
+      majMeta(function(m){ m.exosSales = true; });
+      if (user) planifier(2500);
+    }
+
     function synchroniser(){
       if (!user) return Promise.resolve();
-      return tirer(false).then(pousser).then(function(){ majUI(); })
+      return tirer(false)
+        .then(pousser)
+        .then(function(){
+          return lireMeta().exosSales ? pousserExos().catch(function(){}) : null;
+        })
+        .then(function(){ majUI(); })
         .catch(function(e){ echec = messageErreur(e); majUI(); });
     }
 
@@ -3052,7 +3123,8 @@
       }
       majMeta(function(x){ x.migrePour = user.id; });
       loader('Récupération de tes séances…');
-      return tirer(true).then(function(n){
+      return tirerExos().then(pousserExos).catch(function(){ /* les seances priment */ })
+        .then(function(){ return tirer(true); }).then(function(n){
         msgCompte('ok', n ? n + ' journee(s) recuperee(s) depuis ton compte.' : 'Tout est deja a jour.');
         majUI();
       }).catch(function(e){ msgCompte('err', messageErreur(e)); });
@@ -3133,6 +3205,7 @@
 
     return {
       dispo:dispo, demarrer:demarrer, marquerSale:marquerSale, majUI:majUI,
+      marquerExos:marquerExos, pousserExos:pousserExos, tirerExos:tirerExos,
       montrerAccueil:montrerAccueil, fermerAccueil:fermerAccueil,
       synchroniser:synchroniser, migrer:migrer,
       connecter:connecter, inscrire:inscrire, deconnecter:deconnecter,
