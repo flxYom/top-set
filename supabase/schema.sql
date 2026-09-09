@@ -9,13 +9,17 @@
 --   · Pas de connexion par pseudo. Elle exigeait email_for_pseudo() en
 --     service_role, donc un serveur. Top Set est un site statique : il n'y en
 --     a pas. C'est email + mot de passe, et rien qui prétende le contraire.
---   · Pas de table profiles ni de rôle admin. Rien ne s'en sert ici, et une
---     table qu'on n'utilise pas est une surface d'attaque gratuite.
---   · Pas de vues d'agrégats. L'app calcule déjà volume et records en local,
---     sur des données qu'elle a déjà en cache. Les ajouter serait du code à
---     sécuriser pour zéro gain.
+--   · Pas de vues d'agrégats sur le carnet. L'app calcule déjà volume et
+--     records en local, sur des données qu'elle a déjà en cache. Les ajouter
+--     serait du code à sécuriser pour zéro gain.
 --
--- Modèle : carnets strictement privés. Personne ne voit les séances d'un autre.
+-- Modèle : carnets strictement privés. Personne ne voit les séances d'un
+-- autre — sections 1 à 6.
+--
+-- Les sections 7 à 9 ajoutent la seule exception : un profil public réduit
+-- (pseudo, rôle, dates), des retours utilisateurs, et quatre fonctions
+-- d'administration. Aucune ne lit une ligne de carnet. Le mur du carnet
+-- reste entier.
 -- ============================================================================
 
 
@@ -212,7 +216,13 @@ revoke all on public.seances, public.exercices, public.series,
 grant select, insert, update, delete
   on public.seances, public.exercices, public.series, public.exercices_perso
   to authenticated;
-grant select, insert on public.consentements to authenticated;
+
+-- Un consentement s'ecrit et se relit, il ne se corrige pas et ne s'efface
+-- pas : c'est une trace datee, pas un reglage. L'absence de policy UPDATE le
+-- garantissait deja ; le revoke l'ecrit aussi au niveau du droit de table,
+-- pour que la garantie ne repose pas sur une seule couche.
+revoke all on public.consentements from authenticated;
+grant  select, insert on public.consentements to authenticated;
 
 
 -- ============================================================================
@@ -463,7 +473,372 @@ grant  execute on function public.maintenant()              to authenticated;
 
 
 -- ============================================================================
--- 7. SUPPRESSION DE COMPTE (RGPD — droit à l'effacement)
+-- 7. PROFILS
+-- ============================================================================
+-- Le pseudo vivait dans auth.users.raw_user_meta_data. Ce schéma n'est pas
+-- exposé par PostgREST : personne, pas même son propriétaire, ne peut le lire
+-- depuis le navigateur autrement qu'en décodant son propre jeton. Tant que
+-- chacun était seul dans son carnet ça n'avait aucune importance ; à partir du
+-- moment où l'app doit écrire « ton coach : Marc », ou lister les inscrits,
+-- il faut une table interrogeable.
+--
+-- C'est la seule table du projet qu'un autre utilisateur pourra lire, et
+-- uniquement un administrateur. Elle ne contient donc rien de sensible : pas
+-- d'email, pas de date de naissance, pas de mesure. Un pseudo, un rôle, deux
+-- dates.
+create table if not exists public.profils (
+  user_id  uuid primary key references auth.users (id) on delete cascade,
+  pseudo   text,
+  -- 'membre' ou 'admin'. Le rôle de coach viendra plus tard et sera un
+  -- attribut séparé : on peut être coach ET coaché, les deux ne s'excluent
+  -- pas, alors qu'administrateur est un statut à part.
+  role     text not null default 'membre',
+  cree_le  timestamptz not null default now(),
+  vu_le    timestamptz not null default now()
+);
+
+alter table public.profils drop constraint if exists profils_role_connu;
+alter table public.profils add  constraint profils_role_connu
+  check (role in ('membre', 'admin'));
+
+-- Un pseudo doit désigner une personne et une seule, sinon « X est mon coach »
+-- n'a pas de sens. Insensible à la casse, et seulement quand il est renseigné :
+-- un compte sans pseudo reste parfaitement valide.
+create unique index if not exists profils_pseudo_unique
+  on public.profils (lower(pseudo)) where pseudo is not null;
+
+create index if not exists profils_vu_idx on public.profils (vu_le desc);
+
+alter table public.profils enable row level security;
+
+-- Chacun lit sa propre ligne, et c'est tout ce qu'il peut faire dessus.
+--
+-- Il n'y a volontairement PAS de policy UPDATE. RLS filtre des lignes, pas des
+-- colonnes : « chacun modifie son profil » autoriserait aussi
+-- « update profils set role = 'admin' where user_id = auth.uid() ». La ligne
+-- appartient bien à l'appelant, la policy passerait, et n'importe qui
+-- deviendrait administrateur depuis la console du navigateur.
+--
+-- La ligne naît, se met à jour et se date dans toucher_profil(), qui est
+-- SECURITY DEFINER et n'écrit que les colonnes qu'elle a le droit d'écrire.
+-- Le jour où changer de pseudo devient une fonctionnalité, ce sera une
+-- fonction de plus, pas un droit d'écriture de plus.
+drop policy if exists "Chacun voit son profil" on public.profils;
+create policy "Chacun voit son profil"
+  on public.profils for select using (auth.uid() = user_id);
+
+drop policy if exists "Chacun modifie son profil" on public.profils;
+
+revoke all   on public.profils from anon;
+revoke all   on public.profils from authenticated;
+grant  select on public.profils to authenticated;
+
+
+-- ---------------------------------------------------------------- est_admin
+-- SECURITY DEFINER, et ce n'est pas un raccourci : une policy sur profils qui
+-- irait elle-même lire profils pour savoir si l'appelant est admin déclenche
+-- une récursion infinie, que Postgres refuse. La fonction s'exécute avec les
+-- droits de son propriétaire, donc hors RLS, et coupe la boucle.
+--
+-- Elle ne prend aucun paramètre : impossible de lui demander « est-ce que
+-- QUELQU'UN D'AUTRE est admin ». Elle ne répond que sur l'appelant.
+create or replace function public.est_admin()
+returns boolean
+language sql
+security definer
+stable
+set search_path = public
+as $$
+  select exists (
+    select 1 from public.profils
+    where user_id = auth.uid() and role = 'admin'
+  );
+$$;
+
+revoke execute on function public.est_admin() from anon, public;
+grant  execute on function public.est_admin() to authenticated;
+
+
+-- ------------------------------------------------------------ toucher_profil
+-- Appelée à chaque ouverture de l'app par un utilisateur connecté. Elle fait
+-- trois choses et rien d'autre : créer la ligne si elle manque, poser le
+-- pseudo s'il n'y en a pas encore, et dater la visite.
+--
+-- SECURITY DEFINER pour une seule raison : lire auth.users.created_at, afin
+-- que la date d'inscription affichée soit la vraie et non celle de la première
+-- ouverture après cette migration. Elle n'écrit jamais ailleurs que sur
+-- auth.uid() — l'identité ne vient pas d'un paramètre, elle vient du jeton.
+create or replace function public.toucher_profil(p_pseudo text default null)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_user   uuid := auth.uid();
+  v_veut   text := nullif(trim(coalesce(p_pseudo, '')), '');
+  v_ligne  public.profils;
+begin
+  if v_user is null then
+    raise exception 'Aucune session : connexion requise.';
+  end if;
+
+  -- Un pseudo de 200 caractères casserait chaque écran qui l'affiche.
+  if v_veut is not null then
+    v_veut := left(v_veut, 24);
+  end if;
+
+  insert into public.profils (user_id, pseudo, cree_le, vu_le)
+  select v_user,
+         null,                                   -- posé plus bas, si libre
+         coalesce(u.created_at, now()),
+         now()
+  from auth.users u where u.id = v_user
+  on conflict (user_id) do update set vu_le = now();
+
+  -- Le pseudo continue de vivre dans les métadonnées du compte, comme depuis
+  -- le premier jour. Cette colonne n'en est qu'un miroir interrogeable : on ne
+  -- crée pas une deuxième source de vérité pour 24 caractères. L'app envoie à
+  -- chaque ouverture le pseudo qu'elle a dans le jeton, et la colonne suit.
+  update public.profils
+     set pseudo = case
+       -- Pseudo retiré côté compte : la colonne se vide aussi.
+       when v_veut is null then null
+       -- Deux personnes ont pu choisir le même pseudo du temps où il n'était
+       -- qu'une étiquette dans le jeton. Le premier arrivé le garde, le second
+       -- reste sur le sien plutôt que de voir sa connexion échouer.
+       when exists (
+         select 1 from public.profils p
+         where lower(p.pseudo) = lower(v_veut) and p.user_id <> v_user
+       ) then pseudo
+       else v_veut
+     end
+   where user_id = v_user;
+
+  select * into v_ligne from public.profils where user_id = v_user;
+
+  return jsonb_build_object(
+    'pseudo',  v_ligne.pseudo,
+    'role',    v_ligne.role,
+    'cree_le', v_ligne.cree_le
+  );
+end;
+$$;
+
+revoke execute on function public.toucher_profil(text) from anon, public;
+grant  execute on function public.toucher_profil(text) to authenticated;
+
+
+-- ============================================================================
+-- 8. RETOURS
+-- ============================================================================
+-- « Retour », pas « ticket » : le mot dit ce que c'est sans promettre un
+-- service client. Trois natures, parce qu'un bug et une idée ne se traitent
+-- pas pareil, et que trois est le nombre au-delà duquel personne ne choisit.
+create table if not exists public.retours (
+  id       uuid primary key default gen_random_uuid(),
+  -- « set null » et pas « cascade » : quelqu'un qui supprime son compte a le
+  -- droit de disparaître, pas celui d'effacer un bug qu'il a signalé. La ligne
+  -- reste, anonyme.
+  user_id  uuid references auth.users (id) on delete set null,
+  type     text not null default 'idee',
+  corps    text not null,
+  -- Version de l'app et vue d'où part le retour. Diagnostic, jamais de
+  -- décision : ça vient du client, donc ce n'est pas digne de confiance.
+  contexte jsonb not null default '{}'::jsonb,
+  statut   text not null default 'nouveau',
+  cree_le  timestamptz not null default now()
+);
+
+alter table public.retours drop constraint if exists retours_type_connu;
+alter table public.retours add  constraint retours_type_connu
+  check (type in ('bug', 'idee', 'question'));
+
+alter table public.retours drop constraint if exists retours_statut_connu;
+alter table public.retours add  constraint retours_statut_connu
+  check (statut in ('nouveau', 'vu', 'traite'));
+
+-- Un corps vide n'est pas un retour, et un corps de dix mégaoctets est une
+-- attaque. La base tranche, pas le formulaire : on ne défend pas une table
+-- avec du JavaScript.
+alter table public.retours drop constraint if exists retours_corps_borne;
+alter table public.retours add  constraint retours_corps_borne
+  check (char_length(corps) between 1 and 4000);
+
+alter table public.retours drop constraint if exists retours_contexte_borne;
+alter table public.retours add  constraint retours_contexte_borne
+  check (char_length(contexte::text) <= 1000);
+
+create index if not exists retours_tri_idx on public.retours (statut, cree_le desc);
+
+alter table public.retours enable row level security;
+
+-- On envoie sous son propre nom, on relit ce qu'on a envoyé, on ne modifie ni
+-- n'efface rien. Le statut est bougé par les fonctions d'administration, qui
+-- passent au-dessus de RLS et vérifient le rôle elles-mêmes.
+drop policy if exists "Chacun envoie ses retours" on public.retours;
+create policy "Chacun envoie ses retours"
+  on public.retours for insert with check (auth.uid() = user_id);
+
+drop policy if exists "Chacun relit ses retours" on public.retours;
+create policy "Chacun relit ses retours"
+  on public.retours for select using (auth.uid() = user_id);
+
+revoke all   on public.retours from anon;
+revoke all   on public.retours from authenticated;
+grant  select, insert on public.retours to authenticated;
+
+
+-- ============================================================================
+-- 9. ADMINISTRATION
+-- ============================================================================
+-- Ces quatre fonctions sont le seul endroit du schéma où quelqu'un lit une
+-- ligne qui n'est pas la sienne. Elles sont donc toutes bâties pareil :
+-- SECURITY DEFINER pour passer RLS, et un refus explicite en première
+-- instruction si l'appelant n'est pas administrateur. Le contrôle est dans la
+-- fonction, jamais dans l'interface — un bouton caché n'a jamais protégé
+-- personne.
+--
+-- Aucune ne renvoie d'email, ni la moindre ligne de carnet. Un administrateur
+-- voit qui s'inscrit et combien de séances sont loguées ; il ne voit pas ce
+-- qu'il y a dedans. Ce n'est pas une limite technique, c'est le principe.
+
+-- ------------------------------------------------------------- admin_apercu
+create or replace function public.admin_apercu()
+returns jsonb
+language plpgsql
+security definer
+stable
+set search_path = public
+as $$
+declare v jsonb;
+begin
+  if not public.est_admin() then
+    raise exception 'Reserve a l administrateur.';
+  end if;
+
+  select jsonb_build_object(
+    'inscrits',        (select count(*) from public.profils),
+    'inscrits_7j',     (select count(*) from public.profils where cree_le > now() - interval '7 days'),
+    'actifs_7j',       (select count(*) from public.profils where vu_le  > now() - interval '7 days'),
+    'actifs_30j',      (select count(*) from public.profils where vu_le  > now() - interval '30 days'),
+    'seances',         (select count(*) from public.seances),
+    'seances_7j',      (select count(*) from public.seances where updated_at > now() - interval '7 days'),
+    'series',          (select count(*) from public.series),
+    'retours_nouveaux',(select count(*) from public.retours where statut = 'nouveau')
+  ) into v;
+
+  return v;
+end;
+$$;
+
+-- ------------------------------------------------------------ admin_membres
+-- Une ligne par inscrit, triée par visite la plus récente. Le nombre de
+-- séances est compté ici et non côté client : le client n'a pas le droit de
+-- lire ces séances, et il ne l'aura pas.
+create or replace function public.admin_membres(p_limite int default 200)
+returns table (
+  user_id       uuid,
+  pseudo        text,
+  role          text,
+  cree_le       timestamptz,
+  vu_le         timestamptz,
+  nb_seances    bigint,
+  derniere_seance date
+)
+language plpgsql
+security definer
+stable
+set search_path = public
+as $$
+begin
+  if not public.est_admin() then
+    raise exception 'Reserve a l administrateur.';
+  end if;
+
+  return query
+    select p.user_id, p.pseudo, p.role, p.cree_le, p.vu_le,
+           coalesce(s.n, 0)   as nb_seances,
+           s.derniere         as derniere_seance
+    from public.profils p
+    left join (
+      select se.user_id, count(*) n, max(se.date) derniere
+      from public.seances se group by se.user_id
+    ) s on s.user_id = p.user_id
+    order by p.vu_le desc
+    limit greatest(1, least(coalesce(p_limite, 200), 1000));
+end;
+$$;
+
+-- ------------------------------------------------------------ admin_retours
+create or replace function public.admin_retours(p_statut text default null)
+returns table (
+  id      uuid,
+  pseudo  text,
+  type    text,
+  corps   text,
+  contexte jsonb,
+  statut  text,
+  cree_le timestamptz
+)
+language plpgsql
+security definer
+stable
+set search_path = public
+as $$
+begin
+  if not public.est_admin() then
+    raise exception 'Reserve a l administrateur.';
+  end if;
+
+  return query
+    select r.id, p.pseudo, r.type, r.corps, r.contexte, r.statut, r.cree_le
+    from public.retours r
+    left join public.profils p on p.user_id = r.user_id
+    where p_statut is null or r.statut = p_statut
+    order by r.cree_le desc
+    limit 500;
+end;
+$$;
+
+-- --------------------------------------------------- admin_marquer_retour
+create or replace function public.admin_marquer_retour(p_id uuid, p_statut text)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not public.est_admin() then
+    raise exception 'Reserve a l administrateur.';
+  end if;
+  if p_statut not in ('nouveau', 'vu', 'traite') then
+    raise exception 'Statut inconnu : %', p_statut;
+  end if;
+
+  update public.retours set statut = p_statut where id = p_id;
+end;
+$$;
+
+revoke execute on function public.admin_apercu()                 from anon, public;
+revoke execute on function public.admin_membres(int)             from anon, public;
+revoke execute on function public.admin_retours(text)            from anon, public;
+revoke execute on function public.admin_marquer_retour(uuid,text) from anon, public;
+grant  execute on function public.admin_apercu()                 to authenticated;
+grant  execute on function public.admin_membres(int)             to authenticated;
+grant  execute on function public.admin_retours(text)            to authenticated;
+grant  execute on function public.admin_marquer_retour(uuid,text) to authenticated;
+
+-- Se nommer administrateur ne se fait pas depuis l'app : il n'existe aucune
+-- fonction pour ça, volontairement. Ça se fait une fois, à la main, dans
+-- Supabase → SQL Editor, après avoir ouvert l'app au moins une fois pour que
+-- la ligne existe :
+--
+--   update public.profils set role = 'admin'
+--   where user_id = (select id from auth.users where email = 'ton@email.fr');
+
+-- ============================================================================
+-- 10. SUPPRESSION DE COMPTE (RGPD — droit à l'effacement)
 -- ============================================================================
 -- Tout est en « on delete cascade » depuis auth.users : supprimer le compte
 -- efface séances, exercices, séries, exercices mémorisés et consentements.
