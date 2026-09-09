@@ -42,6 +42,7 @@ repository is for right now.
 - [Migrating an existing logbook](#migrating-an-existing-logbook)
 - [Privacy by construction](#privacy-by-construction)
 - [Accounts and Supabase](#accounts-and-supabase)
+- [Sessions: two tabs](#sessions-two-tabs)
 - [Feedback and administration](#feedback-and-administration)
 - [Stack](#stack)
 - [Project structure](#project-structure)
@@ -199,6 +200,20 @@ from the JWT, server-side.
 
 **No cookies, no analytics, no trackers.** The only processing that exists is the
 host's own access logs, and the privacy page says so.
+
+---
+
+## Sessions: two tabs
+
+The **SÉANCES** view is split in two. *Mes séances* holds what is left to do —
+sessions prepared but not yet logged, today's, and upcoming ones — sorted oldest
+first, so a skipped session rises to the top instead of getting buried. The
+*Créer ma séance* box lives there. *Historique* holds what is done, newest first,
+grouped by month.
+
+The boundary is whether the session has been logged, not the date alone: a
+session logged today stays in *Mes séances* until tomorrow, because it is still
+the one being worked on.
 
 ---
 

@@ -1270,10 +1270,13 @@
   </section>
 
   <section class="view" id="view-seances" hidden>
-    <div class="day-panel-header"><h2>Mes séances</h2></div>
+    <div class="segmented sub" id="seancesTabs">
+      <button type="button" class="seg-btn active" data-onglet="mes">MES SÉANCES</button>
+      <button type="button" class="seg-btn" data-onglet="histo">HISTORIQUE</button>
+    </div>
     <div class="seances-cible" id="seancesCible"></div>
-    <div class="seance-creer">
-      <label class="seance-creer-label" for="seanceDate">CRÉER UNE SÉANCE</label>
+    <div class="seance-creer" id="seanceCreerBloc">
+      <label class="seance-creer-label" for="seanceDate">CRÉER MA SÉANCE</label>
       <div class="seance-creer-ligne">
         <input type="date" id="seanceDate" class="seance-creer-date" aria-label="Date de la nouvelle séance">
         <button type="button" class="btn-sheet primary" id="seanceCreer">CRÉER</button>
@@ -2659,20 +2662,58 @@
   }
 
   // ---------- la page Mes seances ----------
+  // Deux rubriques, et la frontiere est la meme que celle qu'on a dans la
+  // tete : ce qui reste a faire d'un cote, ce qui est fait de l'autre.
+  //
+  //   MES SÉANCES  une seance pas encore loguee, quelle que soit sa date, ou
+  //                une seance d'aujourd'hui ou d'apres. Triee du plus ancien
+  //                au plus recent : une seance prevue et jamais faite remonte
+  //                en haut, la ou on la voit.
+  //   HISTORIQUE   ce qui est logue et date d'avant aujourd'hui. Du plus
+  //                recent au plus ancien, comme on relit un carnet.
+  //
+  // Une seance loguee aujourd'hui reste dans « mes seances » jusqu'a demain :
+  // c'est encore celle sur laquelle on travaille.
+  function trierSeances(){
+    var aujourdhui = toDateStr(new Date());
+    var toutes = seancesReprenables();
+    var mes = [], histo = [];
+    toutes.forEach(function(s){
+      if (s.prevue || s.date >= aujourdhui) mes.push(s); else histo.push(s);
+    });
+    mes.sort(function(a, b){ return a.date < b.date ? -1 : (a.date > b.date ? 1 : 0); });
+    return { mes:mes, histo:histo };   // histo est deja du plus recent au plus ancien
+  }
+
   function renderSeances(){
     var champ = document.getElementById('seanceDate');
     if (champ && !champ.value) champ.value = toDateStr(new Date());
     var liste = document.getElementById('seancesListe');
     var cible = document.getElementById('seancesCible');
-    var seances = seancesReprenables();
+    var bloc  = document.getElementById('seanceCreerBloc');
+
+    document.querySelectorAll('#seancesTabs .seg-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.onglet === seancesOnglet);
+    });
+
+    var groupes = trierSeances();
+    var mes = seancesOnglet === 'mes';
+    var seances = mes ? groupes.mes : groupes.histo;
+
+    // Creer une seance n'a de sens que dans la rubrique ou elle atterrira.
+    bloc.hidden = !mes;
 
     if (!seances.length){
       cible.textContent = '';
-      liste.innerHTML = '<div class="seances-vide">Aucune séance pour l\'instant. ' +
-        'Crée-en une ci-dessus, ou note-en une dans le planning.</div>';
+      liste.innerHTML = '<div class="seances-vide">' + (mes
+        ? 'Aucune séance prévue. Crée-en une ci-dessus, ou note-en une dans le planning.'
+        : 'Rien dans l\'historique pour l\'instant. Les séances terminées viendront ici toutes seules.')
+        + '</div>';
       return;
     }
-    cible.textContent = 'Ouvre une séance pour la modifier, la renommer, voir son récap, ou la sélectionner pour un autre jour.';
+    cible.textContent = mes
+      ? 'Ouvre une séance pour la modifier, la renommer, ou la sélectionner pour un autre jour.'
+      : 'Ouvre une séance passée pour voir son récap, ou la reprendre telle quelle pour un autre jour.';
 
     var moisVu = '', html = '';
     seances.forEach(function(s){
@@ -3166,6 +3207,11 @@
   }
 
   // ---------- event wiring ----------
+  // « mes » ou « histo ». L'onglet survit a un aller-retour dans une fiche :
+  // revenir d'une seance passee pour retomber sur la liste des seances a venir
+  // donnerait l'impression d'avoir perdu sa place.
+  var seancesOnglet = 'mes';
+
   var VUES = ['planning','seances','seance','exercice','recap','admin'];
   function montrerVue(vue){
     state.view = vue;
@@ -3187,10 +3233,20 @@
     montrerVue(btn.dataset.view);
   });
 
+  document.getElementById('seancesTabs').addEventListener('click', function(e){
+    var btn = e.target.closest('.seg-btn'); if (!btn) return;
+    seancesOnglet = btn.dataset.onglet;
+    renderSeances();
+    window.scrollTo(0, 0);
+  });
+
   document.getElementById('subTabs').addEventListener('click', function(e){
     var btn = e.target.closest('.seg-btn'); if (!btn) return;
     state.recapPeriod = btn.dataset.period;
-    document.querySelectorAll('.seg-btn').forEach(function(b){ b.classList.toggle('active', b===btn); });
+    // Portee au recap : « .seg-btn » tout court attrapait aussi les onglets de
+    // la vue SEANCES, qui portent les memes classes, et les eteignait au
+    // passage.
+    document.querySelectorAll('#subTabs .seg-btn').forEach(function(b){ b.classList.toggle('active', b===btn); });
     renderRecap();
   });
 
@@ -4882,7 +4938,14 @@
       if (!sessionStockee()) return;
       client().then(function(){
         majUI();
-        if (user) synchroniser();
+        if (!user) return;
+        synchroniser();
+        // Une session restauree est une ouverture comme une autre : c'est ici
+        // que se date la visite, et ici qu'on apprend qu'on est administrateur.
+        // Ne le faire que dans apresConnexion() revenait a ne compter que les
+        // gens qui viennent de taper leur mot de passe — c'est-a-dire presque
+        // personne, puisque la session dure des semaines.
+        toucherProfil().then(majUI);
       }).catch(function(){ /* hors ligne au demarrage : le local suffit */ });
 
       // La reconnexion relance ce qui attend. C'est tout le mecanisme de retry :
