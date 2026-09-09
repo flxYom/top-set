@@ -215,9 +215,19 @@ sont tous servis depuis le site lui-même. Les charger depuis un CDN enverrait
 l'adresse IP de chaque visiteur à Google ou Cloudflare à chaque ouverture, qu'il
 ait un compte ou non.
 
-**Un CSP strict** dans `vercel.json` — `default-src 'self'`, et `connect-src`
-limité à `'self'` plus la seule origine Supabase du projet. Rien d'autre ne peut
-être contacté, ce qui bloque l'exfiltration au niveau du navigateur.
+**Un CSP strict** dans `vercel.json` — `default-src 'self'`, `script-src 'self'`
+sans `'unsafe-inline'`, `object-src 'none'`, `frame-ancestors 'none'`, et
+`connect-src` limité à `'self'` plus la seule origine Supabase du projet. Rien
+d'autre ne peut être contacté, ce qui bloque l'exfiltration au niveau du
+navigateur, et aucun script injecté ne peut s'exécuter même si un `esc()` était
+oublié quelque part.
+
+**Un fichier importé est traité comme hostile.** Il est plafonné à 8 Mo avant
+d'être lu, les identifiants qui sortent de `[A-Za-z0-9_-]{1,64}` sont remplacés,
+le groupe musculaire est validé contre la liste fermée, et les exercices
+mémorisés sont repassés clé par clé. Aucune donnée légitime n'est réécrite :
+`test/gabarits.test.mjs` vérifie que les identifiants historiques passent tous
+le filtre.
 
 **Rien n'est téléchargé pour qui n'a pas de compte.** supabase-js pèse 209 Ko et
 n'est chargé que si une session existe déjà ou si le panneau compte est ouvert.
@@ -298,8 +308,22 @@ where user_id = (select id from auth.users where email = 'ton@email.fr');
 Aucun framework. Aucune étape de build. Aucun bundler. Aucune dépendance à
 installer.
 
-Un fichier HTML avec CSS et JavaScript en ligne, plus des fichiers statiques.
-`index.html` pèse environ 218 Ko, dont à peu près 119 Ko de texture en base64.
+Un fichier HTML avec le CSS en ligne, plus des fichiers statiques.
+`index.html` pèse environ 182 Ko, dont à peu près 119 Ko de texture en base64 ;
+le JavaScript de l'app vit à côté, dans `app.js` (166 Ko).
+
+**Pourquoi le JS n'est pas en ligne, lui.** Il l'a été jusqu'à l'audit de
+sécurité. Un script en ligne oblige à écrire `script-src 'self' 'unsafe-inline'`
+dans la politique de sécurité de contenu — et cette permission-là autorise aussi
+les gestionnaires d'événements injectés. Un XSS trouvé pendant cet audit
+s'exécutait précisément grâce à elle. Sans étape de build, il n'existe pas de
+`nonce` possible sur un hébergement statique : sortir le script est la seule
+façon de passer à `script-src 'self'`. Il est chargé à la même place, en fin de
+`<body>`, donc l'ordre d'exécution ne change pas.
+
+`style-src` garde `'unsafe-inline'`, et c'est assumé : les cartes portent un
+attribut `style="--card-color:…"`, une injection de style ne peut pas exécuter
+de script, et sortir la feuille de style ne supprimerait pas le besoin.
 
 Chart.js 4.4.1 est la seule bibliothèque, chargée à la demande la première fois
 qu'on ouvre un graphique de progression.

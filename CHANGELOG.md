@@ -68,7 +68,16 @@ while it stays below `1.0.0`, breaking changes (in particular to the
   as `-12,5` rather than turning into text.
 - Imports are capped at 8 MB, checked before `FileReader` and before
   `JSON.parse`. A real two-year backup is under 1 MB.
-- `test/gabarits.test.mjs`: 37 static guards over the rendering, import, CSV
+- **`script-src` no longer allows `'unsafe-inline'`.** That permission is what
+  let the injected `onmouseover` above actually run; without it the browser
+  would have refused it even unpatched. The app's single inline `<script>`
+  block moved to `app.js`, loaded from the same position at the end of
+  `<body>`, so execution order is unchanged. There were no inline event
+  handlers and no `javascript:` URLs to migrate. `style-src` keeps
+  `'unsafe-inline'` on purpose: the cards carry `style="--card-color:…"`
+  attributes, style injection cannot execute script, and extracting the
+  stylesheet would not remove the need.
+- `test/gabarits.test.mjs`: 50 static guards over the rendering, import, CSV
   and service-worker forms that have already caused a hole. Wired into CI.
 - No `UPDATE` policy on `profils`. RLS filters rows, not columns: a
   "users may edit their own profile" policy would also have allowed
@@ -79,7 +88,7 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ### Changed
 
-- Service worker cache version `topset-v2` → `topset-v5`.
+- Service worker cache version `topset-v2` → `topset-v6`.
 - Offline, a clean URL (`/guide`, produced by Vercel's `cleanUrls`) fell back
   to the app instead of the requested page. The navigation fallback now retries
   once with `.html` before giving up.
