@@ -28,6 +28,9 @@ jobs:
       - name: Business logic tests
         run: node test/intelligence.test.mjs
 
+      - name: Template and hardening guards
+        run: node test/gabarits.test.mjs
+
       - name: Lint HTML
         run: npx --yes html-validate "*.html"
 

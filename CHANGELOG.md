@@ -47,6 +47,29 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ### Security
 
+- **Stored XSS via a crafted JSON backup (reproduced, then fixed).** Exercise
+  and set identifiers were interpolated into HTML attributes verbatim. An
+  imported file whose `id` was `x1" onmouseover="…` installed a live event
+  handler on the card, and it fired. Fixed at both ends: every identifier is
+  escaped at the sink, and `idSur()` rejects anything outside
+  `[A-Za-z0-9_-]{1,64}` on the way in — the same rule `uuid_ou_neuf()` already
+  applies server-side. No existing identifier is rewritten: `x1a2b3c`,
+  `s1a2b3c` and UUIDs all pass.
+- `esc()` now also escapes `'`. Every generated attribute uses double quotes
+  today, so this was not exploitable — it removes the trap for the next
+  single-quoted attribute someone writes.
+- Muscle groups from an imported file are validated against `GROUPS`, and
+  remembered exercises are re-validated key by key (`__proto__`,
+  `constructor` and `prototype` are dropped). The legacy
+  `"name": "Group"` string form is preserved as-is.
+- CSV export no longer lets a cell become a spreadsheet formula. Text columns
+  starting with `=`, `+`, `-`, `@`, tab or CR are prefixed with `'`. Numeric
+  columns are exempt on purpose, so a legitimate negative load still exports
+  as `-12,5` rather than turning into text.
+- Imports are capped at 8 MB, checked before `FileReader` and before
+  `JSON.parse`. A real two-year backup is under 1 MB.
+- `test/gabarits.test.mjs`: 37 static guards over the rendering, import, CSV
+  and service-worker forms that have already caused a hole. Wired into CI.
 - No `UPDATE` policy on `profils`. RLS filters rows, not columns: a
   "users may edit their own profile" policy would also have allowed
   `update profils set role = 'admin' where user_id = auth.uid()`.
@@ -56,7 +79,12 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ### Changed
 
-- Service worker cache version `topset-v2` → `topset-v3`.
+- Service worker cache version `topset-v2` → `topset-v5`.
+- Offline, a clean URL (`/guide`, produced by Vercel's `cleanUrls`) fell back
+  to the app instead of the requested page. The navigation fallback now retries
+  once with `.html` before giving up.
+- `SECURITY.md` described a threat model without accounts or a database, which
+  stopped being true when Supabase sync landed.
 - Guide: the install section no longer claims a connection is required — the
   service worker has made the app work offline since v2.
 
