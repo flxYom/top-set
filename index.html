@@ -304,6 +304,7 @@
     font-size:13px;font-weight:800;text-align:left;cursor:pointer;
   }
   .alias-choix:active{background:var(--yellow);color:#0d0c0a;}
+  .pseudo-label{margin-top:4px;}
   .alias-liste{display:flex;flex-direction:column;gap:7px;}
   .alias-select{
     width:100%;min-height:44px;padding:0 30px 0 10px;
@@ -846,7 +847,7 @@
 
     <div class="sheet-stat" id="dataStat">—</div>
 
-    <p class="sheet-note">
+    <p class="sheet-note" id="dataOu">
       Tes séances sont stockées dans ce navigateur, sur cet appareil uniquement.
       Vider les données du site, changer de téléphone ou désinstaller l'app
       les efface définitivement. Garde une copie du fichier quelque part.
@@ -866,6 +867,9 @@
       </div>
 
       <div id="compteCo" hidden>
+        <label class="sheet-label pseudo-label" for="compteMonPseudo">TON PSEUDO</label>
+        <input type="text" id="compteMonPseudo" class="sheet-input" placeholder="ton pseudo" autocomplete="nickname" maxlength="24" aria-label="Ton pseudo">
+        <button type="button" class="btn-sheet" id="comptePseudoOk">ENREGISTRER LE PSEUDO</button>
         <button type="button" class="btn-sheet" id="compteMigrer" hidden></button>
         <button type="button" class="btn-sheet" id="compteSync">SYNCHRONISER MAINTENANT</button>
         <button type="button" class="btn-sheet" id="compteDeconnexion">SE DÉCONNECTER</button>
@@ -911,18 +915,40 @@
       jamais les perdre si tu changes de téléphone.
     </p>
 
-    <input type="email" id="compteEmail" class="sheet-input" placeholder="ton@email.fr" autocomplete="email" inputmode="email" aria-label="Adresse email">
-    <input type="password" id="compteMdp" class="sheet-input" placeholder="mot de passe (8 caractères minimum)" autocomplete="current-password" aria-label="Mot de passe">
+    <div id="modeConnexion">
+      <input type="text" id="comptePseudo" class="sheet-input" placeholder="ton pseudo (facultatif)" autocomplete="nickname" maxlength="24" aria-label="Pseudo">
+      <input type="email" id="compteEmail" class="sheet-input" placeholder="ton@email.fr" autocomplete="email" inputmode="email" aria-label="Adresse email">
+      <input type="password" id="compteMdp" class="sheet-input" placeholder="mot de passe (8 caractères minimum)" autocomplete="current-password" aria-label="Mot de passe">
 
-    <div class="sheet-check">
-      <input type="checkbox" id="compteConsent">
-      <label for="compteConsent">Pour créer un compte : j'ai lu et j'accepte la
-        <a href="confidentialite.html" target="_blank" rel="noopener">politique de confidentialité</a>
-        et les <a href="cgu.html" target="_blank" rel="noopener">CGU</a>.</label>
+      <div class="sheet-check">
+        <input type="checkbox" id="compteConsent">
+        <label for="compteConsent">Pour créer un compte : j'ai lu et j'accepte la
+          <a href="confidentialite.html" target="_blank" rel="noopener">politique de confidentialité</a>
+          et les <a href="cgu.html" target="_blank" rel="noopener">CGU</a>.</label>
+      </div>
+
+      <button type="button" class="btn-sheet primary" id="compteInscription">CRÉER UN COMPTE</button>
+      <button type="button" class="btn-sheet" id="compteConnexion">J'AI DÉJÀ UN COMPTE</button>
+      <button type="button" class="lien-discret" id="accueilOubli">Mot de passe oublié&nbsp;?</button>
     </div>
 
-    <button type="button" class="btn-sheet primary" id="compteInscription">CRÉER UN COMPTE</button>
-    <button type="button" class="btn-sheet" id="compteConnexion">J'AI DÉJÀ UN COMPTE</button>
+    <div id="modeOubli" hidden>
+      <p class="accueil-sous">
+        Donne l'adresse de ton compte : tu recevras un lien pour choisir un
+        nouveau mot de passe. Ouvre-le depuis ce même téléphone.
+      </p>
+      <input type="email" id="oubliEmail" class="sheet-input" placeholder="ton@email.fr" autocomplete="email" inputmode="email" aria-label="Adresse email du compte">
+      <button type="button" class="btn-sheet primary" id="oubliEnvoyer">ENVOYER LE LIEN</button>
+      <button type="button" class="lien-discret" id="oubliRetour">Revenir à la connexion</button>
+    </div>
+
+    <div id="modeNouveau" hidden>
+      <p class="accueil-sous">
+        Choisis ton nouveau mot de passe. Il remplace l'ancien tout de suite.
+      </p>
+      <input type="password" id="nouveauMdp" class="sheet-input" placeholder="nouveau mot de passe (8 caractères minimum)" autocomplete="new-password" aria-label="Nouveau mot de passe">
+      <button type="button" class="btn-sheet primary" id="nouveauValider">ENREGISTRER</button>
+    </div>
 
     <div class="sheet-msg" id="compteMsg" hidden></div>
 
@@ -2763,8 +2789,11 @@
       if (!dispo()) return Promise.reject(new Error('Comptes non configures'));
       if (clientPromise) return clientPromise;
       clientPromise = charger().then(function(){
+        // detectSessionInUrl etait a false parce que rien n'arrivait par URL.
+        // Le lien « mot de passe oublie » en est un : sans ca, le code repartait
+        // avec la page sans jamais ouvrir de session.
         sb = window.supabase.createClient(cfg.url, cfg.anonKey, {
-          auth: { persistSession:true, autoRefreshToken:true, detectSessionInUrl:false }
+          auth: { persistSession:true, autoRefreshToken:true, detectSessionInUrl:true }
         });
         sb.auth.onAuthStateChange(function(_evt, session){
           user = session ? session.user : null;
@@ -3006,6 +3035,76 @@
     }
 
     // ---------------------------------------------------------------- auth
+    // Le pseudo vit dans les metadonnees du compte : une table de plus pour
+    // une chaine de 24 caracteres serait une surface a securiser pour rien.
+    function pseudoDe(u){
+      var m = u && u.user_metadata;
+      var p = m && m.pseudo;
+      return (typeof p === 'string' && p.trim()) ? p.trim() : '';
+    }
+    function nomAffiche(){
+      if (!user) return '';
+      return pseudoDe(user) || user.email;
+    }
+    function enregistrerPseudo(p){
+      if (!user) return Promise.reject(new Error('Pas connecte'));
+      var v = String(p || '').trim().slice(0, 24);
+      return client().then(function(c){
+        return c.auth.updateUser({ data:{ pseudo:v } });
+      }).then(function(r){
+        if (r.error) throw r.error;
+        user = r.data.user;
+        majUI();
+        showToast(v ? 'Salut ' + v + ' !' : 'Pseudo retire');
+      });
+    }
+
+    // ------------------------------------------------- mot de passe oublie
+    function envoyerLienMdp(email){
+      loader('Envoi du lien…');
+      return client().then(function(c){
+        // Le lien doit revenir sur cette page exacte, pas sur une autre : la
+        // preuve PKCE est dans le stockage de ce navigateur.
+        return c.auth.resetPasswordForEmail(String(email || '').trim(), {
+          redirectTo: location.origin + location.pathname
+        });
+      }).then(function(r){
+        cacherLoader();
+        if (r.error) throw r.error;
+        msgCompte('ok', 'Lien envoye. Regarde ta boite mail, et tes indesirables.');
+      }, function(e){ cacherLoader(); throw e; });
+    }
+    function changerMdp(mdp){
+      loader('Enregistrement…');
+      return client().then(function(c){
+        return c.auth.updateUser({ password: String(mdp || '') });
+      }).then(function(r){
+        if (r.error) throw r.error;
+        user = r.data.user;
+        return apresConnexion();
+      }).then(function(){
+        cacherLoader();
+        modeAccueil('connexion');
+        fermerAccueil();
+        showToast('Mot de passe change');
+      }, function(e){ cacherLoader(); throw e; });
+    }
+
+    // L'ecran d'accueil sert trois formulaires. Un seul est visible a la fois :
+    // trois panneaux empiles feraient defiler l'utilisateur pour rien.
+    function modeAccueil(mode){
+      ['Connexion','Oubli','Nouveau'].forEach(function(m){
+        var el = document.getElementById('mode' + m);
+        if (el) el.hidden = (m.toLowerCase() !== mode);
+      });
+      var msg = document.getElementById('compteMsg');
+      if (msg) msg.hidden = true;
+      var sans = document.getElementById('accueilSansCompte');
+      // Pendant un changement de mot de passe, « continuer sans compte »
+      // abandonnerait l'operation a mi-chemin.
+      if (sans) sans.hidden = (mode === 'nouveau');
+    }
+
     function messageErreur(e){
       var m = (e && (e.message || e.error_description)) || 'erreur inconnue';
       if (/fetch|network|Failed to fetch/i.test(m)) return 'pas de connexion';
@@ -3015,6 +3114,14 @@
       if (/Email (logins|signups) are disabled/i.test(m))
         return 'la connexion par email n est pas encore activee cote serveur';
       if (/Email not confirmed/i.test(m))            return 'confirme d abord ton adresse par email';
+      if (/Error sending/i.test(m))
+        return 'le mail n a pas pu partir — l envoyeur n est pas encore configure';
+      if (/For security purposes|rate limit|Too many requests|over_email_send_rate/i.test(m))
+        return 'trop de tentatives — reessaie dans quelques minutes';
+      if (/same as the old password|should be different/i.test(m))
+        return 'choisis un mot de passe different de l ancien';
+      if (/Auth session missing|session_not_found/i.test(m))
+        return 'ce lien a expire — redemande-en un';
       return m;
     }
     // Entre « compte cree » et une app utilisable, il y a un aller-retour
@@ -3074,10 +3181,11 @@
       }).then(function(){}, function(){ /* l'inscription reste valide */ });
     }
 
-    function inscrire(email, mdp){
+    function inscrire(email, mdp, pseudo){
       loader('Création de ton compte…');
       return client().then(function(c){
-        return c.auth.signUp({ email:email, password:mdp });
+        return c.auth.signUp({ email:email, password:mdp,
+                               options:{ data:{ pseudo:String(pseudo || '').trim().slice(0, 24) } } });
       }).then(function(r){
         if (r.error) throw r.error;
         if (!r.data.session){
@@ -3086,7 +3194,8 @@
           return;
         }
         user = r.data.user;
-        loader('Préparation de ton carnet…');
+        var p = pseudoDe(user);
+        loader(p ? 'Bienvenue ' + p + ' — préparation de ton carnet…' : 'Préparation de ton carnet…');
         return enregistrerConsentement().then(apresConnexion).then(function(){
           cacherLoader(); fermerAccueil();
         });
@@ -3147,11 +3256,24 @@
       deco.hidden = !!user;
       co.hidden   = !user;
 
+      var ou = document.getElementById('dataOu');
       if (!user){
         etat.className = 'sheet-etat';
         texte.textContent = 'Pas de compte — tout reste sur cet appareil';
+        if (ou) ou.textContent = 'Tes séances sont stockées dans ce navigateur, sur cet appareil ' +
+          'uniquement. Vider les données du site, changer de téléphone ou désinstaller ' +
+          'l\'app les efface définitivement. Garde une copie du fichier quelque part.';
         return;
       }
+      var qui = nomAffiche();
+      // Ce paragraphe affirmait « sur cet appareil uniquement » meme connecte.
+      // C'etait faux, et faux au pire endroit : celui ou l'on verifie si ses
+      // seances sont a l'abri.
+      if (ou) ou.textContent = 'Tes séances sont sur ton compte ' + user.email +
+        '. Reconnecte-toi depuis n\'importe quel téléphone et elles reviennent. ' +
+        'Une copie reste sur cet appareil pour que l\'app marche sans réseau.';
+      var champPseudo = document.getElementById('compteMonPseudo');
+      if (champPseudo && document.activeElement !== champPseudo) champPseudo.value = pseudoDe(user);
 
       var joursLocaux = Object.keys(state.sessions).filter(function(ds){
         return compterJour(state.sessions[ds]) > 0;
@@ -3163,11 +3285,11 @@
       // attente doit se voir : c'est justement le moment ou l'utilisateur croit
       // etre a l'abri alors que ses seances ne sont encore que sur le telephone.
       var attente = nbSales();
-      if (echec)        { etat.className = 'sheet-etat hs';      texte.textContent = user.email + ' — ' + echec; }
-      else if (enCours) { etat.className = 'sheet-etat attente'; texte.textContent = user.email + ' — envoi en cours…'; }
-      else if (aMigrer) { etat.className = 'sheet-etat attente'; texte.textContent = user.email + ' — ' + joursLocaux + ' journée(s) pas encore envoyée(s) sur ton compte'; }
-      else if (attente) { etat.className = 'sheet-etat attente'; texte.textContent = user.email + ' — ' + attente + ' journée(s) en attente d’envoi'; }
-      else              { etat.className = 'sheet-etat ok';      texte.textContent = user.email + ' — tout est synchronisé'; }
+      if (echec)        { etat.className = 'sheet-etat hs';      texte.textContent = qui + ' — ' + echec; }
+      else if (enCours) { etat.className = 'sheet-etat attente'; texte.textContent = qui + ' — envoi en cours…'; }
+      else if (aMigrer) { etat.className = 'sheet-etat attente'; texte.textContent = qui + ' — ' + joursLocaux + ' journée(s) pas encore envoyée(s) sur ton compte'; }
+      else if (attente) { etat.className = 'sheet-etat attente'; texte.textContent = qui + ' — ' + attente + ' journée(s) en attente d’envoi'; }
+      else              { etat.className = 'sheet-etat ok';      texte.textContent = qui + ' — tout est synchronisé'; }
 
       mig.hidden = !aMigrer;
       if (!mig.hidden){
@@ -3179,9 +3301,33 @@
     }
 
     // -------------------------------------------------------------- demarrage
+    // Un lien de recuperation arrive avec un code dans l'URL. Il faut le
+    // reconnaitre AVANT toute autre decision d'affichage : sinon on montre
+    // l'ecran de connexion a quelqu'un qui vient justement de cliquer sur
+    // « j'ai oublie mon mot de passe ».
+    function lienRecuperation(){
+      return /[?&]code=/.test(location.search) || /[#&]type=recovery/.test(location.hash);
+    }
+
     function demarrer(){
       if (!dispo()) { majUI(); return; }
       majUI();
+      if (lienRecuperation()){
+        montrerAccueil();
+        modeAccueil('nouveau');
+        loader('Vérification du lien…');
+        client().then(function(){
+          cacherLoader();
+          // L'URL garde le code apres usage : un rechargement le rejouerait
+          // et echouerait, ce qui ressemblerait a un lien casse.
+          history.replaceState(null, '', location.pathname);
+          if (!user) msgCompte('err', 'Ce lien a expiré ou a déjà servi. Redemande-en un.');
+        }, function(e){
+          cacherLoader();
+          msgCompte('err', messageErreur(e));
+        });
+        return;
+      }
       // L'ecran d'accueil ne s'affiche qu'a la toute premiere visite : ni pour
       // qui est deja connecte, ni pour qui a deja un carnet ici, ni pour qui a
       // deja choisi. Le reproposer a chaque ouverture serait du harcelement.
@@ -3206,6 +3352,8 @@
     return {
       dispo:dispo, demarrer:demarrer, marquerSale:marquerSale, majUI:majUI,
       marquerExos:marquerExos, pousserExos:pousserExos, tirerExos:tirerExos,
+      enregistrerPseudo:enregistrerPseudo, envoyerLienMdp:envoyerLienMdp,
+      changerMdp:changerMdp, modeAccueil:modeAccueil, nomAffiche:nomAffiche,
       montrerAccueil:montrerAccueil, fermerAccueil:fermerAccueil,
       synchroniser:synchroniser, migrer:migrer,
       connecter:connecter, inscrire:inscrire, deconnecter:deconnecter,
@@ -3242,13 +3390,36 @@
         Sync.msgCompte('err', 'Coche la case : creer un compte envoie tes seances sur un serveur.');
         return;
       }
-      occupe(this, 'CRÉATION…', function(){ return Sync.inscrire(v.email, v.mdp); });
+      var pseudo = document.getElementById('comptePseudo').value;
+      occupe(this, 'CRÉATION…', function(){ return Sync.inscrire(v.email, v.mdp, pseudo); });
     });
     document.getElementById('accueilSansCompte').addEventListener('click', function(){
       Sync.fermerAccueil();
     });
+    document.getElementById('accueilOubli').addEventListener('click', function(){
+      document.getElementById('oubliEmail').value = document.getElementById('compteEmail').value;
+      Sync.modeAccueil('oubli');
+    });
+    document.getElementById('oubliRetour').addEventListener('click', function(){
+      Sync.modeAccueil('connexion');
+    });
+    document.getElementById('oubliEnvoyer').addEventListener('click', function(){
+      var mail = document.getElementById('oubliEmail').value.trim();
+      if (!mail){ Sync.msgCompte('err', 'Donne l adresse de ton compte.'); return; }
+      occupe(this, 'ENVOI…', function(){ return Sync.envoyerLienMdp(mail); });
+    });
+    document.getElementById('nouveauValider').addEventListener('click', function(){
+      var mdp = document.getElementById('nouveauMdp').value;
+      if (mdp.length < 8){ Sync.msgCompte('err', 'Choisis un mot de passe d au moins 8 caracteres.'); return; }
+      occupe(this, 'ENREGISTREMENT…', function(){ return Sync.changerMdp(mdp); });
+    });
+    document.getElementById('comptePseudoOk').addEventListener('click', function(){
+      var p = document.getElementById('compteMonPseudo').value;
+      occupe(this, '…', function(){ return Sync.enregistrerPseudo(p); });
+    });
     document.getElementById('compteOuvrirAccueil').addEventListener('click', function(){
       closeDataSheet();
+      Sync.modeAccueil('connexion');
       Sync.montrerAccueil();
     });
     document.getElementById('compteSync').addEventListener('click', function(){
