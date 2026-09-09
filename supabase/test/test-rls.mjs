@@ -433,9 +433,23 @@ await refuse('la base refuse un contexte demesure', () =>
 
 console.log('\n== 19. Administration ==');
 
-// Tant que personne n'est admin, les quatre fonctions sont fermees a tous.
-r = await as(B, `select public.est_admin() e`);
+// est_admin() ne sort plus par l'API : le front ne l'appelle jamais — il lit
+// le role rendu par toucher_profil() — et les quatre fonctions
+// d'administration l'appellent en interne, ou elles s'executent avec les
+// droits du proprietaire. Une fonction qu'on ne peut pas appeler est une
+// surface d'attaque en moins.
+await refuse('est_admin n est pas appelable depuis l API', () =>
+  as(B, `select public.est_admin()`));
+await refuse('ni par un futur administrateur', () =>
+  as(A, `select public.est_admin()`));
+await refuse('ni par un visiteur', () => asAnon(`select public.est_admin()`));
+
+// Elle repond quand meme correctement a qui a le droit de l'executer : c'est
+// ce dont les policies et les fonctions d'administration dependent.
+r = await db.query(`select set_config('request.jwt.claim.sub', $1, false), public.est_admin() e`, [B]);
 ok('est_admin repond non pour un membre', r.rows[0].e === false, JSON.stringify(r.rows[0].e));
+
+// Tant que personne n'est admin, les quatre fonctions sont fermees a tous.
 await refuse('un membre ne voit pas l apercu',   () => as(B, `select public.admin_apercu()`));
 await refuse('un membre ne liste pas les gens',  () => as(B, `select * from public.admin_membres()`));
 await refuse('un membre ne lit pas les retours', () => as(B, `select * from public.admin_retours()`));
@@ -446,8 +460,9 @@ await refuse('un membre ne marque pas un retour', () =>
 // requete directe, sans passer par un role applicatif.
 await db.query(`update public.profils set role = 'admin' where user_id = $1`, [A]);
 
-r = await as(A, `select public.est_admin() e`);
+r = await db.query(`select set_config('request.jwt.claim.sub', $1, false), public.est_admin() e`, [A]);
 ok('est_admin repond oui une fois promu', r.rows[0].e === true, JSON.stringify(r.rows[0].e));
+await db.query(`select set_config('request.jwt.claim.sub', '', false)`);
 
 r = await as(A, `select public.admin_apercu() a`);
 const ap = r.rows[0].a;
@@ -485,7 +500,41 @@ r = await as(A, `select count(*)::int n from public.profils where user_id = $1`,
 ok('ni la ligne de profil de B en direct', r.rows[0].n === 0, 'n=' + r.rows[0].n);
 
 
-console.log('\n== 20. Suppression du compte ==');
+console.log('\n== 20. Hygiene des fonctions ==');
+
+// Une fonction sans « set search_path » resout ses noms avec le chemin de
+// l'appelant. Qui peut creer un objet dans un schema place avant « public »
+// detourne alors ce que la fonction croit appeler. Le linter Supabase le
+// signale ; ce test l'attrape avant lui, et sur toutes les fonctions a la
+// fois plutot qu'une par une.
+r = await db.query(`
+  select p.proname, p.prosecdef, coalesce(array_to_string(p.proconfig, ','), '') cfg
+  from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+  where n.nspname = 'public'
+  order by p.proname
+`);
+const sansChemin = r.rows.filter(x => x.cfg.indexOf('search_path=') === -1).map(x => x.proname);
+ok('toutes les fonctions figent leur search_path', sansChemin.length === 0, sansChemin.join(', '));
+ok('il y a bien des fonctions a verifier', r.rows.length >= 10, r.rows.length + ' fonction(s)');
+
+// Une fonction SECURITY DEFINER s'execute avec les droits de son proprietaire :
+// c'est puissant, et chacune doit etre justifiee. On fige la liste pour qu'une
+// nouvelle ne s'ajoute pas sans qu'on s'en apercoive.
+const definers = r.rows.filter(x => x.prosecdef).map(x => x.proname).sort();
+ok('la liste des fonctions SECURITY DEFINER est celle attendue',
+   definers.join(',') === 'admin_apercu,admin_marquer_retour,admin_membres,admin_retours,est_admin,toucher_profil',
+   definers.join(','));
+
+// Les fonctions de synchro doivent rester en SECURITY INVOKER : en DEFINER,
+// elles contourneraient tout le RLS des sections 1 a 4.
+['pousser_jour', 'tirer_jours', 'pousser_titre', 'pousser_exos_perso', 'tirer_exos_perso']
+  .forEach(function(nom){
+    const f = r.rows.find(x => x.proname === nom);
+    ok(nom + ' reste en SECURITY INVOKER', !!f && f.prosecdef === false, JSON.stringify(f));
+  });
+
+
+console.log('\n== 21. Suppression du compte ==');
 await db.query('delete from auth.users where id = $1', [A]);
 r = await db.query(`select (select count(*) from public.seances   where user_id = $1)::int s,
                            (select count(*) from public.exercices where user_id = $1)::int e,
