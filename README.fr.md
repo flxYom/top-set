@@ -337,7 +337,10 @@ dans un seul fichier.
 ## Structure du projet
 
 ```
-index.html               toute l'app — balisage, styles, logique
+index.html               balisage et styles de l'app
+app.js                   toute la logique de l'app (sortie du HTML pour la CSP)
+intelligence.js          logique métier pure : top set, records, 1RM, signaux
+sw.js                    service worker — coquille en cache, hors-ligne
 guide.html               page « comment ça marche »
 cgu.html                 conditions générales d'utilisation
 confidentialite.html     politique de confidentialité
@@ -356,7 +359,8 @@ robots.txt  sitemap.xml  indexation
 supabase.umd.js          supabase-js 2.115.0, chargé à la demande
 supabase-config.js       URL du projet + clé publique (voir Comptes)
 supabase/schema.sql      tables, politiques RLS et fonctions de synchro
-supabase/test/           le banc d'essai RLS du schéma (PGlite)
+supabase/test/           le banc d'essai RLS du schéma (PGlite) — 113 tests
+test/                    logique métier (87) et gardes de sécurité (50)
 set-domaine.mjs          remplace le domaine provisoire partout
 LICENSE  SECURITY.md  CONTRIBUTING.md  CHANGELOG.md
 .github/                 templates d'issues/PR, workflow de CI
@@ -474,7 +478,7 @@ ne marche pas aujourd'hui. Le vrai hors-ligne est sur [la suite](#la-suite).
 
 ## Ce qu'il n'est pas
 
-- **Pas une app de coaching.** Il enregistre ce que tu as fait ; il ne te dit pas
+- **Pas un entraîneur automatique.** Il enregistre ce que tu as fait ; il ne te dit pas
   quoi faire.
 - **Pas un dispositif médical.** Les charges et le RPE sont ceux que tu as saisis.
   Rien n'est vérifié, validé ni conseillé.

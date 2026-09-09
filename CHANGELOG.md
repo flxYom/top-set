@@ -36,6 +36,16 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ### Fixed
 
+- CI was red on every merge of this batch: the "Nous faire un retour" entry was
+  written as `<a href="#">`, which the link checker rightly rejects. It is a
+  control that opens a dialog, not a link — it is now a `<button>`, which also
+  fixes how screen readers announce it and makes the space bar work on it.
+- Both READMEs described a project that no longer existed: one file holding all
+  the logic, no service worker, no `profils`/`retours` tables, no CSP change.
+  `README.md` (the one GitHub renders) was the further behind of the two.
+- "Not a coaching app" sat in the same document as a roadmap entry about the
+  coach relationship. Reworded to "not an automatic trainer", which is what was
+  actually meant.
 - The admin entry never appeared for an administrator returning to the app.
   `toucher_profil()` was only called from `apresConnexion()`, which runs after
   an explicit sign-in — never on a restored session, which is how the app is
