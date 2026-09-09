@@ -55,6 +55,15 @@ while it stays below `1.0.0`, breaking changes (in particular to the
   all of the RLS above them. 113 → 124 RLS tests.
 
 ### Fixed
+- Trying to sign up without ticking the consent box said "Coche la case :
+  creer un compte envoie tes seances sur un serveur" — which explains *why* an
+  account sends data, not what the box actually accepts. Someone reading it
+  looks for a box about servers and does not find one. It now names the real
+  thing (the privacy policy and the terms), outlines the box in orange, sets
+  `aria-invalid` on it and moves keyboard focus there. The highlight clears as
+  soon as the box is ticked.
+- Four error messages were missing their accents and apostrophes
+  ("caracteres", "d au moins", "l adresse"), unlike the rest of the interface.
 - Three `meta description` tags still claimed data never leaves the phone and
   that there is no account. The privacy policy's own body has distinguished the
   two modes correctly since sync shipped; the tags had not been updated —
@@ -134,7 +143,7 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ### Changed
 
-- Service worker cache version `topset-v2` → `topset-v6`.
+- Service worker cache version `topset-v2` → `topset-v7`.
 - Offline, a clean URL (`/guide`, produced by Vercel's `cleanUrls`) fell back
   to the app instead of the requested page. The navigation fallback now retries
   once with `.html` before giving up.

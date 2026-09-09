@@ -3635,12 +3635,33 @@
       if (!v.email || !v.mdp){ Sync.msgCompte('err', 'Email et mot de passe requis.'); return; }
       occupe(this, 'CONNEXION…', function(){ return Sync.connecter(v.email, v.mdp); });
     });
+    // Dire « coche la case » sans montrer laquelle, c'est la moitie du travail :
+    // l'ecran en compte une seule, mais elle est grise et discrete, et le
+    // regard part vers le message rouge en bas. On la designe, et le clavier
+    // arrive dessus.
+    function signalerConsentement(){
+      var bloc = document.getElementById('blocConsent');
+      var box  = document.getElementById('compteConsent');
+      if (!bloc || !box) return;
+      bloc.classList.add('manque');
+      box.setAttribute('aria-invalid', 'true');
+      box.focus();
+    }
+    var caseConsent = document.getElementById('compteConsent');
+    if (caseConsent){
+      caseConsent.addEventListener('change', function(){
+        document.getElementById('blocConsent').classList.remove('manque');
+        this.removeAttribute('aria-invalid');
+      });
+    }
+
     document.getElementById('compteInscription').addEventListener('click', function(){
       var v = lire();
       if (!v.email || !v.mdp){ Sync.msgCompte('err', 'Email et mot de passe requis.'); return; }
-      if (v.mdp.length < 8){ Sync.msgCompte('err', 'Choisis un mot de passe d au moins 8 caracteres.'); return; }
+      if (v.mdp.length < 8){ Sync.msgCompte('err', 'Choisis un mot de passe d\'au moins 8 caractères.'); return; }
       if (!document.getElementById('compteConsent').checked){
-        Sync.msgCompte('err', 'Coche la case : creer un compte envoie tes seances sur un serveur.');
+        Sync.msgCompte('err', 'Il faut accepter la politique de confidentialité et les CGU pour créer un compte — la case est juste au-dessus du bouton.');
+        signalerConsentement();
         return;
       }
       var pseudo = document.getElementById('comptePseudo').value;
@@ -3658,12 +3679,12 @@
     });
     document.getElementById('oubliEnvoyer').addEventListener('click', function(){
       var mail = document.getElementById('oubliEmail').value.trim();
-      if (!mail){ Sync.msgCompte('err', 'Donne l adresse de ton compte.'); return; }
+      if (!mail){ Sync.msgCompte('err', 'Donne l\'adresse de ton compte.'); return; }
       occupe(this, 'ENVOI…', function(){ return Sync.envoyerLienMdp(mail); });
     });
     document.getElementById('nouveauValider').addEventListener('click', function(){
       var mdp = document.getElementById('nouveauMdp').value;
-      if (mdp.length < 8){ Sync.msgCompte('err', 'Choisis un mot de passe d au moins 8 caracteres.'); return; }
+      if (mdp.length < 8){ Sync.msgCompte('err', 'Choisis un mot de passe d\'au moins 8 caractères.'); return; }
       occupe(this, 'ENREGISTREMENT…', function(){ return Sync.changerMdp(mdp); });
     });
     document.getElementById('comptePseudoOk').addEventListener('click', function(){
