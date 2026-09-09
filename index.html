@@ -288,6 +288,38 @@
 
   /* Les deux actions de bas de carte. « + SERIE » reste la principale ;
      le lien superset est volontairement plus discret, on s'en sert rarement. */
+  /* Proposition de rattachement d'un nom inconnu. Elle s'affiche dans la
+     carte, sous le nom : une bulle flottante se ferait rater sur telephone. */
+  .alias-prompt{
+    border:2px solid var(--yellow);
+    background:rgba(255,210,63,.07);
+    padding:10px;display:flex;flex-direction:column;gap:7px;
+  }
+  .alias-prompt p{font-size:12.5px;line-height:1.45;color:var(--ink);margin:0;}
+  .alias-prompt b{font-weight:800;color:var(--yellow);}
+  .alias-choix{
+    width:100%;min-height:44px;padding:0 12px;
+    background:var(--panel2);border:2px solid var(--yellow);
+    color:var(--ink);font-family:inherit;
+    font-size:13px;font-weight:800;text-align:left;cursor:pointer;
+  }
+  .alias-choix:active{background:var(--yellow);color:#0d0c0a;}
+  .alias-liste{display:flex;flex-direction:column;gap:7px;}
+  .alias-select{
+    width:100%;min-height:44px;padding:0 30px 0 10px;
+    background:var(--panel2);border:2px solid var(--line);
+    color:var(--ink);font-family:inherit;font-size:13px;font-weight:700;
+    appearance:none;-webkit-appearance:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%239a9184'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-position:right 10px center;
+  }
+  .alias-non{
+    width:100%;min-height:40px;
+    background:none;border:none;color:var(--dim);
+    font-family:inherit;font-size:11.5px;font-weight:800;letter-spacing:.04em;
+    text-decoration:underline;text-underline-offset:3px;cursor:pointer;
+  }
+
   .ex-actions{display:flex;flex-direction:column;gap:6px;}
   .btn-lien{
     width:100%;min-height:40px;padding:0 10px;
@@ -965,11 +997,27 @@
     try { localStorage.setItem(CUSTOM_KEY, JSON.stringify(customExercises)); } catch(e){}
   }
 
+  // Un exercice memorise s'ecrivait « nom: groupe ». Il porte maintenant aussi
+  // un alias, donc un objet. Les deux formes se lisent : une sauvegarde
+  // exportee l'an dernier doit se relire telle quelle.
+  function infoExo(valeur, nom){
+    if (typeof valeur === 'string') return { nom:nom, groupe:valeur, alias:null };
+    return { nom:(valeur && valeur.nom) || nom,
+             groupe:(valeur && valeur.groupe) || 'Autre',
+             alias:(valeur && valeur.alias) || null };
+  }
+
   var EXERCISE_DB_LOWER = {};
+  var CUSTOM_PAR_CLE = {};
   function rebuildLower(){
     EXERCISE_DB_LOWER = {};
+    CUSTOM_PAR_CLE = {};
     Object.keys(EXERCISE_DB).forEach(function(k){ EXERCISE_DB_LOWER[k.toLowerCase()] = EXERCISE_DB[k]; });
-    Object.keys(customExercises).forEach(function(k){ EXERCISE_DB_LOWER[k.toLowerCase()] = customExercises[k]; });
+    Object.keys(customExercises).forEach(function(k){
+      var info = infoExo(customExercises[k], k);
+      EXERCISE_DB_LOWER[k.toLowerCase()] = info.groupe;
+      CUSTOM_PAR_CLE[cleExo(k)] = { nom:info.nom || k, groupe:info.groupe, alias:info.alias };
+    });
   }
   rebuildLower();
 
@@ -980,15 +1028,38 @@
     if (clean.length < 2) return false;
     var key = clean.toLowerCase();
     if (Object.prototype.hasOwnProperty.call(EXERCISE_DB, clean)) return false;
-    var connuMemeGroupe = customExercises[clean] === (groupe || 'Autre');
-    if (connuMemeGroupe) return false;
+    var ancien = CUSTOM_PAR_CLE[cleExo(clean)];
+    if (ancien && ancien.nom === clean && ancien.groupe === (groupe || 'Autre')) return false;
     // Un nom deja connu sous une autre casse ne cree pas de doublon.
     var existant = Object.keys(customExercises).filter(function(k){ return k.toLowerCase() === key; });
     existant.forEach(function(k){ if (k !== clean) delete customExercises[k]; });
-    customExercises[clean] = groupe || 'Autre';
+    // Changer le groupe d'un exercice ne doit pas effacer son rattachement.
+    customExercises[clean] = { nom:clean, groupe:groupe || 'Autre',
+                               alias:(ancien && ancien.alias) || null };
     saveCustom();
     rebuildLower();
+    if (window.Sync && Sync.marquerExos) Sync.marquerExos();
     return true;
+  }
+
+  // « dead » est le souleve de terre de son auteur, pas celui d'un
+  // dictionnaire : le rattachement est une decision de l'utilisateur, jamais
+  // une deduction de l'app.
+  function definirAlias(nom, cleCible){
+    var clean = String(nom || '').trim();
+    if (!clean) return;
+    var cle = cleExo(clean);
+    if (cleCible && cleCible === cle) return;   // rien ne se rattache a soi
+    var ancien = CUSTOM_PAR_CLE[cle];
+    var groupe = (ancien && ancien.groupe) || 'Autre';
+    if (cleCible){
+      var g = groupeCanonique(cleCible);
+      if (g) groupe = g;
+    }
+    customExercises[clean] = { nom:clean, groupe:groupe, alias:cleCible || null };
+    saveCustom();
+    rebuildLower();
+    if (window.Sync && Sync.marquerExos) Sync.marquerExos();
   }
 
   var DAY_NAMES = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
@@ -1106,12 +1177,12 @@
   // d'une séance passée.
   function isNewRecord(serie, exNom){
     if (typeof serie.poids !== 'number' || !(serie.poids > 0)) return false;
-    var norm = exNom && exNom.trim() ? normalizeName(exNom) : null;
+    var norm = exNom && exNom.trim() ? cleCanonique(exNom) : null;
     if (!norm) return false;
     var best = 0;
     Object.keys(state.sessions).forEach(function(ds){
       state.sessions[ds].exercises.forEach(function(e){
-        if (!e.nom || normalizeName(e.nom) !== norm) return;
+        if (!e.nom || cleCanonique(e.nom) !== norm) return;
         (e.series||[]).forEach(function(s){
           if (s.id === serie.id) return;
           if (typeof s.poids === 'number' && s.poids > best) best = s.poids;
@@ -1123,13 +1194,13 @@
 
   // Meilleure série de la dernière séance antérieure à `beforeDate` sur ce même exercice.
   function findPreviousOccurrence(exNom, beforeDate){
-    var norm = exNom && exNom.trim() ? normalizeName(exNom) : null;
+    var norm = exNom && exNom.trim() ? cleCanonique(exNom) : null;
     if (!norm) return null;
     var bestDate = null, bestEx = null;
     Object.keys(state.sessions).forEach(function(ds){
       if (ds >= beforeDate) return;
       state.sessions[ds].exercises.forEach(function(e){
-        if (!e.nom || normalizeName(e.nom) !== norm) return;
+        if (!e.nom || cleCanonique(e.nom) !== norm) return;
         if (!(e.series||[]).some(hasData)) return;
         if (!bestDate || ds > bestDate){ bestDate = ds; bestEx = e; }
       });
@@ -1303,7 +1374,97 @@
 
   // ---------- recap computation ----------
   function normalizeName(nom){
-    return nom.replace(/\([^)]*\)/g,'').replace(/\s+/g,' ').trim();
+    return String(nom == null ? '' : nom).replace(/\([^)]*\)/g,'').replace(/\s+/g,' ').trim();
+  }
+  // La cle ignore la casse et les parentheses : « Bench (top set) » et
+  // « bench » sont le meme mouvement, et doivent le rester d'un jour a l'autre.
+  function cleExo(nom){ return normalizeName(nom).toLowerCase(); }
+
+  // Un alias ne pointe jamais vers un alias — la base l'interdit et l'app ne
+  // le propose pas — donc une seule etape de resolution suffit, sans boucle.
+  function cleCanonique(nom){
+    var k = cleExo(nom);
+    var info = CUSTOM_PAR_CLE[k];
+    return (info && info.alias) ? info.alias : k;
+  }
+  // Nom a afficher pour un exercice, alias resolu. Sert de cle de regroupement
+  // dans le recap : deux noms rattaches produisent la meme chaine, donc une
+  // seule ligne.
+  function nomCanonique(nom){
+    var k = cleExo(nom);
+    var info = CUSTOM_PAR_CLE[k];
+    if (!info || !info.alias) return normalizeName(nom);
+    var cible = CUSTOM_PAR_CLE[info.alias];
+    if (cible && cible.nom) return normalizeName(cible.nom);
+    var dansBase = Object.keys(EXERCISE_DB).filter(function(n){ return cleExo(n) === info.alias; })[0];
+    return dansBase || info.alias;
+  }
+
+  // Rattacher, c'est dire « c'est le meme exercice ». Le groupe musculaire
+  // suit donc la cible : sans ca, le recap compterait la meme serie une fois
+  // en Dos et une fois en Autre.
+  function groupeCanonique(nom){
+    var cle = cleCanonique(nom);
+    var info = CUSTOM_PAR_CLE[cle];
+    if (info && info.groupe) return info.groupe;
+    var dansBase = Object.keys(EXERCISE_DB).filter(function(n){ return cleExo(n) === cle; })[0];
+    return dansBase ? EXERCISE_DB[dansBase] : null;
+  }
+
+  // Les noms deja utilises, du plus recent au plus ancien, puis les noms
+  // memorises, puis la base integree. L'ordre compte : on propose d'abord ce
+  // qu'il a vraiment fait.
+  function candidatsAlias(saisi){
+    var k = cleExo(saisi);
+    if (k.length < 2) return [];
+    var vus = {}, out = [];
+    function ajouter(nom, quand){
+      var c = cleExo(nom);
+      if (!c || c === k || vus[c]) return;
+      // Prefixe dans un sens ou dans l'autre : « dead » trouve « deadlift »,
+      // et « deadlift » retrouve « dead ». A partir de trois lettres on
+      // accepte aussi le milieu du mot, pas avant : « cu » ramenerait la
+      // moitie de la base.
+      var colle = c.indexOf(k) === 0 || k.indexOf(c) === 0 ||
+                  (k.length >= 3 && c.indexOf(k) > 0);
+      if (!colle) return;
+      vus[c] = 1;
+      out.push({ cle:c, nom:normalizeName(nom), quand:quand || null });
+    }
+    Object.keys(state.sessions).sort().reverse().forEach(function(ds){
+      (state.sessions[ds].exercises || []).forEach(function(e){
+        if (e.nom && (e.series||[]).some(hasData)) ajouter(e.nom, ds);
+      });
+    });
+    Object.keys(customExercises).forEach(function(n){ ajouter(n); });
+    Object.keys(EXERCISE_DB).forEach(function(n){ ajouter(n); });
+    return out.slice(0, 3);
+  }
+
+  // Aucun algorithme ne devinera que « dead » est un souleve de terre : les
+  // deux mots n'ont pas une lettre en commun. Quand la proposition automatique
+  // ne trouve rien, on donne la liste et c'est l'utilisateur qui tranche.
+  function tousLesExos(saufCle){
+    var vus = {}, out = [];
+    function ajouter(nom){
+      var c = cleExo(nom);
+      if (!c || c === saufCle || vus[c]) return;
+      // Un alias ne pointe jamais vers un alias : proposer une cible deja
+      // rattachee creerait une chaine que la base refuse.
+      var info = CUSTOM_PAR_CLE[c];
+      if (info && info.alias) return;
+      vus[c] = 1;
+      out.push({ cle:c, nom:normalizeName(nom) });
+    }
+    Object.keys(state.sessions).forEach(function(ds){
+      (state.sessions[ds].exercises || []).forEach(function(e){
+        if (e.nom && (e.series||[]).some(hasData)) ajouter(e.nom);
+      });
+    });
+    Object.keys(customExercises).forEach(ajouter);
+    Object.keys(EXERCISE_DB).forEach(ajouter);
+    out.sort(function(a,b){ return a.nom.localeCompare(b.nom,'fr'); });
+    return out;
   }
   function mostCommon(arr){
     var counts = {}, best=null, bestCount=0;
@@ -1336,7 +1497,7 @@
         totalSeries += validSeries.length;
         validSeries.forEach(function(s){ totalVolume += serieVolume(s); });
         // Le nom n'est jamais requis pour compter — seule la donnée saisie (poids/reps) l'est.
-        var norm = ex.nom && ex.nom.trim() ? normalizeName(ex.nom) : 'Exercice sans nom';
+        var norm = ex.nom && ex.nom.trim() ? nomCanonique(ex.nom) : 'Exercice sans nom';
         if (!byNorm[norm]) byNorm[norm] = [];
         validSeries.forEach(function(s){ byNorm[norm].push({ poids:s.poids, reps:s.reps, groupe:ex.groupe }); });
       });
@@ -2114,8 +2275,96 @@
     var day = getOrCreateDay(state.selectedDay);
     var ex = findExercise(day, t.dataset.id);
     if (!ex || !ex.nom) return;
+    // Le nom est-il deja connu AVANT qu'on l'enregistre ? C'est la seule
+    // fenetre ou la question « c'est le meme exercice ? » a un sens.
+    var etaitConnu = !!CUSTOM_PAR_CLE[cleExo(ex.nom)] ||
+                     !!EXERCISE_DB_LOWER[String(ex.nom).trim().toLowerCase()];
     if (rememberExercise(ex.nom, ex.groupe)) populateDatalist();
+    if (!etaitConnu) proposerRattachement(t.closest('.ex-card'), ex);
   });
+
+  // Affiche la proposition dans la carte, sans re-render : re-dessiner ferait
+  // perdre le focus et la position de scroll au moment precis ou l'utilisateur
+  // est en train de saisir.
+  function proposerRattachement(card, ex){
+    if (!card) return;
+    var vieux = card.querySelector('.alias-prompt');
+    if (vieux) vieux.remove();
+    var choix = candidatsAlias(ex.nom);
+    var liste = tousLesExos(cleExo(ex.nom));
+    if (!choix.length && !liste.length) return;
+
+    var box = document.createElement('div');
+    box.className = 'alias-prompt';
+    var html;
+    if (choix.length){
+      html = '<p><b>« ' + esc(normalizeName(ex.nom)) + ' »</b> — c\'est le même exercice que&nbsp;?</p>';
+      choix.forEach(function(c){
+        var quand = '';
+        if (c.quand){
+          var d = fromDateStr(c.quand);
+          quand = ' <span style="color:var(--dim);font-weight:700;">· ' + d.getDate() + ' ' + MONTH_ABBR[d.getMonth()] + '</span>';
+        }
+        html += '<button type="button" class="alias-choix" data-cle="' + esc(c.cle) + '">' + esc(c.nom) + quand + '</button>';
+      });
+      html += '<button type="button" class="alias-non">NON, C\'EST UN NOUVEL EXERCICE</button>';
+    } else {
+      // Rien ne ressemble : le nom est deja retenu, on ne pose pas de question
+      // pour le plaisir. Le rattachement reste disponible, replie.
+      html = '<p><b>« ' + esc(normalizeName(ex.nom)) + ' »</b> est ajouté à tes exercices.</p>'
+           + '<button type="button" class="alias-non" data-action="ouvrir-liste">LE RATTACHER À UN EXERCICE EXISTANT</button>';
+    }
+    html += '<div class="alias-liste" hidden>'
+         +   '<select class="alias-select" aria-label="Exercice auquel rattacher ce nom">'
+         +     '<option value="">Choisis l\'exercice…</option>'
+         +     liste.map(function(c){ return '<option value="' + esc(c.cle) + '">' + esc(c.nom) + '</option>'; }).join('')
+         +   '</select>'
+         +   '<button type="button" class="alias-choix" data-action="rattacher">RATTACHER</button>'
+         + '</div>';
+    box.innerHTML = html;
+
+    box.addEventListener('click', function(e){
+      var b = e.target.closest('.alias-choix[data-cle]');
+      if (b){
+        definirAlias(ex.nom, b.dataset.cle);
+        var g1 = groupeCanonique(ex.nom); if (g1) ex.groupe = g1;
+        scheduleSave(state.selectedDay, true);
+        box.remove();
+        // L'historique change de sens d'un coup : « derniere fois », records et
+        // recap doivent refleter le rattachement tout de suite.
+        renderDayPanel(true);
+        renderWeekStats();
+        showToast('« ' + normalizeName(ex.nom) +' » rejoint ton historique');
+        return;
+      }
+      if (e.target.closest('[data-action="ouvrir-liste"]')){
+        box.querySelector('.alias-liste').hidden = false;
+        e.target.closest('[data-action="ouvrir-liste"]').hidden = true;
+        return;
+      }
+      if (e.target.closest('[data-action="rattacher"]')){
+        var sel = box.querySelector('.alias-select');
+        if (!sel.value){ sel.focus(); return; }
+        definirAlias(ex.nom, sel.value);
+        var g2 = groupeCanonique(ex.nom); if (g2) ex.groupe = g2;
+        scheduleSave(state.selectedDay, true);
+        box.remove();
+        renderDayPanel(true);
+        renderWeekStats();
+        showToast('« ' + normalizeName(ex.nom) + ' » rejoint ton historique');
+        return;
+      }
+      if (e.target.closest('.alias-non')){
+        definirAlias(ex.nom, null);
+        box.remove();
+      }
+    });
+
+    var corps = card.querySelector('.ex-body');
+    var apres = card.querySelector('.ex-groupe');
+    if (corps && apres) corps.insertBefore(box, apres.nextSibling);
+    else if (corps) corps.appendChild(box);
+  }
 
   document.getElementById('addExerciseBtn').addEventListener('click', function(){
     var day = getOrCreateDay(state.selectedDay);
