@@ -263,6 +263,40 @@
   .ex-del:active{background:#0d0c0a;color:var(--ink);}
 
   .ex-body{padding:8px 12px 12px;display:flex;flex-direction:column;gap:8px;}
+
+  /* Superset : deux exercices ou plus qu'on enchaine sans repos entre eux.
+     Le cadre doit se lire d'un coup d'oeil au milieu d'exercices simples,
+     sinon la distinction ne sert a rien. */
+  .superset{
+    border:2.5px dashed var(--yellow);
+    box-shadow:4px 4px 0 rgba(255,210,63,.22);
+    padding:9px;
+    display:flex;flex-direction:column;gap:9px;
+    background:rgba(255,210,63,.04);
+  }
+  .superset-tag{
+    display:flex;align-items:center;gap:7px;
+    font-size:10.5px;font-weight:800;letter-spacing:.09em;
+    color:var(--yellow);
+  }
+  .superset-tag::after{
+    content:'';flex:1;height:2px;background:rgba(255,210,63,.28);
+  }
+  /* A l'interieur, les cartes perdent leur ombre : deux niveaux de relief
+     imbriques donnent une bouillie visuelle. Le cadre du bloc suffit. */
+  .superset .ex-card{box-shadow:none;border-width:2px;}
+
+  /* Les deux actions de bas de carte. « + SERIE » reste la principale ;
+     le lien superset est volontairement plus discret, on s'en sert rarement. */
+  .ex-actions{display:flex;flex-direction:column;gap:6px;}
+  .btn-lien{
+    width:100%;min-height:40px;padding:0 10px;
+    background:none;border:2px dashed var(--line);
+    color:var(--dim);
+    font-family:inherit;font-size:11px;font-weight:800;letter-spacing:.05em;
+    cursor:pointer;
+  }
+  .btn-lien:active{border-color:var(--yellow);color:var(--yellow);}
   .ex-groupe{
     width:100%;
     background:var(--panel2);
@@ -1018,8 +1052,11 @@
   }
 
   function normalizeExercise(ex){
+    // bloc reste undefined quand il n'y en a pas : un exercice seul ne porte
+    // rien, et le JSON envoye au cloud n'a pas de champ vide a transporter.
+    var bloc = (ex && ex.bloc) ? String(ex.bloc) : undefined;
     if (ex && Array.isArray(ex.series)){
-      return { id:ex.id, nom:ex.nom||'', groupe:ex.groupe||'Autre', repos:ex.repos||'', series:ex.series.map(function(s){
+      return { id:ex.id, nom:ex.nom||'', groupe:ex.groupe||'Autre', repos:ex.repos||'', bloc:bloc, series:ex.series.map(function(s){
         return normalizeSerie(s, ex.repos);
       }) };
     }
@@ -1027,7 +1064,7 @@
     if (ex && (ex.poids!=null || (ex.reps!=null && String(ex.reps).trim()!==''))){
       series.push(normalizeSerie({ poids:ex.poids, reps:ex.reps }, ex.repos));
     }
-    return { id:(ex&&ex.id)||genId(), nom:(ex&&ex.nom)||'', groupe:(ex&&ex.groupe)||'Autre', repos:(ex&&ex.repos)||'', series:series };
+    return { id:(ex&&ex.id)||genId(), nom:(ex&&ex.nom)||'', groupe:(ex&&ex.groupe)||'Autre', repos:(ex&&ex.repos)||'', bloc:bloc, series:series };
   }
 
   // ---------- state ----------
@@ -1520,7 +1557,7 @@
       +     '<select class="serie-rpe'+(s.rpe==null?' vide':'')+'" data-field="rpe" data-serie-id="'+s.id+'" title="'+(s.rpe==null?'Reps en réserve : 10 = à l\'échec, 9 = 1 rep en réserve':esc(rpeLabel(s.rpe)))+'" aria-label="RPE série '+num+'">'+rpeOptions+'</select>'
       +   '</label>'
       +   '<label class="meta-field"><span>REPOS</span>'
-      +     '<input type="text" class="serie-repos" placeholder="90s" data-field="repos" data-serie-id="'+s.id+'" aria-label="Repos après la série '+num+'" value="'+esc(s.repos||'')+'">'
+      +     '<input type="text" inputmode="numeric" enterkeyhint="done" class="serie-repos" placeholder="90s" data-field="repos" data-serie-id="'+s.id+'" aria-label="Repos après la série '+num+'" value="'+esc(s.repos||'')+'">'
       +   '</label>'
       +   '<button type="button" class="serie-del" data-action="del-serie" data-serie-id="'+s.id+'" aria-label="Supprimer la série '+num+'">×</button>'
       + '</div>'
@@ -1553,9 +1590,42 @@
       +   '<select class="ex-groupe" data-field="groupe" data-id="'+ex.id+'">'+groupOptions+'</select>'
       +   hintHTML
       +   '<div class="series-list">'+seriesHTML+'</div>'
-      +   '<button type="button" class="btn-add-serie" data-action="add-serie" data-id="'+ex.id+'">+ SÉRIE'+(series.length?' (reprend la précédente)':'')+'</button>'
+      +   '<div class="ex-actions">'
+      +     '<button type="button" class="btn-add-serie" data-action="add-serie" data-id="'+ex.id+'">+ SÉRIE'+(series.length?' (reprend la précédente)':'')+'</button>'
+      +     (ex.bloc
+              ? '<button type="button" class="btn-lien" data-action="detacher" data-id="'+ex.id+'">⇄ SORTIR DU SUPERSET</button>'
+              : '<button type="button" class="btn-lien" data-action="superset" data-id="'+ex.id+'">⇄ AJOUTER UN EXERCICE EN SUPERSET</button>')
+      +   '</div>'
       + '</div>'
       + '</div>';
+  }
+
+  // Les exercices d'un meme bloc sont contigus dans la liste : il suffit de
+  // regrouper les suites. Rien a trier, donc rien qui puisse se desynchroniser
+  // entre l'ordre affiche et l'ordre enregistre.
+  function exercisesHTML(exercises){
+    var out = '', i = 0;
+    while (i < exercises.length){
+      var bloc = exercises[i].bloc;
+      if (!bloc){ out += exerciseCardHTML(exercises[i]); i++; continue; }
+      var groupe = [];
+      while (i < exercises.length && exercises[i].bloc === bloc){ groupe.push(exercises[i]); i++; }
+      // Un bloc reduit a un seul exercice n'est plus un superset : on l'affiche
+      // comme un exercice normal plutot que d'encadrer une carte toute seule.
+      if (groupe.length < 2){ out += exerciseCardHTML(groupe[0]); continue; }
+      out += '<div class="superset"><div class="superset-tag">SUPERSET</div>'
+           + groupe.map(exerciseCardHTML).join('')
+           + '</div>';
+    }
+    return out;
+  }
+
+  // Un bloc qui ne compte plus qu'un membre doit disparaitre des donnees, pas
+  // seulement de l'affichage : sans ca, il ressortirait sur un autre appareil.
+  function nettoyerBlocs(day){
+    var compte = {};
+    (day.exercises || []).forEach(function(e){ if (e.bloc) compte[e.bloc] = (compte[e.bloc]||0) + 1; });
+    (day.exercises || []).forEach(function(e){ if (e.bloc && compte[e.bloc] < 2) delete e.bloc; });
   }
 
   function renderDayPanel(force){
@@ -1577,7 +1647,7 @@
     if (!exercises.length){
       list.innerHTML = '<div class="empty-state">Aucun exercice noté pour ce jour.<br>Ajoute ta première série ci-dessous.</div>';
     } else {
-      list.innerHTML = exercises.map(exerciseCardHTML).join('');
+      list.innerHTML = exercisesHTML(exercises);
     }
   }
 
@@ -1934,6 +2004,45 @@
       var id = delBtn.dataset.id;
       var day = getOrCreateDay(state.selectedDay);
       day.exercises = day.exercises.filter(function(x){ return x.id!==id; });
+      nettoyerBlocs(day);
+      scheduleSave(state.selectedDay,true);
+      renderDayPanel(true);
+      renderDayPills();
+      renderWeekStats();
+      return;
+    }
+
+    var supBtn = e.target.closest('[data-action="superset"]');
+    if (supBtn){
+      var dayS = getOrCreateDay(state.selectedDay);
+      var idx = -1;
+      for (var k=0;k<dayS.exercises.length;k++){ if (dayS.exercises[k].id===supBtn.dataset.id){ idx=k; break; } }
+      if (idx < 0) return;
+      var source = dayS.exercises[idx];
+      if (!source.bloc) source.bloc = genId();
+      // Insere juste apres, jamais a la fin : un superset dont les membres sont
+      // separes par trois autres exercices n'a plus aucun sens a l'ecran.
+      var suivant = { id:genId(), nom:'', groupe:'Autre', repos:'', bloc:source.bloc,
+                      series:[{ id:genSerieId(), poids:null, reps:'', rpe:null, repos:'', fait:false }] };
+      dayS.exercises.splice(idx + 1, 0, suivant);
+      scheduleSave(state.selectedDay,true);
+      renderDayPanel(true);
+      renderDayPills();
+      renderWeekStats();
+      requestAnimationFrame(function(){
+        var el = exListEl.querySelector('.ex-name[data-id="'+suivant.id+'"]');
+        if (el) el.focus();
+      });
+      return;
+    }
+
+    var detBtn = e.target.closest('[data-action="detacher"]');
+    if (detBtn){
+      var dayD = getOrCreateDay(state.selectedDay);
+      var exD = findExercise(dayD, detBtn.dataset.id);
+      if (!exD) return;
+      delete exD.bloc;
+      nettoyerBlocs(dayD);
       scheduleSave(state.selectedDay,true);
       renderDayPanel(true);
       renderDayPills();
