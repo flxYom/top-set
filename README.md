@@ -104,6 +104,18 @@ clearing site data, switching phones, or browsing in a private window.
 logbook opens on any device. The phone keeps its copy either way: the account
 does not replace local storage, it backs it up.
 
+Seven tables. Five carry the logbook — `seances`, `exercices`, `series`,
+`exercices_perso`, `consentements` — and no one ever sees another person's row.
+Two came later:
+
+- **`profils`** — pseudonym, role, sign-up date, last-seen date. The pseudonym
+  still lives in the account metadata; this column is a queryable mirror of it,
+  because Supabase's `auth` schema is not readable from a browser. No logbook
+  data, no email address.
+- **`retours`** — user feedback. Deleting an account does not erase the
+  feedback, it anonymises it (`on delete set null`): leaving is a right,
+  erasing a bug you reported is not.
+
 ### How the sync works
 
 `localStorage` stays the source of truth for the UI. Every change is written
@@ -184,9 +196,28 @@ served from the site itself. Loading them from a CDN would send every visitor's 
 address to Google or Cloudflare on each page load, whether or not they have an
 account.
 
-**A strict CSP** in `vercel.json` — `default-src 'self'`, and `connect-src` limited
-to `'self'` plus the project's own Supabase origin. Nothing else can be contacted,
-which blocks exfiltration at the browser level.
+**A strict CSP** in `vercel.json` — `default-src 'self'`, `script-src 'self'`
+with no `'unsafe-inline'`, `object-src 'none'`, `frame-ancestors 'none'`, and
+`connect-src` limited to `'self'` plus the project's own Supabase origin. Nothing
+else can be contacted, which blocks exfiltration at the browser level, and no
+injected script can run even if an `esc()` were missed somewhere.
+
+**Two layers of privileges, not one.** Supabase grants every table privilege to
+`authenticated` by default on each new table. The schema revokes them and grants
+back only what is used: consent records and feedback can be written and read
+back, never edited or deleted. RLS already guaranteed that; the table privilege
+says it again so the guarantee does not rest on a single layer.
+
+**No `UPDATE` policy on `profils`, deliberately.** RLS filters rows, not columns:
+"users may edit their own profile" would also have allowed
+`update profils set role = 'admin' where user_id = auth.uid()`. Everything goes
+through `toucher_profil()`.
+
+**An imported file is treated as hostile.** Capped at 8 MB before it is read,
+identifiers outside `[A-Za-z0-9_-]{1,64}` are replaced, the muscle group is
+checked against the closed list, and remembered exercises are re-validated key by
+key. No legitimate data is rewritten: `test/gabarits.test.mjs` asserts that every
+historical identifier passes the filter.
 
 **Nothing is downloaded for people who do not have an account.** supabase-js is
 209 KB and is fetched only when a session already exists or the account panel is
@@ -264,8 +295,21 @@ where user_id = (select id from auth.users where email = 'you@example.com');
 
 No framework. No build step. No bundler. No dependencies to install.
 
-One HTML file with inline CSS and JavaScript, plus static assets. `index.html` is
-about 218 KB, of which roughly 119 KB is a base64 texture.
+One HTML file carrying the markup and inline CSS, plus static assets.
+`index.html` is about 182 KB, of which roughly 119 KB is a base64 texture; the
+app's JavaScript sits beside it in `app.js` (166 KB).
+
+**Why the JS is not inline.** It was, until the security audit. An inline script
+forces `script-src 'self' 'unsafe-inline'` in the Content-Security-Policy — and
+that permission also allows injected event handlers. An XSS found during that
+audit executed precisely because of it. With no build step there is no way to
+emit a nonce on static hosting, so moving the script out is the only route to
+`script-src 'self'`. It loads from the same position at the end of `<body>`, so
+execution order is unchanged.
+
+`style-src` keeps `'unsafe-inline'` on purpose: the cards carry a
+`style="--card-color:…"` attribute, style injection cannot execute script, and
+extracting the stylesheet would not remove the need.
 
 Chart.js 4.4.1 is the only library, loaded on demand the first time you open a
 progression chart.
@@ -278,7 +322,10 @@ version drift, and the whole thing can be opened, read and edited in one file.
 ## Project structure
 
 ```
-index.html               the entire app — markup, styles, logic
+index.html               the app's markup and styles
+app.js                   all of the app's logic (moved out of the HTML for CSP)
+intelligence.js          pure business logic: top set, PRs, 1RM, signals
+sw.js                    service worker — cached shell, offline support
 guide.html               how-to page
 cgu.html                 terms of use              (French)
 confidentialite.html     privacy policy            (French)
@@ -297,7 +344,8 @@ robots.txt  sitemap.xml  indexing
 supabase.umd.js          supabase-js 2.115.0, loaded on demand
 supabase-config.js       project URL + public anon key (see Accounts)
 supabase/schema.sql      tables, RLS policies and sync functions
-supabase/test/           the schema's RLS test bench (PGlite)
+supabase/test/           the schema's RLS test bench (PGlite) — 113 tests
+test/                    business logic (87) and hardening guards (50)
 set-domaine.mjs          replaces the placeholder domain everywhere
 LICENSE  SECURITY.md  CONTRIBUTING.md  CHANGELOG.md
 .github/                 issue templates, PR template, CI workflow
@@ -413,7 +461,7 @@ support is on the [roadmap](#roadmap).
 
 ## What it is not
 
-- **Not a coaching app.** It records what you did; it does not tell you what to do.
+- **Not an automatic trainer.** It records what you did; it does not tell you what to do.
 - **Not a medical device.** Weights and RPE are what you typed. Nothing is checked,
   validated or advised.
 - **Not multi-device.** There is no sync, by design, for now.
@@ -423,14 +471,20 @@ support is on the [roadmap](#roadmap).
 
 ## Roadmap
 
-**Short term:** real offline support. There is no service worker yet (see
-[Installing on a phone](#installing-on-a-phone)) — that is next, ahead of
-anything below.
+**Shipped:** optional accounts and cloud sync on Supabase, the service worker and
+offline support, the business logic extracted and tested in `intelligence.js`,
+the per-exercise progression page, user feedback and the admin space.
 
-**Shipped:** optional accounts and cloud sync, on Supabase.
+**In progress:** the coach ↔ client relationship. An invite code generated by the
+coach, accepted on both sides, consented to and revocable; then session templates
+filed in folders and assignable into a client's logbook; then a message thread
+and a per-session debrief. `profils` is the foundation for all of it — that is
+why it was written first.
 
-**Still open:** password reset needs a real SMTP sender — Supabase's default
-service sends 2 messages an hour, which is not a production email service.
+**Still open:** the return leg of the password-reset link has never been
+exercised with a real email. Resend's DNS records are published on `top-set.fr`;
+what remains is wiring the API key into Supabase's SMTP settings and doing a full
+round trip.
 
 ---
 

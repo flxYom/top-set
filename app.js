@@ -2557,9 +2557,7 @@
   }
   function fermerRetour(){ document.getElementById('retourSheet').hidden = true; }
 
-  document.getElementById('lienRetour').addEventListener('click', function(e){
-    e.preventDefault(); ouvrirRetour();
-  });
+  document.getElementById('lienRetour').addEventListener('click', ouvrirRetour);
   document.getElementById('retourClose').addEventListener('click', fermerRetour);
   document.getElementById('retourSheet').addEventListener('click', function(e){
     if (e.target === this) fermerRetour();

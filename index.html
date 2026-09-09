@@ -1197,12 +1197,18 @@
     flex-wrap:wrap;padding:24px 0 28px;margin-top:14px;
     border-top:2px solid var(--line);
   }
-  /* 44 px de haut : un lien de pied de page doit rester tappable. */
-  .legal-footer a{
+  /* 44 px de haut : un lien de pied de page doit rester tappable. Le bouton
+     porte exactement le meme style que ses voisins — il se lit pareil, mais il
+     s'annonce comme une commande et repond a la barre d'espace. */
+  .legal-footer a,.legal-footer button{
     display:inline-flex;align-items:center;min-height:44px;padding:0 4px;
     color:var(--dim);font-size:11px;text-decoration:none;letter-spacing:.03em;
+    background:none;border:0;font-family:inherit;font-weight:inherit;cursor:pointer;
   }
-  .legal-footer a:hover,.legal-footer a:focus-visible{color:var(--ink);text-decoration:underline;}
+  .legal-footer a:hover,.legal-footer a:focus-visible,
+  .legal-footer button:hover,.legal-footer button:focus-visible{
+    color:var(--ink);text-decoration:underline;
+  }
   .legal-footer .sep{color:var(--line);font-size:11px;}
   .sheet-msg.warn{border-color:var(--yellow);color:var(--yellow);}
   .sheet-msg.err{border-color:var(--orange);color:var(--orange);}
@@ -1336,7 +1342,7 @@
   </section>
 
   <footer class="legal-footer">
-    <a href="#" id="lienRetour">Nous faire un retour</a>
+    <button type="button" id="lienRetour">Nous faire un retour</button>
     <span class="sep">·</span>
     <a href="guide.html">Comment ça marche</a>
     <span class="sep">·</span>
