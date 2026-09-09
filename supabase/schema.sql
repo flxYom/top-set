@@ -72,6 +72,11 @@ create table if not exists public.series (
   foreign key (user_id, exercice_id) references public.exercices (user_id, id) on delete cascade
 );
 
+-- Superset : les exercices qui portent le meme « bloc » se font ensemble. La
+-- colonne est nullable parce que l'immense majorite des exercices sont seuls,
+-- et qu'un exercice seul ne doit rien avoir a porter.
+alter table public.exercices add column if not exists bloc text;
+
 create index if not exists seances_user_maj_idx  on public.seances   (user_id, updated_at desc);
 create index if not exists seances_user_date_idx on public.seances   (user_id, date desc);
 create index if not exists exercices_seance_idx  on public.exercices (user_id, seance_id, ordre);
@@ -92,8 +97,24 @@ create table if not exists public.exercices_perso (
   nom         text not null,
   groupe      text not null default 'Autre',
   updated_at  timestamptz not null default now(),
+  -- « dead » est le soulevé de terre de son auteur, pas celui d'un
+  -- dictionnaire. alias_cle pointe vers la cle d'un autre exercice memorise :
+  -- les deux noms partagent alors historique, records et recap. Null = le nom
+  -- est un exercice a part entiere.
+  alias_cle   text,
   primary key (user_id, nom_cle)
 );
+
+alter table public.exercices_perso add column if not exists alias_cle text;
+
+-- Un alias doit designer un exercice qui existe, et jamais lui-meme : sans
+-- cette contrainte, une boucle « a pointe vers b qui pointe vers a » rendrait
+-- la resolution du nom infinie cote client.
+alter table public.exercices_perso
+  drop constraint if exists exercices_perso_alias_pas_soi;
+alter table public.exercices_perso
+  add  constraint exercices_perso_alias_pas_soi
+  check (alias_cle is null or alias_cle <> nom_cle);
 
 
 -- ============================================================================
@@ -230,11 +251,12 @@ begin
   for v_ex in select * from jsonb_array_elements(coalesce(p_exercices, '[]'::jsonb))
   loop
     v_ex_id := public.uuid_ou_neuf(v_ex ->> 'id');
-    insert into public.exercices (id, seance_id, user_id, ordre, nom, groupe, repos)
+    insert into public.exercices (id, seance_id, user_id, ordre, nom, groupe, repos, bloc)
     values (v_ex_id, v_seance, v_user, i,
             coalesce(v_ex ->> 'nom', ''),
             coalesce(nullif(v_ex ->> 'groupe', ''), 'Autre'),
-            v_ex ->> 'repos');
+            v_ex ->> 'repos',
+            nullif(v_ex ->> 'bloc', ''));
 
     j := 0;
     for v_se in select * from jsonb_array_elements(coalesce(v_ex -> 'series', '[]'::jsonb))
@@ -283,6 +305,7 @@ as $$
               'nom', e.nom,
               'groupe', e.groupe,
               'repos', coalesce(e.repos, ''),
+              'bloc', e.bloc,
               'series', coalesce((
                 select jsonb_agg(
                   jsonb_build_object(
@@ -310,6 +333,68 @@ $$;
 -- au prochain tirage.
 create or replace function public.maintenant()
 returns timestamptz language sql stable as $$ select now(); $$;
+
+-- Les noms d'exercices memorises suivent le compte, comme les seances. Deux
+-- appareils peuvent en avoir invente chacun de leur cote : on fusionne au lieu
+-- de choisir, et le plus recent gagne sur un meme nom.
+create or replace function public.pousser_exos_perso(p_exos jsonb)
+returns timestamptz
+language plpgsql
+security invoker
+set search_path = public
+as $$
+declare
+  v_user uuid := auth.uid();
+  v_ex   jsonb;
+begin
+  if v_user is null then
+    raise exception 'Aucune session : connexion requise.';
+  end if;
+
+  for v_ex in select * from jsonb_array_elements(coalesce(p_exos, '[]'::jsonb))
+  loop
+    -- Un nom vide n'est pas un exercice, et une cle vide ecraserait les autres.
+    continue when coalesce(trim(v_ex ->> 'cle'), '') = '';
+
+    insert into public.exercices_perso (user_id, nom_cle, nom, groupe, alias_cle, updated_at)
+    values (v_user,
+            trim(v_ex ->> 'cle'),
+            coalesce(nullif(trim(v_ex ->> 'nom'), ''), trim(v_ex ->> 'cle')),
+            coalesce(nullif(v_ex ->> 'groupe', ''), 'Autre'),
+            nullif(trim(coalesce(v_ex ->> 'alias', '')), ''),
+            now())
+    on conflict (user_id, nom_cle) do update
+      set nom       = excluded.nom,
+          groupe    = excluded.groupe,
+          alias_cle = excluded.alias_cle,
+          updated_at = now();
+  end loop;
+
+  return now();
+end;
+$$;
+
+create or replace function public.tirer_exos_perso()
+returns jsonb
+language sql
+security invoker
+stable
+set search_path = public
+as $$
+  select coalesce(jsonb_agg(jsonb_build_object(
+           'cle',    p.nom_cle,
+           'nom',    p.nom,
+           'groupe', p.groupe,
+           'alias',  p.alias_cle
+         ) order by p.nom_cle), '[]'::jsonb)
+  from public.exercices_perso p
+  where p.user_id = auth.uid();
+$$;
+
+revoke execute on function public.pousser_exos_perso(jsonb) from anon, public;
+revoke execute on function public.tirer_exos_perso()        from anon, public;
+grant  execute on function public.pousser_exos_perso(jsonb) to authenticated;
+grant  execute on function public.tirer_exos_perso()        to authenticated;
 
 revoke execute on function public.pousser_jour(date, jsonb) from anon, public;
 revoke execute on function public.tirer_jours(timestamptz)  from anon, public;
