@@ -82,6 +82,13 @@ tu quittes le champ, pas à chaque lettre — sinon tu te retrouverais avec `B`,
 records par exercice et répartition par groupe musculaire — sur la semaine, le
 mois ou l'année.
 
+**Deux rubriques dans SÉANCES.** *Mes séances* — ce qui reste à faire : les
+séances préparées mais pas loguées, celle du jour, celles à venir, triées du plus
+ancien au plus récent pour qu'une séance sautée remonte. C'est là que vit
+*Créer ma séance*. *Historique* — ce qui est fait, du plus récent au plus ancien,
+groupé par mois. La frontière est le fait de l'avoir loguée, pas la date seule :
+une séance loguée aujourd'hui reste dans *Mes séances* jusqu'au lendemain.
+
 **Graphique de progression** par exercice, tracé depuis ton propre historique.
 
 **Faire un retour.** Un lien en bas de chaque écran ouvre un formulaire : un bug,

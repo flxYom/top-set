@@ -11,6 +11,9 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ### Added
 
+- SÉANCES view split into two tabs: *Mes séances* (not-yet-logged sessions,
+  today's, and upcoming, oldest first, with the *Créer ma séance* box) and
+  *Historique* (logged sessions, newest first, grouped by month).
 - Feedback (`retours`): a footer link opens a sheet with three kinds
   (`bug`, `idee`, `question`), a 4,000-character body, and the list of what you
   already sent with its status. Requires an account. The context sent alongside
@@ -30,6 +33,17 @@ while it stays below `1.0.0`, breaking changes (in particular to the
   `intelligence.js` with 87 unit tests, set types (warm-up / top set / working /
   back-off), the previous-performance block with one-tap copy, session
   create/edit, and the per-exercise progression page.
+
+### Fixed
+
+- The admin entry never appeared for an administrator returning to the app.
+  `toucher_profil()` was only called from `apresConnexion()`, which runs after
+  an explicit sign-in — never on a restored session, which is how the app is
+  opened almost every time. It is now also called when the session is restored,
+  which fixes the same bug for `vu_le`: the "active in the last 7 days" counter
+  would only ever have counted people who had just typed their password.
+- The recap's period buttons used a global `.seg-btn` selector, which also
+  deactivated the new SÉANCES tabs. Scoped to `#subTabs`.
 
 ### Security
 
