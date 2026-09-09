@@ -305,6 +305,7 @@
   }
   .alias-choix:active{background:var(--yellow);color:#0d0c0a;}
   .pseudo-label{margin-top:4px;}
+
   .alias-liste{display:flex;flex-direction:column;gap:7px;}
   .alias-select{
     width:100%;min-height:44px;padding:0 30px 0 10px;
@@ -773,6 +774,27 @@
   .legal-footer .sep{color:var(--line);font-size:11px;}
   .sheet-msg.warn{border-color:var(--yellow);color:var(--yellow);}
   .sheet-msg.err{border-color:var(--orange);color:var(--orange);}
+
+  /* Sous 380 px — iPhone SE, petits Android — la ligne de serie compte
+     169 px de boutons fixes avant les deux champs. Dans un superset, qui
+     mange 23 px de plus, le poids et les reps se retrouvaient rognes a une
+     poignee de pixels : le chiffre saisi devenait illisible. On reprend sur
+     les boutons, pas sur les champs, parce que c'est la valeur qui compte. */
+  @media (max-width:380px){
+    .superset{padding:6px;}
+    .serie-check{width:44px;height:44px;}
+    .step-btn{width:30px;height:44px;font-size:17px;}
+    .serie-poids,.serie-reps{height:44px;font-size:15px;padding:0 1px;}
+    .serie-main{gap:4px;}
+    /* L'etoile de record passe en bord de carte : dans la ligne, elle coutait
+       vingt pixels aux deux seuls champs qui portent une valeur. */
+    .serie-pr{position:absolute;top:3px;right:3px;}
+    .serie-card{position:relative;}
+    /* Le numero de serie est deja porte par l'ordre des lignes : c'est ce
+       qu'on sacrifie en premier pour qu'un poids a trois chiffres reste
+       lisible. Il reste dans l'etiquette lue par les lecteurs d'ecran. */
+    .serie-num{display:none;}
+  }
 
 </style>
 </head>
@@ -3434,6 +3456,17 @@
   })();
 
   init();
+
+  // Le service worker rend l'app ouvrable dans une salle sans reseau. Il
+  // exige un contexte securise : en http, il n'y a rien a enregistrer, et
+  // c'est normal.
+  if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')){
+    window.addEventListener('load', function(){
+      navigator.serviceWorker.register('sw.js').catch(function(){
+        // Pas de worker : l'app fonctionne exactement comme avant, en ligne.
+      });
+    });
+  }
 })();
 </script>
 </body>
