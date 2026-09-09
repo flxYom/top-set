@@ -345,7 +345,7 @@ supabase.umd.js          supabase-js 2.115.0, loaded on demand
 supabase-config.js       project URL + public anon key (see Accounts)
 supabase/schema.sql      tables, RLS policies and sync functions
 supabase/test/           the schema's RLS test bench (PGlite) — 113 tests
-test/                    business logic (87) and hardening guards (50)
+test/                    business logic (87), hardening guards (50), links (19)
 set-domaine.mjs          replaces the placeholder domain everywhere
 LICENSE  SECURITY.md  CONTRIBUTING.md  CHANGELOG.md
 .github/                 issue templates, PR template, CI workflow

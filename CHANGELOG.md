@@ -36,6 +36,18 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ### Fixed
 
+- **CI had never been green.** The `Check internal links` step (lychee-action)
+  failed on every run going back weeks, and its failure could neither be
+  reproduced locally nor read usefully from the log. Replaced by
+  `test/liens.test.mjs`, which runs identically on a dev machine and in CI, and
+  catches the two traps Windows hides: path case (`Guide.html` works locally,
+  not on Linux) and anchors pointing at nothing. Verified by deliberately
+  breaking a link and confirming the test fails.
+- The RLS suite now runs in CI. Those 113 tests are the only thing proving one
+  user cannot read another's logbook, and until now they only ever ran on the
+  machine of whoever edited the schema — precisely where that guarantee should
+  not rest. `supabase/test/package-lock.json` added so the install is
+  reproducible.
 - CI was red on every merge of this batch: the "Nous faire un retour" entry was
   written as `<a href="#">`, which the link checker rightly rejects. It is a
   control that opens a dialog, not a link — it is now a `<button>`, which also
