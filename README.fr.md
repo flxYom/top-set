@@ -360,7 +360,7 @@ supabase.umd.js          supabase-js 2.115.0, chargé à la demande
 supabase-config.js       URL du projet + clé publique (voir Comptes)
 supabase/schema.sql      tables, politiques RLS et fonctions de synchro
 supabase/test/           le banc d'essai RLS du schéma (PGlite) — 113 tests
-test/                    logique métier (87) et gardes de sécurité (50)
+test/                    logique métier (87), gardes de sécurité (50), liens (19)
 set-domaine.mjs          remplace le domaine provisoire partout
 LICENSE  SECURITY.md  CONTRIBUTING.md  CHANGELOG.md
 .github/                 templates d'issues/PR, workflow de CI

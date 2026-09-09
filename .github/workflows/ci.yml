@@ -31,14 +31,37 @@ jobs:
       - name: Template and hardening guards
         run: node test/gabarits.test.mjs
 
+      # Remplace lychee-action, qui echouait a chaque execution sans qu'on
+      # puisse reproduire l'echec en local ni lire utilement son journal. Ce
+      # test-ci tourne a l'identique sur une machine de dev et ici, et il
+      # attrape les deux pieges que Windows cache : la casse des chemins et
+      # les ancres qui ne pointent nulle part.
+      - name: Internal links
+        run: node test/liens.test.mjs
+
       - name: Lint HTML
         run: npx --yes html-validate "*.html"
 
-      - name: Check internal links
-        uses: lycheeverse/lychee-action@v2
+  schema:
+    name: Database schema and RLS
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
         with:
-          args: >-
-            --offline --no-progress
-            --exclude-mail
-            "*.html"
-          fail: true
+          node-version: 22
+
+      # Ces 113 tests sont la seule chose qui prouve qu'un utilisateur ne peut
+      # pas lire le carnet d'un autre. Ils ne tournaient jusqu'ici que sur la
+      # machine de la personne qui modifiait le schema, ce qui est exactement
+      # l'endroit ou l'on ne veut pas que cette garantie repose.
+      - name: Install PGlite
+        run: npm ci
+        working-directory: supabase/test
+
+      - name: RLS and schema tests
+        run: node test-rls.mjs
+        working-directory: supabase/test
