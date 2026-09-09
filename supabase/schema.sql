@@ -16,10 +16,14 @@
 -- Modèle : carnets strictement privés. Personne ne voit les séances d'un
 -- autre — sections 1 à 6.
 --
--- Les sections 7 à 9 ajoutent la seule exception : un profil public réduit
--- (pseudo, rôle, dates), des retours utilisateurs, et quatre fonctions
--- d'administration. Aucune ne lit une ligne de carnet. Le mur du carnet
--- reste entier.
+-- Les sections 7 à 9 ajoutent un profil public réduit (pseudo, rôle, dates),
+-- des retours utilisateurs, et quatre fonctions d'administration. Aucune ne lit
+-- une ligne de carnet : un administrateur voit des compteurs, jamais un contenu.
+--
+-- La section 10 ouvre la seule porte du mur : un coach lit le carnet de son
+-- coaché. En lecture seule, après accord des deux parties, avec consentement
+-- daté, révocable des deux côtés et à effet immédiat. C'est la partie du
+-- schéma à relire en premier quand on doute de quelque chose.
 -- ============================================================================
 
 
@@ -846,7 +850,446 @@ grant  execute on function public.admin_marquer_retour(uuid,text) to authenticat
 --   where user_id = (select id from auth.users where email = 'ton@email.fr');
 
 -- ============================================================================
--- 10. SUPPRESSION DE COMPTE (RGPD — droit à l'effacement)
+-- 10. LE LIEN COACH ↔ COACHÉ
+-- ============================================================================
+-- C'est le seul endroit du schéma où quelqu'un lit le carnet d'un autre. Tout
+-- y est donc écrit pour qu'un oubli ne soit pas silencieux :
+--
+--   · le lien n'existe que si les DEUX parties ont agi — le coaché saisit un
+--     code, le coach accepte. Un pseudo tapé à la main suffirait à donner son
+--     carnet à un inconnu sur une faute de frappe ; un code est faux ou juste,
+--     jamais « presque » ;
+--   · l'accès est en LECTURE SEULE. Les policies ajoutées ici sont des policies
+--     SELECT, et rien d'autre. Un coach ne peut ni modifier ni effacer une
+--     séance — écrire une séance programmée viendra plus tard, par une
+--     fonction dédiée, pas en élargissant ces droits ;
+--   · un seul coach actif par personne, garanti par un index unique et non par
+--     une règle applicative qu'on pourrait oublier ;
+--   · révocable des deux côtés, avec effet immédiat : la policy consulte le
+--     statut à chaque requête, il n'y a rien à invalider ;
+--   · le consentement du coaché est daté et versionné au moment où il demande.
+--
+-- Ce que le coach ne voit JAMAIS, et il n'existe aucune fonction pour :
+-- l'email de son coaché, ses consentements, ses retours, son mot de passe.
+
+alter table public.profils add column if not exists est_coach boolean not null default false;
+alter table public.profils add column if not exists code_coach text;
+
+-- Le code est la clé d'entrée : il doit désigner un coach et un seul.
+create unique index if not exists profils_code_coach_unique
+  on public.profils (code_coach) where code_coach is not null;
+
+
+create table if not exists public.liens_coach (
+  id         uuid primary key default gen_random_uuid(),
+  coach_id   uuid not null references auth.users (id) on delete cascade,
+  client_id  uuid not null references auth.users (id) on delete cascade,
+  statut     text not null default 'en_attente',
+  demande_le timestamptz not null default now(),
+  accepte_le timestamptz,
+  fini_le    timestamptz,
+  -- Se coacher soi-même n'a pas de sens, et contournerait la logique des deux
+  -- parties : la base refuse plutôt que l'app.
+  constraint liens_pas_soi_meme check (coach_id <> client_id)
+);
+
+alter table public.liens_coach drop constraint if exists liens_statut_connu;
+alter table public.liens_coach add  constraint liens_statut_connu
+  check (statut in ('en_attente', 'actif', 'refuse', 'revoque'));
+
+-- Un seul coach actif à la fois, et une seule demande en attente vers un même
+-- coach. L'index partiel dit la règle une fois pour toutes ; aucun chemin
+-- applicatif ne peut la contourner.
+create unique index if not exists liens_un_seul_coach_actif
+  on public.liens_coach (client_id) where statut = 'actif';
+create unique index if not exists liens_une_seule_demande
+  on public.liens_coach (client_id, coach_id) where statut = 'en_attente';
+
+create index if not exists liens_coach_idx  on public.liens_coach (coach_id, statut);
+create index if not exists liens_client_idx on public.liens_coach (client_id, statut);
+
+alter table public.liens_coach enable row level security;
+
+
+-- ------------------------------------------------------------- les verdicts
+-- SECURITY DEFINER pour la même raison que est_admin() : une policy sur
+-- liens_coach qui irait lire liens_coach déclenche une récursion que Postgres
+-- refuse. Aucune des deux ne prend de paramètre permettant d'interroger la
+-- relation de quelqu'un d'autre — elles ne répondent que sur l'appelant.
+create or replace function public.coach_de(p_client uuid)
+returns boolean
+language sql
+security definer
+stable
+set search_path = public
+as $$
+  select exists (
+    select 1 from public.liens_coach
+    where client_id = p_client and coach_id = auth.uid() and statut = 'actif'
+  );
+$$;
+
+create or replace function public.mon_coach_id()
+returns uuid
+language sql
+security definer
+stable
+set search_path = public
+as $$
+  select coach_id from public.liens_coach
+  where client_id = auth.uid() and statut = 'actif'
+  limit 1;
+$$;
+
+-- Contrairement a est_admin(), ces deux-la sont appelees DEPUIS LES POLICIES.
+-- Une policy s'evalue avec les droits de celui qui interroge : sans EXECUTE
+-- pour « authenticated », toute lecture de seance echouerait par un
+-- « permission denied for function coach_de » — y compris la lecture de son
+-- propre carnet. Les exposer ne revele rien : coach_de(x) repond « suis-je le
+-- coach de x », ce que l'appelant peut de toute facon deduire en essayant de
+-- lire, et mon_coach_id() ne parle que de l'appelant.
+revoke execute on function public.coach_de(uuid)  from anon, public;
+revoke execute on function public.mon_coach_id()  from anon, public;
+grant  execute on function public.coach_de(uuid)  to authenticated;
+grant  execute on function public.mon_coach_id()  to authenticated;
+
+
+-- ------------------------------------------------------------- les policies
+-- Chacun voit les liens qui le concernent, des deux côtés : le coaché doit
+-- pouvoir constater qui a accès à son carnet, et le coach voir ses demandes.
+-- Personne n'écrit dans cette table à la main — tout passe par les fonctions
+-- plus bas, qui vérifient de quel côté du lien se trouve l'appelant.
+drop policy if exists "Chacun voit ses liens" on public.liens_coach;
+create policy "Chacun voit ses liens"
+  on public.liens_coach for select
+  using (auth.uid() = client_id or auth.uid() = coach_id);
+
+revoke all   on public.liens_coach from anon;
+revoke all   on public.liens_coach from authenticated;
+grant  select on public.liens_coach to authenticated;
+
+-- L'ouverture du mur, et elle tient en quatre policies SELECT. Elles s'ajoutent
+-- aux policies « Chacun gere ses … » de la section 4 sans les toucher : deux
+-- policies permissives se cumulent, donc le propriétaire garde tous ses droits
+-- et le coach n'obtient que la lecture.
+drop policy if exists "Le coach lit les seances de son coache" on public.seances;
+create policy "Le coach lit les seances de son coache"
+  on public.seances for select using (public.coach_de(user_id));
+
+drop policy if exists "Le coach lit les exercices de son coache" on public.exercices;
+create policy "Le coach lit les exercices de son coache"
+  on public.exercices for select using (public.coach_de(user_id));
+
+drop policy if exists "Le coach lit les series de son coache" on public.series;
+create policy "Le coach lit les series de son coache"
+  on public.series for select using (public.coach_de(user_id));
+
+drop policy if exists "Le coach lit les exercices memorises de son coache" on public.exercices_perso;
+create policy "Le coach lit les exercices memorises de son coache"
+  on public.exercices_perso for select using (public.coach_de(user_id));
+
+-- Chacun doit pouvoir nommer l'autre : le coaché voit le pseudo de son coach,
+-- le coach voit ceux de ses coachés. Rien de plus que le profil réduit, qui ne
+-- contient ni email ni donnée de carnet.
+drop policy if exists "Le coach voit le profil de son coache" on public.profils;
+create policy "Le coach voit le profil de son coache"
+  on public.profils for select using (public.coach_de(user_id));
+
+drop policy if exists "Chacun voit le profil de son coach" on public.profils;
+create policy "Chacun voit le profil de son coach"
+  on public.profils for select using (user_id = public.mon_coach_id());
+
+
+-- ---------------------------------------------------------- devenir coach
+-- Être coach est une capacité qui s'ajoute, pas un type de compte : un coach a
+-- son propre carnet comme tout le monde, et peut lui-même être coaché.
+create or replace function public.devenir_coach()
+returns text
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_user uuid := auth.uid();
+  v_code text;
+  v_essais int := 0;
+begin
+  if v_user is null then raise exception 'Aucune session : connexion requise.'; end if;
+
+  select code_coach into v_code from public.profils where user_id = v_user;
+  if v_code is not null then
+    update public.profils set est_coach = true where user_id = v_user;
+    return v_code;
+  end if;
+
+  -- Alphabet sans O/0 ni I/1 : ce code se lit à voix haute et se recopie à la
+  -- main, c'est là qu'on perd les gens.
+  loop
+    v_essais := v_essais + 1;
+    v_code := (
+      select string_agg(substr('ABCDEFGHJKLMNPQRSTUVWXYZ23456789',
+                               (floor(random() * 32) + 1)::int, 1), '')
+      from generate_series(1, 8)
+    );
+    exit when not exists (select 1 from public.profils where code_coach = v_code);
+    if v_essais > 20 then raise exception 'Impossible de generer un code.'; end if;
+  end loop;
+
+  update public.profils set est_coach = true, code_coach = v_code where user_id = v_user;
+  return v_code;
+end;
+$$;
+
+-- Cesser d'être coach ne supprime pas l'historique : les liens actifs passent
+-- en « revoque », datés. Un coaché doit pouvoir constater après coup que
+-- l'accès a bien été coupé, et quand.
+create or replace function public.cesser_coach()
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare v_user uuid := auth.uid();
+begin
+  if v_user is null then raise exception 'Aucune session : connexion requise.'; end if;
+  update public.liens_coach
+     set statut = 'revoque', fini_le = now()
+   where coach_id = v_user and statut in ('actif', 'en_attente');
+  update public.profils set est_coach = false, code_coach = null where user_id = v_user;
+end;
+$$;
+
+
+-- --------------------------------------------------------- demander un coach
+-- C'est le coaché qui saisit le code : il est la personne dont les données
+-- seront exposées, c'est donc à lui d'engager. Le coach devra accepter — sans
+-- quoi n'importe qui pourrait s'inventer des clients.
+create or replace function public.demander_coach(p_code text, p_version_politique text default '1')
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_user  uuid := auth.uid();
+  v_coach uuid;
+  v_lien  uuid;
+begin
+  if v_user is null then raise exception 'Aucune session : connexion requise.'; end if;
+
+  select user_id into v_coach
+  from public.profils
+  where code_coach = upper(trim(coalesce(p_code, ''))) and est_coach;
+
+  if v_coach is null then raise exception 'Code inconnu.'; end if;
+  if v_coach = v_user then raise exception 'Ce code est le tien.'; end if;
+
+  if exists (select 1 from public.liens_coach where client_id = v_user and statut = 'actif') then
+    raise exception 'Tu as deja un coach. Coupe le lien actuel avant d en demander un autre.';
+  end if;
+
+  -- Une demande déjà en attente vers ce coach : on ne la duplique pas.
+  select id into v_lien from public.liens_coach
+   where client_id = v_user and coach_id = v_coach and statut = 'en_attente';
+
+  if v_lien is null then
+    insert into public.liens_coach (coach_id, client_id)
+    values (v_coach, v_user) returning id into v_lien;
+  end if;
+
+  -- La trace du consentement se pose ici, au moment où la personne agit, et
+  -- pas au moment où l'accès s'ouvre : c'est cet instant-là qu'il faut pouvoir
+  -- prouver.
+  insert into public.consentements (user_id, type, version_politique)
+  values (v_user, 'coaching', coalesce(nullif(trim(p_version_politique), ''), '1'));
+
+  return jsonb_build_object(
+    'lien', v_lien,
+    'coach', (select pseudo from public.profils where user_id = v_coach)
+  );
+end;
+$$;
+
+-- Le coach répond. Accepter ouvre l'accès ; refuser le ferme sans le supprimer,
+-- pour que le coaché voie qu'il a été traité.
+create or replace function public.repondre_demande(p_lien uuid, p_accepte boolean)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_user uuid := auth.uid();
+  v_ok   boolean;
+begin
+  if v_user is null then raise exception 'Aucune session : connexion requise.'; end if;
+
+  select true into v_ok from public.liens_coach
+   where id = p_lien and coach_id = v_user and statut = 'en_attente';
+  if v_ok is null then raise exception 'Demande introuvable.'; end if;
+
+  if p_accepte then
+    update public.liens_coach
+       set statut = 'actif', accepte_le = now()
+     where id = p_lien;
+  else
+    update public.liens_coach
+       set statut = 'refuse', fini_le = now()
+     where id = p_lien;
+  end if;
+end;
+$$;
+
+-- Révocable des deux côtés, et sans délai : la policy relit le statut à chaque
+-- requête, donc l'accès tombe dans la même transaction. Il n'y a pas de jeton
+-- à faire expirer ni de cache à vider.
+create or replace function public.revoquer_lien(p_lien uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_user uuid := auth.uid();
+  v_ok   boolean;
+begin
+  if v_user is null then raise exception 'Aucune session : connexion requise.'; end if;
+
+  select true into v_ok from public.liens_coach
+   where id = p_lien and (client_id = v_user or coach_id = v_user)
+     and statut in ('actif', 'en_attente');
+  if v_ok is null then raise exception 'Lien introuvable.'; end if;
+
+  update public.liens_coach set statut = 'revoque', fini_le = now() where id = p_lien;
+end;
+$$;
+
+
+-- --------------------------------------------------------- lire côté coach
+-- SECURITY INVOKER, et c'est le point important : la fonction ne vérifie
+-- aucun droit elle-même. Elle demande les séances de p_client, et RLS répond.
+-- Sans lien actif, le résultat est vide — pas parce qu'un « if » l'a décidé,
+-- mais parce que la base n'a rien à montrer. Il n'y a donc aucun contrôle à
+-- oublier ici.
+create or replace function public.tirer_jours_de(p_client uuid, p_depuis timestamptz default null)
+returns jsonb
+language sql
+security invoker
+stable
+set search_path = public
+as $$
+  select coalesce(jsonb_object_agg(d.jour_date, d.contenu), '{}'::jsonb)
+  from (
+    select
+      s.date::text as jour_date,
+      jsonb_build_object(
+        'date', s.date::text,
+        'titre', s.titre,
+        'updatedAt', s.updated_at,
+        'exercises', coalesce((
+          select jsonb_agg(
+            jsonb_build_object(
+              'id', e.id,
+              'nom', e.nom,
+              'groupe', e.groupe,
+              'repos', coalesce(e.repos, ''),
+              'bloc', e.bloc,
+              'series', coalesce((
+                select jsonb_agg(
+                  jsonb_build_object(
+                    'id',    se.id,
+                    'poids', se.poids,
+                    'reps',  coalesce(se.reps, ''),
+                    'rpe',   se.rpe,
+                    'repos', coalesce(se.repos, ''),
+                    'type',  se.type,
+                    'fait',  se.fait
+                  ) order by se.ordre)
+                from public.series se where se.user_id = e.user_id and se.exercice_id = e.id
+              ), '[]'::jsonb)
+            ) order by e.ordre)
+          from public.exercices e where e.user_id = s.user_id and e.seance_id = s.id
+        ), '[]'::jsonb)
+      ) as contenu
+    from public.seances s
+    where s.user_id = p_client
+      and (p_depuis is null or s.updated_at > p_depuis)
+  ) d;
+$$;
+
+-- La liste des coachés d'un coach, avec de quoi juger l'assiduité sans ouvrir
+-- le carnet. Comme au-dessus : aucun contrôle de droit ici, RLS filtre.
+create or replace function public.mes_coaches()
+returns table (
+  lien_id     uuid,
+  client_id   uuid,
+  pseudo      text,
+  statut      text,
+  demande_le  timestamptz,
+  accepte_le  timestamptz,
+  nb_seances  bigint,
+  derniere    date
+)
+language sql
+security invoker
+stable
+set search_path = public
+as $$
+  select l.id, l.client_id, p.pseudo, l.statut, l.demande_le, l.accepte_le,
+         coalesce(s.n, 0), s.derniere
+  from public.liens_coach l
+  left join public.profils p on p.user_id = l.client_id
+  left join (
+    select se.user_id, count(*) n, max(se.date) derniere
+    from public.seances se group by se.user_id
+  ) s on s.user_id = l.client_id
+  where l.coach_id = auth.uid() and l.statut in ('en_attente', 'actif')
+  order by l.statut, l.demande_le desc;
+$$;
+
+-- Le coach du coaché, s'il en a un. Le lien en attente compte : il faut voir
+-- qu'une demande est partie, sinon on la refait.
+create or replace function public.mon_coach()
+returns table (
+  lien_id    uuid,
+  coach_id   uuid,
+  pseudo     text,
+  statut     text,
+  demande_le timestamptz,
+  accepte_le timestamptz
+)
+language sql
+security invoker
+stable
+set search_path = public
+as $$
+  select l.id, l.coach_id, p.pseudo, l.statut, l.demande_le, l.accepte_le
+  from public.liens_coach l
+  left join public.profils p on p.user_id = l.coach_id
+  where l.client_id = auth.uid() and l.statut in ('en_attente', 'actif')
+  order by l.demande_le desc
+  limit 1;
+$$;
+
+revoke execute on function public.devenir_coach()                    from anon, public;
+revoke execute on function public.cesser_coach()                     from anon, public;
+revoke execute on function public.demander_coach(text, text)         from anon, public;
+revoke execute on function public.repondre_demande(uuid, boolean)    from anon, public;
+revoke execute on function public.revoquer_lien(uuid)                from anon, public;
+revoke execute on function public.tirer_jours_de(uuid, timestamptz)  from anon, public;
+revoke execute on function public.mes_coaches()                      from anon, public;
+revoke execute on function public.mon_coach()                        from anon, public;
+grant  execute on function public.devenir_coach()                    to authenticated;
+grant  execute on function public.cesser_coach()                     to authenticated;
+grant  execute on function public.demander_coach(text, text)         to authenticated;
+grant  execute on function public.repondre_demande(uuid, boolean)    to authenticated;
+grant  execute on function public.revoquer_lien(uuid)                to authenticated;
+grant  execute on function public.tirer_jours_de(uuid, timestamptz)  to authenticated;
+grant  execute on function public.mes_coaches()                      to authenticated;
+grant  execute on function public.mon_coach()                        to authenticated;
+
+-- ============================================================================
+-- 11. SUPPRESSION DE COMPTE (RGPD — droit à l'effacement)
 -- ============================================================================
 -- Tout est en « on delete cascade » depuis auth.users : supprimer le compte
 -- efface séances, exercices, séries, exercices mémorisés et consentements.
