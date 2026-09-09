@@ -1122,6 +1122,49 @@
   .retour-statut.traite{color:var(--green);}
   .retour-statut.vu{color:var(--yellow);}
 
+  /* ---- Conversation -------------------------------------------------- */
+  /* Deux voix, deux cotes : c'est la convention de toutes les messageries, et
+     ce n'est pas un caprice — sans elle il faut relire l'etiquette a chaque
+     bulle pour savoir qui parle. */
+  .fil{
+    max-height:320px;overflow-y:auto;
+    border:1px solid var(--line);border-radius:10px;
+    padding:12px;margin-bottom:10px;background:var(--panel2);
+  }
+  .bulle{max-width:82%;margin-bottom:9px;}
+  .bulle:last-child{margin-bottom:0;}
+  .bulle.moi{margin-left:auto;}
+  .bulle-corps{
+    font-size:13px;line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere;
+    border:1px solid var(--line);border-radius:11px;padding:9px 12px;
+    background:var(--panel);
+  }
+  .bulle.moi .bulle-corps{border-color:var(--orange);}
+  .bulle-quand{
+    font-size:10px;font-weight:700;color:var(--dim);
+    margin-top:3px;letter-spacing:.03em;
+  }
+  .bulle.moi .bulle-quand{text-align:right;}
+  .fil-vide{font-size:12.5px;font-weight:700;color:var(--dim);padding:6px 2px;}
+
+  /* ---- Notifications de l'espace admin ------------------------------- */
+  .notif-ligne{
+    display:flex;align-items:flex-start;gap:10px;
+    border:1px solid var(--line);border-radius:9px;
+    padding:10px 12px;margin-bottom:6px;background:var(--panel);
+  }
+  .notif-ligne.neuf{border-left:3px solid var(--orange);}
+  .notif-type{
+    font-size:9px;font-weight:800;letter-spacing:.07em;
+    border:1px solid var(--line);border-radius:4px;padding:2px 5px;
+    color:var(--dim);white-space:nowrap;flex:none;
+  }
+  .notif-type.message{color:var(--orange);border-color:var(--orange);}
+  .notif-type.inscription{color:var(--green);border-color:var(--green);}
+  .notif-type.coach{color:var(--blue);border-color:var(--blue);}
+  .notif-corps{flex:1;font-size:12.5px;line-height:1.4;overflow-wrap:anywhere;}
+  .notif-quand{font-size:10px;font-weight:700;color:var(--dim);white-space:nowrap;}
+
   /* ---- Coach --------------------------------------------------------- */
   /* Le code se lit a voix haute et se recopie a la main : gros, espace, et
      une seule casse. C'est le seul champ de l'app ou l'on tape quelque chose
@@ -1415,6 +1458,21 @@
 
     <div class="admin-bloc">
       <div class="admin-bloc-tete">
+        <h3>NOTIFICATIONS</h3>
+        <div class="admin-filtres">
+          <button type="button" class="admin-filtre" id="adminNotifsLues">TOUT MARQUER LU</button>
+        </div>
+      </div>
+      <div id="adminNotifsListe"></div>
+    </div>
+
+    <div class="admin-bloc">
+      <div class="admin-bloc-tete"><h3>MESSAGES</h3></div>
+      <div id="adminFilsListe"></div>
+    </div>
+
+    <div class="admin-bloc">
+      <div class="admin-bloc-tete">
         <h3>RETOURS</h3>
         <div class="admin-filtres" id="adminFiltres">
           <button type="button" class="admin-filtre active" data-statut="">TOUT</button>
@@ -1564,6 +1622,18 @@
         reproduire le problème. Rien de ton carnet n'est envoyé.
       </p>
       <div class="sheet-msg" id="retourMsg" hidden></div>
+    </div>
+
+    <div class="sheet-section" id="conversation" hidden>
+      <div class="sheet-label">TA CONVERSATION</div>
+      <div class="fil" id="filMessages"></div>
+      <textarea id="messageCorps" class="sheet-paste" rows="2" maxlength="4000"
+                placeholder="Répondre…"></textarea>
+      <button type="button" class="btn-sheet" id="messageEnvoyer">ENVOYER</button>
+      <p class="sheet-note">
+        C'est le même fil des deux côtés. Tu peux revenir ici à tout moment
+        pour relire ce qui s'est dit.
+      </p>
     </div>
 
     <div class="sheet-section" id="retourMiens" hidden>

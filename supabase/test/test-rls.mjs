@@ -433,21 +433,16 @@ await refuse('la base refuse un contexte demesure', () =>
 
 console.log('\n== 19. Administration ==');
 
-// est_admin() ne sort plus par l'API : le front ne l'appelle jamais — il lit
-// le role rendu par toucher_profil() — et les quatre fonctions
-// d'administration l'appellent en interne, ou elles s'executent avec les
-// droits du proprietaire. Une fonction qu'on ne peut pas appeler est une
-// surface d'attaque en moins.
-await refuse('est_admin n est pas appelable depuis l API', () =>
-  as(B, `select public.est_admin()`));
-await refuse('ni par un futur administrateur', () =>
-  as(A, `select public.est_admin()`));
-await refuse('ni par un visiteur', () => asAnon(`select public.est_admin()`));
-
-// Elle repond quand meme correctement a qui a le droit de l'executer : c'est
-// ce dont les policies et les fonctions d'administration dependent.
-r = await db.query(`select set_config('request.jwt.claim.sub', $1, false), public.est_admin() e`, [B]);
+// est_admin() est appelable par « authenticated », et c'est necessaire : les
+// policies de la messagerie (section 11) l'appellent, et une policy s'evalue
+// avec les droits de celui qui interroge. La revoquer casserait la lecture de
+// son propre fil. Elle ne prend aucun parametre : elle ne repond que sur
+// l'appelant, donc l'exposer ne revele rien sur les autres.
+r = await as(B, `select public.est_admin() e`);
 ok('est_admin repond non pour un membre', r.rows[0].e === false, JSON.stringify(r.rows[0].e));
+r = await as(A, `select public.est_admin() e`);
+ok('et non pour un futur administrateur', r.rows[0].e === false, JSON.stringify(r.rows[0].e));
+await refuse('mais un visiteur ne peut pas l appeler', () => asAnon(`select public.est_admin()`));
 
 // Tant que personne n'est admin, les quatre fonctions sont fermees a tous.
 await refuse('un membre ne voit pas l apercu',   () => as(B, `select public.admin_apercu()`));
@@ -460,9 +455,8 @@ await refuse('un membre ne marque pas un retour', () =>
 // requete directe, sans passer par un role applicatif.
 await db.query(`update public.profils set role = 'admin' where user_id = $1`, [A]);
 
-r = await db.query(`select set_config('request.jwt.claim.sub', $1, false), public.est_admin() e`, [A]);
+r = await as(A, `select public.est_admin() e`);
 ok('est_admin repond oui une fois promu', r.rows[0].e === true, JSON.stringify(r.rows[0].e));
-await db.query(`select set_config('request.jwt.claim.sub', '', false)`);
 
 r = await as(A, `select public.admin_apercu() a`);
 const ap = r.rows[0].a;
@@ -527,7 +521,11 @@ ok('la liste des fonctions SECURITY DEFINER est celle attendue',
      // Le lien coach : les deux verdicts (recursion de policy) et les quatre
      // ecritures, qui verifient de quel cote du lien se trouve l'appelant.
      'cesser_coach', 'coach_de', 'demander_coach', 'devenir_coach',
-     'est_admin', 'mon_coach_id', 'repondre_demande', 'revoquer_lien',
+     'est_admin', 'mon_coach_id',
+     // Le declencheur des notifications : il ecrit dans une table ou personne
+     // n'a de policy insert, c'est tout l'interet.
+     'notifier_admin',
+     'repondre_demande', 'revoquer_lien',
      'toucher_profil'
    ].join(','),
    definers.join(','));
@@ -687,7 +685,113 @@ await refuse('anon n appelle pas demander_coach', () => asAnon(`select public.de
 await refuse('anon n appelle pas tirer_jours_de', () => asAnon(`select public.tirer_jours_de($1)`, [B]));
 
 
-console.log('\n== 22. Suppression du compte ==');
+console.log('\n== 22. Messagerie et notifications ==');
+
+// Le fil appartient au membre des deux cotes : un message ecrit par
+// l'administrateur porte quand meme le user_id du membre.
+await as(B, `insert into public.messages_support (user_id, auteur, corps)
+             values ($1, 'membre', 'Le minuteur ne sonne pas')`, [B]);
+
+rr = await as(B, `select count(*)::int n from public.messages_support`);
+ok('B lit son fil', rr.rows[0].n === 1, 'n=' + rr.rows[0].n);
+rr = await as(C, `select count(*)::int n from public.messages_support`);
+ok('C ne voit pas le fil de B', rr.rows[0].n === 0, 'n=' + rr.rows[0].n);
+
+// LE point du systeme : le role declare doit correspondre au role reel.
+await refuse('un membre ne peut pas signer « admin »', () =>
+  as(B, `insert into public.messages_support (user_id, auteur, corps)
+         values ($1, 'admin', 'faux message officiel')`, [B]));
+await refuse('ni ecrire dans le fil de quelqu un d autre', () =>
+  as(C, `insert into public.messages_support (user_id, auteur, corps)
+         values ($1, 'membre', 'usurpation')`, [B]));
+await refuse('la base refuse un auteur inconnu', () =>
+  as(B, `insert into public.messages_support (user_id, auteur, corps)
+         values ($1, 'moderateur', 'x')`, [B]));
+await refuse('la base refuse un corps vide', () =>
+  as(B, `insert into public.messages_support (user_id, auteur, corps) values ($1, 'membre', '')`, [B]));
+
+// Personne ne peut reecrire un message deja envoye : le droit est limite a la
+// colonne « lu », pas a la ligne.
+await refuse('personne ne reecrit le corps d un message', () =>
+  as(B, `update public.messages_support set corps = 'reecrit' where user_id = $1`, [B]));
+await as(B, `update public.messages_support set lu = true where user_id = $1`, [B]);
+rr = await db.query(`select count(*)::int n from public.messages_support where lu`);
+ok('mais on peut marquer comme lu', rr.rows[0].n === 1, 'n=' + rr.rows[0].n);
+
+await refuse('personne n efface un message', () =>
+  as(B, `delete from public.messages_support where user_id = $1`, [B]));
+await refuse('anon ne lit rien', () => asAnon(`select * from public.messages_support`));
+await refuse('anon n ecrit rien', () =>
+  asAnon(`insert into public.messages_support (user_id, auteur, corps) values ($1,'membre','x')`, [B]));
+
+console.log('  -- cote administrateur');
+// C devient administrateur : A a ete promu puis supprime dans les sections
+// precedentes, on repart d'un compte propre.
+await db.query(`update public.profils set role = 'admin' where user_id = $1`, [C]);
+
+rr = await as(C, `select count(*)::int n from public.messages_support`);
+ok('un admin lit le fil de B', rr.rows[0].n === 1, 'n=' + rr.rows[0].n);
+await as(C, `insert into public.messages_support (user_id, auteur, corps)
+             values ($1, 'admin', 'On regarde ca, merci du signalement')`, [B]);
+rr = await as(B, `select count(*)::int n from public.messages_support where auteur = 'admin'`);
+ok('sa reponse arrive dans le fil de B', rr.rows[0].n === 1, 'n=' + rr.rows[0].n);
+await refuse('meme admin, il ne signe pas « membre » chez quelqu un', () =>
+  as(C, `insert into public.messages_support (user_id, auteur, corps)
+         values ($1, 'membre', 'faux message du membre')`, [B]));
+
+rr = await as(C, `select * from public.admin_fils()`);
+ok('admin_fils rend un fil par personne', rr.rows.length === 1, 'n=' + rr.rows.length);
+ok('avec le dernier message et le compte des non lus',
+   rr.rows[0].total === '2' || Number(rr.rows[0].total) === 2, JSON.stringify(rr.rows[0]));
+// Un troisieme fil, pour verifier ce qui compte vraiment.
+await as(C, `insert into public.messages_support (user_id, auteur, corps)
+             values ($1, 'membre', 'Question de Carole')`, [C]);
+
+rr = await as(B, `select * from public.admin_fils()`);
+ok('un membre n obtient que son propre fil',
+   rr.rows.length === 1 && rr.rows[0].user_id === B,
+   JSON.stringify(rr.rows.map(x => x.user_id)));
+ok('et jamais celui d un autre',
+   !rr.rows.some(x => x.user_id !== B),
+   JSON.stringify(rr.rows.map(x => x.user_id)));
+
+console.log('  -- les notifications');
+rr = await as(C, `select type, count(*)::int n from public.notifications_admin group by type order by type`);
+const types = rr.rows.map(x => x.type + ':' + x.n).join(' ');
+ok('les declencheurs ont ecrit', rr.rows.length >= 2, types);
+ok('une notification par inscription', types.indexOf('inscription') > -1, types);
+ok('une notification par message de membre', types.indexOf('message') > -1, types);
+ok('une notification par demande de coaching', types.indexOf('coach') > -1, types);
+
+rr = await db.query(`select count(*)::int n from public.notifications_admin
+                     where type = 'message' and contenu like 'Le minuteur%'`);
+ok('le contenu vient de la ligne ecrite, pas d un parametre', rr.rows[0].n === 1, 'n=' + rr.rows[0].n);
+// La propriete a verifier n'est pas un total — il bouge des qu'on ajoute un
+// message ailleurs — mais qu'AUCUNE notification ne porte le texte ecrit par
+// l'administrateur.
+rr = await db.query(`select count(*)::int n from public.notifications_admin
+                     where contenu like 'On regarde ca%'`);
+ok('la reponse de l admin ne se notifie pas elle-meme', rr.rows[0].n === 0, 'n=' + rr.rows[0].n);
+rr = await db.query(`select count(*)::int n from public.notifications_admin
+                     where type = 'message' and contenu like 'Question de Carole%'`);
+ok('mais chaque message de membre en cree une', rr.rows[0].n === 1, 'n=' + rr.rows[0].n);
+
+rr = await as(B, `select count(*)::int n from public.notifications_admin`);
+ok('un membre ne voit aucune notification', rr.rows[0].n === 0, 'n=' + rr.rows[0].n);
+await refuse('personne ne fabrique une notification', () =>
+  as(C, `insert into public.notifications_admin (type, contenu) values ('message', 'inventee')`));
+await refuse('meme un admin ne peut pas en inserer', () =>
+  as(C, `insert into public.notifications_admin (type, user_id, contenu) values ('retour', $1, 'x')`, [B]));
+await refuse('ni en effacer', () => as(C, `delete from public.notifications_admin`));
+await refuse('ni en reecrire le contenu', () =>
+  as(C, `update public.notifications_admin set contenu = 'trafique'`));
+await as(C, `update public.notifications_admin set lu = true`);
+rr = await db.query(`select count(*)::int n from public.notifications_admin where not lu`);
+ok('mais un admin peut les marquer lues', rr.rows[0].n === 0, 'n=' + rr.rows[0].n);
+await refuse('anon ne lit aucune notification', () => asAnon(`select * from public.notifications_admin`));
+
+
+console.log('\n== 23. Suppression du compte ==');
 // Compte avant, compare apres : un nombre en dur se perime des qu'une section
 // precedente ajoute une journee, et le test se met alors a mentir.
 const avantB = (await db.query(

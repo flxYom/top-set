@@ -563,7 +563,19 @@ as $$
   );
 $$;
 
-revoke execute on function public.est_admin() from anon, public, authenticated;
+-- est_admin() a d'abord ete retiree de « authenticated » : le front ne
+-- l'appelait pas, et une fonction qu'on ne peut pas appeler est une surface
+-- d'attaque en moins. La messagerie de la section 11 change la donne — ses
+-- policies l'appellent, et une policy s'evalue avec les droits de celui qui
+-- interroge. Sans EXECUTE, un membre ne peut plus ni lire ni ecrire dans son
+-- propre fil.
+--
+-- C'est la meme regle que pour coach_de() : une fonction utilisee DANS une
+-- policy doit etre executable par le role qui declenche la policy. Le linter
+-- Supabase la signalera de nouveau, et c'est desormais justifie : elle ne
+-- prend aucun parametre, et ne repond que sur l'appelant.
+revoke execute on function public.est_admin() from anon, public;
+grant  execute on function public.est_admin() to authenticated;
 
 
 -- ------------------------------------------------------------ toucher_profil
@@ -736,7 +748,9 @@ begin
     'seances',         (select count(*) from public.seances),
     'seances_7j',      (select count(*) from public.seances where updated_at > now() - interval '7 days'),
     'series',          (select count(*) from public.series),
-    'retours_nouveaux',(select count(*) from public.retours where statut = 'nouveau')
+    'retours_nouveaux',(select count(*) from public.retours where statut = 'nouveau'),
+    'messages_nouveaux',(select count(*) from public.messages_support where auteur = 'membre' and not lu),
+    'notifs_nouvelles', (select count(*) from public.notifications_admin where not lu)
   ) into v;
 
   return v;
@@ -1293,7 +1307,223 @@ grant  execute on function public.mes_coaches()                      to authenti
 grant  execute on function public.mon_coach()                        to authenticated;
 
 -- ============================================================================
--- 11. SUPPRESSION DE COMPTE (RGPD — droit à l'effacement)
+-- 11. MESSAGERIE ET NOTIFICATIONS
+-- ============================================================================
+-- Transposition d'un système écrit pour Next.js, où chaque écriture sensible
+-- passait par une route serveur portant la clé service_role. Top Set n'a pas de
+-- serveur, et ne doit pas en avoir un pour ça : tout ce que ces routes
+-- faisaient — vérifier qui parle, refuser un contenu falsifié, écrire une
+-- notification que personne d'autre ne peut écrire — se dit ici en policies et
+-- en déclencheurs, donc en un seul endroit et sans clé à protéger.
+
+create table if not exists public.messages_support (
+  id      uuid primary key default gen_random_uuid(),
+  -- Le fil appartient au membre, des deux côtés : un message écrit par
+  -- l'administrateur porte quand même le user_id du membre. Sans ça il n'y
+  -- aurait pas de conversation, juste deux listes.
+  user_id uuid not null references auth.users (id) on delete cascade,
+  auteur  text not null,
+  corps   text not null,
+  lu      boolean not null default false,
+  cree_le timestamptz not null default now()
+);
+
+alter table public.messages_support drop constraint if exists messages_auteur_connu;
+alter table public.messages_support add  constraint messages_auteur_connu
+  check (auteur in ('membre', 'admin'));
+
+alter table public.messages_support drop constraint if exists messages_corps_borne;
+alter table public.messages_support add  constraint messages_corps_borne
+  check (char_length(corps) between 1 and 4000);
+
+create index if not exists messages_fil_idx on public.messages_support (user_id, cree_le);
+create index if not exists messages_non_lus_idx on public.messages_support (user_id, auteur) where not lu;
+
+alter table public.messages_support enable row level security;
+
+drop policy if exists "Chacun lit son fil" on public.messages_support;
+create policy "Chacun lit son fil"
+  on public.messages_support for select
+  using (auth.uid() = user_id or public.est_admin());
+
+-- Le point qui compte : la policy vérifie que « auteur » correspond au rôle
+-- réel de celui qui écrit. Un membre ne peut pas insérer un message signé
+-- « admin », même en fabriquant la requête à la main — ce n'est pas le
+-- formulaire qui l'empêche, c'est la base.
+drop policy if exists "Chacun ecrit dans son fil" on public.messages_support;
+create policy "Chacun ecrit dans son fil"
+  on public.messages_support for insert
+  with check (
+    (auth.uid() = user_id and auteur = 'membre')
+    or (public.est_admin() and auteur = 'admin')
+  );
+
+drop policy if exists "Marquer les messages comme lus" on public.messages_support;
+create policy "Marquer les messages comme lus"
+  on public.messages_support for update
+  using (auth.uid() = user_id or public.est_admin())
+  with check (auth.uid() = user_id or public.est_admin());
+
+-- RLS filtre des lignes, pas des colonnes : sans droit restreint à « lu », la
+-- policy ci-dessus laisserait réécrire le corps d'un message déjà envoyé. Le
+-- droit de table dit la vraie règle — on ne marque que la lecture.
+revoke all on public.messages_support from anon;
+revoke all on public.messages_support from authenticated;
+grant  select, insert on public.messages_support to authenticated;
+grant  update (lu)   on public.messages_support to authenticated;
+
+
+-- ============================================================================
+-- Les notifications d'administration
+-- ============================================================================
+-- Écrites uniquement par des déclencheurs : il n'y a AUCUNE policy insert, donc
+-- personne ne peut en fabriquer une depuis le navigateur. C'est ce que faisait
+-- la clé service_role côté serveur dans le système d'origine, en moins de code
+-- et sans secret à garder.
+create table if not exists public.notifications_admin (
+  id      uuid primary key default gen_random_uuid(),
+  type    text not null,
+  -- « set null » : un compte supprimé ne doit pas emporter la trace de ce qui
+  -- s'est passé, mais ne doit plus être identifiable non plus.
+  user_id uuid references auth.users (id) on delete set null,
+  contenu text,
+  lu      boolean not null default false,
+  cree_le timestamptz not null default now()
+);
+
+alter table public.notifications_admin drop constraint if exists notif_type_connu;
+alter table public.notifications_admin add  constraint notif_type_connu
+  check (type in ('inscription', 'message', 'retour', 'coach'));
+
+create index if not exists notif_tri_idx on public.notifications_admin (lu, cree_le desc);
+
+alter table public.notifications_admin enable row level security;
+
+drop policy if exists "Un admin lit les notifications" on public.notifications_admin;
+create policy "Un admin lit les notifications"
+  on public.notifications_admin for select using (public.est_admin());
+
+drop policy if exists "Un admin marque comme lues" on public.notifications_admin;
+create policy "Un admin marque comme lues"
+  on public.notifications_admin for update
+  using (public.est_admin()) with check (public.est_admin());
+
+revoke all on public.notifications_admin from anon;
+revoke all on public.notifications_admin from authenticated;
+grant  select on public.notifications_admin to authenticated;
+grant  update (lu) on public.notifications_admin to authenticated;
+
+
+-- ---------------------------------------------------------- les déclencheurs
+-- SECURITY DEFINER parce qu'ils écrivent dans une table où personne n'a le
+-- droit d'insérer. Ils ne lisent aucun paramètre venu du client : ce qu'ils
+-- inscrivent, ils le prennent dans la ligne qui vient d'être écrite — c'est la
+-- version base de données de « relire la source plutôt que croire le corps de
+-- la requête ».
+create or replace function public.notifier_admin()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if tg_table_name = 'profils' then
+    insert into public.notifications_admin (type, user_id, contenu)
+    values ('inscription', new.user_id, coalesce(new.pseudo, 'sans pseudo'));
+
+  elsif tg_table_name = 'messages_support' then
+    -- Un message de l'administrateur ne se notifie pas à lui-même.
+    if new.auteur = 'membre' then
+      insert into public.notifications_admin (type, user_id, contenu)
+      values ('message', new.user_id, left(new.corps, 200));
+    end if;
+
+  elsif tg_table_name = 'retours' then
+    insert into public.notifications_admin (type, user_id, contenu)
+    values ('retour', new.user_id, new.type || ' · ' || left(new.corps, 180));
+
+  elsif tg_table_name = 'liens_coach' then
+    insert into public.notifications_admin (type, user_id, contenu)
+    values ('coach', new.client_id, 'nouvelle demande de coaching');
+  end if;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists notif_inscription on public.profils;
+create trigger notif_inscription after insert on public.profils
+  for each row execute function public.notifier_admin();
+
+drop trigger if exists notif_message on public.messages_support;
+create trigger notif_message after insert on public.messages_support
+  for each row execute function public.notifier_admin();
+
+drop trigger if exists notif_retour on public.retours;
+create trigger notif_retour after insert on public.retours
+  for each row execute function public.notifier_admin();
+
+drop trigger if exists notif_coach on public.liens_coach;
+create trigger notif_coach after insert on public.liens_coach
+  for each row execute function public.notifier_admin();
+
+
+-- ------------------------------------------------------ lecture côté admin
+-- Comme tirer_jours_de() : SECURITY INVOKER, aucun contrôle dans la fonction,
+-- RLS répond. Un non-administrateur obtient une liste vide, pas une erreur —
+-- et il ne peut rien en déduire.
+create or replace function public.admin_fils()
+returns table (
+  user_id     uuid,
+  pseudo      text,
+  dernier     text,
+  dernier_le  timestamptz,
+  non_lus     bigint,
+  total       bigint
+)
+language sql
+security invoker
+stable
+set search_path = public
+as $$
+  select m.user_id,
+         p.pseudo,
+         (select corps from public.messages_support x
+           where x.user_id = m.user_id order by x.cree_le desc limit 1),
+         max(m.cree_le),
+         count(*) filter (where m.auteur = 'membre' and not m.lu),
+         count(*)
+  from public.messages_support m
+  left join public.profils p on p.user_id = m.user_id
+  group by m.user_id, p.pseudo
+  order by max(m.cree_le) desc
+  limit 200;
+$$;
+
+revoke execute on function public.admin_fils() from anon, public;
+grant  execute on function public.admin_fils() to authenticated;
+
+
+-- ============================================================================
+-- Ce que ce projet ne peut PAS faire, et pourquoi c'est écrit ici
+-- ============================================================================
+-- Le système d'origine envoyait un email à l'administrateur à chaque nouveau
+-- message, depuis une route serveur qui relisait le message en base avant de
+-- composer l'email. Top Set est un site statique : il n'y a pas de route où
+-- mettre ce code, et la clé service_role n'a rien à faire dans un navigateur.
+--
+-- Les notifications ci-dessus remplacent la partie utile — savoir qu'il s'est
+-- passé quelque chose — sans email. Si l'email devient nécessaire, la voie
+-- propre est une Edge Function Supabase déclenchée par un webhook sur
+-- notifications_admin : le secret reste chez Supabase, le dépôt reste statique.
+-- Ce n'est pas fait tant que personne ne l'a demandé.
+--
+-- De même, modifier ou supprimer le compte d'un autre utilisateur exige la clé
+-- service_role. Ça se fait dans Supabase → Authentication → Users, et c'est
+-- très bien ainsi : ces gestes-là méritent de sortir de l'app.
+
+-- ============================================================================
+-- 12. SUPPRESSION DE COMPTE (RGPD — droit à l'effacement)
 -- ============================================================================
 -- Tout est en « on delete cascade » depuis auth.users : supprimer le compte
 -- efface séances, exercices, séries, exercices mémorisés et consentements.

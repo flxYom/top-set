@@ -345,6 +345,33 @@ Les bornes sont dans la base, pas dans le formulaire : `check` sur le type, sur
 le statut, sur la longueur du corps et sur la taille du contexte. On ne défend pas
 une table avec du JavaScript.
 
+### La messagerie
+
+Un fil par personne, le même des deux côtés : un message écrit par
+l'administrateur porte quand même le `user_id` du membre, sans quoi il n'y
+aurait pas de conversation mais deux listes.
+
+Le point qui tient tout : **la policy d'insertion vérifie que l'auteur déclaré
+correspond au rôle réel de l'appelant.** Un membre ne peut pas insérer un
+message signé `admin`, même en fabriquant la requête à la main. Ce n'est pas le
+formulaire qui l'empêche, c'est la base.
+
+Le droit d'écriture est limité à la colonne `lu` — encore la même leçon : RLS
+filtre des lignes, pas des colonnes, et sans ce droit restreint la policy
+`update` laisserait réécrire le corps d'un message déjà envoyé.
+
+### Les notifications
+
+Une table sans **aucune** policy d'insertion : personne ne peut en fabriquer une
+depuis le navigateur. Elles sont écrites par des déclencheurs `security definer`
+posés sur `profils`, `messages_support`, `retours` et `liens_coach`.
+
+Ces déclencheurs ne lisent aucun paramètre venu du client : ce qu'ils
+inscrivent, ils le prennent dans la ligne qui vient d'être écrite. C'est la
+version base de données de « relire la source plutôt que croire le corps de la
+requête » — la règle qu'on applique côté serveur ailleurs, obtenue ici sans
+serveur.
+
 ### L'espace administrateur
 
 Réservé au rôle `admin`. Il montre huit compteurs (inscrits, nouveaux et actifs à
