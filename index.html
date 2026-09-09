@@ -367,6 +367,38 @@
     text-transform:uppercase;
   }
 
+  .seance-creer{
+    border:2px solid var(--line);
+    background:var(--panel);
+    padding:11px 12px;
+    margin-top:12px;
+  }
+  .seance-creer-label{
+    display:block;
+    font-size:9.5px;font-weight:800;letter-spacing:.12em;color:var(--dim);
+    margin-bottom:7px;
+  }
+  .seance-creer-ligne{display:flex;gap:7px;}
+  .seance-creer-date{
+    flex:1;min-width:0;height:46px;
+    background:var(--panel2);
+    border:2px solid var(--line);
+    color:var(--ink);
+    font-family:inherit;font-size:14px;font-weight:800;
+    padding:0 9px;
+  }
+  .seance-creer-ligne .btn-sheet{flex:none;width:104px;margin:0;}
+
+  /* Une seance prevue se distingue de celles qui ont ete faites : meme place,
+     meme carte, mais rien ne laisse croire qu'elle a eu lieu. */
+  .seance-carte.prevue{box-shadow:4px 4px 0 var(--line);}
+  .seance-carte.prevue .seance-tete{background:var(--line);color:var(--ink);}
+  .seance-badge{
+    flex:none;
+    font-size:8.5px;font-weight:800;letter-spacing:.1em;
+    border:1.5px solid currentColor;padding:1px 4px;
+  }
+
   .seances-cible{
     border-left:3px solid var(--orange);padding-left:10px;
     font-size:12.5px;line-height:1.5;color:var(--dim);
@@ -1057,6 +1089,13 @@
   <section class="view" id="view-seances" hidden>
     <div class="day-panel-header"><h2>Mes séances</h2></div>
     <div class="seances-cible" id="seancesCible"></div>
+    <div class="seance-creer">
+      <label class="seance-creer-label" for="seanceDate">CRÉER UNE SÉANCE</label>
+      <div class="seance-creer-ligne">
+        <input type="date" id="seanceDate" class="seance-creer-date" aria-label="Date de la nouvelle séance">
+        <button type="button" class="btn-sheet primary" id="seanceCreer">CRÉER</button>
+      </div>
+    </div>
     <div id="seancesListe"></div>
   </section>
 
@@ -1789,7 +1828,7 @@
     }
     var startStr = toDateStr(start), endStr = toDateStr(end);
     var days = Object.keys(state.sessions).filter(function(d){
-      return d>=startStr && d<=endStr && state.sessions[d].exercises.length>0;
+      return d>=startStr && d<=endStr && compterJour(state.sessions[d]) > 0;
     });
 
     var totalSeries = 0, totalVolume = 0;
@@ -2246,18 +2285,28 @@
   // Les journees qui ont vraiment servi, de la plus recente a la plus
   // ancienne. Le jour affiche est exclu : se recopier sur soi-meme
   // doublerait la seance en cours.
+  // Toutes les seances du carnet : celles qui sont faites, et celles qui sont
+  // seulement prevues — des exercices poses a l'avance, sans valeurs. Sans ca,
+  // une seance qu'on vient de creer disparaitrait de sa propre page.
   function seancesReprenables(){
     return Object.keys(state.sessions)
-      .filter(function(ds){ return compterJour(state.sessions[ds]) > 0; })
+      .filter(function(ds){
+        var day = state.sessions[ds];
+        return compterJour(day) > 0 || (day.exercises || []).length > 0 || titreChoisi(ds);
+      })
       .sort().reverse()
       .map(function(ds){
         var day = state.sessions[ds];
-        var exos = (day.exercises || []).filter(function(e){ return seriesRemplies(e).length; });
+        var faite = compterJour(day) > 0;
+        var exos = (day.exercises || []).filter(function(e){
+          return faite ? seriesRemplies(e).length : true;
+        });
         return {
           date: ds,
           noms: exos.map(function(e){ return normalizeName(e.nom) || 'Sans nom'; }),
           exos: exos.length,
-          series: compterJour(day)
+          series: compterJour(day),
+          prevue: !faite
         };
       });
   }
@@ -2313,8 +2362,12 @@
     var day = state.sessions[ds];
     if (!day) return [];
     var compte = {};
+    // Une seance prevue n'a pas encore de series remplies : on compte alors
+    // les exercices poses. Sans ca, une seance de squat preparee a l'avance
+    // s'appellerait « Seance » au lieu de « Jambes ».
+    var faite = compterJour(day) > 0;
     (day.exercises || []).forEach(function(e){
-      var n = seriesRemplies(e).length;
+      var n = faite ? seriesRemplies(e).length : 1;
       if (!n) return;
       var g = e.groupe || 'Autre';
       if (g === 'Autre') return;
@@ -2363,17 +2416,19 @@
 
   // ---------- la page Mes seances ----------
   function renderSeances(){
+    var champ = document.getElementById('seanceDate');
+    if (champ && !champ.value) champ.value = toDateStr(new Date());
     var liste = document.getElementById('seancesListe');
     var cible = document.getElementById('seancesCible');
     var seances = seancesReprenables();
 
     if (!seances.length){
       cible.textContent = '';
-      liste.innerHTML = '<div class="seances-vide">Aucune séance enregistrée pour l\'instant. ' +
-        'Note-en une dans le planning, et elle apparaîtra ici.</div>';
+      liste.innerHTML = '<div class="seances-vide">Aucune séance pour l\'instant. ' +
+        'Crée-en une ci-dessus, ou note-en une dans le planning.</div>';
       return;
     }
-    cible.textContent = 'Ouvre une séance pour la renommer, voir son récap, ou la sélectionner pour un autre jour.';
+    cible.textContent = 'Ouvre une séance pour la modifier, la renommer, voir son récap, ou la sélectionner pour un autre jour.';
 
     var moisVu = '', html = '';
     seances.forEach(function(s){
@@ -2387,14 +2442,16 @@
       var quandS = DAY_NAMES[(sd.getDay()+6)%7] + ' ' + sd.getDate() + ' ' + MONTH_ABBR[sd.getMonth()];
       var noms = s.noms.slice(0, 5).join(' · ') + (s.noms.length > 5 ? ' · +' + (s.noms.length - 5) : '');
       var vol = volumeTexte(dayVolume(s.date));
-      html += '<button type="button" class="seance-carte" data-ouvrir="' + esc(s.date) + '" style="--card-color:' + couleur + '">'
-        + '<span class="seance-tete"><span class="seance-titre">' + esc(titreSeance(s.date)) + '</span><span class="seance-fleche">›</span></span>'
+      html += '<button type="button" class="seance-carte' + (s.prevue ? ' prevue' : '') + '" data-ouvrir="' + esc(s.date) + '" style="--card-color:' + couleur + '">'
+        + '<span class="seance-tete"><span class="seance-titre">' + esc(titreSeance(s.date)) + '</span>'
+        +   (s.prevue ? '<span class="seance-badge">PRÉVUE</span>' : '')
+        +   '<span class="seance-fleche">›</span></span>'
         + '<span class="seance-corps">'
         +   '<span class="seance-quand">' + esc(quandS) + '</span>'
-        +   '<span class="seance-exos">' + esc(noms) + '</span>'
+        +   '<span class="seance-exos">' + esc(noms || 'Aucun exercice pour l\'instant') + '</span>'
         +   '<span class="seance-chiffres">'
         +     '<span class="seance-chip">' + s.exos + (s.exos > 1 ? ' EXOS' : ' EXO') + '</span>'
-        +     '<span class="seance-chip">' + s.series + (s.series > 1 ? ' SÉRIES' : ' SÉRIE') + '</span>'
+        +     (s.prevue ? '' : '<span class="seance-chip">' + s.series + (s.series > 1 ? ' SÉRIES' : ' SÉRIE') + '</span>')
         +     (vol ? '<span class="seance-chip">' + esc(vol) + '</span>' : '')
         +   '</span>'
         + '</span>'
@@ -2447,7 +2504,13 @@
       + '</div>';
 
     if (!exos.length){
-      html += '<div class="seances-vide">Rien de noté ce jour-là.</div>';
+      var poses = day ? (day.exercises || []).length : 0;
+      html += '<div class="seances-vide">'
+        + (poses
+            ? 'Séance prévue : ' + poses + (poses > 1 ? ' exercices posés' : ' exercice posé') + ', aucune valeur notée.'
+            : 'Rien de noté ce jour-là.')
+        + '</div>';
+      html += '<button type="button" class="btn-add" id="ficheModifier">MODIFIER CETTE SÉANCE</button>';
       hote.innerHTML = html;
       return;
     }
@@ -2481,7 +2544,8 @@
     });
 
     var meme = (ds === state.selectedDay);
-    html += '<button type="button" class="btn-add" id="ficheSelectionner"' + (meme ? ' disabled' : '') + '>'
+    html += '<button type="button" class="btn-add" id="ficheModifier">MODIFIER CETTE SÉANCE</button>';
+    html += '<button type="button" class="btn-reprendre" id="ficheSelectionner"' + (meme ? ' disabled' : '') + '>'
       + (meme ? 'C\'EST LA SÉANCE DU JOUR AFFICHÉ' : 'SÉLECTIONNER POUR LE JOUR AFFICHÉ')
       + '</button>';
     hote.innerHTML = html;
@@ -2517,6 +2581,15 @@
       if (e.key === 'Enter'){ e.preventDefault(); champ.blur(); }
       if (e.key === 'Escape'){ fini = true; renderSeanceDetail(); }
     });
+  }
+
+  function modifierSeance(ds){
+    if (!ds) return;
+    getOrCreateDay(ds);
+    allerAuJour(ds);
+    montrerVue('planning');
+    renderPlanning(true);
+    window.scrollTo(0, 0);
   }
 
   function allerAuJour(ds){
@@ -3147,9 +3220,26 @@
     var o = e.target.closest('[data-ouvrir]');
     if (o) ouvrirSeance(o.dataset.ouvrir);
   });
+
+  document.getElementById('seanceCreer').addEventListener('click', function(){
+    var champ = document.getElementById('seanceDate');
+    var ds = champ.value;
+    if (!ds){ showToast('Choisis une date'); champ.focus(); return; }
+    // Creer une seance qui existe deja, c'est simplement l'ouvrir : on ne
+    // detruit jamais ce qui est note, meme si l'utilisateur insiste.
+    var existante = state.sessions[ds] && (state.sessions[ds].exercises || []).length > 0;
+    getOrCreateDay(ds);
+    persistDay(ds);
+    modifierSeance(ds);
+    showToast(existante ? 'Cette séance existait déjà — la voici' : 'Séance créée — ajoute tes exercices');
+  });
   document.getElementById('seanceDetail').addEventListener('click', function(e){
     if (e.target.closest('#ficheTitre') || e.target.closest('#ficheCrayon')){
       editerTitreFiche();
+      return;
+    }
+    if (e.target.closest('#ficheModifier')){
+      modifierSeance(state.seanceOuverte);
       return;
     }
     if (!e.target.closest('#ficheSelectionner')) return;
