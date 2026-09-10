@@ -761,6 +761,17 @@ $$;
 -- Une ligne par inscrit, triée par visite la plus récente. Le nombre de
 -- séances est compté ici et non côté client : le client n'a pas le droit de
 -- lire ces séances, et il ne l'aura pas.
+--
+-- DROP avant CREATE, pour cette fonction et les quatre autres qui renvoient un
+-- tableau : Postgres refuse de « remplacer » une fonction dont les colonnes de
+-- retour ont changé (« cannot change return type of existing function »). Dans
+-- l'éditeur SQL de Supabase, cette seule erreur annule TOUT le script — c'est
+-- arrivé une fois, quand admin_retours a gagné user_id : rien n'était passé,
+-- et rien ne le disait. Supprimer puis recréer est sans risque ici : aucune
+-- policy ni aucune vue ne dépend de ces fonctions, et leurs droits sont
+-- reposés juste en dessous. test-montee.mjs rejoue la montée depuis chaque
+-- version du schéma pour que ça ne se reproduise pas.
+drop function if exists public.admin_membres(int);
 create or replace function public.admin_membres(p_limite int default 200)
 returns table (
   user_id       uuid,
@@ -796,6 +807,7 @@ end;
 $$;
 
 -- ------------------------------------------------------------ admin_retours
+drop function if exists public.admin_retours(text);
 create or replace function public.admin_retours(p_statut text default null)
 returns table (
   id      uuid,
@@ -1238,6 +1250,7 @@ $$;
 
 -- La liste des coachés d'un coach, avec de quoi juger l'assiduité sans ouvrir
 -- le carnet. Comme au-dessus : aucun contrôle de droit ici, RLS filtre.
+drop function if exists public.mes_coaches();
 create or replace function public.mes_coaches()
 returns table (
   lien_id     uuid,
@@ -1268,6 +1281,7 @@ $$;
 
 -- Le coach du coaché, s'il en a un. Le lien en attente compte : il faut voir
 -- qu'une demande est partie, sinon on la refait.
+drop function if exists public.mon_coach();
 create or replace function public.mon_coach()
 returns table (
   lien_id    uuid,
@@ -1483,6 +1497,7 @@ create trigger notif_coach after insert on public.liens_coach
 -- Comme tirer_jours_de() : SECURITY INVOKER, aucun contrôle dans la fonction,
 -- RLS répond. Un non-administrateur obtient une liste vide, pas une erreur —
 -- et il ne peut rien en déduire.
+drop function if exists public.admin_fils();
 create or replace function public.admin_fils()
 returns table (
   user_id     uuid,
@@ -1569,6 +1584,24 @@ create trigger retours_accuse
   after insert on public.retours
   for each row when (new.user_id is not null)
   execute function public.accuser_retour();
+
+-- Les retours envoyés AVANT ce déclencheur n'ont jamais ouvert de
+-- conversation : ils attendaient dans l'espace admin sans rien qui permette
+-- d'y répondre. On les recopie une fois dans le fil de leur auteur, à leur date
+-- d'origine. Pas d'accusé de réception : il arriverait des jours après la
+-- question et dirait « bien reçu » à quelqu'un qui attend déjà une réponse.
+--
+-- Rejouable : un retour déjà recopié (par ce bloc ou par le déclencheur) porte
+-- son retour_id dans le fil, et n'est pas recopié deux fois. Aucune
+-- notification : notifier_admin() ignore les messages qui viennent d'un
+-- retour. Un retour déjà lu ou traité arrive lu — il n'est pas nouveau.
+insert into public.messages_support (user_id, auteur, corps, retour_id, cree_le, lu)
+select r.user_id, 'membre', r.corps, r.id, r.cree_le, r.statut <> 'nouveau'
+from public.retours r
+where r.user_id is not null
+  and not exists (
+    select 1 from public.messages_support m where m.retour_id = r.id
+  );
 
 
 -- ============================================================================

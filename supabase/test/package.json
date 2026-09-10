@@ -2,6 +2,6 @@
   "name": "topset-schema-test",
   "private": true,
   "type": "module",
-  "scripts": { "test": "node test-rls.mjs" },
+  "scripts": { "test": "node test-rls.mjs && node test-montee.mjs" },
   "dependencies": { "@electric-sql/pglite": "^0.3.0" }
 }

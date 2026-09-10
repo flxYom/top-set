@@ -46,8 +46,12 @@ jobs:
     name: Database schema and RLS
     runs-on: ubuntu-latest
     steps:
+      # Tout l'historique : le test de montee installe chaque ancienne version
+      # du schema avant de passer la nouvelle par-dessus.
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Node
         uses: actions/setup-node@v4
@@ -64,4 +68,11 @@ jobs:
 
       - name: RLS and schema tests
         run: node test-rls.mjs
+        working-directory: supabase/test
+
+      # La base de production n'est jamais vide. Une fonction dont on change
+      # les colonnes de retour passe sur une base neuve et casse sur la vraie :
+      # dans l'editeur SQL de Supabase, tout le script est alors annule.
+      - name: Upgrade from every past schema version
+        run: node test-montee.mjs
         working-directory: supabase/test
