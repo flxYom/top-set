@@ -2546,30 +2546,41 @@
   // Deux voix, deux cotes. « moi » depend de qui regarde : dans l'espace
   // admin le meme fil se lit dans l'autre sens, et c'est le seul parametre
   // qui change.
-  function bullesHTML(rows, moiEstAdmin, nomAutre){
+  // Un seul rendu pour les quatre points de vue — membre, admin, coach,
+  // coache. Ce qui change, c'est « quel auteur suis-je » : c'est lui qui
+  // decide de quel cote tombe chaque bulle.
+  function bullesHTML(rows, monAuteur, nomAutre, vide){
     if (!rows.length){
-      return '<div class="fil-vide">Un souci, une question, une idée ? Écris ici, '
-           + 'on te répond dans cette conversation.</div>';
+      return '<div class="fil-vide">' + esc(vide || 'Un souci, une question, une idée ? '
+           + 'Écris ici, on te répond dans cette conversation.') + '</div>';
     }
     // Le nom ne se met qu'au-dessus de ce que dit l'autre : au-dessus des
     // siens il n'apprend rien, et il double la hauteur du fil pour rien.
-    var autre = nomAutre || (moiEstAdmin ? 'Membre' : 'Top Set');
+    var autre = nomAutre || 'Top Set';
     return rows.map(function(m){
-      var moi = moiEstAdmin ? (m.auteur === 'admin') : (m.auteur === 'membre');
-      return '<div class="bulle ' + (moi ? 'moi' : '') + '">'
-        + '<div class="bulle-corps">' + esc(m.corps) + '</div>'
-        + '<div class="bulle-quand">' + (moi ? '' : esc(autre) + ' · ')
+      // L'accuse automatique parle au nom de l'administration : il est de son
+      // cote du fil, et en face pour le membre. Il le dit, dans les deux cas.
+      var sys = m.auteur === 'systeme';
+      var moi = sys ? (monAuteur === 'admin') : (m.auteur === monAuteur);
+      var qui = sys ? 'Top Set · automatique' : autre;
+      return '<div class="bulle' + (moi ? ' moi' : '') + (sys ? ' systeme' : '') + '">'
+        + '<div class="bulle-corps">'
+        +   (m.retour_id && m.auteur === 'membre' ? '<span class="bulle-tag">RETOUR</span>' : '')
+        +   esc(m.corps) + '</div>'
+        + '<div class="bulle-quand">' + (moi ? (sys ? 'automatique · ' : '') : esc(qui) + ' · ')
         + esc(quandCourt(m.cree_le)) + '</div>'
         + '</div>';
     }).join('');
   }
 
   // Fabriquee, jamais stockee : elle disparait d'elle-meme des qu'une reponse
-  // arrive, parce qu'alors le dernier message n'est plus du membre.
-  function attenteHTML(rows){
-    if (!rows.length || rows[rows.length - 1].auteur !== 'membre') return '';
+  // arrive, parce qu'alors le dernier message n'est plus de celui qui attend.
+  // Apres un retour, le dernier message est l'accuse : pas de bulle en plus,
+  // l'accuse dit deja la meme chose.
+  function attenteHTML(rows, monAuteur, texte){
+    if (!rows.length || rows[rows.length - 1].auteur !== monAuteur) return '';
     return '<div class="bulle bulle-attente"><div class="bulle-corps">'
-         + 'On te répond dès que possible.</div></div>';
+         + esc(texte || 'On te répond dès que possible.') + '</div></div>';
   }
 
   // Le fil descend, pas la page : scrollTo sur le conteneur ne touche pas au
@@ -2596,13 +2607,13 @@
   function chargerConversation(){
     var bloc = document.getElementById('conversation');
     var fil  = document.getElementById('filMessages');
-    if (!Sync.estConnecte()){ bloc.hidden = true; return; }
-    Sync.lireFil().then(function(rows){
+    if (!Sync.estConnecte()){ bloc.hidden = true; return Promise.resolve(); }
+    return Sync.lireFil().then(function(rows){
       // Le fil s'affiche meme vide. Le cacher tant qu'il n'y a rien rendait le
       // premier message impossible a ecrire : la conversation ne pouvait
       // commencer que si elle avait deja commence.
       bloc.hidden = false;
-      fil.innerHTML = bullesHTML(rows, false) + attenteHTML(rows);
+      fil.innerHTML = bullesHTML(rows, 'membre') + attenteHTML(rows, 'membre');
       filEnBas(fil);
       // Ouvrir le fil, c'est l'avoir lu : on ne marque que les messages de
       // l'administrateur, pas les siens.
@@ -2676,7 +2687,16 @@
       majResteRetour();
       msgRetour('ok', 'Reçu. Merci — c\'est vraiment utile.');
       chargerMesRetours();
-      chargerConversation();
+      // Le retour vient d'ouvrir le fil, et la reponse y arrivera : c'est la
+      // qu'on emmene la personne, sinon l'accuse attend sous le formulaire
+      // sans que personne pense a descendre.
+      chargerConversation().then(function(){
+        var c = document.getElementById('conversation');
+        if (!c || c.hidden || !c.scrollIntoView) return;
+        var calme = window.matchMedia
+                 && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        c.scrollIntoView({ block:'start', behavior: calme ? 'auto' : 'smooth' });
+      });
     }, function(e){
       msgRetour('err', Sync.messageErreur(e));
     }).then(function(){
@@ -2735,8 +2755,20 @@
             ? '<b>' + nom + '</b> lit ce carnet'
             : 'Demande envoyée à <b>' + nom + '</b>, en attente de sa réponse')
         + '</span></div>'
+        + (l.statut === 'actif'
+            ? '<button type="button" class="btn-sheet primary" data-fil-coach="' + esc(l.coach_id)
+              + '" data-nom="' + esc(l.pseudo || '') + '">ÉCRIRE À ' + (l.pseudo ? esc(l.pseudo.toUpperCase()) : 'TON COACH')
+              + '<span class="compteur-fil" id="monCoachNonLus" hidden></span></button>'
+            : '')
         + '<button type="button" class="btn-sheet danger" data-couper="' + esc(l.lien_id) + '">'
         + (l.statut === 'actif' ? 'COUPER L\'ACCÈS' : 'ANNULER LA DEMANDE') + '</button>';
+      if (l.statut === 'actif'){
+        Sync.nonLusCoach().then(function(par){
+          var c = document.getElementById('monCoachNonLus');
+          var n = par[l.coach_id] || 0;
+          if (c){ c.textContent = n; c.hidden = !n; }
+        });
+      }
     }, function(){ /* le SQL n'est peut-etre pas encore passe */ });
   }
 
@@ -2772,7 +2804,103 @@
      .then(function(){ b.disabled = false; b.textContent = avant; });
   });
 
+  // ------------------------------------------------- la conversation coach
+  // Une feuille, deux sens. « jeSuis » dit de quel cote on se tient ; tout le
+  // reste — qui est l'autre, ce qu'on marque lu — s'en deduit.
+  var filCoach = null;   // { autre, jeSuis:'coach'|'client', nom }
+
+  function ouvrirFilCoach(autre, jeSuis, nom){
+    filCoach = { autre: autre, jeSuis: jeSuis, nom: nom || '' };
+    closeDataSheet();
+    document.getElementById('coachFilTitre').textContent =
+      jeSuis === 'client' ? 'TON COACH' : (nom || 'COACHÉ').toUpperCase();
+    document.getElementById('coachFilNote').textContent = jeSuis === 'client'
+      ? 'Ton ressenti sur une séance, une douleur, une question sur le programme. Entrée envoie, Maj+Entrée va à la ligne.'
+      : 'Un conseil, un ajustement, une réponse à son ressenti. Entrée envoie, Maj+Entrée va à la ligne.';
+    document.getElementById('coachFilMsg').hidden = true;
+    document.getElementById('coachFilMessages').innerHTML = '<div class="fil-vide">Chargement…</div>';
+    document.getElementById('coachFilSheet').hidden = false;
+    chargerFilCoach();
+  }
+
+  function fermerFilCoach(){
+    document.getElementById('coachFilSheet').hidden = true;
+    var etait = filCoach;
+    filCoach = null;
+    majPastilleCompte();
+    // Les compteurs de la liste des coaches sont perimes des qu'on a lu.
+    if (etait && etait.jeSuis === 'coach' && !coachClient
+        && !document.getElementById('view-coach').hidden) renderCoach();
+  }
+
+  function chargerFilCoach(){
+    var f = filCoach; if (!f) return;
+    var fil = document.getElementById('coachFilMessages');
+    var enFace = f.jeSuis === 'client' ? 'coach' : 'client';
+    Sync.lireFilCoach(f.autre, f.jeSuis).then(function(rows){
+      if (filCoach !== f) return;   // ferme ou change entre-temps
+      fil.innerHTML = bullesHTML(rows, f.jeSuis,
+          f.nom || (f.jeSuis === 'client' ? 'Ton coach' : 'Coaché'),
+          f.jeSuis === 'client'
+            ? 'Pas encore de message. Ton ressenti sur une séance, une douleur, une question : écris-le ici.'
+            : 'Pas encore de message. Écris le premier : il le retrouvera dans son espace « Mon coach ».')
+        + (f.jeSuis === 'client' ? attenteHTML(rows, 'client', 'Ton coach te répond dès que possible.') : '');
+      filEnBas(fil);
+      var aLire = rows.filter(function(m){ return m.auteur === enFace && !m.lu; })
+                      .map(function(m){ return m.id; });
+      if (aLire.length) Sync.marquerLusCoach(aLire).then(majPastilleCompte, majPastilleCompte);
+    }, function(e){
+      if (filCoach !== f) return;
+      fil.innerHTML = '<div class="fil-vide">' + esc(Sync.messageErreur(e)) + '</div>';
+    });
+  }
+
+  // Le point sur le bouton du compte : c'est la porte d'entree des deux sens,
+  // « Mon coach » comme « Mes coachés ».
+  function majPastilleCompte(){
+    var p = document.getElementById('comptePastille');
+    if (!p) return;
+    if (!Sync.estConnecte()){ p.hidden = true; return; }
+    Sync.nonLusCoach().then(function(par){
+      var n = 0; Object.keys(par).forEach(function(k){ n += par[k]; });
+      p.hidden = !n;
+      p.title = n ? (n + ' message' + (n > 1 ? 's' : '') + ' de coaching non lu' + (n > 1 ? 's' : '')) : '';
+    });
+  }
+
+  document.getElementById('coachFilEnvoyer').addEventListener('click', function(){
+    if (!filCoach) return;
+    var champ = document.getElementById('coachFilCorps');
+    var corps = champ.value.trim();
+    if (!corps){ champ.focus(); return; }
+    var b = this, avant = b.textContent, f = filCoach;
+    b.disabled = true; b.textContent = 'ENVOI…';
+    Sync.envoyerMessageCoach(f.autre, f.jeSuis, corps).then(function(){
+      champ.value = '';
+      document.getElementById('coachFilMsg').hidden = true;
+      chargerFilCoach();
+    }, function(err){
+      var m = document.getElementById('coachFilMsg');
+      m.className = 'sheet-msg err';
+      m.textContent = Sync.messageErreur(err);
+      m.hidden = false;
+    }).then(function(){ b.disabled = false; b.textContent = avant; });
+  });
+
+  document.getElementById('coachFilCorps').addEventListener('keydown', function(e){
+    if (e.key === 'Enter' && !e.shiftKey){
+      e.preventDefault();
+      document.getElementById('coachFilEnvoyer').click();
+    }
+  });
+  document.getElementById('coachFilClose').addEventListener('click', fermerFilCoach);
+  document.getElementById('coachFilSheet').addEventListener('click', function(e){
+    if (e.target === this) fermerFilCoach();
+  });
+
   document.getElementById('monCoachEtat').addEventListener('click', function(e){
+    var ecrire = e.target.closest('[data-fil-coach]');
+    if (ecrire){ ouvrirFilCoach(ecrire.dataset.filCoach, 'client', ecrire.dataset.nom); return; }
     var b = e.target.closest('[data-couper]'); if (!b) return;
     if (!confirm('Couper l\'accès ? Ton coach ne verra plus rien immédiatement.')) return;
     Sync.revoquerLien(b.dataset.couper).then(function(){
@@ -2796,13 +2924,19 @@
     if (coachClient){
       titre.textContent = (coachClient.pseudo || 'CARNET').toUpperCase();
       zone.innerHTML = '<div class="admin-vide">Lecture du carnet…</div>';
+      // Lire une seance et vouloir en parler, c'est le meme geste : le bouton
+      // est la ou naissent les questions.
+      var ecrire = '<div class="coache-actions">'
+        + '<button type="button" class="coache-action oui" data-fil-client="' + esc(coachClient.client_id)
+        + '" data-pseudo="' + esc(coachClient.pseudo || '') + '">ÉCRIRE À '
+        + (coachClient.pseudo ? esc(coachClient.pseudo.toUpperCase()) : 'CE COACHÉ') + '</button></div>';
       Sync.tirerJoursDe(coachClient.client_id).then(function(jours){
         var dates = Object.keys(jours || {}).sort().reverse();
         if (!dates.length){
-          zone.innerHTML = '<div class="admin-vide">Aucune séance loguée pour l\'instant.</div>';
+          zone.innerHTML = ecrire + '<div class="admin-vide">Aucune séance loguée pour l\'instant.</div>';
           return;
         }
-        zone.innerHTML = dates.map(function(ds){
+        zone.innerHTML = ecrire + dates.map(function(ds){
           var j = jours[ds];
           var d = fromDateStr(ds);
           var quand = DAY_NAMES[(d.getDay()+6)%7] + ' ' + d.getDate() + ' ' +
@@ -2835,7 +2969,8 @@
 
     titre.textContent = 'MES COACHÉS';
     zone.innerHTML = '<div class="admin-vide">Chargement…</div>';
-    Sync.mesCoaches().then(function(rows){
+    Promise.all([Sync.mesCoaches(), Sync.nonLusCoach()]).then(function(res){
+      var rows = res[0], nonLus = res[1];
       if (!rows || !rows.length){
         zone.innerHTML = '<div class="admin-vide">Personne pour l\'instant. '
           + 'Donne ton code à quelqu\'un : sa demande apparaîtra ici.</div>';
@@ -2863,6 +2998,10 @@
                 + '<button type="button" class="coache-action non" data-repondre="' + esc(c.lien_id) + '" data-oui="">REFUSER</button>'
                 + '</div>'
               : '<div class="coache-actions">'
+                + '<button type="button" class="coache-action oui" data-fil-client="' + esc(c.client_id)
+                +   '" data-pseudo="' + esc(c.pseudo || '') + '">MESSAGES'
+                +   (nonLus[c.client_id] ? '<span class="compteur-fil">' + nonLus[c.client_id] + '</span>' : '')
+                + '</button>'
                 + '<button type="button" class="coache-action non" data-couper-coache="' + esc(c.lien_id) + '">METTRE FIN AU SUIVI</button>'
                 + '</div>')
           + '</div>';
@@ -2879,6 +3018,9 @@
   document.getElementById('coachRafraichir').addEventListener('click', renderCoach);
 
   document.getElementById('coachContenu').addEventListener('click', function(e){
+    // Avant la carte : le bouton est DANS la carte, et la carte ouvre le carnet.
+    var msg = e.target.closest('[data-fil-client]');
+    if (msg){ ouvrirFilCoach(msg.dataset.filClient, 'coach', msg.dataset.pseudo); return; }
     var rep = e.target.closest('[data-repondre]');
     if (rep){
       rep.disabled = true;
@@ -2949,6 +3091,10 @@
           + (x.contexte && Object.keys(x.contexte).length
               ? '<div class="admin-ctx">' + esc(JSON.stringify(x.contexte)) + '</div>' : '')
           + '<div class="admin-actions">'
+          // Un retour sans auteur (compte supprime) n'a plus personne a qui
+          // repondre : pas de bouton plutot qu'un bouton qui echoue.
+          +   (x.user_id ? '<button type="button" class="admin-action" data-ecrire="' + esc(x.user_id)
+                         + '" data-pseudo="' + esc(x.pseudo || '') + '">RÉPONDRE</button>' : '')
           +   (x.statut !== 'vu'      ? '<button type="button" class="admin-action" data-marquer="' + esc(x.id) + '" data-statut="vu">MARQUER LU</button>' : '')
           +   (x.statut !== 'traite'  ? '<button type="button" class="admin-action" data-marquer="' + esc(x.id) + '" data-statut="traite">TRAITÉ</button>' : '')
           +   (x.statut !== 'nouveau' ? '<button type="button" class="admin-action" data-marquer="' + esc(x.id) + '" data-statut="nouveau">ROUVRIR</button>' : '')
@@ -2981,7 +3127,9 @@
             '<div class="admin-carte-tete"><span class="admin-qui">'
           +   (adminFil.pseudo ? esc(adminFil.pseudo) : '<span class="anon">sans pseudo</span>')
           + '</span><button type="button" class="admin-action" id="filRetour">← TOUS LES FILS</button></div>'
-          + '<div class="fil">' + bullesHTML(rows, true, adminFil.pseudo || 'Membre') + '</div>'
+          + '<div class="fil">' + bullesHTML(rows, 'admin', adminFil.pseudo || 'Membre',
+              'Pas encore de message. Le tien arrivera dans la conversation de cette personne, '
+            + 'sous « Nous faire un retour ».') + '</div>'
           + '<textarea id="adminMessageCorps" class="sheet-paste" rows="2" maxlength="4000" placeholder="Répondre…"></textarea>'
           + '<button type="button" class="admin-action" id="adminMessageEnvoyer">ENVOYER LA RÉPONSE</button>';
         filEnBas(fils.querySelector('.fil'));
@@ -3021,6 +3169,8 @@
           +   x.nb_seances + ' séance' + (x.nb_seances > 1 ? 's' : '') + '<br>'
           +   'vu ' + esc(quandCourt(x.vu_le))
           + '</div>'
+          + '<button type="button" class="admin-action" data-ecrire="' + esc(x.user_id)
+          +   '" data-pseudo="' + esc(x.pseudo || '') + '">ÉCRIRE</button>'
           + '</div>';
       }).join('');
     }, function(e){
@@ -3074,6 +3224,23 @@
     this.querySelectorAll('.admin-filtre').forEach(function(x){ x.classList.toggle('active', x === b); });
     renderAdmin();
   });
+  // Ouvrir un fil, c'est pouvoir y ecrire — meme s'il est vide. Le bloc
+  // MESSAGES est au-dessus des retours : on y remonte, sinon le fil s'ouvre
+  // hors de l'ecran et rien ne semble s'etre passe.
+  function ouvrirFilAdmin(uid, pseudo){
+    adminFil = { user_id: uid, pseudo: pseudo };
+    renderAdmin();
+    var bloc = document.getElementById('adminFilsListe');
+    if (bloc && bloc.scrollIntoView) bloc.scrollIntoView({ block:'start' });
+  }
+
+  ['adminRetoursListe', 'adminMembresListe'].forEach(function(id){
+    document.getElementById(id).addEventListener('click', function(e){
+      var b = e.target.closest('[data-ecrire]'); if (!b) return;
+      ouvrirFilAdmin(b.dataset.ecrire, b.dataset.pseudo);
+    });
+  });
+
   document.getElementById('adminRetoursListe').addEventListener('click', function(e){
     var b = e.target.closest('[data-marquer]'); if (!b) return;
     b.disabled = true;
@@ -3093,6 +3260,7 @@
     if (e.target === this) closeDataSheet();
   });
   document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape' && !document.getElementById('coachFilSheet').hidden) fermerFilCoach();
     if (e.key === 'Escape' && !document.getElementById('retourSheet').hidden) fermerRetour();
     if (e.key === 'Escape' && !document.getElementById('dataSheet').hidden) closeDataSheet();
   });
@@ -3974,6 +4142,7 @@
       deco.hidden = !!user;
       co.hidden   = !user;
       if (typeof majPastilleRetour === 'function') majPastilleRetour();
+      if (typeof majPastilleCompte === 'function') majPastilleCompte();
 
       var ou = document.getElementById('dataOu');
       if (!user){
@@ -4177,7 +4346,7 @@
         if (!qui) return Promise.resolve([]);
         return client().then(function(c){
           return c.from('messages_support')
-                  .select('id,auteur,corps,lu,cree_le')
+                  .select('id,auteur,corps,lu,cree_le,retour_id')
                   .eq('user_id', qui)
                   .order('cree_le', { ascending:true })
                   .limit(300);
@@ -4213,6 +4382,60 @@
                 function(){ return 0; });
       },
       adminFils:function(){ return rpcAdmin('admin_fils'); },
+
+      // Le fil coach se designe par l'autre personne et par le cote ou l'on
+      // se tient : c'est ce qui dit lequel des deux identifiants est le sien.
+      // La base, elle, reverifie tout — le lien actif et l'auteur declare.
+      lireFilCoach:function(autre, jeSuis){
+        if (!user || !autre) return Promise.resolve([]);
+        var coach  = jeSuis === 'coach' ? user.id : autre;
+        var coache = jeSuis === 'coach' ? autre   : user.id;
+        return client().then(function(c){
+          return c.from('messages_coach')
+                  .select('id,auteur,corps,lu,cree_le')
+                  .eq('coach_id', coach).eq('client_id', coache)
+                  .order('cree_le', { ascending:true })
+                  .limit(300);
+        }).then(function(r){ if (r.error) throw r.error; return r.data || []; });
+      },
+      envoyerMessageCoach:function(autre, jeSuis, corps){
+        if (!user) return Promise.reject(new Error('Connecte-toi pour écrire.'));
+        return client().then(function(c){
+          return c.from('messages_coach').insert({
+            coach_id:  jeSuis === 'coach' ? user.id : autre,
+            client_id: jeSuis === 'coach' ? autre   : user.id,
+            auteur:    jeSuis === 'coach' ? 'coach' : 'client',
+            corps:     String(corps || '').trim().slice(0, 4000)
+          });
+        }).then(function(r){ if (r.error) throw r.error; });
+      },
+      marquerLusCoach:function(ids){
+        if (!ids || !ids.length) return Promise.resolve();
+        return client().then(function(c){
+          return c.from('messages_coach').update({ lu:true }).in('id', ids);
+        }).then(function(r){ if (r.error) throw r.error; });
+      },
+      // Les non-lus par personne, dans les deux sens a la fois : on peut etre
+      // coach de quelqu'un et coache de quelqu'un d'autre. RLS ne rend que ses
+      // propres fils ; reste a garder ce que l'AUTRE a ecrit. Jamais d'echec :
+      // un compteur ne doit pas empecher une page de s'afficher.
+      nonLusCoach:function(){
+        if (!user) return Promise.resolve({});
+        return client().then(function(c){
+          return c.from('messages_coach')
+                  .select('coach_id,client_id,auteur')
+                  .eq('lu', false).limit(500);
+        }).then(function(r){
+          var par = {};
+          (r.error ? [] : (r.data || [])).forEach(function(m){
+            var autre = null;
+            if (m.coach_id  === user.id && m.auteur === 'client') autre = m.client_id;
+            if (m.client_id === user.id && m.auteur === 'coach')  autre = m.coach_id;
+            if (autre) par[autre] = (par[autre] || 0) + 1;
+          });
+          return par;
+        }, function(){ return {}; });
+      },
       lireNotifs:function(){
         return client().then(function(c){
           return c.from('notifications_admin')

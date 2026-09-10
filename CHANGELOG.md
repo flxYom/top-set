@@ -34,6 +34,43 @@ while it stays below `1.0.0`, breaking changes (in particular to the
   because a badge must never keep a page from rendering.
 - 12 more static guards (68 → 80), one of them verified to fail when the
   hidden-empty-thread bug is put back.
+- **Every feedback now opens a conversation.** A trigger copies the feedback
+  into the member's thread — signed by them, tagged **RETOUR** — then adds an
+  acknowledgement signed `systeme`, not `admin`: nobody has read it yet. No
+  policy lets anyone write a `systeme` message, the admin included. Both rows
+  get explicit timestamps, because `now()` does not move inside a transaction
+  and the acknowledgement could otherwise sort before the question. The copy
+  raises no notification of its own (one action, one notification), and
+  insert rights on `messages_support` are now limited to `user_id`, `auteur`
+  and `corps`, so nobody can set `retour_id` by hand to silence their own.
+  After sending, the sheet scrolls down to the thread.
+- **Reply from anywhere in the admin space**: a RÉPONDRE button on every
+  feedback that still has an author, an ÉCRIRE button on every member — a
+  thread can be opened with someone who never wrote.
+- **Coach ↔ client conversation**, in its own table `messages_coach`. Writing
+  requires the active link and an author that matches the caller's real side.
+  The client keeps the history after ending the link; the coach loses it, as
+  with the logbook. Rows can be marked read, never rewritten or deleted. One
+  sheet serves both directions, reachable from *Mon coach*, from each card in
+  *Mes coachés*, and from the logbook being read; an orange dot on the account
+  button flags unread messages either way.
+- `admin_retours()` now returns `user_id` — without it a feedback could be
+  read but not answered.
+
+### Fixed
+
+- The new footer dot used the bare class `.pastille`, which already belonged
+  to the account and coach status lights; it added a stray margin to them.
+  Renamed `.pastille-fil`, with a guard that no bare `.pastille` rule returns.
+
+### Tests
+
+- 32 more RLS tests (199 → 231): the feedback copy and its ordering, one
+  notification per action, nobody signing `systeme`, `retour_id` not settable,
+  and the whole coach conversation — both sides, strangers, the admin, forged
+  authors, a self-thread, rewrite, delete, `anon`, and what happens after the
+  link ends.
+- 13 more static guards (80 → 93).
 - **The coach ↔ client link.** A coach generates an 8-character code, the
   client enters it, the coach accepts — the link exists only once both sides
   acted. The coach then *reads* the client's logbook: sessions, exercises, sets,

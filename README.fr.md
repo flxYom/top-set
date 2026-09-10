@@ -327,6 +327,29 @@ vérifie qu'elle ne passe jamais en `security definer`.
 que le coach ne peut pas faire, le tiers qui n'est ni l'un ni l'autre, le second
 coach refusé, la révocation, l'arrêt du coaching, et `anon` partout.
 
+### La conversation coach ↔ coaché
+
+Une table à part, `messages_coach`, et non une réutilisation de la messagerie de
+support : là-bas l'autre partie est « l'administration », la même pour tout le
+monde ; ici ce sont deux comptes, et le droit d'écrire se lit **dans le lien**,
+pas dans un rôle.
+
+- **Écrire** exige le lien *actif*, et que l'auteur déclaré corresponde au côté
+  réel : un coaché ne signe pas « coach », un coach n'écrit pas à quelqu'un qu'il
+  ne suit pas, et personne ne fabrique un fil entre deux inconnus.
+- **Lire** : le coaché garde son historique même après avoir coupé l'accès —
+  c'est sa conversation. Le coach, lui, perd la lecture dès la rupture, comme
+  pour le carnet. L'administrateur ne la voit pas.
+- **Réécrire** est impossible : le droit de mise à jour est limité à la colonne
+  `lu`. **Effacer** aussi : il n'y a pas de policy `delete`.
+
+Dans l'app, une seule feuille sert les deux sens. Le coaché l'ouvre depuis
+*Mon coach*, le coach depuis chaque carte de *Mes coachés* ou depuis le carnet
+qu'il est en train de lire — lire une séance et vouloir en parler, c'est le même
+geste. Un point orange sur le bouton du compte signale un message non lu, dans
+un sens comme dans l'autre : on peut être coach de quelqu'un et coaché par
+quelqu'un d'autre.
+
 ---
 
 ## Retours et administration
@@ -386,6 +409,29 @@ Le fil descend tout seul via `scrollTo` **sur le conteneur** — pas sur la page
 qui ne doit pas bouger — et l'animation est coupée pour qui a réglé son système
 sur `prefers-reduced-motion`.
 
+#### Un retour ouvre la conversation
+
+Un retour arrivait dans l'espace admin sans rien qui permette d'y répondre, et
+de son côté le membre ne voyait rien se passer. Désormais un déclencheur,
+`accuser_retour()`, recopie le retour dans le fil du membre — signé de lui,
+marqué d'une étiquette **RETOUR** — puis ajoute un accusé de réception.
+
+Cet accusé est signé `systeme`, pas `admin`. Personne n'a encore lu le retour
+à ce moment-là ; le signer « admin » serait un mensonge poli. Aucune policy
+n'autorise quiconque à écrire un message `systeme`, administrateur compris :
+seul le déclencheur le peut, et c'est ce qui le rend crédible. Les deux lignes
+sont horodatées explicitement — dans une même transaction `now()` ne bouge
+pas, et l'accusé aurait pu s'afficher avant la question.
+
+**Un geste, une notification** : la copie ne se notifie pas, le retour a déjà la
+sienne. Et le droit d'insertion est limité aux colonnes `user_id`, `auteur`,
+`corps` — sans ça, un membre pourrait poser lui-même un `retour_id` pour faire
+taire la notification de ses propres messages.
+
+Côté administrateur, chaque retour porte un bouton **RÉPONDRE** et chaque
+inscrit un bouton **ÉCRIRE** : on peut ouvrir une conversation avec n'importe
+qui, même avec quelqu'un qui n'a jamais rien envoyé.
+
 Enfin une **pastille** s'allume dans le pied de page quand une réponse attend.
 Sans elle, une réponse pouvait dormir indéfiniment dans une feuille que personne
 n'ouvre par habitude. Elle est obtenue par un comptage `head:true` — un nombre,
@@ -406,10 +452,11 @@ serveur.
 
 ### L'espace administrateur
 
-Réservé au rôle `admin`. Il montre huit compteurs (inscrits, nouveaux et actifs à
-7 et 30 jours, séances, séries, retours en attente), la liste des retours avec de
-quoi les marquer lus ou traités, et la liste des inscrits triée par dernière
-visite.
+Réservé au rôle `admin`. Il montre dix compteurs (inscrits, nouveaux et actifs à
+7 et 30 jours, séances, séries, retours en attente, messages non lus,
+notifications), les notifications, les conversations triées par activité, la
+liste des retours — chacun avec **RÉPONDRE**, **MARQUER LU** et **TRAITÉ** — et
+la liste des inscrits triée par dernière visite, chacun avec **ÉCRIRE**.
 
 **Ce qu'il ne montre pas :** aucun email, et aucune ligne de carnet. Les quatre
 fonctions renvoient des agrégats. Un administrateur voit *combien* de séances sont
@@ -625,11 +672,13 @@ service worker et le hors-ligne, la logique métier testée dans `intelligence.j
 la page de progression par exercice, les retours utilisateurs et l'espace
 administrateur.
 
-**En cours :** la relation coach ↔ coaché. Un code d'invitation généré par le
-coach, accepté des deux côtés, consenti et révocable ; puis des modèles de séance
-rangés en dossiers, assignables dans le carnet d'un coaché ; puis un fil de
-discussion et un retour de séance. `profils` est le socle de tout ça — c'est pour
-elle qu'elle a été écrite en premier.
+**Livré depuis :** le lien coach ↔ coaché (code d'invitation, accord des deux
+côtés, consentement, révocation, lecture du carnet), la messagerie de support —
+où chaque retour ouvre une conversation — et la conversation coach ↔ coaché.
+
+**En cours :** des modèles de séance rangés en dossiers, assignables dans le
+carnet d'un coaché, et un retour de séance. `profils` est le socle de tout ça —
+c'est pour elle qu'elle a été écrite en premier.
 
 **Encore ouvert :** le retour du lien de réinitialisation du mot de passe n'a
 jamais été exercé avec un vrai email. Les enregistrements DNS de Resend sont

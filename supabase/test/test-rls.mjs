@@ -517,6 +517,9 @@ ok('il y a bien des fonctions a verifier', r.rows.length >= 10, r.rows.length + 
 const definers = r.rows.filter(x => x.prosecdef).map(x => x.proname).sort();
 ok('la liste des fonctions SECURITY DEFINER est celle attendue',
    definers.join(',') === [
+     // L'accuse de reception : il ecrit un message « systeme », et aucune
+     // policy n'autorise quiconque a le faire.
+     'accuser_retour',
      'admin_apercu', 'admin_marquer_retour', 'admin_membres', 'admin_retours',
      // Le lien coach : les deux verdicts (recursion de policy) et les quatre
      // ecritures, qui verifient de quel cote du lien se trouve l'appelant.
@@ -692,8 +695,11 @@ console.log('\n== 22. Messagerie et notifications ==');
 await as(B, `insert into public.messages_support (user_id, auteur, corps)
              values ($1, 'membre', 'Le minuteur ne sonne pas')`, [B]);
 
-rr = await as(B, `select count(*)::int n from public.messages_support`);
+rr = await as(B, `select count(*)::int n from public.messages_support
+                   where auteur = 'membre' and corps = 'Le minuteur ne sonne pas'`);
 ok('B lit son fil', rr.rows[0].n === 1, 'n=' + rr.rows[0].n);
+rr = await as(B, `select count(*)::int n from public.messages_support where user_id <> $1`, [B]);
+ok('et rien d autre que le sien', rr.rows[0].n === 0, 'n=' + rr.rows[0].n);
 rr = await as(C, `select count(*)::int n from public.messages_support`);
 ok('C ne voit pas le fil de B', rr.rows[0].n === 0, 'n=' + rr.rows[0].n);
 
@@ -715,8 +721,9 @@ await refuse('la base refuse un corps vide', () =>
 await refuse('personne ne reecrit le corps d un message', () =>
   as(B, `update public.messages_support set corps = 'reecrit' where user_id = $1`, [B]));
 await as(B, `update public.messages_support set lu = true where user_id = $1`, [B]);
-rr = await db.query(`select count(*)::int n from public.messages_support where lu`);
-ok('mais on peut marquer comme lu', rr.rows[0].n === 1, 'n=' + rr.rows[0].n);
+rr = await db.query(`select count(*)::int n from public.messages_support
+                     where user_id = $1 and not lu`, [B]);
+ok('mais on peut marquer comme lu', rr.rows[0].n === 0, 'restant=' + rr.rows[0].n);
 
 await refuse('personne n efface un message', () =>
   as(B, `delete from public.messages_support where user_id = $1`, [B]));
@@ -729,7 +736,8 @@ console.log('  -- cote administrateur');
 // precedentes, on repart d'un compte propre.
 await db.query(`update public.profils set role = 'admin' where user_id = $1`, [C]);
 
-rr = await as(C, `select count(*)::int n from public.messages_support`);
+rr = await as(C, `select count(*)::int n from public.messages_support
+                   where user_id = $1 and corps = 'Le minuteur ne sonne pas'`, [B]);
 ok('un admin lit le fil de B', rr.rows[0].n === 1, 'n=' + rr.rows[0].n);
 await as(C, `insert into public.messages_support (user_id, auteur, corps)
              values ($1, 'admin', 'On regarde ca, merci du signalement')`, [B]);
@@ -740,9 +748,13 @@ await refuse('meme admin, il ne signe pas « membre » chez quelqu un', () =>
          values ($1, 'membre', 'faux message du membre')`, [B]));
 
 rr = await as(C, `select * from public.admin_fils()`);
-ok('admin_fils rend un fil par personne', rr.rows.length === 1, 'n=' + rr.rows.length);
+const filB = rr.rows.find(x => x.user_id === B);
+ok('admin_fils rend un fil par personne',
+   !!filB && rr.rows.length === new Set(rr.rows.map(x => x.user_id)).size,
+   JSON.stringify(rr.rows.map(x => x.user_id)));
 ok('avec le dernier message et le compte des non lus',
-   rr.rows[0].total === '2' || Number(rr.rows[0].total) === 2, JSON.stringify(rr.rows[0]));
+   filB.dernier === 'On regarde ca, merci du signalement' && Number(filB.non_lus) === 0,
+   JSON.stringify(filB));
 // Un troisieme fil, pour verifier ce qui compte vraiment.
 await as(C, `insert into public.messages_support (user_id, auteur, corps)
              values ($1, 'membre', 'Question de Carole')`, [C]);
@@ -791,7 +803,153 @@ ok('mais un admin peut les marquer lues', rr.rows[0].n === 0, 'n=' + rr.rows[0].
 await refuse('anon ne lit aucune notification', () => asAnon(`select * from public.notifications_admin`));
 
 
-console.log('\n== 23. Suppression du compte ==');
+console.log('\n== 23. L accuse de reception ==');
+// Envoyer un retour dans le vide, c'est ne pas savoir s'il est parti. Le
+// declencheur ouvre le fil a la place du membre — mais sans se faire passer
+// pour quelqu'un : personne n'a encore lu ce retour.
+rr = await db.query(`select count(*)::int n from public.messages_support
+                     where user_id = $1 and auteur = 'systeme'`, [C]);
+const avantAccuse = rr.rows[0].n;
+await as(C, `insert into public.retours (user_id, type, corps)
+             values ($1, 'bug', 'Le chrono deraille')`, [C]);
+rr = await db.query(`select auteur, corps from public.messages_support
+                     where user_id = $1 and auteur = 'systeme'
+                     order by cree_le desc limit 1`, [C]);
+ok('un retour ouvre le fil', rr.rows.length === 1);
+ok('et le message est signe « systeme », pas « admin »',
+   rr.rows[0].auteur === 'systeme', rr.rows[0].auteur);
+ok('il dit qu on repondra, pas qu on a lu',
+   /dès que possible/.test(rr.rows[0].corps), rr.rows[0].corps);
+rr = await db.query(`select count(*)::int n from public.messages_support
+                     where user_id = $1 and auteur = 'systeme'`, [C]);
+ok('un accuse par retour', rr.rows[0].n === avantAccuse + 1, 'n=' + rr.rows[0].n);
+
+// La conversation commence par la question, pas par l'accuse : le retour est
+// recopie dans le fil, signe du membre, et l'accuse vient juste apres.
+rr = await db.query(`select auteur, corps, retour_id from public.messages_support
+                     where user_id = $1 and retour_id is not null
+                     order by cree_le desc, auteur desc limit 2`, [C]);
+const [accuse, copie] = rr.rows;
+ok('le retour est recopie dans le fil, signe du membre',
+   copie && copie.auteur === 'membre' && copie.corps === 'Le chrono deraille',
+   JSON.stringify(copie));
+ok('la copie et l accuse pointent vers le retour',
+   copie && accuse && copie.retour_id === accuse.retour_id && !!copie.retour_id);
+rr = await db.query(`select auteur from public.messages_support
+                     where user_id = $1 and retour_id is not null
+                     order by cree_le`, [C]);
+ok('la question passe avant l accuse, meme dans la meme transaction',
+   rr.rows.slice(-2).map(x => x.auteur).join(',') === 'membre,systeme',
+   rr.rows.map(x => x.auteur).join(','));
+
+// Un geste, une notification : le retour a la sienne, sa copie n'en ajoute pas.
+rr = await db.query(`select type, count(*)::int n from public.notifications_admin
+                     where contenu like '%Le chrono deraille%' group by type`);
+ok('un seul retour ne produit qu une notification',
+   rr.rows.length === 1 && rr.rows[0].type === 'retour' && rr.rows[0].n === 1,
+   JSON.stringify(rr.rows));
+
+// Et personne ne peut poser retour_id a la main pour faire taire la sienne.
+await refuse('un membre ne pose pas retour_id lui-meme', () =>
+  as(B, `insert into public.messages_support (user_id, auteur, corps, retour_id)
+         select $1, 'membre', 'message discret', id from public.retours limit 1`, [B]));
+
+// L'accuse ne doit pas se notifier lui-meme : l'administrateur serait prevenu
+// de sa propre reponse automatique.
+rr = await db.query(`select count(*)::int n from public.notifications_admin
+                     where type = 'message' and contenu like 'Bien reçu%'`);
+ok('l accuse ne se notifie pas', rr.rows[0].n === 0, 'n=' + rr.rows[0].n);
+
+// Personne ne peut signer « systeme » : aucune policy ne l'autorise, et c'est
+// exactement ce qui rend le declencheur credible.
+await refuse('un membre ne peut pas signer « systeme »', () =>
+  as(B, `insert into public.messages_support (user_id, auteur, corps)
+         values ($1, 'systeme', 'faux accuse')`, [B]));
+await refuse('un admin non plus', () =>
+  as(C, `insert into public.messages_support (user_id, auteur, corps)
+         values ($1, 'systeme', 'faux accuse')`, [B]));
+
+rr = await as(C, `select user_id from public.admin_retours() limit 1`);
+ok('admin_retours rend le user_id, sinon on ne peut pas repondre',
+   rr.rows.length === 1 && !!rr.rows[0].user_id, JSON.stringify(rr.rows[0]));
+
+
+console.log('\n== 24. La conversation coach ↔ coache ==');
+// On repart d'un lien propre : D coache E.
+const D = '44444444-4444-4444-4444-444444444444';
+const E = '55555555-5555-5555-5555-555555555555';
+for (const [id, mail] of [[D, 'd@t.fr'], [E, 'e@t.fr']]){
+  await db.query(`insert into auth.users (id, email) values ($1, $2)
+                  on conflict (id) do nothing`, [id, mail]);
+  await as(id, `select public.toucher_profil()`);
+}
+await as(D, `select public.devenir_coach()`);
+rr = await db.query(`select code_coach from public.profils where user_id = $1`, [D]);
+await as(E, `select public.demander_coach($1, 'oui')`, [rr.rows[0].code_coach]);
+rr = await db.query(`select id from public.liens_coach where client_id = $1`, [E]);
+await as(D, `select public.repondre_demande($1, true)`, [rr.rows[0].id]);
+
+await as(E, `insert into public.messages_coach (coach_id, client_id, auteur, corps)
+             values ($1, $2, 'client', 'J ai mal a l epaule sur le developpe')`, [D, E]);
+await as(D, `insert into public.messages_coach (coach_id, client_id, auteur, corps)
+             values ($1, $2, 'coach', 'On passe en prise neutre cette semaine')`, [D, E]);
+
+rr = await as(E, `select count(*)::int n from public.messages_coach`);
+ok('le coache lit le fil', rr.rows[0].n === 2, 'n=' + rr.rows[0].n);
+rr = await as(D, `select count(*)::int n from public.messages_coach`);
+ok('le coach lit le meme fil', rr.rows[0].n === 2, 'n=' + rr.rows[0].n);
+rr = await as(B, `select count(*)::int n from public.messages_coach`);
+ok('personne d autre ne le lit', rr.rows[0].n === 0, 'n=' + rr.rows[0].n);
+rr = await as(C, `select count(*)::int n from public.messages_coach`);
+ok('pas meme l administrateur', rr.rows[0].n === 0, 'n=' + rr.rows[0].n);
+
+// Le meme point que pour le support : le role declare doit correspondre au
+// role reel, et ici « reel » se lit dans le lien, pas dans un booleen.
+await refuse('un coache ne peut pas signer « coach »', () =>
+  as(E, `insert into public.messages_coach (coach_id, client_id, auteur, corps)
+         values ($1, $2, 'coach', 'faux conseil')`, [D, E]));
+await refuse('un coach ne peut pas signer « client »', () =>
+  as(D, `insert into public.messages_coach (coach_id, client_id, auteur, corps)
+         values ($1, $2, 'client', 'faux ressenti')`, [D, E]));
+await refuse('un inconnu n ecrit pas dans le fil des autres', () =>
+  as(B, `insert into public.messages_coach (coach_id, client_id, auteur, corps)
+         values ($1, $2, 'coach', 'intrusion')`, [D, E]));
+await refuse('ni en se declarant coach de quelqu un qu il ne suit pas', () =>
+  as(B, `insert into public.messages_coach (coach_id, client_id, auteur, corps)
+         values ($1, $2, 'coach', 'intrusion')`, [B, E]));
+await refuse('la base refuse un auteur inconnu', () =>
+  as(E, `insert into public.messages_coach (coach_id, client_id, auteur, corps)
+         values ($1, $2, 'moderateur', 'x')`, [D, E]));
+await refuse('et un fil avec soi-meme', () =>
+  db.query(`insert into public.messages_coach (coach_id, client_id, auteur, corps)
+            values ($1, $1, 'coach', 'x')`, [D]));
+
+await refuse('personne ne reecrit un message envoye', () =>
+  as(D, `update public.messages_coach set corps = 'reecrit'`));
+await as(E, `update public.messages_coach set lu = true where auteur = 'coach'`);
+rr = await db.query(`select count(*)::int n from public.messages_coach where auteur = 'coach' and not lu`);
+ok('mais on marque comme lu', rr.rows[0].n === 0, 'n=' + rr.rows[0].n);
+await refuse('personne n efface', () => as(D, `delete from public.messages_coach`));
+await refuse('anon ne lit rien', () => asAnon(`select * from public.messages_coach`));
+
+// Couper le suivi ferme la porte au coach — et seulement a lui. La
+// conversation reste celle du coache : c'est son historique, pas celui du
+// coach.
+rr = await db.query(`select id from public.liens_coach where client_id = $1 and statut = 'actif'`, [E]);
+await as(E, `select public.revoquer_lien($1)`, [rr.rows[0].id]);
+rr = await as(D, `select count(*)::int n from public.messages_coach`);
+ok('le coach ne lit plus rien apres la rupture', rr.rows[0].n === 0, 'n=' + rr.rows[0].n);
+rr = await as(E, `select count(*)::int n from public.messages_coach`);
+ok('le coache garde son historique', rr.rows[0].n === 2, 'n=' + rr.rows[0].n);
+await refuse('et le coach n ecrit plus', () =>
+  as(D, `insert into public.messages_coach (coach_id, client_id, auteur, corps)
+         values ($1, $2, 'coach', 'je reviens')`, [D, E]));
+await refuse('le coache non plus, il n a plus de coach', () =>
+  as(E, `insert into public.messages_coach (coach_id, client_id, auteur, corps)
+         values ($1, $2, 'client', 'tu es la ?')`, [D, E]));
+
+
+console.log('\n== 25. Suppression du compte ==');
 // Compte avant, compare apres : un nombre en dur se perime des qu'une section
 // precedente ajoute une journee, et le test se met alors a mentir.
 const avantB = (await db.query(

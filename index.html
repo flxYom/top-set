@@ -1151,17 +1151,37 @@
      dernier message est du membre. Sans elle, le fil se termine sur sa propre
      question et rien ne dit que c'est parti. Le pointille la distingue d'un
      vrai message — ce n'est pas quelqu'un qui parle. */
-  .bulle-attente .bulle-corps{
+  .bulle-attente .bulle-corps,
+  .bulle.systeme .bulle-corps{
     font-style:italic;color:var(--dim);border-style:dashed;
+  }
+  /* Ce message vient du formulaire de retour : l'administrateur doit savoir
+     qu'un contexte l'accompagne, dans la liste des retours. */
+  .bulle-tag{
+    display:inline-block;margin-right:6px;padding:1px 5px;
+    border:1px solid var(--line);border-radius:4px;
+    font-size:9px;font-weight:800;letter-spacing:.07em;color:var(--dim);
+    font-style:normal;vertical-align:1px;
   }
 
   /* Une reponse attend, et rien d'autre ne le dirait : le fil est range dans
-     une feuille qu'on n'ouvre pas par hasard. */
-  .pastille{
+     une feuille qu'on n'ouvre pas par hasard. Nom propre a elle — « .pastille »
+     appartient deja aux voyants d'etat du compte et du coach. */
+  .pastille-fil{
     display:inline-block;width:7px;height:7px;margin-left:5px;
     border-radius:50%;background:var(--orange);vertical-align:middle;
   }
-  .pastille[hidden]{display:none;}
+  .pastille-fil[hidden]{display:none;}
+  .brand-btn{position:relative;}
+  .brand-btn .pastille-fil{
+    position:absolute;top:6px;right:6px;margin:0;width:9px;height:9px;
+    box-shadow:0 0 0 2px var(--panel);
+  }
+  .compteur-fil{
+    display:inline-block;min-width:17px;margin-left:6px;padding:2px 5px;
+    border-radius:9px;background:var(--orange);color:#0d0c0a;
+    font-size:10px;font-weight:800;line-height:1.2;text-align:center;
+  }
 
   /* ---- Notifications de l'espace admin ------------------------------- */
   .notif-ligne{
@@ -1381,7 +1401,8 @@
 <div class="app">
   <header class="brand">
     <h1 class="brand-mark"><span class="wm-top">TOP</span><span class="wm-set">SET</span><span class="wm-app">app</span></h1>
-    <button type="button" class="brand-btn" id="dataBtn" aria-label="Sauvegarde de mes données">⇅</button>
+    <button type="button" class="brand-btn" id="dataBtn" aria-label="Sauvegarde de mes données">⇅<span
+      class="pastille-fil" id="comptePastille" hidden></span></button>
     <div class="brand-date" id="brandDate"><b>—</b><span>—</span></div>
   </header>
 
@@ -1507,7 +1528,7 @@
 
   <footer class="legal-footer">
     <button type="button" id="lienRetour">Nous faire un retour<span
-      class="pastille" id="retourPastille" hidden></span></button>
+      class="pastille-fil" id="retourPastille" hidden></span></button>
     <span class="sep">·</span>
     <a href="guide.html">Comment ça marche</a>
     <span class="sep">·</span>
@@ -1607,6 +1628,26 @@
       <button type="button" class="btn-sheet danger" id="dataImport">REMPLACER MES DONNÉES</button>
       <button type="button" class="btn-sheet" id="dataRecover" aria-label="Récupérer la copie de secours" hidden></button>
       <div class="sheet-msg" id="dataMsg" hidden></div>
+    </div>
+  </div>
+</div>
+
+<div class="sheet" id="coachFilSheet" hidden>
+  <div class="sheet-card" role="dialog" aria-modal="true" aria-labelledby="coachFilTitre">
+    <div class="sheet-head">
+      <h2 id="coachFilTitre">TON COACH</h2>
+      <button type="button" class="icon-btn" id="coachFilClose" aria-label="Fermer">×</button>
+    </div>
+    <div class="sheet-section">
+      <div class="fil" id="coachFilMessages"></div>
+      <textarea id="coachFilCorps" class="sheet-paste" rows="2" maxlength="4000"
+                placeholder="Écris ton message…"></textarea>
+      <button type="button" class="btn-sheet primary" id="coachFilEnvoyer">ENVOYER</button>
+      <p class="sheet-note" id="coachFilNote">
+        Ton ressenti sur une séance, une douleur, une question sur le programme.
+        Entrée envoie, Maj+Entrée va à la ligne.
+      </p>
+      <div class="sheet-msg" id="coachFilMsg" hidden></div>
     </div>
   </div>
 </div>
