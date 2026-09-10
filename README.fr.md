@@ -68,6 +68,23 @@ tu appuies quatre fois.
 **Incréments.** `−` et `+` ajoutent ou retirent 2,5 kg sans ouvrir le clavier.
 C'est le geste le plus fréquent entre deux séries : il coûte un appui.
 
+**Au temps : gainage, planche, chaise.** Un exercice tenu se mesure en secondes.
+Taper « Planche » ou « Gainage » bascule la série en durée pendant la frappe —
+`−` et `+` y valent 5 secondes — et un bouton de la carte bascule n'importe
+quel autre exercice. Sous la série, la *difficulté* ressentie de 1 à 10 remplace
+les reps en réserve, qui n'ont pas de sens pour une planche. Le record est la
+série la plus longue, la fiche de l'exercice trace le meilleur temps séance après
+séance, le récap l'affiche en minutes.
+
+La durée vit **dans le champ des reps, écrite avec son unité** : `45 s`. Le champ
+est déjà du texte libre, donc la base, la synchro, la sauvegarde et le tableur la
+transportent sans qu'aucun format change, et `45 s` se lit tel quel partout. La
+difficulté occupe le champ du RPE — c'est ce que le sigle veut dire au départ.
+L'unité est obligatoire : `45` tout court reste 45 répétitions. Deviner
+réinterpréterait des séances déjà notées, et ce n'est pas à l'app de décider
+après coup qu'une série de pompes était un gainage. Une durée ne compte ni dans le
+volume, ni dans le 1RM estimé, ni dans les records par reps.
+
 **RPE par série.** Échelle des répétitions en réserve, de 10 à 6 par demi-points :
 10 c'est l'échec, 9 il t'en restait une, 8 il t'en restait deux. Facultatif —
 laisse vide, rien ne casse.
@@ -93,9 +110,27 @@ une séance loguée aujourd'hui reste dans *Mes séances* jusqu'au lendemain.
 **Graphique de progression** par exercice, tracé depuis ton propre historique.
 
 **Faire un retour.** Un lien en bas de chaque écran ouvre un formulaire : un bug,
-une idée, une question. Ça part dans la base, pas dans une boîte mail, et tu peux
-relire ce que tu as déjà envoyé avec son statut. Il faut un compte — c'est ce qui
-permet de répondre, et ce qui évite qu'un robot remplisse la table.
+une idée, une question. Ça part dans la base, pas dans une boîte mail, et
+l'app t'emmène aussitôt dans ta conversation avec l'équipe, où la réponse
+arrivera. Il faut un compte — c'est ce qui permet de répondre, et ce qui évite
+qu'un robot remplisse la table.
+
+**Messages.** Une bulle dans l'en-tête ouvre toutes les conversations au même
+endroit : l'équipe Top Set, son coach, ses coachés. Une pastille y compte ce qui
+attend. Voir [La messagerie](#la-messagerie).
+
+**Trois portes dans l'en-tête.** La bulle des messages, la silhouette du
+**profil** (compte, pseudo, coach, synchronisation) et `⇅` pour les **données**
+(sauvegarde, tableur, import). Le compte et les fichiers vivaient dans la même
+feuille, qui était devenue un fourre-tout.
+
+**Pensé pour le téléphone.** Les onglets restent en haut quand on descend —
+y compris dans l'app installée sur iPhone, où ils glissaient sous la barre
+d'état. Une flèche « revenir en haut » apparaît dès qu'on est descendu d'un
+écran. Deux appuis rapides sur `+` ajoutent 5 kg au lieu de zoomer
+(`touch-action: manipulation`), et toucher un champ ne fait plus zoomer
+Safari : sous iOS, tous les champs sont écrits en 16 px au moins, la taille en
+dessous de laquelle Safari zoome d'office.
 
 **Une virgule qui marche vraiment.** Le champ poids accepte `62,5` comme `62.5`.
 Un clavier français propose une virgule, et `<input type="number">` la refuse en
@@ -196,9 +231,31 @@ Le navigateur étant l'unique copie, l'app prend sa perte au sérieux.
 tes exercices personnels. Tu le télécharges, le partages, ou le copies en texte.
 C'est la seule copie qui survit à un navigateur nettoyé.
 
-**L'import se fait en deux temps :** le premier appui montre ce que tu as et ce
-que le fichier contient, le second seulement applique. Remplacer est irréversible,
-donc il demande deux fois.
+**Importer ajoute, ne remplace plus.** Remplacer effaçait le carnet en place par
+celui du fichier : une vieille sauvegarde importée par erreur faisait disparaître
+des mois de séances. `fusionnerCarnets()`, dans `intelligence.js` et donc
+testée, ajoute ce qui manque et ne touche jamais à ce qui est là :
+
+- un jour absent arrive entier, avec son titre ;
+- dans un jour présent, un exercice est reconnu par son identifiant, ou par son
+  nom et ses séries remplies — c'est ce qui permet au tableur, qui n'a pas
+  d'identifiants, de ne rien doubler ;
+- c'est un multi-ensemble, pas un ensemble : deux cartes « Pompes × 20 » le même
+  jour sont deux exercices faits, et restent deux ;
+- un identifiant déjà pris ailleurs dans le carnet est remplacé. En base, un
+  exercice est unique par personne, tous jours confondus : un doublon bloquerait
+  la synchro de la journée pour toujours.
+
+Le premier appui montre ce qui va arriver — « 25 séries sur 4 jours (dont 3 que
+tu n'avais pas) » — le second applique, en refaisant la fusion sur le carnet de
+cet instant. Seules les journées qui ont bougé repartent vers le compte.
+Réimporter deux fois le même fichier n'ajoute rien.
+
+**Le tableur se réimporte.** `lireCsvCarnet()` relit le CSV exporté, et ce
+qu'Excel en fait quand il le réenregistre : virgules au lieu de points-virgules,
+dates en JJ/MM/AAAA. Il passe ensuite par exactement le même nettoyage qu'un
+fichier JSON. Au passage, l'import relit enfin le **titre** des séances : il
+voyageait dans la sauvegarde sans jamais être relu.
 
 **Garde-fou contre l'écrasement.** `saveLocal()` réécrit le carnet entier à chaque
 sauvegarde. Si `state.sessions` était vide au mauvais moment — chargement raté,
@@ -210,7 +267,8 @@ Donc :
 - Chaque sauvegarde conserve la **version précédente** sous une clé de secours.
 - Un JSON illisible est **mis de côté** au lieu d'être écrasé.
 - Un bouton `RÉCUPÉRER N JOURS` apparaît dans le panneau `⇅` dès qu'une copie
-  récupérable contient plus que ce qui est chargé.
+  récupérable contient plus que ce qui est chargé. Récupérer, c'est importer
+  cette copie : ce qui manque revient, ce qui est là ne bouge pas.
 
 ---
 
@@ -343,12 +401,12 @@ pas dans un rôle.
 - **Réécrire** est impossible : le droit de mise à jour est limité à la colonne
   `lu`. **Effacer** aussi : il n'y a pas de policy `delete`.
 
-Dans l'app, une seule feuille sert les deux sens. Le coaché l'ouvre depuis
-*Mon coach*, le coach depuis chaque carte de *Mes coachés* ou depuis le carnet
-qu'il est en train de lire — lire une séance et vouloir en parler, c'est le même
-geste. Un point orange sur le bouton du compte signale un message non lu, dans
-un sens comme dans l'autre : on peut être coach de quelqu'un et coaché par
-quelqu'un d'autre.
+Dans l'app, cette conversation est une ligne de la boîte des messages, comme
+les autres. On y arrive aussi depuis *Mon coach* dans le profil, depuis chaque
+carte de *Mes coachés*, et depuis le carnet que le coach est en train de lire —
+lire une séance et vouloir en parler, c'est le même geste. Un suivi terminé
+reste dans la boîte du coaché, marqué **SUIVI TERMINÉ** : il la relit, il n'y
+écrit plus.
 
 ---
 
@@ -383,6 +441,38 @@ Le droit d'écriture est limité à la colonne `lu` — encore la même leçon :
 filtre des lignes, pas des colonnes, et sans ce droit restreint la policy
 `update` laisserait réécrire le corps d'un message déjà envoyé.
 
+#### Une seule boîte pour toutes les conversations
+
+Le support et le coaching avaient chacun leur fil, dans deux feuilles
+différentes, et un ticket arrivait dans l'espace admin sans rien pour y
+répondre. Il y a désormais **une boîte**, derrière la bulle de l'en-tête. Deux
+tables en base, parce que le droit d'écrire ne s'y décide pas pareil — un rôle
+d'un côté, un lien de l'autre — mais une seule porte à l'écran : pour la
+personne, c'est la même chose, quelqu'un lui a écrit.
+
+Une conversation se décrit par sa table, le côté où l'on se tient et l'autre
+personne. Quatre points de vue, un seul rendu :
+
+| Qui regarde | Table | Avec qui |
+|---|---|---|
+| un membre | `messages_support` | l'équipe Top Set |
+| l'équipe | `messages_support` | chaque membre qui a écrit |
+| un coaché | `messages_coach` | son coach |
+| un coach | `messages_coach` | chacun de ses coachés |
+
+Un coach ou un coaché écrit à l'équipe comme n'importe quel membre, et l'équipe
+peut écrire à n'importe qui depuis l'espace admin (**ÉCRIRE**, **RÉPONDRE**).
+**Deux inconnus ne peuvent pas s'écrire** : aucun lien ne dit que l'un veut bien
+lire l'autre, et c'est la base qui refuse, pas l'écran.
+
+La boîte ne demande aucune fonction nouvelle en base : le dernier message et les
+non-lus se lisent directement, sous RLS, et les personnes sans message encore
+viennent des liens de coaching. La conversation est la page elle-même — le
+champ de saisie reste collé en bas de l'écran — et les nouveaux messages sont
+relevés toutes les dix secondes tant qu'elle est ouverte et visible, toutes les
+trente secondes dans la boîte. Rien quand l'onglet est caché : ce n'est pas un
+battement de cœur pour garder la base éveillée.
+
 #### Ce qui en fait une conversation et pas un formulaire
 
 Le fil s'ouvre **même vide**. Ça paraît un détail d'affichage ; c'en était un de
@@ -394,9 +484,10 @@ avec.
 Le reste tient en quatre gestes, tous empruntés à ce que fait n'importe quelle
 messagerie et qu'on ne remarque que par leur absence :
 
-- **Les bulles s'alignent par auteur** — les siennes à droite, celles d'en face
-  à gauche, avec un liseré orange sur les siennes. Sans ça il faut relire
-  l'étiquette à chaque bulle pour savoir qui parle.
+- **Les bulles s'alignent par auteur** — les siennes à droite, en orange,
+  celles d'en face à gauche. Sans ça il faut relire l'étiquette à chaque bulle
+  pour savoir qui parle. Le jour s'écrit une fois, en intertitre (« Hier »,
+  « Aujourd'hui »), et chaque bulle ne porte que l'heure.
 - **Le nom ne s'affiche qu'au-dessus de ce que dit l'autre.** Au-dessus des
   siens il n'apprend rien et double la hauteur du fil.
 - **Une bulle d'attente** apparaît quand le dernier message est du membre. Elle
@@ -405,9 +496,11 @@ messagerie et qu'on ne remarque que par leur absence :
 - **Entrée envoie, Maj+Entrée va à la ligne**, des deux côtés. Le bouton reste
   pour le téléphone.
 
-Le fil descend tout seul via `scrollTo` **sur le conteneur** — pas sur la page,
-qui ne doit pas bouger — et l'animation est coupée pour qui a réglé son système
-sur `prefers-reduced-motion`.
+À l'ouverture, la page descend jusqu'au dernier message. Une relève qui apporte
+du neuf ne fait descendre que si l'on était déjà en bas — on ne tire pas la page
+sous le nez de quelqu'un qui relit plus haut — et une relève sans nouveauté ne
+repeint rien. L'animation est coupée pour qui a réglé son système sur
+`prefers-reduced-motion`.
 
 #### Un retour ouvre la conversation
 
@@ -432,11 +525,17 @@ Côté administrateur, chaque retour porte un bouton **RÉPONDRE** et chaque
 inscrit un bouton **ÉCRIRE** : on peut ouvrir une conversation avec n'importe
 qui, même avec quelqu'un qui n'a jamais rien envoyé.
 
-Enfin une **pastille** s'allume dans le pied de page quand une réponse attend.
-Sans elle, une réponse pouvait dormir indéfiniment dans une feuille que personne
-n'ouvre par habitude. Elle est obtenue par un comptage `head:true` — un nombre,
-pas trois cents messages — et rend zéro en cas d'erreur : une pastille ne doit
-jamais empêcher une page de s'afficher.
+Répondre à un retour encore nouveau le passe en **LU**, puisque c'est ce qu'on
+vient de faire. Les retours envoyés avant l'accusé de réception n'avaient jamais
+ouvert de conversation : le schéma les recopie une fois, à leur date, sans
+notification et sans accusé tardif.
+
+Enfin la **pastille** de la bulle, dans l'en-tête, compte tout ce qui attend,
+toutes conversations confondues. Deux comptages `head:true` — des nombres, pas
+des centaines de messages — au plus une fois toutes les huit secondes, et zéro
+en cas d'erreur : une pastille ne doit jamais empêcher une page de s'afficher.
+L'équipe compte ce que les membres ont écrit ; un membre compte ce qu'on lui a
+écrit ; tout le monde ajoute ses conversations de coaching.
 
 ### Les notifications
 
@@ -454,9 +553,9 @@ serveur.
 
 Réservé au rôle `admin`. Il montre dix compteurs (inscrits, nouveaux et actifs à
 7 et 30 jours, séances, séries, retours en attente, messages non lus,
-notifications), les notifications, les conversations triées par activité, la
-liste des retours — chacun avec **RÉPONDRE**, **MARQUER LU** et **TRAITÉ** — et
-la liste des inscrits triée par dernière visite, chacun avec **ÉCRIRE**.
+notifications), les notifications, un accès à la boîte des messages, la liste
+des retours — chacun avec **RÉPONDRE**, **MARQUER LU** et **TRAITÉ** — et la
+liste des inscrits triée par dernière visite, chacun avec **ÉCRIRE**.
 
 **Ce qu'il ne montre pas :** aucun email, et aucune ligne de carnet. Les quatre
 fonctions renvoient des agrégats. Un administrateur voit *combien* de séances sont
@@ -595,9 +694,19 @@ Les règles de la base sont testées contre un vrai Postgres (PGlite), pas simul
 cd supabase/test && npm install && npm test
 ```
 
-39 vérifications : écriture, journée rejouée sans doublon, tirage incrémental,
-isolation entre deux utilisateurs, refus de greffer une ligne sur la séance d'un
-autre, visiteur anonyme sans accès, cascade à la suppression du compte.
+`test-rls.mjs` attaque les règles depuis le rôle `authenticated`, comme le
+ferait le navigateur : écriture, journée rejouée sans doublon, isolation entre
+utilisateurs, lien coach, messagerie, notifications, visiteur anonyme, cascade à
+la suppression du compte.
+
+`test-montee.mjs` installe **chaque version passée** du schéma sur une base
+neuve, y met des données, puis passe la version actuelle deux fois. La base de
+production n'est jamais vide, et c'est là que ça casse : une fonction dont les
+colonnes de retour changent passe sur une base neuve, et Postgres refuse de la
+« remplacer » sur la vraie. Dans l'éditeur SQL de Supabase, cette seule erreur
+annule tout le script, sans que rien ne le dise. C'est arrivé une fois ; les
+fonctions qui renvoient un tableau sont désormais supprimées avant d'être
+recréées, et ce test tourne dans la CI avec l'historique complet.
 
 ---
 
@@ -644,12 +753,10 @@ s'ouvre en plein écran.
 effacer le `localStorage` d'un site non visité depuis environ une semaine, mais
 pas celui d'une app posée sur l'écran d'accueil.
 
-**Pas encore hors connexion.** Il n'y a pas de service worker : ouvrir l'app
-demande encore une connexion réseau (`index.html` est servi en `no-cache`,
-volontairement, pour que tu aies toujours la dernière version). Une fois la page
-chargée, tout ce qui est déjà dans le `localStorage` reste lisible même si la
-connexion tombe en cours de séance — mais lancer Top Set sans connexion du tout
-ne marche pas aujourd'hui. Le vrai hors-ligne est sur [la suite](#la-suite).
+**Hors connexion.** Un service worker garde la coquille de l'app : elle s'ouvre
+sans réseau, dans une salle au sous-sol, et le carnet est dans le
+`localStorage`. La page passe d'abord par le réseau pour que tu aies toujours la
+dernière version, et rien de ce qui vient de Supabase n'est mis en cache.
 
 ---
 
@@ -659,9 +766,9 @@ ne marche pas aujourd'hui. Le vrai hors-ligne est sur [la suite](#la-suite).
   quoi faire.
 - **Pas un dispositif médical.** Les charges et le RPE sont ceux que tu as saisis.
   Rien n'est vérifié, validé ni conseillé.
-- **Pas multi-appareils.** Il n'y a pas de synchronisation, volontairement, pour
-  l'instant.
-- **Pas une app sociale.** Pas de fil, pas d'amis, pas de classement.
+- **Pas une app sociale.** Pas de fil d'actualité, pas d'amis, pas de
+  classement. On écrit à l'équipe, à son coach ou à ses coachés — à personne
+  d'autre.
 
 ---
 
@@ -674,7 +781,12 @@ administrateur.
 
 **Livré depuis :** le lien coach ↔ coaché (code d'invitation, accord des deux
 côtés, consentement, révocation, lecture du carnet), la messagerie de support —
-où chaque retour ouvre une conversation — et la conversation coach ↔ coaché.
+où chaque retour ouvre une conversation — et la conversation coach ↔ coaché,
+réunies dans une seule boîte avec sa pastille ; les exercices au temps ; l'import
+qui ajoute sans remplacer, JSON comme tableur ; le profil et les données
+séparés.
+
+**Plus tard :** un chronomètre intégré aux séries au temps.
 
 **En cours :** des modèles de séance rangés en dossiers, assignables dans le
 carnet d'un coaché, et un retour de séance. `profils` est le socle de tout ça —

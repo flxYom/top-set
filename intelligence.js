@@ -36,13 +36,63 @@
   }
 
   // ------------------------------------------------------------------
+  // Exercices au temps : gainage, planche, chaise...
+  // ------------------------------------------------------------------
+  // Une serie tenue se mesure en secondes, pas en repetitions. La duree vit
+  // dans le champ reps, ecrite avec son unite : « 45 s ». Le champ est deja
+  // du texte libre, donc la base, la synchro, la sauvegarde et le tableur la
+  // transportent sans qu'aucun format change — et « 45 s » se lit tel quel
+  // partout, y compris sur un telephone qui n'a pas encore cette version.
+  //
+  // L'unite est obligatoire : « 45 » tout court reste 45 repetitions. Deviner
+  // reinterpreterait des donnees existantes, et ce n'est pas a l'app de
+  // decider apres coup qu'une serie de pompes etait un gainage.
+  function positif(n) { return (isFinite(n) && n > 0) ? n : null; }
+
+  function dureeSecondes(txt) {
+    if (txt == null || typeof txt === 'number') return null;
+    var t = String(txt).trim().toLowerCase();
+    if (!t) return null;
+    var m = t.match(/^(\d{1,4})\s*(?:s|sec|secs|seconde|secondes|")$/);
+    if (m) return positif(+m[1]);
+    // « 1:30 », comme sur un chronometre.
+    m = t.match(/^(\d{1,3}):([0-5]\d)$/);
+    if (m) return positif(+m[1] * 60 + +m[2]);
+    // « 1 min 30 », « 2 min », « 1'30 ». Pas de « m » seul : c'est aussi
+    // le metre d'une poussee de traineau.
+    m = t.match(/^(\d{1,3})\s*(?:min|mn|')\s*(?:([0-5]?\d)\s*(?:s|sec|")?)?$/);
+    if (m) return positif(+m[1] * 60 + (m[2] ? +m[2] : 0));
+    return null;
+  }
+
+  function ecrireDuree(sec) {
+    var n = Math.round(Number(sec));
+    return (isFinite(n) && n > 0) ? n + ' s' : '';
+  }
+
+  // « 45 s », « 1 min 30 », « 2 min » : ce qu'on dirait a voix haute.
+  function formatDuree(sec) {
+    var n = Math.round(Number(sec));
+    if (!isFinite(n) || n <= 0) return '';
+    if (n < 60) return n + ' s';
+    var reste = n % 60;
+    return Math.floor(n / 60) + ' min' + (reste ? ' ' + (reste < 10 ? '0' : '') + reste : '');
+  }
+
+  function serieAuTemps(s) { return dureeSecondes(s && s.reps) !== null; }
+
+  // ------------------------------------------------------------------
   // Lecture des valeurs saisies
   // ------------------------------------------------------------------
   // Le champ reps est du texte libre : « 8 », « 8-10 », « AMRAP », « 12+ ».
   // On lit le premier entier rencontre, c'est-a-dire la borne garantie d'une
   // fourchette. Mieux vaut sous-estimer une performance que la gonfler.
+  //
+  // Une duree n'est PAS un nombre de repetitions : sans cette exception,
+  // « 45 s » compterait pour 45 reps dans le volume et le 1RM estime.
   function nombreReps(reps) {
     if (typeof reps === 'number') return isFinite(reps) && reps > 0 ? reps : null;
+    if (dureeSecondes(reps) !== null) return null;
     var m = String(reps == null ? '' : reps).match(/\d+([.,]\d+)?/);
     if (!m) return null;
     var n = parseFloat(m[0].replace(',', '.'));
@@ -134,6 +184,9 @@
       if (pb !== pa) return pb > pa ? b : a;
       var ra = nombreReps(a.reps) || 0, rb = nombreReps(b.reps) || 0;
       if (rb !== ra) return rb > ra ? b : a;
+      // Au temps, la meilleure serie est celle qu'on a tenue le plus longtemps.
+      var da = dureeSecondes(a.reps) || 0, db = dureeSecondes(b.reps) || 0;
+      if (db !== da) return db > da ? b : a;
       var ea = rpeDe(a), eb = rpeDe(b);
       if (ea === null && eb === null) return a;
       if (ea === null) return b;
@@ -254,16 +307,58 @@
       .filter(Boolean);
   }
 
-  function detecterSignal(seances) {
-    var pts = pointsTopSet(seances);
+  // Au temps, la courbe suit la serie la plus longue de chaque seance. Le 1RM
+  // n'a aucun sens pour une planche : on compare des secondes a des secondes.
+  function pointsDuree(seances) {
+    return (seances || [])
+      .filter(function (j) { return j && j.date; })
+      .slice()
+      .sort(function (a, b) { return a.date < b.date ? -1 : (a.date > b.date ? 1 : 0); })
+      .map(function (j) {
+        var top = calculerTopSet((j.series || []).filter(serieAuTemps));
+        var sec = top ? dureeSecondes(top.reps) : null;
+        return sec === null ? null : { date: j.date, valeur: sec, topSet: top };
+      })
+      .filter(Boolean);
+  }
+
+  // Le plus long jamais tenu, echauffements exclus.
+  function meilleureDuree(seances) {
+    var best = null;
+    (seances || []).forEach(function (j) {
+      (j.series || []).forEach(function (s) {
+        if (typeSerie(s) === TYPES.ECHAUFFEMENT) return;
+        var d = dureeSecondes(s.reps);
+        if (d !== null && (best === null || d > best)) best = d;
+      });
+    });
+    return best;
+  }
+
+  // Le temps passe sous tension, toutes series comprises : l'equivalent du
+  // volume pour un exercice ou rien ne se souleve.
+  function dureeTotale(seances) {
+    var t = 0;
+    (seances || []).forEach(function (j) {
+      (j.series || []).forEach(function (s) { t += dureeSecondes(s.reps) || 0; });
+    });
+    return t;
+  }
+
+  // mode 'temps' : meme regles, mesurees sur la duree plutot que sur le 1RM.
+  function detecterSignal(seances, mode) {
+    var auTemps = mode === 'temps';
+    var pts = auTemps ? pointsDuree(seances) : pointsTopSet(seances);
+    var quoi = auTemps ? 'Ton meilleur temps' : 'Ton top set';
     if (pts.length < SEANCES_MINI) {
+      var mesure = auTemps ? ' avec un temps noté.' : ' avec un top set mesurable.';
       return {
         signal: 'insufficient_data',
         seances: pts.length,
         manquantes: SEANCES_MINI - pts.length,
         raison: pts.length
-          ? 'Seulement ' + pts.length + ' séance' + (pts.length > 1 ? 's' : '') + ' avec un top set mesurable.'
-          : 'Aucune séance avec un top set mesurable.'
+          ? 'Seulement ' + pts.length + ' séance' + (pts.length > 1 ? 's' : '') + mesure
+          : 'Aucune séance' + mesure
       };
     }
     var fenetre = pts.slice(-SEANCES_STAGNATION);
@@ -281,12 +376,12 @@
 
     if (variation > TOLERANCE) {
       base.signal = 'progressing';
-      base.raison = 'Ton top set a progressé sur les ' + recents.length + ' dernières séances.';
+      base.raison = quoi + ' a progressé sur les ' + recents.length + ' dernières séances.';
       return base;
     }
     if (variation < -TOLERANCE) {
       base.signal = 'declining';
-      base.raison = 'Ton top set baisse depuis ' + recents.length + ' séances.';
+      base.raison = quoi + ' baisse depuis ' + recents.length + ' séances.';
       return base;
     }
     // Plat depuis longtemps, ou simplement plat : ce n'est pas la meme
@@ -299,8 +394,8 @@
     base.signal = platLong ? 'stagnating' : 'stable';
     base.seances = platLong ? fenetre.length : recents.length;
     base.raison = platLong
-      ? 'Ton top set n’a pas bougé depuis ' + fenetre.length + ' séances.'
-      : 'Ton top set est stable depuis ' + recents.length + ' séances.';
+      ? quoi + ' n’a pas bougé depuis ' + fenetre.length + ' séances.'
+      : quoi + ' est stable depuis ' + recents.length + ' séances.';
     return base;
   }
 
@@ -364,9 +459,271 @@
     };
   }
 
+  // ------------------------------------------------------------------
+  // Importer sans ecraser
+  // ------------------------------------------------------------------
+  // Un import AJOUTE ce qui manque et ne touche jamais a ce qui est deja la.
+  // Ce qui est dans le carnet est, par definition, la version la plus
+  // recente : le fichier est une photo plus ancienne, ou un autre appareil.
+  //
+  // Deux exercices sont « le meme » s'ils portent le meme identifiant, ou le
+  // meme nom avec les memes series remplies (poids et reps). La seconde regle
+  // rattrape le tableur, qui n'a pas d'identifiants : reimporter deux fois le
+  // meme fichier ne doit rien doubler.
+  //
+  // `fabrique(prefixe)` rend un identifiant neuf. Un identifiant deja pris
+  // ailleurs dans le carnet est remplace : en base, un exercice est unique
+  // par personne, tous jours confondus — un doublon bloquerait la synchro de
+  // la journee pour toujours.
+  function cleNom(nom) {
+    return String(nom == null ? '' : nom).replace(/\([^)]*\)/g, '')
+      .replace(/\s+/g, ' ').trim().toLowerCase();
+  }
+
+  function signatureExo(ex) {
+    return cleNom(ex && ex.nom) + '#' + ((ex && ex.series) || [])
+      .filter(serieRemplie)
+      .map(function (s) {
+        var p = poidsDe(s);
+        return (p === null ? '' : Math.round(p * 100) / 100) + '/' +
+               String(s.reps == null ? '' : s.reps).trim().toLowerCase();
+      }).join('|');
+  }
+
+  // Cartes a cles venues de l'exterieur : sans prototype, une cle
+  // « __proto__ » ou « constructor » reste une cle comme les autres.
+  function carte() { return Object.create(null); }
+
+  function fusionnerCarnets(local, entrant, fabrique) {
+    var sortie = {};
+    Object.keys(local || {}).forEach(function (ds) { sortie[ds] = local[ds]; });
+
+    var idsExo = carte(), idsSerie = carte();
+    Object.keys(sortie).forEach(function (ds) {
+      ((sortie[ds] && sortie[ds].exercises) || []).forEach(function (e) {
+        if (e && e.id) idsExo[e.id] = 1;
+        ((e && e.series) || []).forEach(function (s) { if (s && s.id) idsSerie[s.id] = 1; });
+      });
+    });
+    function neuf(prefixe, pris) {
+      var id = fabrique(prefixe);
+      while (pris[id]) id = fabrique(prefixe);
+      pris[id] = 1;
+      return id;
+    }
+
+    var bilan = { jours: 0, exercices: 0, series: 0, titres: 0, dates: [] };
+
+    Object.keys(entrant || {}).sort().forEach(function (ds) {
+      var jourIn = entrant[ds];
+      if (!jourIn || typeof jourIn !== 'object') return;
+      var exosIn = (jourIn.exercises || []).filter(function (e) {
+        return e && ((e.nom && String(e.nom).trim()) || (e.series || []).some(serieRemplie));
+      });
+      var titreIn = (typeof jourIn.titre === 'string' && jourIn.titre.trim()) ? jourIn.titre.trim() : '';
+
+      var jourLocal = sortie[ds];
+      var exosLocaux = (jourLocal && jourLocal.exercises) || [];
+
+      // Un multi-ensemble, pas un ensemble : deux cartes « Pompes × 20 » le
+      // meme jour sont deux exercices faits, et le fichier qui les contient
+      // tous les deux doit pouvoir les ajouter tous les deux.
+      var parSig = carte(), sigDuLocal = carte();
+      exosLocaux.forEach(function (e) {
+        var sig = signatureExo(e);
+        parSig[sig] = (parSig[sig] || 0) + 1;
+        if (e && e.id) sigDuLocal[e.id] = sig;
+      });
+      // D'abord les identifiants : un exercice deja la sous le meme id est
+      // CE exercice-la, meme si on l'a modifie depuis l'export.
+      var restants = exosIn.filter(function (e) {
+        if (e.id && sigDuLocal[e.id] !== undefined) {
+          parSig[sigDuLocal[e.id]]--;
+          return false;
+        }
+        return true;
+      });
+
+      var blocs = carte(), ajoutes = [];
+      restants.forEach(function (e) {
+        var sig = signatureExo(e);
+        if (parSig[sig] > 0) { parSig[sig]--; return; }
+        var copie = {};
+        Object.keys(e).forEach(function (k) { copie[k] = e[k]; });
+        if (!copie.id || idsExo[copie.id]) copie.id = neuf('x', idsExo);
+        else idsExo[copie.id] = 1;
+        // Un superset du fichier ne doit pas fusionner avec un superset du
+        // carnet qui porterait par hasard le meme identifiant de bloc.
+        if (copie.bloc) {
+          if (!blocs[copie.bloc]) blocs[copie.bloc] = fabrique('x');
+          copie.bloc = blocs[copie.bloc];
+        }
+        copie.series = (e.series || []).map(function (s) {
+          var cs = {};
+          Object.keys(s || {}).forEach(function (k) { cs[k] = s[k]; });
+          if (!cs.id || idsSerie[cs.id]) cs.id = neuf('s', idsSerie);
+          else idsSerie[cs.id] = 1;
+          return cs;
+        });
+        ajoutes.push(copie);
+        bilan.exercices++;
+        bilan.series += copie.series.filter(serieRemplie).length;
+      });
+
+      var ajouterTitre = titreIn && !(jourLocal && typeof jourLocal.titre === 'string' && jourLocal.titre.trim());
+      if (!ajoutes.length && !ajouterTitre) return;
+
+      var jour = { date: ds, exercises: exosLocaux.concat(ajoutes) };
+      if (jourLocal && jourLocal.titre) jour.titre = jourLocal.titre;
+      if (ajouterTitre) { jour.titre = titreIn.slice(0, 60); bilan.titres++; }
+
+      // Un superset dont un seul membre est arrive n'en est plus un.
+      var compte = carte();
+      jour.exercises.forEach(function (e) { if (e.bloc) compte[e.bloc] = (compte[e.bloc] || 0) + 1; });
+      jour.exercises = jour.exercises.map(function (e) {
+        if (!e.bloc || compte[e.bloc] > 1) return e;
+        var c = {};
+        Object.keys(e).forEach(function (k) { if (k !== 'bloc') c[k] = e[k]; });
+        return c;
+      });
+
+      if (!jourLocal) bilan.jours++;
+      sortie[ds] = jour;
+      bilan.dates.push(ds);
+    });
+
+    return { sessions: sortie, bilan: bilan };
+  }
+
+  // ------------------------------------------------------------------
+  // Relire le tableur exporte
+  // ------------------------------------------------------------------
+  // Le CSV sort de l'app avec des points-virgules, la virgule decimale et une
+  // ligne par serie. Excel le reenregistre parfois a sa facon : dates en
+  // JJ/MM/AAAA, virgules comme separateur. Les deux se relisent.
+  //
+  // Rend une carte date -> { date, exercises } SANS identifiants : c'est
+  // l'app qui les fabrique, avec les memes regles que pour un fichier JSON.
+  function decouperCsv(texte, sep) {
+    var lignes = [], ligne = [], champ = '', entre = false;
+    for (var i = 0; i < texte.length; i++) {
+      var c = texte[i];
+      if (entre) {
+        if (c === '"') {
+          if (texte[i + 1] === '"') { champ += '"'; i++; }
+          else entre = false;
+        } else champ += c;
+      } else if (c === '"') entre = true;
+      else if (c === sep) { ligne.push(champ); champ = ''; }
+      else if (c === '\n' || c === '\r') {
+        if (c === '\r' && texte[i + 1] === '\n') i++;
+        ligne.push(champ); champ = '';
+        lignes.push(ligne); ligne = [];
+      } else champ += c;
+    }
+    if (champ !== '' || ligne.length) { ligne.push(champ); lignes.push(ligne); }
+    return lignes.filter(function (l) { return l.some(function (x) { return String(x).trim() !== ''; }); });
+  }
+
+  function sansAccent(t) {
+    return String(t || '').toLowerCase()
+      .replace(/[àâä]/g, 'a').replace(/[éèêë]/g, 'e').replace(/[îï]/g, 'i')
+      .replace(/[ôö]/g, 'o').replace(/[ùûü]/g, 'u').replace(/ç/g, 'c')
+      .replace(/[^a-z]/g, '');
+  }
+
+  // L'export prefixe d'une apostrophe un texte qui commence par = + - @, pour
+  // qu'un tableur ne le prenne pas pour une formule. On la retire au retour.
+  function texteCsv(v) {
+    var t = String(v == null ? '' : v).trim();
+    return /^'[=+\-@\t\r]/.test(t) ? t.slice(1) : t;
+  }
+
+  function nombreCsv(v) {
+    var t = String(v == null ? '' : v).trim().replace(/\s/g, '').replace(',', '.');
+    if (t === '') return null;
+    var n = Number(t);
+    return isFinite(n) ? n : null;
+  }
+
+  function dateCsv(v) {
+    var t = String(v == null ? '' : v).trim();
+    var m = t.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (m) return t;
+    m = t.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (m) return m[3] + '-' + (m[2].length < 2 ? '0' : '') + m[2] + '-' + (m[1].length < 2 ? '0' : '') + m[1];
+    return null;
+  }
+
+  function lireCsvCarnet(texte) {
+    var t = String(texte || '').replace(/^\ufeff/, '');
+    var premiere = t.split(/\r?\n/)[0] || '';
+    var sep = premiere.indexOf(';') > -1 ? ';' : ',';
+    var lignes = decouperCsv(t, sep);
+    if (lignes.length < 2) return { erreur: 'Tableur vide : aucune ligne de série.' };
+
+    var tete = lignes[0].map(sansAccent);
+    function col() {
+      for (var i = 0; i < arguments.length; i++) {
+        var k = tete.indexOf(arguments[i]);
+        if (k > -1) return k;
+      }
+      return -1;
+    }
+    var C = {
+      date: col('date'), exo: col('exercice'), groupe: col('groupe'), serie: col('serie'),
+      poids: col('poidskg', 'poids'), reps: col('repetitions', 'reps'), rpe: col('rpe'),
+      repos: col('reposs', 'repos'), fait: col('fait')
+    };
+    if (C.date < 0 || C.exo < 0 || (C.poids < 0 && C.reps < 0)) {
+      return { erreur: 'Ce tableur ne vient pas de Top Set : il faut au moins les colonnes Date, Exercice, et Poids ou Répétitions.' };
+    }
+
+    var sessions = {}, lues = 0, ignorees = 0, dernier = null;
+    lignes.slice(1).forEach(function (l) {
+      var ds = dateCsv(l[C.date]);
+      var nom = texteCsv(l[C.exo]);
+      var poids = C.poids > -1 ? nombreCsv(l[C.poids]) : null;
+      var reps = C.reps > -1 ? texteCsv(l[C.reps]) : '';
+      if (!ds || (poids === null && reps === '')) { ignorees++; return; }
+      var num = C.serie > -1 ? nombreCsv(l[C.serie]) : null;
+      var jour = sessions[ds] || (sessions[ds] = { date: ds, exercises: [] });
+      // Une serie numerotee 1, ou un autre nom, ouvre un nouvel exercice :
+      // c'est ainsi que l'export les ecrit, a la suite.
+      var ex = dernier && dernier.ds === ds && dernier.nom === nom &&
+               !(num !== null && dernier.num !== null && num <= dernier.num) ? dernier.ex : null;
+      if (!ex) {
+        ex = { nom: nom, groupe: C.groupe > -1 ? texteCsv(l[C.groupe]) : '', repos: '', series: [] };
+        jour.exercises.push(ex);
+      }
+      var fait = C.fait > -1 ? String(l[C.fait] || '').trim().toLowerCase() : '';
+      ex.series.push({
+        poids: poids,
+        reps: reps,
+        rpe: C.rpe > -1 ? nombreCsv(l[C.rpe]) : null,
+        repos: C.repos > -1 ? texteCsv(l[C.repos]) : '',
+        fait: fait === 'oui' || fait === 'true' || fait === '1' || fait === 'x'
+      });
+      dernier = { ds: ds, nom: nom, num: num, ex: ex };
+      lues++;
+    });
+    if (!lues) return { erreur: 'Aucune série lisible dans ce tableur.' };
+    return { sessions: sessions, series: lues, ignorees: ignorees };
+  }
+
   return {
     TYPES: TYPES,
     TYPES_VALIDES: TYPES_VALIDES,
+    dureeSecondes: dureeSecondes,
+    ecrireDuree: ecrireDuree,
+    formatDuree: formatDuree,
+    serieAuTemps: serieAuTemps,
+    pointsDuree: pointsDuree,
+    meilleureDuree: meilleureDuree,
+    dureeTotale: dureeTotale,
+    signatureExo: signatureExo,
+    fusionnerCarnets: fusionnerCarnets,
+    lireCsvCarnet: lireCsvCarnet,
     FOURCHETTES: FOURCHETTES,
     INCREMENT: INCREMENT,
     typeSerie: typeSerie,

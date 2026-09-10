@@ -11,6 +11,38 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ### Added
 
+- **One inbox for every conversation.** A speech-bubble button in the header
+  opens every conversation the account has: the Top Set team, one's coach,
+  one's clients — and, for the admin, every member who wrote. Each row shows
+  the last message, its time and an unread count; a badge on the button totals
+  what is waiting. A conversation is the page itself, with the input stuck to
+  the bottom of the screen, day separators, and bubbles sized to their text.
+  New messages are fetched every 10 s while a conversation is open and visible
+  (every 30 s in the inbox), never while the tab is hidden. Two tables stay
+  underneath — the right to write is a role on one side, a link on the other —
+  and two strangers still cannot write to each other.
+- **Timed exercises** (planks, wall sits, dead hangs). Typing « Planche » or
+  « Gainage » switches the set to seconds as you type; a card button switches
+  any other exercise. − and + step by 5 s, a 1–10 *difficulty* replaces reps in
+  reserve, and the record is the longest hold. The duration is stored in the
+  existing reps field as `45 s` — no column, no sync or export format change,
+  readable as is on any device. A bare `45` stays 45 reps: nothing already
+  logged is reinterpreted. Durations count toward no volume, 1RM or rep record.
+  The exercise page, the session page and the recap show times.
+- **Importing adds instead of replacing** (`fusionnerCarnets()`, pure and
+  tested). A missing day arrives whole; in an existing day an exercise is
+  matched by id, or by name and filled sets; identical cards on the same day
+  stay distinct; an id already used elsewhere is replaced, since a duplicate
+  would block that day's sync forever. The first tap shows exactly what will
+  be added, the second applies it on the logbook as it is at that moment.
+- **The CSV export can be imported back**, including after Excel re-saves it
+  with commas and DD/MM/YYYY dates. It goes through the same cleaning as JSON.
+- **Separate Profile and Data sheets**, behind two header buttons. The account,
+  pseudo, coach and sync moved out of the data sheet, which had become a
+  catch-all.
+- **Back-to-top button**, shown once scrolled a screen down, bottom right.
+- Replying to a feedback still marked new marks it read.
+
 - **Support messaging.** One thread per person, the same from both sides. The
   insert policy checks that the declared author matches the caller's real role,
   so a member cannot post a message signed `admin` even by hand-crafting the
@@ -57,14 +89,44 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 - `admin_retours()` now returns `user_id` — without it a feedback could be
   read but not answered.
 
+### Changed
+
+- The feedback sheet no longer embeds a thread: sending a feedback takes the
+  member straight to the team conversation, where the acknowledgement already
+  is and the reply will arrive. The coach sheet and the admin-space thread are
+  gone too; every entry point opens the shared conversation page.
+- The date box left the header to make room for the three buttons; the day is
+  already written out in the hero band below.
+
 ### Fixed
 
+- **The schema could not be applied to the production database.**
+  `admin_retours()` gained a return column, Postgres refuses to replace a
+  function whose return columns change, and the Supabase SQL editor then rolls
+  back the *whole* script — so nothing of the previous release had reached the
+  database, neither the coach conversation nor the REPLY button. The five
+  table-returning functions are now dropped before being recreated. Feedback
+  sent before the acknowledgement trigger existed is copied once into its
+  author's thread, at its original date, without notification.
+- In the installed iPhone app, the sticky tabs slid under the status bar and
+  looked gone. They now stick below the safe area, over an opaque strip.
+- Double-tapping − or + zoomed the page (`touch-action: manipulation`), and
+  focusing any field under 16 px made iOS Safari zoom in and stay zoomed.
+- Session titles in a backup file were never read back on import.
+- Four button styles used `font: 800 10px/1 inherit`, an invalid shorthand the
+  browser dropped entirely: admin, coach and feedback buttons fell back to the
+  system font.
 - The new footer dot used the bare class `.pastille`, which already belonged
   to the account and coach status lights; it added a stray margin to them.
   Renamed `.pastille-fil`, with a guard that no bare `.pastille` rule returns.
 
 ### Tests
 
+- `test-montee.mjs`: installs each of the 10 past schema versions, adds data,
+  then applies the current one twice and checks the data survived. It failed
+  on 5 of 10 before the fix. Runs in CI with full history.
+- 59 more business tests (87 → 146): durations, the merge, CSV reading.
+- Static guards rewritten for the single inbox and extended (93 → 125).
 - 32 more RLS tests (199 → 231): the feedback copy and its ordering, one
   notification per action, nobody signing `systeme`, `retour_id` not settable,
   and the whole coach conversation — both sides, strangers, the admin, forged
