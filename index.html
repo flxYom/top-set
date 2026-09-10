@@ -114,16 +114,6 @@
     font-size:11px;font-weight:800;color:#0d0c0a;
     margin-left:3px;align-self:flex-start;position:relative;top:1px;
   }
-  .brand-date{
-    width:74px;flex:none;
-    background:var(--ink);
-    border:2.5px solid var(--ink);
-    box-shadow:4px 4px 0 var(--orange);
-    color:#0d0c0a;
-    display:flex;flex-direction:column;align-items:center;justify-content:center;
-  }
-  .brand-date b{font-size:10px;font-weight:800;letter-spacing:.08em;}
-  .brand-date span{font-size:17px;font-weight:800;line-height:1;}
 
   .topbar{position:sticky;top:0;z-index:20;background:var(--bg);padding:14px 0 12px;}
   .topbar-inner{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;}
@@ -1101,7 +1091,7 @@
     flex:1;min-height:42px;padding:0 4px;
     background:var(--panel2);color:var(--dim);
     border:2px solid var(--line);border-radius:9px;
-    font:800 10.5px/1.15 inherit;letter-spacing:.04em;cursor:pointer;
+    font-family:inherit;font-weight:800;font-size:10.5px;line-height:1.15;letter-spacing:.04em;cursor:pointer;
   }
   .retour-type.active{border-color:var(--orange);color:var(--ink);background:var(--panel);}
   .retour-reste{
@@ -1167,16 +1157,7 @@
   /* Une reponse attend, et rien d'autre ne le dirait : le fil est range dans
      une feuille qu'on n'ouvre pas par hasard. Nom propre a elle — « .pastille »
      appartient deja aux voyants d'etat du compte et du coach. */
-  .pastille-fil{
-    display:inline-block;width:7px;height:7px;margin-left:5px;
-    border-radius:50%;background:var(--orange);vertical-align:middle;
-  }
-  .pastille-fil[hidden]{display:none;}
   .brand-btn{position:relative;}
-  .brand-btn .pastille-fil{
-    position:absolute;top:6px;right:6px;margin:0;width:9px;height:9px;
-    box-shadow:0 0 0 2px var(--panel);
-  }
   .compteur-fil{
     display:inline-block;min-width:17px;margin-left:6px;padding:2px 5px;
     border-radius:9px;background:var(--orange);color:#0d0c0a;
@@ -1247,7 +1228,7 @@
   .coache-action{
     flex:1;min-height:38px;background:var(--panel2);color:var(--ink);
     border:1px solid var(--line);border-radius:8px;
-    font:800 11px/1 inherit;letter-spacing:.05em;cursor:pointer;
+    font-family:inherit;font-weight:800;font-size:11px;line-height:1;letter-spacing:.05em;cursor:pointer;
   }
   .coache-action.oui{border-color:var(--green);color:var(--green);}
   .coache-action.non{border-color:var(--orange);color:var(--orange);}
@@ -1309,7 +1290,7 @@
   .admin-filtre{
     min-height:30px;padding:0 10px;background:var(--panel2);color:var(--dim);
     border:1px solid var(--line);border-radius:7px;
-    font:800 10px/1 inherit;letter-spacing:.05em;cursor:pointer;
+    font-family:inherit;font-weight:800;font-size:10px;line-height:1;letter-spacing:.05em;cursor:pointer;
   }
   .admin-filtre.active{border-color:var(--orange);color:var(--ink);}
   .admin-carte{
@@ -1333,7 +1314,7 @@
   .admin-action{
     min-height:32px;padding:0 11px;background:var(--panel2);color:var(--ink);
     border:1px solid var(--line);border-radius:7px;
-    font:800 10px/1 inherit;letter-spacing:.05em;cursor:pointer;
+    font-family:inherit;font-weight:800;font-size:10px;line-height:1;letter-spacing:.05em;cursor:pointer;
   }
   .admin-ligne{
     display:flex;align-items:center;gap:10px;
@@ -1394,6 +1375,175 @@
     .serie-num{display:none;}
   }
 
+  /* ==== Au temps : gainage, planche, chaise ============================ */
+  /* Meme gabarit que le poids — meme hauteur, memes boutons de pas — pour
+     que la main retrouve ses reperes : seule l'unite change. */
+  .serie-duree{
+    flex:1;min-width:0;height:48px;
+    background:var(--panel2);border:2px solid var(--line);
+    color:var(--ink);font-family:inherit;
+    font-size:17px;font-weight:800;letter-spacing:-.02em;
+    padding:0 3px;text-align:center;
+  }
+  .serie-unite{flex:none;font-size:12px;font-weight:800;color:var(--dim);}
+  @media (max-width:380px){ .serie-duree{height:44px;font-size:15px;} }
+
+  /* ==== Telephone : zoom, barre du haut, retour en haut ================ */
+  /* Deux appuis rapides sur « + » ajoutent 5 kg : ce n'est pas une demande
+     de zoom. « manipulation » garde le pincement et le defilement, et retire
+     seulement le double-tap. Sur la racine, parce que le navigateur decide
+     en croisant l'element touche et tous ses ancetres. */
+  html{touch-action:manipulation;}
+  button,a,input,select,textarea,label{touch-action:manipulation;}
+
+  /* Sur iPhone, Safari zoome sur tout champ ecrit en moins de 16 px des
+     qu'on le touche — et ne dezoome pas en le quittant. Le seul remede fiable
+     est la taille du texte. On ne la change que sous iOS : ailleurs, le
+     probleme n'existe pas et le dessin reste le meme. */
+  @supports (-webkit-touch-callout:none){
+    .sheet-input,.sheet-paste,.ex-name,.ex-groupe,.serie-type,.serie-rpe,
+    .serie-repos,.seance-creer-date,.alias-select,.conv-champ{font-size:16px;}
+    @media (max-width:380px){ .serie-poids,.serie-reps,.serie-duree{font-size:16px;} }
+  }
+
+  /* Dans l'app installee sur l'ecran d'accueil, la page passe SOUS la barre
+     d'etat de l'iPhone. Collee a top:0, la barre des onglets se cachait
+     derriere l'heure et la batterie des qu'on descendait. Elle se colle donc
+     sous la zone protegee, et une bande opaque couvre cette zone pour que la
+     page n'y defile pas en transparence. Dans Safari la zone vaut 0 : rien
+     ne change. */
+  :root{--haut:env(safe-area-inset-top,0px);}
+  .topbar{top:var(--haut);}
+  body::before{
+    content:'';position:fixed;left:0;right:0;top:0;height:var(--haut);
+    background:var(--bg);z-index:25;pointer-events:none;
+  }
+
+  /* Revenir en haut : il apparait des qu'on a descendu, en bas a droite,
+     sous le pouce — la ou le mettent la plupart des sites sur telephone. */
+  .haut-btn{
+    position:fixed;z-index:40;
+    right:max(16px,calc(env(safe-area-inset-right) + 12px));
+    bottom:calc(22px + env(safe-area-inset-bottom));
+    width:52px;height:52px;padding:0;
+    display:flex;align-items:center;justify-content:center;
+    background:var(--ink);color:#0d0c0a;
+    border:2.5px solid var(--ink);box-shadow:4px 4px 0 var(--orange);
+    cursor:pointer;
+  }
+  .haut-btn:active{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--orange);}
+  @media (prefers-reduced-motion:no-preference){
+    .haut-btn{animation:haut-entre .18s ease-out;}
+  }
+  @keyframes haut-entre{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:none;}}
+
+  /* ==== En-tete : messages, profil, donnees ============================ */
+  /* Trois portes. La date qui occupait la place est deja ecrite en toutes
+     lettres dans le bandeau du jour, juste en dessous. */
+  .brand-btn svg{display:block;}
+  .brand-btn.msg{box-shadow:4px 4px 0 var(--orange);}
+  .brand-btn.msg:active{box-shadow:2px 2px 0 var(--orange);}
+  .brand-btn.profil{box-shadow:4px 4px 0 var(--yellow);}
+  .brand-btn.profil:active{box-shadow:2px 2px 0 var(--yellow);}
+  .brand-badge{
+    position:absolute;top:-10px;right:-10px;
+    min-width:22px;height:22px;padding:0 5px;border-radius:11px;
+    background:var(--orange);color:#0d0c0a;border:2px solid var(--bg);
+    font-size:11px;font-weight:800;line-height:18px;text-align:center;
+  }
+  @media (max-width:360px){
+    .brand{gap:7px;}
+    .brand-mark{font-size:18px;padding:10px;}
+    .brand-btn{width:46px;}
+  }
+
+  /* ==== Messages ====================================================== */
+  /* Une seule boite pour toutes les conversations de l'app : l'equipe, le
+     coach, les coaches. Une ligne par personne, la plus recente en haut —
+     la forme que tout le monde sait deja lire. */
+  .conv-ligne{
+    display:flex;align-items:center;gap:11px;width:100%;
+    background:var(--panel);border:1px solid var(--line);border-radius:12px;
+    padding:11px 12px;margin-bottom:8px;
+    color:var(--ink);font-family:inherit;text-align:left;cursor:pointer;
+  }
+  .conv-ligne:active{background:var(--panel2);}
+  .conv-ligne.nonlu{border-color:var(--orange);box-shadow:3px 3px 0 var(--orange);}
+  .conv-avatar{
+    flex:none;width:42px;height:42px;border-radius:10px;
+    background:var(--c,var(--orange));color:#0d0c0a;
+    display:flex;align-items:center;justify-content:center;
+    font-size:18px;font-weight:800;text-transform:uppercase;
+  }
+  .conv-milieu{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px;}
+  .conv-nom{display:flex;align-items:center;gap:7px;min-width:0;font-size:14.5px;font-weight:800;}
+  .conv-nom-texte{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .conv-role{
+    flex:none;font-size:8.5px;font-weight:800;letter-spacing:.09em;color:var(--dim);
+    border:1px solid var(--line);border-radius:4px;padding:1px 4px;
+  }
+  .conv-apercu{font-size:12.5px;color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .conv-ligne.nonlu .conv-apercu{color:var(--ink);font-weight:700;}
+  .conv-droite{flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:5px;}
+  .conv-quand{font-size:10.5px;font-weight:700;color:var(--dim);white-space:nowrap;}
+  .conv-compte{
+    min-width:20px;height:20px;padding:0 6px;border-radius:10px;
+    background:var(--orange);color:#0d0c0a;
+    font-size:11px;font-weight:800;line-height:20px;text-align:center;
+  }
+
+  .conv-qui{margin:0 0 10px;font-size:12.5px;line-height:1.5;color:var(--dim);border-left:3px solid var(--orange);padding-left:10px;}
+  /* La conversation occupe l'ecran jusqu'en bas : le champ de saisie y est
+     pose des l'ouverture, comme dans une messagerie, meme quand le fil ne
+     compte que deux messages. 250 px, c'est l'en-tete, les onglets et le
+     titre au-dessus. */
+  #conv:not([hidden]){
+    display:flex;flex-direction:column;
+    min-height:calc(100vh - 250px - var(--haut) - env(safe-area-inset-bottom));
+    min-height:calc(100dvh - 250px - var(--haut) - env(safe-area-inset-bottom));
+  }
+  .conv-fil{flex:1;display:flex;flex-direction:column;padding:2px 0 6px;}
+  .conv-aide{margin:14px 2px 0;font-size:12px;line-height:1.5;color:var(--dim);}
+  /* La bulle prend la largeur de ce qu'elle dit, pas celle de l'ecran. */
+  .conv-fil .bulle{align-self:flex-start;margin-left:0;}
+  .conv-fil .bulle.moi{align-self:flex-end;}
+  .conv-fil .bulle-corps{font-size:14px;background:var(--panel2);}
+  .conv-fil .bulle.moi .bulle-corps{background:var(--orange);border-color:var(--orange);color:#0d0c0a;}
+  .conv-fil .bulle.moi .bulle-tag{border-color:#0d0c0a;color:#0d0c0a;}
+  /* L'accuse automatique, vu de l'equipe : de son cote, mais ce n'est pas
+     elle qui parle. Il garde son pointille, pas la couleur des messages. */
+  .conv-fil .bulle.moi.systeme .bulle-corps{background:transparent;border-color:var(--line);color:var(--dim);}
+  .conv-jour{
+    align-self:center;margin:14px 0 10px;
+    font-size:10px;font-weight:800;letter-spacing:.1em;color:var(--dim);text-transform:uppercase;
+  }
+  .conv-jour:first-child{margin-top:4px;}
+  .conv-saisie{
+    position:sticky;bottom:0;z-index:15;
+    display:flex;align-items:flex-end;gap:8px;
+    padding:10px 0 calc(10px + env(safe-area-inset-bottom));
+    background:var(--bg);border-top:2px solid var(--line);
+  }
+  .conv-champ{
+    flex:1;min-width:0;min-height:46px;max-height:140px;resize:none;
+    background:var(--panel2);color:var(--ink);
+    border:2px solid var(--line);border-radius:12px;
+    padding:11px 12px;font-family:inherit;font-size:14px;line-height:1.35;
+  }
+  .conv-champ:focus{outline:none;border-color:var(--orange);}
+  .conv-envoyer{
+    flex:none;width:46px;height:46px;border-radius:12px;padding:0;
+    background:var(--orange);color:#0d0c0a;border:2px solid var(--ink);
+    display:flex;align-items:center;justify-content:center;cursor:pointer;
+  }
+  .conv-envoyer:disabled{opacity:.5;cursor:default;}
+  .conv-ferme{
+    margin:0;font-size:12.5px;line-height:1.5;color:var(--dim);text-align:center;
+    padding:12px 10px;border:2px dashed var(--line);
+  }
+  /* En conversation, le pied de page et le bouton du haut genent la saisie. */
+  body.en-conv .legal-footer,body.en-conv .haut-btn{display:none;}
+
 </style>
 </head>
 
@@ -1401,9 +1551,16 @@
 <div class="app">
   <header class="brand">
     <h1 class="brand-mark"><span class="wm-top">TOP</span><span class="wm-set">SET</span><span class="wm-app">app</span></h1>
-    <button type="button" class="brand-btn" id="dataBtn" aria-label="Sauvegarde de mes données">⇅<span
-      class="pastille-fil" id="comptePastille" hidden></span></button>
-    <div class="brand-date" id="brandDate"><b>—</b><span>—</span></div>
+    <button type="button" class="brand-btn msg" id="messagesBtn" aria-label="Messages">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 4.5h17v11.5H10l-5 4v-4H3.5z"/></svg>
+      <span class="brand-badge" id="messagesBadge" hidden></span>
+    </button>
+    <button type="button" class="brand-btn profil" id="profilBtn" aria-label="Ton profil et ton compte">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg>
+    </button>
+    <button type="button" class="brand-btn" id="dataBtn" aria-label="Tes données : sauvegarde, tableur, import">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="square" aria-hidden="true"><path d="M8 20V5M4 9l4-4 4 4M16 4v15M12 15l4 4 4-4"/></svg>
+    </button>
   </header>
 
   <nav class="topbar">
@@ -1485,6 +1642,28 @@
     <div id="coachContenu"></div>
   </section>
 
+  <section class="view" id="view-messages" hidden>
+    <div class="admin-tete">
+      <button type="button" class="icon-btn" id="messagesRetour" aria-label="Revenir">&lsaquo;</button>
+      <h2 id="messagesTitre">MESSAGES</h2>
+      <button type="button" class="icon-btn" id="messagesRafraichir" aria-label="Rafraîchir">&#8635;</button>
+    </div>
+    <div id="messagesListe"></div>
+    <div id="conv" hidden>
+      <p class="conv-qui" id="convQui"></p>
+      <div class="conv-fil" id="convFil" aria-live="polite"></div>
+      <div class="sheet-msg" id="convMsg" hidden></div>
+      <div class="conv-saisie" id="convSaisie">
+        <textarea id="convCorps" class="conv-champ" rows="1" maxlength="4000"
+                  placeholder="Écris un message…" enterkeyhint="send" aria-label="Ton message"></textarea>
+        <button type="button" class="conv-envoyer" id="convEnvoyer" aria-label="Envoyer">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="square" aria-hidden="true"><path d="M12 20V5M5 12l7-7 7 7"/></svg>
+        </button>
+      </div>
+      <p class="conv-ferme" id="convFerme" hidden></p>
+    </div>
+  </section>
+
   <section class="view" id="view-admin" hidden>
     <div class="admin-tete">
       <button type="button" class="icon-btn" id="adminRetourBtn" aria-label="Revenir">&lsaquo;</button>
@@ -1505,7 +1684,7 @@
 
     <div class="admin-bloc">
       <div class="admin-bloc-tete"><h3>MESSAGES</h3></div>
-      <div id="adminFilsListe"></div>
+      <button type="button" class="btn-sheet" id="adminVersMessages">OUVRIR LES CONVERSATIONS</button>
     </div>
 
     <div class="admin-bloc">
@@ -1527,8 +1706,7 @@
   </section>
 
   <footer class="legal-footer">
-    <button type="button" id="lienRetour">Nous faire un retour<span
-      class="pastille-fil" id="retourPastille" hidden></span></button>
+    <button type="button" id="lienRetour">Nous faire un retour</button>
     <span class="sep">·</span>
     <a href="guide.html">Comment ça marche</a>
     <span class="sep">·</span>
@@ -1539,6 +1717,10 @@
     <a href="cgu.html">CGU</a>
   </footer>
 </div>
+
+<button type="button" class="haut-btn" id="hautBtn" aria-label="Revenir en haut" hidden>
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="square" aria-hidden="true"><path d="M12 19V6M5 12l7-7 7 7"/></svg>
+</button>
 
 <datalist id="exerciseList"></datalist>
 <div class="sheet" id="dataSheet" hidden>
@@ -1554,6 +1736,52 @@
       Tes séances sont stockées dans ce navigateur, sur cet appareil uniquement.
       Vider les données du site, changer de téléphone ou désinstaller l'app
       les efface définitivement. Garde une copie du fichier quelque part.
+    </p>
+
+    <div class="sheet-section">
+      <div class="sheet-label">SAUVEGARDER</div>
+      <button type="button" class="btn-sheet primary" id="dataDownload">SAUVEGARDE COMPLÈTE (.JSON)</button>
+      <button type="button" class="btn-sheet" id="dataShare" hidden>ENVOYER / PARTAGER</button>
+      <button type="button" class="btn-sheet" id="dataCopy">COPIER LE TEXTE</button>
+      <p class="sheet-note">C'est ce fichier — et lui seul — qui contient tout : séances, titres, exercices mémorisés.</p>
+    </div>
+
+    <div class="sheet-section">
+      <div class="sheet-label">OUVRIR DANS UN TABLEUR</div>
+      <button type="button" class="btn-sheet" id="dataCsv">EXPORTER EN TABLEUR (.CSV)</button>
+      <p class="sheet-note">
+        Une ligne par série, à ouvrir dans Excel, Numbers ou Google Sheets.
+        Il se réimporte aussi, tel quel ou retouché dans le tableur.
+      </p>
+    </div>
+
+    <div class="sheet-section">
+      <div class="sheet-label">IMPORTER</div>
+      <label class="btn-sheet file">CHOISIR UN FICHIER (.JSON OU .CSV)<input type="file" id="dataFile" accept="application/json,.json,text/csv,.csv"></label>
+      <textarea id="dataPaste" class="sheet-paste" rows="3" placeholder="… ou colle ici le contenu d'une sauvegarde"></textarea>
+      <button type="button" class="btn-sheet primary" id="dataImport">AJOUTER À MES DONNÉES</button>
+      <button type="button" class="btn-sheet" id="dataRecover" aria-label="Récupérer la copie de secours" hidden></button>
+      <div class="sheet-msg" id="dataMsg" hidden></div>
+      <p class="sheet-note">
+        Un import <strong>ajoute</strong> ce qui te manque — les séances d'un
+        autre téléphone, une vieille sauvegarde — et ne remplace rien. Ce qui
+        est déjà dans ton carnet ne bouge pas, et réimporter deux fois le même
+        fichier n'ajoute rien de plus.
+      </p>
+    </div>
+  </div>
+</div>
+
+<div class="sheet" id="profilSheet" hidden>
+  <div class="sheet-card" role="dialog" aria-modal="true" aria-labelledby="profilTitre">
+    <div class="sheet-head">
+      <h2 id="profilTitre">TON PROFIL</h2>
+      <button type="button" class="icon-btn" id="profilClose" aria-label="Fermer">×</button>
+    </div>
+
+    <p class="sheet-note" id="compteIndispo" hidden>
+      Les comptes ne sont pas activés sur cette version de l'app : tout reste
+      sur cet appareil.
     </p>
 
     <div class="sheet-section" id="compteSection" hidden>
@@ -1596,58 +1824,14 @@
         <button type="button" class="btn-sheet danger" id="coachCesser" hidden>NE PLUS ÊTRE COACH</button>
         <div class="sheet-msg" id="coachMsg" hidden></div>
 
-        <button type="button" class="btn-sheet" id="compteAdmin" hidden>ADMINISTRATION</button>
+        <div class="sheet-label espace">SYNCHRONISATION</div>
         <button type="button" class="btn-sheet" id="compteSync">SYNCHRONISER MAINTENANT</button>
-        <button type="button" class="btn-sheet" id="compteDeconnexion">SE DÉCONNECTER</button>
         <p class="sheet-note" id="compteNote"></p>
+
+        <button type="button" class="btn-sheet" id="compteAdmin" hidden>ADMINISTRATION</button>
+        <button type="button" class="btn-sheet danger" id="compteDeconnexion">SE DÉCONNECTER</button>
       </div>
 
-    </div>
-
-    <div class="sheet-section">
-      <div class="sheet-label">SAUVEGARDER</div>
-      <button type="button" class="btn-sheet primary" id="dataDownload">SAUVEGARDE COMPLÈTE (.JSON)</button>
-      <button type="button" class="btn-sheet" id="dataShare" hidden>ENVOYER / PARTAGER</button>
-      <button type="button" class="btn-sheet" id="dataCopy">COPIER LE TEXTE</button>
-      <p class="sheet-note">C'est ce fichier — et lui seul — qui sait tout remettre en place.</p>
-    </div>
-
-    <div class="sheet-section">
-      <div class="sheet-label">OUVRIR DANS UN TABLEUR</div>
-      <button type="button" class="btn-sheet" id="dataCsv">EXPORTER EN TABLEUR (.CSV)</button>
-      <p class="sheet-note">
-        Une ligne par série, à ouvrir dans Excel, Numbers ou Google Sheets.
-        Pratique pour analyser ou imprimer — mais ce fichier ne se réimporte pas.
-      </p>
-    </div>
-
-    <div class="sheet-section">
-      <div class="sheet-label">RESTAURER</div>
-      <label class="btn-sheet file">CHOISIR UN FICHIER<input type="file" id="dataFile" accept="application/json,.json"></label>
-      <textarea id="dataPaste" class="sheet-paste" rows="3" placeholder="… ou colle ici le contenu de ta sauvegarde"></textarea>
-      <button type="button" class="btn-sheet danger" id="dataImport">REMPLACER MES DONNÉES</button>
-      <button type="button" class="btn-sheet" id="dataRecover" aria-label="Récupérer la copie de secours" hidden></button>
-      <div class="sheet-msg" id="dataMsg" hidden></div>
-    </div>
-  </div>
-</div>
-
-<div class="sheet" id="coachFilSheet" hidden>
-  <div class="sheet-card" role="dialog" aria-modal="true" aria-labelledby="coachFilTitre">
-    <div class="sheet-head">
-      <h2 id="coachFilTitre">TON COACH</h2>
-      <button type="button" class="icon-btn" id="coachFilClose" aria-label="Fermer">×</button>
-    </div>
-    <div class="sheet-section">
-      <div class="fil" id="coachFilMessages"></div>
-      <textarea id="coachFilCorps" class="sheet-paste" rows="2" maxlength="4000"
-                placeholder="Écris ton message…"></textarea>
-      <button type="button" class="btn-sheet primary" id="coachFilEnvoyer">ENVOYER</button>
-      <p class="sheet-note" id="coachFilNote">
-        Ton ressenti sur une séance, une douleur, une question sur le programme.
-        Entrée envoie, Maj+Entrée va à la ligne.
-      </p>
-      <div class="sheet-msg" id="coachFilMsg" hidden></div>
     </div>
   </div>
 </div>
@@ -1682,16 +1866,14 @@
       <div class="sheet-msg" id="retourMsg" hidden></div>
     </div>
 
-    <div class="sheet-section" id="conversation" hidden>
-      <div class="sheet-label">TA CONVERSATION</div>
-      <div class="fil" id="filMessages"></div>
-      <textarea id="messageCorps" class="sheet-paste" rows="2" maxlength="4000"
-                placeholder="Répondre…"></textarea>
-      <button type="button" class="btn-sheet" id="messageEnvoyer">ENVOYER</button>
+    <div class="sheet-section" id="retourVersConv" hidden>
+      <div class="sheet-label">LA RÉPONSE</div>
       <p class="sheet-note">
-        C'est le même fil des deux côtés. Tu peux revenir ici à tout moment
-        pour relire ce qui s'est dit. Entrée envoie, Maj+Entrée va à la ligne.
+        Chaque retour ouvre une conversation avec nous, dans
+        <strong>MESSAGES</strong> — la bulle en haut de l'écran. On te répond
+        là, et une pastille s'allume quand c'est fait.
       </p>
+      <button type="button" class="btn-sheet" id="retourVersMessages">VOIR MES MESSAGES</button>
     </div>
 
     <div class="sheet-section" id="retourMiens" hidden>

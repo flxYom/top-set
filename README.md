@@ -551,6 +551,14 @@ acknowledgement signed `systeme` rather than `admin` (nobody has read it yet);
 and a coach ↔ client conversation in its own table, `messages_coach`, writable
 only while the link is active, readable by the client even after they end it.
 
+**Since then:** one inbox for every conversation in the app — the team, your
+coach, your clients — with an unread badge in the header; timed exercises
+(planks, wall sits) stored as `45 s` in the existing reps field, so no format
+changes; imports that add what is missing and never replace; separate Profile
+and Data sheets; sticky tabs that no longer slide under the iPhone status bar,
+a back-to-top button, and no more accidental zoom. A schema upgrade test now
+installs every past schema version before applying the current one.
+
 **In progress:** session templates filed in folders and assignable into a
 client's logbook, and a per-session debrief. `profils` is the foundation for
 all of it — that is why it was written first.

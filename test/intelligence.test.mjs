@@ -277,6 +277,159 @@ egal('des espaces ne font pas une serie', TS.serieRemplie(s(null, '   ')), false
 }
 
 // ----------------------------------------------------------------
+titre('Exercices au temps (gainage, planche)');
+{
+  egal('« 45 s » est une duree', TS.dureeSecondes('45 s'), 45);
+  egal('« 45s » colle aussi', TS.dureeSecondes('45s'), 45);
+  egal('« 1:30 » comme un chrono', TS.dureeSecondes('1:30'), 90);
+  egal('« 1 min 30 »', TS.dureeSecondes('1 min 30'), 90);
+  egal('« 2 min »', TS.dureeSecondes('2 min'), 120);
+  egal("« 1'30 »", TS.dureeSecondes("1'30"), 90);
+  egal('« 45 » sans unite reste des reps', TS.dureeSecondes('45'), null);
+  egal('« 8-10 » reste des reps', TS.dureeSecondes('8-10'), null);
+  egal('« 20 m » (metres) n est pas une duree', TS.dureeSecondes('20 m'), null);
+  egal('« 0 s » ne compte pas', TS.dureeSecondes('0 s'), null);
+  egal('un nombre brut n est pas une duree', TS.dureeSecondes(45), null);
+  egal('ecrire 90 secondes', TS.ecrireDuree(90), '90 s');
+  egal('ecrire rien', TS.ecrireDuree(0), '');
+  egal('lire 45 s', TS.formatDuree(45), '45 s');
+  egal('lire 90 s', TS.formatDuree(90), '1 min 30');
+  egal('lire 125 s', TS.formatDuree(125), '2 min 05');
+  egal('lire 120 s', TS.formatDuree(120), '2 min');
+  egal('aller-retour ecrire puis relire', TS.dureeSecondes(TS.ecrireDuree(75)), 75);
+
+  // Le piege : une duree lue comme des reps gonflerait volume et 1RM.
+  egal('une duree n est pas un nombre de reps', TS.nombreReps('45 s'), null);
+  egal('pas de volume pour une planche lestee', TS.volumeSerie(s(10, '60 s')), 0);
+  egal('pas de 1RM pour une planche lestee', TS.epleySerie(s(10, '60 s')), null);
+  egal('pas de record par reps', TS.recordsParReps([{ date: 'x', series: [s(10, '60 s')] }]), []);
+  egal('pas de cible suggeree', TS.suggererCible([{ date: '2026-09-01', series: [s(null, '60 s', { rpe: 6 })] }]), null);
+  egal('une serie au temps est une serie faite', TS.serieRemplie(s(null, '45 s')), true);
+
+  const series = [s(null, '45 s'), s(null, '70 s'), s(null, '60 s')];
+  egal('la meilleure serie est la plus longue', TS.calculerTopSet(series).reps, '70 s');
+  ok('un echauffement long ne fait pas le top', TS.calculerTopSet([
+    s(null, '90 s', { type: 'echauffement' }), s(null, '60 s')]).reps === '60 s');
+  const jours = [
+    { date: '2026-09-01', series: [s(null, '45 s'), s(null, '50 s')] },
+    { date: '2026-09-04', series: [s(null, '60 s')] },
+    { date: '2026-09-08', series: [s(null, '75 s'), s(null, '120 s', { type: 'echauffement' })] }
+  ];
+  egal('meilleur temps, echauffement exclu', TS.meilleureDuree(jours), 75);
+  egal('temps total sous tension', TS.dureeTotale(jours), 45 + 50 + 60 + 75 + 120);
+  egal('la courbe suit le plus long de chaque seance',
+    TS.pointsDuree(jours).map(p => p.valeur), [50, 60, 75]);
+  const sig = TS.detecterSignal(jours, 'temps');
+  egal('trois seances qui montent : en progression', sig.signal, 'progressing');
+  ok('et la raison parle de temps, pas de top set', /meilleur temps/.test(sig.raison), sig.raison);
+  egal('en mode reps, une planche n a aucun top set mesurable',
+    TS.detecterSignal(jours).signal, 'insufficient_data');
+}
+
+// ----------------------------------------------------------------
+titre('Importer sans ecraser');
+{
+  let n = 0;
+  const fab = p => p + 'neuf' + (++n);
+  const ex = (id, nom, series, extra = {}) => Object.assign({ id, nom, groupe: 'Autre', series }, extra);
+  const se = (id, poids, reps) => ({ id, poids, reps, rpe: null, repos: '', fait: true });
+
+  const local = {
+    '2026-09-01': { date: '2026-09-01', exercises: [ex('x1', 'Squat', [se('s1', 100, '5')])] }
+  };
+  const avant = JSON.stringify(local);
+
+  // Le meme fichier, mais la seance a ete modifiee depuis l'export.
+  const fichier = {
+    '2026-09-01': { date: '2026-09-01', titre: 'Jambes lourdes',
+      exercises: [ex('x1', 'Squat', [se('s1', 90, '5')]), ex('x2', 'Fentes', [se('s2', 20, '10')])] },
+    '2026-09-03': { date: '2026-09-03', exercises: [ex('x3', 'Tractions', [se('s3', null, '8')])] }
+  };
+  const r = TS.fusionnerCarnets(local, fichier, fab);
+  egal('le carnet d origine n est pas modifie', JSON.stringify(local), avant);
+  egal('le squat deja la garde SA valeur, pas celle du fichier',
+    r.sessions['2026-09-01'].exercises[0].series[0].poids, 100);
+  egal('les fentes absentes sont ajoutees',
+    r.sessions['2026-09-01'].exercises.map(e => e.nom), ['Squat', 'Fentes']);
+  egal('le jour absent est ajoute', !!r.sessions['2026-09-03'], true);
+  egal('le titre manquant est repris', r.sessions['2026-09-01'].titre, 'Jambes lourdes');
+  egal('bilan : 1 jour, 2 exercices, 2 series, 1 titre',
+    [r.bilan.jours, r.bilan.exercices, r.bilan.series, r.bilan.titres], [1, 2, 2, 1]);
+
+  const r2 = TS.fusionnerCarnets(r.sessions, fichier, fab);
+  egal('reimporter le meme fichier n ajoute rien',
+    [r2.bilan.jours, r2.bilan.exercices, r2.bilan.titres], [0, 0, 0]);
+
+  // Le tableur n'a pas d'identifiants : c'est le contenu qui reconnait.
+  const sansId = { '2026-09-01': { date: '2026-09-01', exercises: [
+    { nom: 'squat', series: [{ poids: 100, reps: '5' }] }] } };
+  egal('sans identifiant, le meme contenu est reconnu',
+    TS.fusionnerCarnets(local, sansId, fab).bilan.exercices, 0);
+
+  const deuxFois = { '2026-09-05': { date: '2026-09-05', exercises: [
+    ex('p1', 'Pompes', [se('q1', null, '20')]), ex('p2', 'Pompes', [se('q2', null, '20')])] } };
+  egal('deux cartes identiques le meme jour sont deux exercices',
+    TS.fusionnerCarnets(local, deuxFois, fab).bilan.exercices, 2);
+  const unDeja = { '2026-09-05': { date: '2026-09-05', exercises: [
+    { id: 'autre', nom: 'Pompes', groupe: 'Autre', series: [{ id: 'z', poids: null, reps: '20' }] }] } };
+  egal('et si une seule est deja la, l autre arrive',
+    TS.fusionnerCarnets(unDeja, deuxFois, fab).bilan.exercices, 1);
+
+  // En base, un exercice est unique tous jours confondus.
+  const collision = { '2026-09-07': { date: '2026-09-07', exercises: [ex('x1', 'Dips', [se('s1', null, '12')])] } };
+  const rc = TS.fusionnerCarnets(local, collision, fab);
+  const dips = rc.sessions['2026-09-07'].exercises[0];
+  ok('un id deja pris ailleurs est remplace', dips.id !== 'x1' && dips.series[0].id !== 's1',
+    dips.id + ' / ' + dips.series[0].id);
+
+  const hostile = { '2026-09-08': { date: '2026-09-08', exercises: [ex('__proto__', 'Curl', [se('constructor', 10, '10')])] } };
+  ok('un id « __proto__ » ne casse rien',
+    TS.fusionnerCarnets(local, hostile, fab).bilan.exercices === 1);
+
+  const superset = { '2026-09-09': { date: '2026-09-09', exercises: [
+    ex('a', 'Curl', [se('sa', 10, '10')], { bloc: 'b1' }),
+    ex('b', 'Triceps', [se('sb', 10, '10')], { bloc: 'b1' })] } };
+  const rs = TS.fusionnerCarnets(local, superset, fab).sessions['2026-09-09'].exercises;
+  ok('un superset arrive entier, sous un bloc neuf',
+    rs[0].bloc && rs[0].bloc === rs[1].bloc && rs[0].bloc !== 'b1');
+  const moitie = { '2026-09-09': { date: '2026-09-09', exercises: [
+    { id: 'a', nom: 'Curl', groupe: 'Bras', series: [{ id: 'sa', poids: 10, reps: '10' }] }] } };
+  const rm = TS.fusionnerCarnets(moitie, superset, fab).sessions['2026-09-09'].exercises;
+  ok('un superset dont un seul membre arrive n en est plus un', rm.every(e => !e.bloc));
+}
+
+// ----------------------------------------------------------------
+titre('Relire le tableur exporte');
+{
+  const csv = '\ufeffDate;Jour;Exercice;Groupe;Serie;Poids (kg);Repetitions;RPE;Repos (s);Volume (kg);Fait\r\n'
+    + '2026-09-01;Lundi;Développé couché;Pectoraux;1;82,5;6;8;120;495;oui\r\n'
+    + '2026-09-01;Lundi;Développé couché;Pectoraux;2;82,5;5;9,5;120;412,5;non\r\n'
+    + '2026-09-01;Lundi;Planche;Abdos;1;;45 s;7;60;;oui\r\n'
+    + "2026-09-02;Mardi;'-Poulie basse;Dos;1;40;12;;;480;oui\r\n"
+    + '2026-09-02;Mardi;"Curl ""marteau""";Bras;1;14;10;;;140;oui\r\n';
+  const r = TS.lireCsvCarnet(csv);
+  egal('deux jours lus', Object.keys(r.sessions), ['2026-09-01', '2026-09-02']);
+  const j1 = r.sessions['2026-09-01'].exercises;
+  egal('deux series du meme exercice restent ensemble', j1.map(e => e.series.length), [2, 1]);
+  egal('la virgule decimale est lue', j1[0].series[0].poids, 82.5);
+  egal('le RPE decimal aussi', j1[0].series[1].rpe, 9.5);
+  egal('fait oui/non', j1[0].series.map(x => x.fait), [true, false]);
+  egal('une planche garde sa duree', j1[1].series[0].reps, '45 s');
+  egal('l apostrophe anti-formule est retiree', r.sessions['2026-09-02'].exercises[0].nom, '-Poulie basse');
+  egal('les guillemets doubles sont relus', r.sessions['2026-09-02'].exercises[1].nom, 'Curl "marteau"');
+  egal('cinq series en tout', r.series, 5);
+
+  const excel = 'Date,Exercice,Serie,Poids (kg),Repetitions\n10/09/2026,Squat,1,100,5\n10/09/2026,Squat,1,100,5\n';
+  const rx = TS.lireCsvCarnet(excel);
+  egal('Excel : virgules et dates JJ/MM/AAAA', Object.keys(rx.sessions), ['2026-09-10']);
+  egal('une serie qui repart a 1 ouvre un nouvel exercice',
+    rx.sessions['2026-09-10'].exercises.length, 2);
+  ok('un tableur etranger est refuse avec une raison',
+    typeof TS.lireCsvCarnet('Nom;Age\nPaul;30\n').erreur === 'string');
+  ok('un tableur vide aussi', typeof TS.lireCsvCarnet('').erreur === 'string');
+}
+
+// ----------------------------------------------------------------
 console.log('\n' + '='.repeat(52));
 if (echecs.length) {
   console.log(passes + ' tests passes, ' + echecs.length + ' ECHEC(S) :');

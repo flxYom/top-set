@@ -185,86 +185,86 @@ console.log('\n== 10. Pas de secret dans ce qui est servi ==');
   ok('aucun secret de forme ' + i, !re.test(SRC));
 });
 
-console.log('\n== 11. La conversation se comporte comme une conversation ==');
-// Le fil etait cache tant qu'il etait vide. C'est le genre de bug qui ne se
-// voit pas en relisant le code : chaque ligne est correcte, et pourtant
-// personne ne peut ecrire le premier message — la conversation ne pouvait
-// commencer que si elle avait deja commence. Ce qui suit fige les cinq
-// comportements qui font la difference entre un chat et un formulaire.
+console.log('\n== 11. Une seule messagerie, et elle se comporte comme une messagerie ==');
+// Le support et le coaching avaient chacun leur fil, dans deux feuilles
+// differentes, et un ticket ne pouvait pas recevoir de reponse. Tout passe
+// maintenant par une seule boite. Ce qui suit fige ce qui en fait un chat et
+// pas un formulaire — et les pieges dans lesquels les versions precedentes
+// sont tombees.
 
-const CONV = corps('function chargerConversation(', 'document.getElementById(\'messageCorps\')');
+const MSG = corps('// MESSAGES\r\n', '// COACH\r\n');
+ok('la section MESSAGES est bien delimitee', MSG.length > 3000, MSG.length + ' caracteres');
 
-ok('le fil s ouvre avant de savoir s il est vide',
-   CONV.indexOf('bloc.hidden = false') > -1
-   && CONV.indexOf('if (!rows.length)') === -1,
-   'un fil vide doit rester ouvert, sinon le premier message est impossible');
+ok('quatre points de vue, un seul rendu',
+   MSG.indexOf("type:'support', je:'membre'") > -1 && MSG.indexOf("je:'admin'") > -1
+   && SRC.indexOf("type:'coach', je:'client'") > -1 && SRC.indexOf("type:'coach', je:'coach'") > -1);
 
-ok('mais il reste ferme si la base ne repond pas',
-   CONV.indexOf('}, function(){ bloc.hidden = true; });') > -1);
+// Un fil vide se cachait : la conversation ne pouvait commencer que si elle
+// avait deja commence.
+ok('une conversation vide s ouvre quand meme',
+   corps('function bullesHTML(', 'function attenteHTML(').indexOf("'<div class=\"fil-vide\">'") > -1
+   && corps('function renderMessages(', 'function renderBoite(').indexOf('if (!rows.length)') === -1);
+ok('l equipe apparait toujours dans la boite d un membre, meme sans message',
+   corps('function conversationsDe(', 'function ligneConvHTML(').indexOf('out.push(e);') > -1);
 
 ok('la bulle d attente existe et n est pas stockee',
    SRC.indexOf('function attenteHTML(') > -1
    && SRC.indexOf('rows[rows.length - 1].auteur !== monAuteur') > -1
-   && CONV.indexOf("attenteHTML(rows, 'membre')") > -1);
+   && MSG.indexOf("attenteHTML(rows, 'membre')") > -1);
 
-ok('le fil descend sans emporter la page',
-   SRC.indexOf('function filEnBas(') > -1
-   && SRC.indexOf('fil.scrollTo({ top: fil.scrollHeight') > -1
-   && SRC.indexOf('window.scrollTo(0, fil') === -1);
-
-ok('et il ne s anime pas pour qui a demande le calme',
-   corps('function filEnBas(', 'function majPastilleRetour(')
-     .indexOf('prefers-reduced-motion') > -1);
+const CHC = corps('function chargerConv(', 'function ajusterChamp(');
+ok('une reponse lente n ecrit pas dans une conversation qu on a quittee',
+   (CHC.match(/if \(conv !== c[^)]*\) return;/g) || []).length === 2);
+ok('on ne marque lu que ce que l autre a ecrit',
+   CHC.indexOf('m.auteur !== c.je') > -1);
+ok('et l accuse automatique ne se « lit » pas cote equipe',
+   CHC.indexOf("!(c.je === 'admin' && m.auteur === 'systeme')") > -1);
+ok('une releve sans nouveaute ne repeint rien (et ne fait pas sauter la page)',
+   CHC.indexOf("if (mode === 'releve' && cle === convCle) return;") > -1);
+ok('on ne descend pas sous le nez de qui relit plus haut',
+   CHC.indexOf("var enBas = mode !== 'releve' || presDuBas();") > -1);
+ok('et rien ne s anime pour qui a demande le calme',
+   corps('function allerEnBas(', 'function chargerConv(').indexOf('prefers-reduced-motion') > -1);
 
 ok('Entree envoie, Maj+Entree va a la ligne',
-   SRC.indexOf('e.key === \'Enter\' && !e.shiftKey') > -1);
-
-// Les deux cotes, pas seulement celui du membre : le meme fil se lit dans
-// l'autre sens dans l'espace admin, et un seul parametre change.
-ok('des deux cotes',
-   (SRC.match(/e\.key === 'Enter' && !e\.shiftKey/g) || []).length >= 2);
-
+   MSG.indexOf("e.key === 'Enter' && !e.shiftKey") > -1);
 ok('le nom ne se met qu au-dessus de ce que dit l autre',
-   corps('function bullesHTML(', 'function attenteHTML(')
-     .indexOf(": esc(qui) + ' · ')") > -1);
-
-ok('la pastille compte sans rapatrier le fil',
-   SRC.indexOf("{ count:'exact', head:true }") > -1
-   && SRC.indexOf('function majPastilleRetour(') > -1);
-
-ok('et elle ne casse jamais la page',
-   corps('nonLus:function()', 'adminFils:function()')
-     .indexOf('function(){ return 0; }') > -1,
-   'une erreur de comptage doit rendre zero, pas rejeter');
-
-ok('la pastille est un element vide, pas du texte injecte',
-   HTML.indexOf('<span\n      class="pastille" id="retourPastille" hidden></span>') > -1
-   || HTML.indexOf('id="retourPastille" hidden></span>') > -1);
-
-ok('et hidden la cache vraiment malgre display:inline-block',
-   HTML.indexOf('.pastille-fil[hidden]{display:none;}') > -1);
-
-console.log('\n== 12. Toute demande peut recevoir une reponse ==');
-// Un retour arrivait dans l'espace admin sans rien qui permette d'y repondre,
-// et le coach lisait un carnet sans pouvoir en parler. Ce qui suit fige les
-// portes d'entree des fils — et les pieges dans lesquels elles sont tombees.
-
-const BUL = corps('function bullesHTML(', 'function attenteHTML(');
-
+   corps('function bullesHTML(', 'function attenteHTML(').indexOf(": esc(qui) + ' · ')") > -1);
 ok('l accuse automatique n est jamais « moi » pour un membre',
-   BUL.indexOf("var moi = sys ? (monAuteur === 'admin')") > -1);
-ok('et il se dit automatique, des deux cotes',
-   BUL.indexOf("'Top Set · automatique'") > -1 && BUL.indexOf("'automatique · '") > -1);
+   corps('function bullesHTML(', 'function attenteHTML(').indexOf("var moi = sys ? (monAuteur === 'admin')") > -1);
 
+// La releve : seulement quand on regarde. Pas un battement de coeur pour
+// garder la base eveillee.
+const MIN = corps('function relancerMinuteur(', 'var badgeQuand');
+ok('on ne releve que la page ouverte et visible',
+   MIN.indexOf("state.view !== 'messages' || document.hidden") > -1);
+ok('et le minuteur s arrete en quittant la page',
+   corps('function montrerVue(', "document.getElementById('mainTabs')").indexOf('clearInterval(minuteurMessages)') > -1);
+
+console.log('\n== 12. La pastille ==');
+const NLT = corps('nonLusTotal:function()', 'apercuCoach:function()');
+ok('elle compte sans rapatrier les messages', NLT.indexOf("{ count:'exact', head:true }") > -1);
+ok('elle ne casse jamais la page', NLT.indexOf('function(){ return 0; }') > -1);
+ok('l equipe ne compte pas ses propres messages', NLT.indexOf(".neq('user_id', user.id)") > -1);
+ok('le compteur coach ne casse jamais la page non plus',
+   SRC.indexOf('}, function(){ return {}; });') > -1);
+ok('elle est dans l en-tete, pas cachee dans une feuille',
+   HTML.indexOf('id="messagesBadge" hidden') > -1
+   && HTML.indexOf('id="messagesBadge"') < HTML.indexOf('<nav class="topbar">'));
+ok('elle ne s interroge pas plus d une fois toutes les huit secondes',
+   corps('function majBadgeMessages(', 'setInterval(').indexOf('Date.now() - badgeQuand < 8000') > -1);
+
+console.log('\n== 13. Toute demande peut recevoir une reponse ==');
 ok('un retour se repond — s il a encore un auteur',
    SRC.indexOf("(x.user_id ? '<button type=\"button\" class=\"admin-action\" data-ecrire=") > -1);
 ok('un inscrit s ecrit',
    SRC.indexOf("'<button type=\"button\" class=\"admin-action\" data-ecrire=\"' + esc(x.user_id)") > -1);
-ok('ouvrir le fil remonte jusqu a lui',
-   corps('function ouvrirFilAdmin(', "['adminRetoursListe'").indexOf('scrollIntoView') > -1);
-
+ok('repondre a un retour nouveau le passe en LU',
+   SRC.indexOf("if (b.dataset.retour) Sync.adminMarquer(b.dataset.retour, 'vu')") > -1);
+ok('un retour envoye emmene dans sa conversation',
+   corps("getElementById('retourEnvoyer').addEventListener", '// ====').indexOf('ouvrirConversation(convEquipe())') > -1);
 // Les boutons sont DANS des cartes cliquables : si la carte est testee
-// d'abord, le bouton ouvre le carnet au lieu du fil.
+// d'abord, le bouton ouvre le carnet au lieu de la conversation.
 const LCOACH = corps("getElementById('coachContenu').addEventListener", '// ====');
 ok('le bouton MESSAGES passe avant la carte qui le contient',
    LCOACH.indexOf('[data-fil-client]') > -1
@@ -273,25 +273,68 @@ const LMON = corps("getElementById('monCoachEtat').addEventListener", "getElemen
 ok('et ECRIRE A TON COACH avant COUPER L ACCES',
    LMON.indexOf('[data-fil-coach]') > -1
    && LMON.indexOf('[data-fil-coach]') < LMON.indexOf('[data-couper]'));
-
-const CHF = corps('function chargerFilCoach(', 'function majPastilleCompte(');
-ok('une reponse lente n ecrit pas dans un fil qu on a quitte',
-   (CHF.match(/if \(filCoach !== f\) return;/g) || []).length === 2);
-ok('on ne marque lu que ce que l autre a ecrit',
-   CHF.indexOf('m.auteur === enFace && !m.lu') > -1);
-ok('le compteur coach ne casse jamais la page',
-   corps('nonLusCoach:function()', '},\r\n').length > 0
-   && SRC.indexOf('}, function(){ return {}; });') > -1);
-ok('Echap ferme la feuille du coach',
-   SRC.indexOf("!document.getElementById('coachFilSheet').hidden) fermerFilCoach();") > -1);
+ok('un suivi termine se relit sans s ecrire',
+   MSG.indexOf("'SUIVI TERMINÉ', c, false") > -1 && MSG.indexOf("document.getElementById('convSaisie').hidden = !peut;") > -1);
+ok('plus aucune trace des anciens fils',
+   !/ouvrirFilCoach|chargerConversation|coachFilSheet|adminFilsListe/.test(SRC + HTML));
+ok('une table absente se dit en francais',
+   SRC.indexOf('pas encore activé sur le serveur') > -1);
 
 // « .pastille » etait deja pris par les voyants d'etat. Une regle nue du meme
 // nom leur ajoutait une marge sans que rien ne le signale.
 ok('aucune regle nue « .pastille » ne deborde sur les voyants d etat',
    !/\n\s*\.pastille\s*\{/.test(HTML));
-ok('les points de fil ont leur propre nom',
-   HTML.indexOf('class="pastille-fil" id="retourPastille"') > -1
-   && HTML.indexOf('class="pastille-fil" id="comptePastille"') > -1);
+
+console.log('\n== 14. Sur telephone ==');
+ok('le double-tap ne zoome plus', /html\{touch-action:manipulation;\}/.test(HTML));
+ok('les champs de moins de 16 px ne font plus zoomer iOS',
+   /@supports \(-webkit-touch-callout:none\)\{[^}]*\.sheet-input[^}]*font-size:16px;/.test(HTML));
+ok('la barre des onglets se colle sous la barre d etat de l iPhone',
+   HTML.indexOf('.topbar{top:var(--haut);}') > -1 && HTML.indexOf('--haut:env(safe-area-inset-top,0px)') > -1);
+ok('et une bande opaque couvre cette zone', /body::before\{[^}]*height:var\(--haut\)/.test(HTML));
+ok('le bouton « revenir en haut » existe', HTML.indexOf('id="hautBtn"') > -1);
+ok('il ecoute le defilement sans le ralentir',
+   SRC.indexOf("}, { passive:true });") > -1 && SRC.indexOf('requestAnimationFrame(majBoutonHaut)') > -1);
+ok('et il respecte le calme demande',
+   corps("hautBtn.addEventListener('click'", '});').indexOf('prefers-reduced-motion') > -1);
+// « font: 800 10px/1 inherit » est invalide : le navigateur jetait toute la
+// declaration, et ces boutons tombaient dans la police du systeme.
+ok('aucun raccourci font: ... inherit invalide', !/font:[^;]*\dpx[^;]*\binherit;/.test(HTML));
+
+console.log('\n== 15. Gainage, planche : au temps ==');
+ok('la duree s ecrit avec son unite, dans le champ des reps',
+   SRC.indexOf('found.serie.reps = TS.ecrireDuree(sec)') > -1);
+ok('une serie deja notee n est jamais reinterpretee',
+   corps('function estAuTemps(', 'function secondesAffichees(').indexOf('if (remplies.length) return remplies.some(TS.serieAuTemps);') > -1);
+ok('la chaise romaine n est pas un gainage', SRC.indexOf('chaise(?!\\s+romaine)') > -1);
+ok('le record au temps est la serie la plus longue', SRC.indexOf('function recordDuree(') > -1);
+ok('la bascule n encombre pas un exercice deja note en kilos',
+   SRC.indexOf('auTemps || nomAuTemps(ex.nom) || !series.some(serieRemplie)') > -1);
+ok('le mode choisi survit a la normalisation',
+   (SRC.match(/mesure:mesure/g) || []).length === 2);
+
+console.log('\n== 16. Importer ajoute, ne remplace plus ==');
+ok('plus de bouton REMPLACER', HTML.indexOf('REMPLACER MES DONN') === -1 && SRC.indexOf('REMPLACER MES DONN') === -1);
+ok('l import passe par la fusion', SRC.indexOf('TS.fusionnerCarnets(state.sessions, parsed.sessions, fabriqueId)') > -1);
+ok('et elle est refaite au moment de confirmer',
+   corps('function appliquerImport(', 'var pendingBackup').indexOf('TS.fusionnerCarnets(') > -1);
+ok('seules les journees qui ont bouge repartent vers le compte',
+   corps('function appliquerImport(', 'var pendingBackup').indexOf('r.bilan.dates.forEach') > -1);
+ok('le titre d une seance est relu a l import', SRC.indexOf('clean[ds].titre = day.titre.trim().slice(0, 60)') > -1);
+ok('le tableur se relit aussi', SRC.indexOf('TS.lireCsvCarnet(t)') > -1 && /accept="[^"]*\.csv/.test(HTML));
+ok('et il passe par le meme nettoyage que le JSON',
+   SRC.indexOf('return parseBackup(JSON.stringify({ sessions: lu.sessions }));') > -1);
+
+console.log('\n== 17. Profil et donnees : deux portes ==');
+ok('le compte est dans la feuille du profil',
+   HTML.indexOf('id="compteSection"') > HTML.indexOf('id="profilSheet"'));
+ok('et plus dans celle des donnees',
+   HTML.indexOf('id="compteSection"') > HTML.indexOf('id="dataSheet"')
+   && HTML.indexOf('id="profilSheet"') > HTML.indexOf('id="dataImport"'));
+ok('Echap ferme la feuille ouverte, quelle qu elle soit',
+   SRC.indexOf("if (e.key === 'Escape') fermerFeuilles();") > -1);
+ok('ouvrir une page depuis une feuille ferme la feuille',
+   (SRC.match(/fermerFeuilles\(\);/g) || []).length >= 6);
 
 console.log(`\n${pass} reussis, ${fail} echoues`);
 process.exit(fail ? 1 : 0);

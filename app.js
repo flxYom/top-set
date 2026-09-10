@@ -34,7 +34,8 @@
 
     'Crunch':'Abdos','Relevé de jambes':'Abdos','Planche':'Abdos','Russian twist':'Abdos','Ab wheel':'Abdos',
     'Crunch à la poulie':'Abdos','Gainage latéral':'Abdos','Mountain climber':'Abdos','Sit-up':'Abdos',
-    'V-up':'Abdos','Dragon flag':'Abdos',
+    'V-up':'Abdos','Dragon flag':'Abdos','Gainage':'Abdos','Gainage planche':'Abdos','Hollow hold':'Abdos',
+    'Chaise':'Jambes','Suspension à la barre':'Dos',
 
     'Course à pied':'Cardio','Rameur':'Cardio','Vélo elliptique':'Cardio','Vélo':'Cardio','Corde à sauter':'Cardio',
     'Tapis de course':'Cardio','Burpees':'Cardio','Marche rapide':'Cardio','Natation':'Cardio'
@@ -217,8 +218,11 @@
     // bloc reste undefined quand il n'y en a pas : un exercice seul ne porte
     // rien, et le JSON envoye au cloud n'a pas de champ vide a transporter.
     var bloc = (ex && ex.bloc) ? String(ex.bloc) : undefined;
+    // Au temps ou en repetitions, quand l'utilisateur l'a dit lui-meme.
+    // Absent sinon : le nom et les valeurs saisies suffisent a le deduire.
+    var mesure = (ex && (ex.mesure === 'temps' || ex.mesure === 'reps')) ? ex.mesure : undefined;
     if (ex && Array.isArray(ex.series)){
-      return { id:idSur(ex.id, genId), nom:ex.nom||'', groupe:groupeSur(ex.groupe), repos:ex.repos||'', bloc:bloc, series:ex.series.map(function(s){
+      return { id:idSur(ex.id, genId), nom:ex.nom||'', groupe:groupeSur(ex.groupe), repos:ex.repos||'', bloc:bloc, mesure:mesure, series:ex.series.map(function(s){
         return normalizeSerie(s, ex.repos);
       }) };
     }
@@ -226,7 +230,7 @@
     if (ex && (ex.poids!=null || (ex.reps!=null && String(ex.reps).trim()!==''))){
       series.push(normalizeSerie({ poids:ex.poids, reps:ex.reps }, ex.repos));
     }
-    return { id:idSur(ex&&ex.id, genId), nom:(ex&&ex.nom)||'', groupe:groupeSur(ex&&ex.groupe), repos:(ex&&ex.repos)||'', bloc:bloc, series:series };
+    return { id:idSur(ex&&ex.id, genId), nom:(ex&&ex.nom)||'', groupe:groupeSur(ex&&ex.groupe), repos:(ex&&ex.repos)||'', bloc:bloc, mesure:mesure, series:series };
   }
 
   // ---------- state ----------
@@ -270,7 +274,80 @@
   // Un record est un poids strictement supérieur à tout autre poids jamais logué sur ce
   // nom d'exercice (normalisé) — indépendant de la date, donc robuste à l'édition a posteriori
   // d'une séance passée.
+  // ---------- exercices au temps ----------
+  // Ceux qu'on tient plutot qu'on ne repete. Le nom suffit a ouvrir la saisie
+  // en secondes, et le bouton de la carte bascule dans les deux sens.
+  // « Chaise romaine » est un appareil, pas un gainage.
+  var AU_TEMPS_NOM = /(^|[\s'’-])(gainage|planche|chaise(?!\s+romaine)|hollow|l-sit|dead hang|wall sit|isom[ée]tri|suspension)/i;
+  function nomAuTemps(nom){ return AU_TEMPS_NOM.test(String(nom || '')); }
+
+  // La derniere fois que ce nom a ete fait, etait-ce au temps ? C'est ce qui
+  // rouvre « Gainage leste » en secondes la semaine suivante, sans rien
+  // retenir nulle part : la reponse est deja dans le carnet.
+  function historiqueAuTemps(nom){
+    var norm = nom && String(nom).trim() ? cleCanonique(nom) : null;
+    if (!norm) return false;
+    var dates = Object.keys(state.sessions).sort().reverse();
+    for (var i = 0; i < dates.length; i++){
+      var exos = state.sessions[dates[i]].exercises || [];
+      for (var k = 0; k < exos.length; k++){
+        var e = exos[k];
+        if (!e.nom || cleCanonique(e.nom) !== norm) continue;
+        var remplies = (e.series || []).filter(serieRemplie);
+        if (remplies.length) return remplies.some(TS.serieAuTemps);
+      }
+    }
+    return false;
+  }
+
+  // L'ordre des questions compte : ce que l'utilisateur a choisi, puis ce
+  // qu'il a deja saisi, puis le nom, puis l'historique. Une serie deja notee
+  // n'est jamais reinterpretee — « 45 » sans unite reste 45 repetitions.
+  function estAuTemps(ex){
+    if (!ex) return false;
+    if (ex.mesure === 'temps') return true;
+    if (ex.mesure === 'reps') return false;
+    var remplies = (ex.series || []).filter(serieRemplie);
+    if (remplies.length) return remplies.some(TS.serieAuTemps);
+    return nomAuTemps(ex.nom) || historiqueAuTemps(ex.nom);
+  }
+
+  // Ce que montre le champ des secondes : la duree lue, ou un nombre nu
+  // quand la serie a ete notee avant que le champ existe.
+  function secondesAffichees(s){
+    var d = TS.dureeSecondes(s && s.reps);
+    if (d !== null) return String(d);
+    var brut = String((s && s.reps) || '').trim();
+    return /^\d+$/.test(brut) ? brut : '';
+  }
+  function secondesDe(s){
+    var v = secondesAffichees(s);
+    return v === '' ? 0 : Number(v);
+  }
+
+  // Au temps, le record est la serie la plus longue jamais tenue sur ce nom.
+  function recordDuree(serie, exNom, duree){
+    if (TS.typeSerie(serie) === TS.TYPES.ECHAUFFEMENT) return false;
+    var norm = exNom && exNom.trim() ? cleCanonique(exNom) : null;
+    if (!norm) return false;
+    var best = 0;
+    Object.keys(state.sessions).forEach(function(ds){
+      state.sessions[ds].exercises.forEach(function(e){
+        if (!e.nom || cleCanonique(e.nom) !== norm) return;
+        (e.series||[]).forEach(function(s){
+          if (s.id === serie.id) return;
+          if (TS.typeSerie(s) === TS.TYPES.ECHAUFFEMENT) return;
+          var d = TS.dureeSecondes(s.reps);
+          if (d !== null && d > best) best = d;
+        });
+      });
+    });
+    return duree > best;
+  }
+
   function isNewRecord(serie, exNom){
+    var duree = TS.dureeSecondes(serie.reps);
+    if (duree !== null) return recordDuree(serie, exNom, duree);
     if (typeof serie.poids !== 'number' || !(serie.poids > 0)) return false;
     // Un echauffement ne fait pas record, meme lourd.
     if (TS.typeSerie(serie) === TS.TYPES.ECHAUFFEMENT) return false;
@@ -602,7 +679,7 @@
         if (!byNorm[norm]) byNorm[norm] = [];
         if (!byJour[norm]) byJour[norm] = {};
         byJour[norm][d] = 1;
-        validSeries.forEach(function(s){ byNorm[norm].push({ poids:s.poids, reps:s.reps, groupe:ex.groupe }); });
+        validSeries.forEach(function(s){ byNorm[norm].push({ poids:s.poids, reps:s.reps, groupe:ex.groupe, duree:TS.dureeSecondes(s.reps) }); });
       });
     });
 
@@ -621,8 +698,11 @@
         repsAtMax = repsNums2.length ? Math.max.apply(null,repsNums2) : '?';
       }
       var groupe = mostCommon(entries.map(function(e){return e.groupe;})) || 'Autre';
+      // Au temps, le meilleur temps : « PDC × ? » ne voudrait rien dire.
+      var durees = entries.map(function(e){ return e.duree; }).filter(function(d){ return d !== null; });
       return { nom:norm, groupe:groupe, maxPoids:maxPoids, repsAtMax:repsAtMax,
                bodyweight:bodyweight,
+               maxDuree: durees.length ? Math.max.apply(null, durees) : null,
                fois:Object.keys(byJour[norm] || {}).length,
                series:entries.length };
     });
@@ -719,9 +799,6 @@
   function renderWeekNav(){
     var days = weekDays();
     document.getElementById('weekLabel').textContent = formatWeekRange(days[0],days[6]);
-    var d = fromDateStr(state.selectedDay);
-    var bd = document.getElementById('brandDate');
-    if (bd) bd.innerHTML = '<b>'+DAY_ABBR[(d.getDay()+6)%7].toUpperCase()+'</b><span>'+pad2(d.getDate())+'</span>';
   }
 
   function renderDayPills(){
@@ -814,6 +891,14 @@
     return 'RPE ' + v + ' — ' + (reste === 1 ? '1 rep en réserve' : reste + ' reps en réserve');
   }
 
+  // Au temps, il n'y a pas de repetition en reserve : on note la difficulte
+  // ressentie, de 1 a 10. Meme champ que le RPE — c'est ce que le sigle veut
+  // dire au depart — donc meme colonne en base et dans le tableur.
+  var DIFF_VALUES = [10, 9, 8, 7, 6, 5, 4, 3, 2, 1];
+  function diffLabel(v){
+    return v >= 10 ? 'Difficulté 10/10 — impossible de tenir plus' : 'Difficulté ' + v + '/10';
+  }
+
   // Repeint les etoiles de record d'une carte sans la reconstruire : le
   // rendu complet ferait perdre le focus et la position de defilement.
   function majEtoilesRecord(card){
@@ -834,32 +919,46 @@
 
   var ETOILE_PR = '<span class="serie-pr" title="Nouveau record" aria-label="Nouveau record"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ffd23f" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.6 5.6 6.1.8-4.5 4.2 1.2 6-5.4-3-5.4 3 1.2-6L3.3 9.4l6.1-.8z"></path></svg></span>';
 
-  function serieRowHTML(s, idx, exNom){
+  // Au temps, la ligne garde sa forme — coche, pas de moins, valeur, pas de
+  // plus — et seule la valeur change d'unite : la main retrouve ses reperes.
+  // Le poids d'une serie deja lestee n'est pas efface, il reste dans les
+  // donnees et dans le texte des performances.
+  function serieRowHTML(s, idx, exNom, auTemps){
     var pr = isNewRecord(s, exNom);
     var num = idx + 1;
-    var rpeOptions = '<option value="">RPE</option>' + RPE_VALUES.map(function(v){
+    var rpeOptions = '<option value="">' + (auTemps ? 'DIFF.' : 'RPE') + '</option>'
+      + (auTemps ? DIFF_VALUES : RPE_VALUES).map(function(v){
       return '<option value="'+v+'"'+(s.rpe===v?' selected':'')+'>'+v+'</option>';
     }).join('');
     var typeCourant = s.type || '';
     var typeOptions = TYPE_LABELS.map(function(p){
       return '<option value="'+p[0]+'"'+(typeCourant===p[0]?' selected':'')+'>'+p[1]+'</option>';
     }).join('');
+    var valeur = auTemps
+      ? '<button type="button" class="step-btn" data-action="step-temps" data-delta="-5" data-serie-id="'+ esc(s.id) +'" aria-label="Retirer 5 secondes à la série '+num+'">−</button>'
+      +   '<input type="text" inputmode="numeric" enterkeyhint="done" class="serie-duree" placeholder="sec" aria-label="Durée en secondes, série '+num+'" data-field="duree" data-serie-id="'+ esc(s.id) +'" value="'+esc(secondesAffichees(s))+'">'
+      +   '<span class="serie-unite" aria-hidden="true">s</span>'
+      +   '<button type="button" class="step-btn" data-action="step-temps" data-delta="5" data-serie-id="'+ esc(s.id) +'" aria-label="Ajouter 5 secondes à la série '+num+'">+</button>'
+      : '<button type="button" class="step-btn" data-action="step" data-delta="-2.5" data-serie-id="'+ esc(s.id) +'" aria-label="Retirer 2,5 kg à la série '+num+'">−</button>'
+      +   '<input type="text" inputmode="decimal" enterkeyhint="next" class="serie-poids" placeholder="kg" aria-label="Poids série '+num+'" data-field="poids" data-serie-id="'+ esc(s.id) +'" value="'+esc(poidsAffiche(s.poids))+'">'
+      +   '<button type="button" class="step-btn" data-action="step" data-delta="2.5" data-serie-id="'+ esc(s.id) +'" aria-label="Ajouter 2,5 kg à la série '+num+'">+</button>'
+      +   '<span class="serie-x" aria-hidden="true">×</span>'
+      +   '<input type="text" inputmode="numeric" enterkeyhint="done" class="serie-reps" placeholder="reps" aria-label="Répétitions série '+num+'" data-field="reps" data-serie-id="'+ esc(s.id) +'" value="'+esc(s.reps==null?'':s.reps)+'">';
+    var titreEffort = auTemps
+      ? (s.rpe==null ? 'Difficulté ressentie, de 1 à 10' : esc(diffLabel(s.rpe)))
+      : (s.rpe==null ? 'Reps en réserve : 10 = à l\'échec, 9 = 1 rep en réserve' : esc(rpeLabel(s.rpe)));
     return '<div class="serie-card'+(s.fait?' fait':'')+'" data-serie-id="'+ esc(s.id) +'"'
       + (typeCourant ? ' data-type="'+typeCourant+'"' : '') + '>'
       + '<div class="serie-main">'
       +   '<button type="button" class="serie-check'+(s.fait?' checked':'')+'" data-action="toggle-fait" data-serie-id="'+ esc(s.id) +'" aria-pressed="'+(s.fait?'true':'false')+'" aria-label="Série '+num+' — '+(s.fait?'marquer comme non faite':'marquer comme faite')+'">'+(s.fait?'✓':'')+'</button>'
       +   '<span class="serie-num" aria-hidden="true">'+num+'</span>'
-      +   '<button type="button" class="step-btn" data-action="step" data-delta="-2.5" data-serie-id="'+ esc(s.id) +'" aria-label="Retirer 2,5 kg à la série '+num+'">−</button>'
-      +   '<input type="text" inputmode="decimal" enterkeyhint="next" class="serie-poids" placeholder="kg" aria-label="Poids série '+num+'" data-field="poids" data-serie-id="'+ esc(s.id) +'" value="'+esc(poidsAffiche(s.poids))+'">'
-      +   '<button type="button" class="step-btn" data-action="step" data-delta="2.5" data-serie-id="'+ esc(s.id) +'" aria-label="Ajouter 2,5 kg à la série '+num+'">+</button>'
-      +   '<span class="serie-x" aria-hidden="true">×</span>'
-      +   '<input type="text" inputmode="numeric" enterkeyhint="done" class="serie-reps" placeholder="reps" aria-label="Répétitions série '+num+'" data-field="reps" data-serie-id="'+ esc(s.id) +'" value="'+esc(s.reps==null?'':s.reps)+'">'
+      +   valeur
       +   (pr ? ETOILE_PR : '')
       + '</div>'
       + '<div class="serie-meta">'
       +   '<select class="serie-type" data-field="type" data-serie-id="'+ esc(s.id) +'" aria-label="Type de la série '+num+'">'+typeOptions+'</select>'
-      +   '<label class="meta-field"><span>RPE</span>'
-      +     '<select class="serie-rpe'+(s.rpe==null?' vide':'')+'" data-field="rpe" data-serie-id="'+ esc(s.id) +'" title="'+(s.rpe==null?'Reps en réserve : 10 = à l\'échec, 9 = 1 rep en réserve':esc(rpeLabel(s.rpe)))+'" aria-label="RPE série '+num+'">'+rpeOptions+'</select>'
+      +   '<label class="meta-field"><span>' + (auTemps ? 'DIFF.' : 'RPE') + '</span>'
+      +     '<select class="serie-rpe'+(s.rpe==null?' vide':'')+'" data-field="rpe"' + (auTemps ? ' data-mode="temps"' : '') + ' data-serie-id="'+ esc(s.id) +'" title="'+titreEffort+'" aria-label="'+(auTemps ? 'Difficulté' : 'RPE')+' série '+num+'">'+rpeOptions+'</select>'
       +   '</label>'
       +   '<label class="meta-field"><span>REPOS</span>'
       +     '<input type="text" inputmode="numeric" enterkeyhint="done" class="serie-repos" placeholder="90s" data-field="repos" data-serie-id="'+ esc(s.id) +'" aria-label="Repos après la série '+num+'" value="'+esc(s.repos||'')+'">'
@@ -882,6 +981,11 @@
   TYPE_COURT[TS.TYPES.BACKOFF] = 'B.O.';
 
   function perfTexte(s){
+    var d = TS.dureeSecondes(s && s.reps);
+    if (d !== null){
+      var lest = (typeof s.poids === 'number' && s.poids > 0) ? ' · ' + formatWeight(s.poids) + ' kg' : '';
+      return TS.formatDuree(d) + lest;
+    }
     var p = (typeof s.poids === 'number') ? formatWeight(s.poids) + ' kg' : '';
     var r = s.reps ? String(s.reps) : '';
     if (p && r) return p + ' × ' + r;
@@ -984,11 +1088,10 @@
       return '<option value="'+g+'"'+(g===ex.groupe?' selected':'')+'>'+g+'</option>';
     }).join('');
     var series = ex.series || [];
-    var seriesHTML = series.length
-      ? series.map(function(s,idx){ return serieRowHTML(s, idx, ex.nom); }).join('')
-      : '<div class="empty-state" style="padding:14px;font-size:12px;">Aucune série — ajoute la première ci-dessous.</div>';
+    var auTemps = estAuTemps(ex);
+    var seriesHTML = seriesListeHTML(ex, auTemps);
     var hintHTML = blocPrecedentHTML(ex);
-    return '<div class="ex-card" style="--card-color:'+color+'" data-id="'+ esc(ex.id) +'">'
+    return '<div class="ex-card" style="--card-color:'+color+'" data-id="'+ esc(ex.id) +'" data-mode="'+(auTemps ? 'temps' : 'reps')+'">'
       + '<div class="ex-head">'
       +   '<input class="ex-name" type="text" list="exerciseList" placeholder="Nom de l\'exercice" value="'+esc(ex.nom||'')+'" data-field="nom" data-id="'+ esc(ex.id) +'">'
       +   '<button type="button" class="ex-del" data-id="'+ esc(ex.id) +'" aria-label="Supprimer l\'exercice">×</button>'
@@ -999,12 +1102,42 @@
       +   '<div class="series-list">'+seriesHTML+'</div>'
       +   '<div class="ex-actions">'
       +     '<button type="button" class="btn-add-serie" data-action="add-serie" data-id="'+ esc(ex.id) +'">+ SÉRIE'+(series.length?' (reprend la précédente)':'')+'</button>'
+      // La bascule ne sert qu'avant de noter, ou pour un exercice deja au
+      // temps : sur un developpe couche rempli en kilos, elle encombrerait
+      // chaque carte pour rien.
+      +     (auTemps || nomAuTemps(ex.nom) || !series.some(serieRemplie)
+              ? '<button type="button" class="btn-lien" data-action="mesure" data-id="'+ esc(ex.id) +'">'+libelleMesure(auTemps)+'</button>'
+              : '')
       +     (ex.bloc
               ? '<button type="button" class="btn-lien" data-action="detacher" data-id="'+ esc(ex.id) +'">⇄ SORTIR DU SUPERSET</button>'
               : '<button type="button" class="btn-lien" data-action="superset" data-id="'+ esc(ex.id) +'">⇄ AJOUTER UN EXERCICE EN SUPERSET</button>')
       +   '</div>'
       + '</div>'
       + '</div>';
+  }
+
+  function seriesListeHTML(ex, auTemps){
+    var series = ex.series || [];
+    return series.length
+      ? series.map(function(s,idx){ return serieRowHTML(s, idx, ex.nom, auTemps); }).join('')
+      : '<div class="empty-state" style="padding:14px;font-size:12px;">Aucune série — ajoute la première ci-dessous.</div>';
+  }
+  function libelleMesure(auTemps){
+    return auTemps ? '⇄ PASSER EN RÉPÉTITIONS' : '◷ PASSER AU TEMPS (GAINAGE, PLANCHE…)';
+  }
+  // Taper « Planche » dans le nom bascule la saisie en secondes pendant la
+  // frappe. On repeint les series, pas la carte : le champ du nom garde le
+  // focus, et le clavier reste ouvert.
+  function repeindreSeries(card, ex){
+    if (!card) return;
+    var auTemps = estAuTemps(ex);
+    var mode = auTemps ? 'temps' : 'reps';
+    if (card.dataset.mode === mode) return;
+    card.dataset.mode = mode;
+    var liste = card.querySelector('.series-list');
+    if (liste) liste.innerHTML = seriesListeHTML(ex, auTemps);
+    var bascule = card.querySelector('[data-action="mesure"]');
+    if (bascule) bascule.textContent = libelleMesure(auTemps);
   }
 
   // Les exercices d'un meme bloc sont contigus dans la liste : il suffit de
@@ -1090,7 +1223,7 @@
       }
       jour.exercises.push({
         id: genId(), nom: ex.nom || '', groupe: ex.groupe || 'Autre',
-        repos: ex.repos || '', bloc: bloc,
+        repos: ex.repos || '', bloc: bloc, mesure: ex.mesure,
         series: series.map(function(s){
           return { id:genSerieId(), poids:s.poids, reps:s.reps, rpe:s.rpe,
                    repos:s.repos || '', fait:false };
@@ -1278,6 +1411,25 @@
     return '<div class="fiche-delta' + classe + '">' + txt + '</div>';
   }
 
+  // Au temps : la plus longue serie du jour contre la plus longue de la
+  // derniere fois. Des secondes contre des secondes.
+  function ligneProgressionDuree(nom, ds, meilleure){
+    var avant = seancesDeLExo(nom).filter(function(j){ return j.date < ds; });
+    if (!avant.length) return '';
+    var prec = avant[avant.length - 1];
+    var sa = TS.meilleureDuree([prec]);
+    if (sa === null) return '';
+    var pd = fromDateStr(prec.date);
+    var quand = pd.getDate() + ' ' + MONTH_ABBR[pd.getMonth()];
+    var delta = meilleure - sa;
+    var classe = delta > 0 ? ' hausse' : (delta < 0 ? ' baisse' : '');
+    var txt = delta === 0
+      ? 'Même temps que le ' + quand
+      : '<b>' + (delta > 0 ? '+' : '−') + esc(TS.formatDuree(Math.abs(delta))) + '</b> par rapport au ' + quand +
+        ' (' + esc(TS.formatDuree(sa)) + ')';
+    return '<div class="fiche-delta' + classe + '">' + txt + '</div>';
+  }
+
   function renderSeanceDetail(){
     var hote = document.getElementById('seanceDetail');
     var ds = state.seanceOuverte;
@@ -1325,17 +1477,18 @@
       var series = seriesRemplies(e);
       var pesees = series.filter(function(s){ return typeof s.poids === 'number' && s.poids > 0; });
       var meilleure = pesees.length ? Math.max.apply(null, pesees.map(function(s){ return s.poids; })) : null;
+      var tenues = series.map(function(s){ return TS.dureeSecondes(s.reps); }).filter(function(d){ return d !== null; });
       html += '<button type="button" class="fiche-exo" data-exo="' + esc(e.nom || '') + '" style="--exo-color:' + (GROUP_COLORS[e.groupe] || GROUP_COLORS['Autre']) + '">'
         + '<div class="fiche-exo-nom">' + esc(normalizeName(e.nom) || 'Sans nom') + '<span class="fiche-exo-fleche">›</span></div>'
         + '<div class="fiche-exo-groupe">' + esc(e.groupe || 'Autre') + '</div>'
         + '<div class="fiche-series">'
         + series.map(function(s){
-            var v = (typeof s.poids === 'number' ? formatWeight(s.poids) + ' kg' : '') +
-                    (typeof s.poids === 'number' && s.reps ? ' × ' : '') + (s.reps || '');
-            return '<span class="fiche-serie' + (s.fait ? ' fait' : '') + '">' + esc(v || '—') + '</span>';
+            return '<span class="fiche-serie' + (s.fait ? ' fait' : '') + '">' + esc(perfTexte(s)) + '</span>';
           }).join('')
         + '</div>'
-        + ligneProgression(e.nom, ds, meilleure)
+        + (tenues.length
+            ? ligneProgressionDuree(e.nom, ds, Math.max.apply(null, tenues))
+            : ligneProgression(e.nom, ds, meilleure))
         + '</button>';
     });
 
@@ -1487,7 +1640,9 @@
         + '<div class="recap-section-title">'+g+'</div>'
         + '<div class="recap-rows">'
         + byGroup[g].map(function(it){
-            var valueTxt = (it.bodyweight ? 'PDC' : formatWeight(it.maxPoids)+' kg') + ' × ' + it.repsAtMax;
+            var valueTxt = it.maxDuree !== null
+              ? TS.formatDuree(it.maxDuree)
+              : (it.bodyweight ? 'PDC' : formatWeight(it.maxPoids)+' kg') + ' × ' + it.repsAtMax;
             var freq = it.fois + (it.fois > 1 ? ' séances' : ' séance') + ' · ' +
                        it.series + (it.series > 1 ? ' séries' : ' série');
             return '<button type="button" class="recap-row" data-recap-name="'+esc(it.nom)+'">'
@@ -1559,9 +1714,13 @@
       return;
     }
 
+    // Au temps des que l'historique en contient : une planche se suit en
+    // secondes, et son 1RM n'existe pas.
+    var auTemps = toutes.some(function(j){ return j.series.some(TS.serieAuTemps); });
+
     // --- signal, sur tout l'historique : une fenetre courte inventerait des
     // tendances a partir de deux points.
-    var sig = TS.detecterSignal(toutes);
+    var sig = TS.detecterSignal(toutes, auTemps ? 'temps' : undefined);
     var vue = SIGNAUX[sig.signal] || SIGNAUX.insufficient_data;
     html += '<div class="exo-signal ' + vue.classe + '">'
       + '<div class="exo-signal-tete">' + vue.pastille + ' ' + vue.mot + '</div>'
@@ -1583,6 +1742,17 @@
       });
     });
 
+    if (auTemps){
+      var nbSeries = toutes.reduce(function(t, j){ return t + j.series.length; }, 0);
+      var tenu = TS.meilleureDuree(toutes);
+      html += '<div class="exo-stats">'
+        + statTile(top ? esc(perfTexte(top)) : '—', 'Dernière séance')
+        + statTile(tenu === null ? '—' : esc(TS.formatDuree(tenu)), 'Meilleur temps')
+        + statTile(toutes.length, toutes.length > 1 ? 'Séances' : 'Séance')
+        + statTile(nbSeries, nbSeries > 1 ? 'Séries' : 'Série')
+        + statTile(esc(TS.formatDuree(TS.dureeTotale(toutes)) || '—'), 'Temps total tenu')
+        + '</div>';
+    } else {
     html += '<div class="exo-stats">'
       + statTile(top ? esc(perfTexte(top)) : '—', 'Top set')
       + statTile(rm === null ? '—' : formatWeight(rm) + ' kg', '1RM estimé')
@@ -1590,10 +1760,11 @@
       + statTile(reps || '—', 'Meilleures reps')
       + statTile(volumeTexte(volume) || '—', 'Volume total')
       + '</div>';
+    }
 
     // --- courbe
     html += '<div class="exo-bloc">'
-      + '<div class="exo-bloc-titre">TOP SET AU FIL DU TEMPS</div>'
+      + '<div class="exo-bloc-titre">' + (auTemps ? 'MEILLEUR TEMPS, SÉANCE APRÈS SÉANCE' : 'TOP SET AU FIL DU TEMPS') + '</div>'
       + '<div class="exo-periodes">'
       + PERIODES.map(function(p){
           return '<button type="button" class="exo-periode' + (p.cle === state.exoPeriode ? ' actif' : '') + '"'
@@ -1604,7 +1775,7 @@
       + '</div>';
 
     // --- records par fourchette de reps
-    var records = TS.recordsParReps(toutes);
+    var records = auTemps ? [] : TS.recordsParReps(toutes);
     if (records.length){
       html += '<div class="exo-bloc">'
         + '<div class="exo-bloc-titre">RECORDS PERSONNELS</div>'
@@ -1644,20 +1815,20 @@
 
     var points = seancesFiltrees(toutes);
     var zone = document.getElementById('exoChart');
-    loadChartLib().then(function(){ dessinerCourbeExo(zone, points); }).catch(function(){
+    loadChartLib().then(function(){ dessinerCourbeExo(zone, points, auTemps); }).catch(function(){
       zone.innerHTML = '<div class="recap-chart-empty">Graphique indisponible hors-ligne.</div>';
     });
   }
 
   var courbeExo = null;
-  function dessinerCourbeExo(zone, seances){
+  function dessinerCourbeExo(zone, seances, auTemps){
     if (courbeExo){ courbeExo.destroy(); courbeExo = null; }
-    var pts = TS.pointsTopSet(seances);
+    var pts = auTemps ? TS.pointsDuree(seances) : TS.pointsTopSet(seances);
     if (pts.length < 2){
       zone.innerHTML = '<div class="recap-chart-empty">Pas encore assez de séances sur cette période pour tracer une courbe.</div>';
       return;
     }
-    zone.innerHTML = '<div class="chart-box"><canvas role="img" aria-label="1RM estimé du top set, ' + esc(state.exoOuvert) + '"></canvas></div>';
+    zone.innerHTML = '<div class="chart-box"><canvas role="img" aria-label="' + (auTemps ? 'Meilleur temps tenu, ' : '1RM estimé du top set, ') + esc(state.exoOuvert) + '"></canvas></div>';
     var labels = pts.map(function(p){ var d = fromDateStr(p.date); return d.getDate() + ' ' + MONTH_ABBR[d.getMonth()]; });
     courbeExo = new Chart(zone.querySelector('canvas'), {
       type:'line',
@@ -1677,13 +1848,14 @@
           label:function(ctx){
             var p = pts[ctx.dataIndex];
             var t = p.topSet ? perfTexte(p.topSet) : '';
+            if (auTemps) return TS.formatDuree(p.valeur);
             return formatWeight(p.valeur) + ' kg estimés' + (t ? ' — ' + t : '');
           }
         } } },
         scales:{
           x:{ grid:{display:false}, ticks:{ color:'#9a9184', font:{size:10,weight:'700'} } },
           y:{ grid:{color:'#35312b'}, ticks:{ color:'#9a9184', font:{size:10,weight:'700'},
-              callback:function(v){ return v + 'kg'; } } }
+              callback:function(v){ return v + (auTemps ? ' s' : 'kg'); } } }
         }
       }
     });
@@ -1715,6 +1887,7 @@
     else if (state.view === 'exercice') renderExerciceDetail();
     else if (state.view === 'coach') renderCoach();
     else if (state.view === 'admin') renderAdmin();
+    else if (state.view === 'messages') renderMessages();
     else renderRecap();
   }
 
@@ -1724,7 +1897,7 @@
   // donnerait l'impression d'avoir perdu sa place.
   var seancesOnglet = 'mes';
 
-  var VUES = ['planning','seances','seance','exercice','recap','coach','admin'];
+  var VUES = ['planning','seances','seance','exercice','recap','coach','admin','messages'];
   function montrerVue(vue){
     state.view = vue;
     // La fiche n'a pas d'onglet : c'est une page ou l'on entre depuis la
@@ -1738,8 +1911,36 @@
       b.classList.toggle('active', b.dataset.view === actif);
     });
     VUES.forEach(function(v){ document.getElementById('view-' + v).hidden = (v !== vue); });
+    if (vue !== 'messages'){
+      document.body.classList.remove('en-conv');
+      clearInterval(minuteurMessages);
+      minuteurMessages = null;
+    }
     renderAll();
+    majBoutonHaut();
   }
+  // Revenir en haut : des qu'on a descendu d'un ecran, un bouton apparait en
+  // bas a droite. C'est la ou les sites le mettent sur telephone, sous le
+  // pouce. Le defilement est ecoute en mode passif, et le calcul attend la
+  // frame suivante : aucun a-coup pendant qu'on fait defiler.
+  var hautBtn = document.getElementById('hautBtn');
+  var hautPrevu = false;
+  function majBoutonHaut(){
+    hautPrevu = false;
+    if (!hautBtn) return;
+    var loin = window.scrollY > Math.max(420, window.innerHeight * 0.7);
+    hautBtn.hidden = !loin;
+  }
+  window.addEventListener('scroll', function(){
+    if (hautPrevu) return;
+    hautPrevu = true;
+    requestAnimationFrame(majBoutonHaut);
+  }, { passive:true });
+  hautBtn.addEventListener('click', function(){
+    var calme = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    window.scrollTo({ top:0, behavior: calme ? 'auto' : 'smooth' });
+  });
+
   document.getElementById('mainTabs').addEventListener('click', function(e){
     var btn = e.target.closest('.topbar-tab'); if (!btn) return;
     montrerVue(btn.dataset.view);
@@ -1822,12 +2023,23 @@
       var found = findSerie(day, t.dataset.serieId);
       if (!found) return;
       if (field==='poids') found.serie.poids = poidsLu(t.value);
+      else if (field==='duree'){
+        // Des chiffres seuls : ce sont des secondes. « 1:30 » se lit aussi,
+        // pour qui tape au clavier d'un ordinateur. Une saisie a moitie
+        // tapee (« 1: ») ne remplace pas la derniere valeur lisible.
+        var v = String(t.value || '').trim();
+        var sec = /^\d+$/.test(v) ? Number(v) : TS.dureeSecondes(v);
+        if (v === '' || sec === 0) found.serie.reps = '';
+        else if (sec) found.serie.reps = TS.ecrireDuree(sec);
+      }
       else if (field==='rpe'){
         found.serie.rpe = t.value==='' ? null : Number(t.value);
         t.classList.toggle('vide', found.serie.rpe==null);
-        t.title = found.serie.rpe==null
-          ? "Reps en réserve : 10 = à l'échec, 9 = 1 rep en réserve"
-          : rpeLabel(found.serie.rpe);
+        t.title = t.dataset.mode === 'temps'
+          ? (found.serie.rpe==null ? 'Difficulté ressentie, de 1 à 10' : diffLabel(found.serie.rpe))
+          : (found.serie.rpe==null
+              ? "Reps en réserve : 10 = à l'échec, 9 = 1 rep en réserve"
+              : rpeLabel(found.serie.rpe));
       }
       else found.serie[field] = t.value;
 
@@ -1835,7 +2047,7 @@
       // ferait perdre le focus. Ce bloc visait « .serie-row », un sélecteur
       // qui n'existe plus depuis que les séries sont des « .serie-card » :
       // l'étoile ne bougeait donc jamais pendant la frappe.
-      if (field === 'poids' || field === 'reps'){
+      if (field === 'poids' || field === 'reps' || field === 'duree'){
         majEtoilesRecord(t.closest('.ex-card'));
       }
 
@@ -1866,6 +2078,7 @@
       // jamais pendant la saisie du nom, qui est justement le moment où il
       // devient utile. Mis à jour ici, sans reconstruire la carte.
       majBlocPrecedent(card, ex);
+      repeindreSeries(card, ex);
     }
     scheduleSave(state.selectedDay);
     renderDayPills();
@@ -1874,6 +2087,13 @@
 
   exListEl.addEventListener('change', function(e){
     var t = e.target;
+    // En quittant le champ, on reaffiche ce qui a ete retenu : « 1:30 »
+    // tape au clavier devient 90, ce que montrent les boutons de pas.
+    if (t.classList.contains('serie-duree')){
+      var fd = findSerie(getOrCreateDay(state.selectedDay), t.dataset.serieId);
+      if (fd) t.value = secondesAffichees(fd.serie);
+      return;
+    }
     if (t.classList.contains('serie-type')){
       var jour = getOrCreateDay(state.selectedDay);
       var trouve = findSerie(jour, t.dataset.serieId);
@@ -1948,7 +2168,37 @@
     e.stopPropagation();
   });
 
+  // Au temps : cinq secondes par appui, le pas qu'on ajoute d'une semaine a
+  // l'autre sur une planche.
   exListEl.addEventListener('click', function(e){
+    var b = e.target.closest('[data-action="step-temps"]');
+    if (!b) return;
+    var found = findSerie(getOrCreateDay(state.selectedDay), b.dataset.serieId);
+    if (!found) return;
+    var val = Math.max(0, secondesDe(found.serie) + Number(b.dataset.delta));
+    found.serie.reps = val ? TS.ecrireDuree(val) : '';
+    var input = exListEl.querySelector('.serie-duree[data-serie-id="'+found.serie.id+'"]');
+    if (input) input.value = val ? String(val) : '';
+    scheduleSave(state.selectedDay, true);
+    majEtoilesRecord(b.closest('.ex-card'));
+    renderDayPills();
+    renderWeekStats();
+    e.stopPropagation();
+  });
+
+  exListEl.addEventListener('click', function(e){
+    var mesBtn = e.target.closest('[data-action="mesure"]');
+    if (mesBtn){
+      var dayM = getOrCreateDay(state.selectedDay);
+      var exM = findExercise(dayM, mesBtn.dataset.id);
+      if (!exM) return;
+      exM.mesure = estAuTemps(exM) ? 'reps' : 'temps';
+      scheduleSave(state.selectedDay, true);
+      renderDayPanel(true);
+      showToast(exM.mesure === 'temps' ? 'Au temps : la durée se note en secondes' : 'En répétitions');
+      return;
+    }
+
     var delBtn = e.target.closest('.ex-del');
     if (delBtn){
       var id = delBtn.dataset.id;
@@ -2420,6 +2670,9 @@
       if (!day || typeof day !== 'object') return;
       var exs = Array.isArray(day.exercises) ? day.exercises.map(normalizeExercise) : [];
       clean[ds] = { date:ds, exercises:exs };
+      // Le titre voyageait dans la sauvegarde sans jamais etre relu :
+      // restaurer faisait perdre tous les noms donnes aux seances.
+      if (typeof day.titre === 'string' && day.titre.trim()) clean[ds].titre = day.titre.trim().slice(0, 60);
       var n = compterJour(clean[ds]);
       if (n){ jours++; series += n; }
     });
@@ -2429,7 +2682,105 @@
     return { sessions:clean, jours:jours, series:series, customExercises:custom };
   }
 
-  var pendingBackup = null, pendingBackupLabel = '';
+  // Un fichier JSON de Top Set, ou le tableur qu'il exporte. Les deux passent
+  // ensuite par le meme nettoyage : ce qui vient d'un fichier n'est jamais
+  // cru sur parole, et le tableur n'a pas de passe-droit.
+  function parseImport(text, nom){
+    var t = String(text == null ? '' : text);
+    if (t.length > IMPORT_MAX) return parseBackup(t);   // meme refus, meme message
+    var brut = t.replace(/^\ufeff/, '').replace(/^\s+/, '');
+    var csv = /\.csv$/i.test(nom || '') ||
+      (brut.charAt(0) !== '{' && brut.charAt(0) !== '[' && /^[^\r\n]*exercice/i.test(brut));
+    if (!csv) return parseBackup(t);
+    var lu = TS.lireCsvCarnet(t);
+    if (lu.erreur) return { error: lu.erreur };
+    return parseBackup(JSON.stringify({ sessions: lu.sessions }));
+  }
+
+  function fabriqueId(prefixe){ return prefixe === 's' ? genSerieId() : genId(); }
+
+  // Les exercices memorises du fichier qu'on n'a pas encore. Un nom deja
+  // connu, quelle que soit sa casse, garde sa version d'ici.
+  function customAbsents(custom){
+    if (!custom) return [];
+    var connus = Object.create(null);
+    Object.keys(customExercises).forEach(function(k){ connus[k.toLowerCase()] = 1; });
+    Object.keys(EXERCISE_DB).forEach(function(k){ connus[k.toLowerCase()] = 1; });
+    return Object.keys(custom).filter(function(k){ return !connus[k.toLowerCase()]; });
+  }
+
+  function resumeImport(b, perso){
+    var parts = [];
+    var jours = b.dates.length;
+    if (b.series){
+      var surJours = ' sur ' + jours + (jours > 1 ? ' jours' : ' jour');
+      // « sur 1 jour que tu n'avais pas » quand tous les jours sont neufs,
+      // « (dont 2 que tu n'avais pas) » quand certains existaient deja.
+      var neufs = !b.jours ? '' : (b.jours === jours ? ' que tu n\'avais pas'
+                                 : ' (dont ' + b.jours + ' que tu n\'avais pas)');
+      parts.push(b.series + (b.series > 1 ? ' séries' : ' série') + surJours + neufs);
+    } else if (b.exercices){
+      parts.push(b.exercices + (b.exercices > 1 ? ' exercices prévus' : ' exercice prévu'));
+    }
+    if (b.titres) parts.push(b.titres + (b.titres > 1 ? ' titres de séance' : ' titre de séance'));
+    if (perso) parts.push(perso + (perso > 1 ? ' exercices mémorisés' : ' exercice mémorisé'));
+    return parts.join(', ');
+  }
+
+  // Premier temps : on lit, on compare, on dit ce qui va arriver. Rien n'est
+  // encore touche. Un import ne remplace plus rien, mais on montre quand meme
+  // avant de faire : « 40 séries » quand on en attendait 400, ca se voit ici.
+  function preparerImport(text, nom){
+    var parsed = parseImport(text, nom);
+    if (parsed.error){ disarmImport(); sheetMsg('err', parsed.error); return; }
+    var essai = TS.fusionnerCarnets(state.sessions, parsed.sessions, fabriqueId);
+    var perso = customAbsents(parsed.customExercises).length;
+    var contenu = parsed.jours + (parsed.jours > 1 ? ' jours' : ' jour') + ', ' +
+                  parsed.series + (parsed.series > 1 ? ' séries' : ' série');
+    if (!essai.bilan.exercices && !essai.bilan.titres && !perso){
+      disarmImport();
+      sheetMsg('ok', 'Le fichier contient ' + contenu + ' — tout est déjà dans ton carnet. Rien à ajouter.');
+      return;
+    }
+    pendingBackup = parsed;
+    var btn = document.getElementById('dataImport');
+    btn.classList.add('armed');
+    btn.textContent = 'CONFIRMER L\'AJOUT';
+    sheetMsg('warn', 'Le fichier contient ' + contenu + '. À ajouter : ' +
+      resumeImport(essai.bilan, perso) + '. Rien de ce que tu as déjà ne sera modifié.');
+  }
+
+  // Second temps. La fusion est refaite sur le carnet de CET instant : entre
+  // l'apercu et la confirmation, une synchro a pu passer.
+  function appliquerImport(){
+    var parsed = pendingBackup;
+    if (!parsed) return;
+    var r = TS.fusionnerCarnets(state.sessions, parsed.sessions, fabriqueId);
+    state.sessions = r.sessions;
+    var absents = customAbsents(parsed.customExercises);
+    absents.forEach(function(k){ customExercises[k] = parsed.customExercises[k]; });
+    if (absents.length){
+      saveCustom();
+      rebuildLower();
+      if (Sync.marquerExos) Sync.marquerExos();
+    }
+    saveLocal();
+    // Seules les journees qui ont bouge partent vers le compte : le reste
+    // du carnet n'a pas change, il n'y a rien a renvoyer.
+    r.bilan.dates.forEach(function(ds){
+      Sync.marquerSale(ds);
+      if (state.sessions[ds] && state.sessions[ds].titre) Sync.marquerTitre(ds);
+    });
+    populateDatalist();
+    renderAll();
+    disarmImport();
+    document.getElementById('dataPaste').value = '';
+    refreshSheet();
+    sheetMsg('ok', 'Ajouté : ' + resumeImport(r.bilan, absents.length) + '. Rien n\'a été remplacé.');
+    showToast('Ajouté à ton carnet');
+  }
+
+  var pendingBackup = null;
 
   function sheetMsg(kind, text){
     var el = document.getElementById('dataMsg');
@@ -2441,7 +2792,7 @@
     pendingBackup = null;
     var b = document.getElementById('dataImport');
     b.classList.remove('armed');
-    b.textContent = 'REMPLACER MES DONN\u00c9ES';
+    b.textContent = 'AJOUTER \u00c0 MES DONN\u00c9ES';
   }
 
   function refreshSheet(){
@@ -2462,14 +2813,17 @@
     b.hidden = false;
     b.textContent = 'R\u00c9CUP\u00c9RER ' + c.jours + (c.jours > 1 ? ' JOURS' : ' JOUR') +
                     ' (' + c.series + (c.series > 1 ? ' S\u00c9RIES' : ' S\u00c9RIE') + ')';
+    // Recuperer, c'est importer la copie : ce qui manque revient, et ce qui
+    // est la ne bouge pas.
     b.onclick = function(){
       document.getElementById('dataPaste').value = c.texte;
       disarmImport();
-      sheetMsg('warn', 'Copie de secours charg\u00e9e. Appuie sur \u00ab REMPLACER MES DONN\u00c9ES \u00bb pour la remettre.');
+      preparerImport(c.texte, '');
     };
   }
 
   function openDataSheet(){
+    fermerFeuilles();
     refreshSheet();
     disarmImport();
     document.getElementById('dataMsg').hidden = true;
@@ -2477,6 +2831,23 @@
     document.getElementById('dataSheet').hidden = false;
   }
   function closeDataSheet(){ document.getElementById('dataSheet').hidden = true; }
+
+  // Le profil : le compte, le pseudo, le coach. Separe des donnees, qui
+  // parlent de fichiers — deux questions differentes, deux portes.
+  function openProfil(){
+    fermerFeuilles();
+    Sync.majUI();
+    document.getElementById('profilSheet').hidden = false;
+  }
+  function closeProfil(){ document.getElementById('profilSheet').hidden = true; }
+
+  // Ouvrir une page depuis une feuille, c'est quitter la feuille.
+  function fermerFeuilles(){
+    ['dataSheet', 'profilSheet', 'retourSheet'].forEach(function(id){
+      var el = document.getElementById(id);
+      if (el) el.hidden = true;
+    });
+  }
 
   // ==================================================================
   // RETOURS
@@ -2543,12 +2914,13 @@
     }, function(){ bloc.hidden = true; });
   }
 
-  // Deux voix, deux cotes. « moi » depend de qui regarde : dans l'espace
-  // admin le meme fil se lit dans l'autre sens, et c'est le seul parametre
-  // qui change.
-  // Un seul rendu pour les quatre points de vue — membre, admin, coach,
-  // coache. Ce qui change, c'est « quel auteur suis-je » : c'est lui qui
-  // decide de quel cote tombe chaque bulle.
+  // Deux voix, deux cotes. « moi » depend de qui regarde : le meme fil se
+  // lit dans l'autre sens de l'autre cote, et c'est le seul parametre qui
+  // change. Un seul rendu pour les quatre points de vue — membre, equipe,
+  // coach, coache.
+  //
+  // Comme dans toutes les messageries, le jour s'ecrit une fois, en
+  // intertitre, et chaque bulle ne porte que l'heure.
   function bullesHTML(rows, monAuteur, nomAutre, vide){
     if (!rows.length){
       return '<div class="fil-vide">' + esc(vide || 'Un souci, une question, une idée ? '
@@ -2557,18 +2929,21 @@
     // Le nom ne se met qu'au-dessus de ce que dit l'autre : au-dessus des
     // siens il n'apprend rien, et il double la hauteur du fil pour rien.
     var autre = nomAutre || 'Top Set';
+    var jourVu = '';
     return rows.map(function(m){
-      // L'accuse automatique parle au nom de l'administration : il est de son
-      // cote du fil, et en face pour le membre. Il le dit, dans les deux cas.
+      // L'accuse automatique parle au nom de l'equipe : il est de son cote
+      // du fil, et en face pour le membre. Il le dit, dans les deux cas.
       var sys = m.auteur === 'systeme';
       var moi = sys ? (monAuteur === 'admin') : (m.auteur === monAuteur);
       var qui = sys ? 'Top Set · automatique' : autre;
-      return '<div class="bulle' + (moi ? ' moi' : '') + (sys ? ' systeme' : '') + '">'
+      var jour = jourConv(m.cree_le), sep = '';
+      if (jour && jour !== jourVu){ jourVu = jour; sep = '<div class="conv-jour">' + esc(jour) + '</div>'; }
+      return sep + '<div class="bulle' + (moi ? ' moi' : '') + (sys ? ' systeme' : '') + '">'
         + '<div class="bulle-corps">'
         +   (m.retour_id && m.auteur === 'membre' ? '<span class="bulle-tag">RETOUR</span>' : '')
         +   esc(m.corps) + '</div>'
         + '<div class="bulle-quand">' + (moi ? (sys ? 'automatique · ' : '') : esc(qui) + ' · ')
-        + esc(quandCourt(m.cree_le)) + '</div>'
+        + esc(heureCourte(m.cree_le)) + '</div>'
         + '</div>';
     }).join('');
   }
@@ -2583,70 +2958,30 @@
          + esc(texte || 'On te répond dès que possible.') + '</div></div>';
   }
 
-  // Le fil descend, pas la page : scrollTo sur le conteneur ne touche pas au
-  // defilement du document. Et on n'anime rien pour qui a demande le calme.
-  function filEnBas(fil){
-    if (!fil) return;
-    var calme = window.matchMedia
-             && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (fil.scrollTo) fil.scrollTo({ top: fil.scrollHeight, behavior: calme ? 'auto' : 'smooth' });
-    else fil.scrollTop = fil.scrollHeight;
+  function heureCourte(iso){
+    var d = new Date(iso);
+    return isNaN(d) ? '' : pad2(d.getHours()) + 'h' + pad2(d.getMinutes());
   }
-
-  // Une reponse attend dans une feuille que personne n'ouvre par habitude.
-  function majPastilleRetour(){
-    var p = document.getElementById('retourPastille');
-    if (!p) return;
-    if (!Sync.estConnecte()){ p.hidden = true; return; }
-    Sync.nonLus().then(function(n){
-      p.hidden = !n;
-      p.title = n ? (n + ' réponse' + (n > 1 ? 's' : '') + ' non lue' + (n > 1 ? 's' : '')) : '';
-    });
+  function memeJour(a, b){ return a.toDateString() === b.toDateString(); }
+  // « Aujourd'hui », « Hier », puis la date en toutes lettres.
+  function jourConv(iso){
+    var d = new Date(iso);
+    if (isNaN(d)) return '';
+    var auj = new Date();
+    if (memeJour(d, auj)) return 'Aujourd\'hui';
+    if (memeJour(d, addDays(auj, -1))) return 'Hier';
+    return DAY_NAMES[(d.getDay()+6)%7] + ' ' + d.getDate() + ' ' + MONTH_NAMES[d.getMonth()]
+         + (d.getFullYear() !== auj.getFullYear() ? ' ' + d.getFullYear() : '');
   }
-
-  function chargerConversation(){
-    var bloc = document.getElementById('conversation');
-    var fil  = document.getElementById('filMessages');
-    if (!Sync.estConnecte()){ bloc.hidden = true; return Promise.resolve(); }
-    return Sync.lireFil().then(function(rows){
-      // Le fil s'affiche meme vide. Le cacher tant qu'il n'y a rien rendait le
-      // premier message impossible a ecrire : la conversation ne pouvait
-      // commencer que si elle avait deja commence.
-      bloc.hidden = false;
-      fil.innerHTML = bullesHTML(rows, 'membre') + attenteHTML(rows, 'membre');
-      filEnBas(fil);
-      // Ouvrir le fil, c'est l'avoir lu : on ne marque que les messages de
-      // l'administrateur, pas les siens.
-      var aLire = rows.filter(function(m){ return m.auteur === 'admin' && !m.lu; })
-                      .map(function(m){ return m.id; });
-      if (aLire.length) Sync.marquerLus(aLire).then(majPastilleRetour, majPastilleRetour);
-      else majPastilleRetour();
-      // Si la base n'a pas encore la table, on n'affiche pas une erreur au
-      // milieu d'un formulaire de retour qui, lui, fonctionne.
-    }, function(){ bloc.hidden = true; });
+  // Dans la liste : l'heure si c'est aujourd'hui, « hier », sinon la date.
+  function quandListe(iso){
+    var d = new Date(iso);
+    if (isNaN(d)) return '';
+    var auj = new Date();
+    if (memeJour(d, auj)) return heureCourte(iso);
+    if (memeJour(d, addDays(auj, -1))) return 'hier';
+    return d.getDate() + ' ' + MONTH_ABBR[d.getMonth()] + (d.getFullYear() !== auj.getFullYear() ? ' ' + d.getFullYear() : '');
   }
-
-  // Entree envoie, Maj+Entree va a la ligne : c'est la convention de toutes
-  // les messageries, et sur telephone le bouton reste la pour qui prefere.
-  document.getElementById('messageCorps').addEventListener('keydown', function(e){
-    if (e.key === 'Enter' && !e.shiftKey){
-      e.preventDefault();
-      document.getElementById('messageEnvoyer').click();
-    }
-  });
-
-  document.getElementById('messageEnvoyer').addEventListener('click', function(){
-    var champ = document.getElementById('messageCorps');
-    var corps = champ.value.trim();
-    if (!corps){ champ.focus(); return; }
-    var b = this, avant = b.textContent;
-    b.disabled = true; b.textContent = 'ENVOI…';
-    Sync.envoyerMessage(corps).then(function(){
-      champ.value = '';
-      chargerConversation();
-    }, function(e){ msgRetour('err', Sync.messageErreur(e)); })
-     .then(function(){ b.disabled = false; b.textContent = avant; });
-  });
 
   function ouvrirRetour(){
     document.getElementById('retourMsg').hidden = true;
@@ -2659,12 +2994,15 @@
       env.disabled = false;
     }
     chargerMesRetours();
-    chargerConversation();
+    document.getElementById('retourVersConv').hidden = !Sync.estConnecte();
     document.getElementById('retourSheet').hidden = false;
   }
   function fermerRetour(){ document.getElementById('retourSheet').hidden = true; }
 
   document.getElementById('lienRetour').addEventListener('click', ouvrirRetour);
+  document.getElementById('retourVersMessages').addEventListener('click', function(){
+    ouvrirBoite();
+  });
   document.getElementById('retourClose').addEventListener('click', fermerRetour);
   document.getElementById('retourSheet').addEventListener('click', function(e){
     if (e.target === this) fermerRetour();
@@ -2685,24 +3023,382 @@
     Sync.envoyerRetour(retourType, corps, contexteRetour()).then(function(){
       champ.value = '';
       majResteRetour();
-      msgRetour('ok', 'Reçu. Merci — c\'est vraiment utile.');
       chargerMesRetours();
-      // Le retour vient d'ouvrir le fil, et la reponse y arrivera : c'est la
-      // qu'on emmene la personne, sinon l'accuse attend sous le formulaire
-      // sans que personne pense a descendre.
-      chargerConversation().then(function(){
-        var c = document.getElementById('conversation');
-        if (!c || c.hidden || !c.scrollIntoView) return;
-        var calme = window.matchMedia
-                 && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        c.scrollIntoView({ block:'start', behavior: calme ? 'auto' : 'smooth' });
-      });
+      // Le retour vient d'ouvrir une conversation, et la reponse y arrivera :
+      // c'est la qu'on emmene la personne. Son message y est deja, suivi de
+      // l'accuse de reception — c'est ce qui dit que c'est bien parti.
+      showToast('Reçu — la réponse arrivera ici');
+      ouvrirConversation(convEquipe());
     }, function(e){
       msgRetour('err', Sync.messageErreur(e));
     }).then(function(){
       btn.disabled = false; btn.textContent = avant;
     });
   });
+
+  // ==================================================================
+  // MESSAGES
+  // ==================================================================
+  // Une seule boite pour toutes les conversations de l'app. Deux tables en
+  // base — le support (un membre et l'equipe) et le coaching (un coach et
+  // son coache) — parce que le droit d'ecrire ne s'y decide pas pareil. Mais
+  // une seule porte a l'ecran : pour la personne, c'est la meme chose,
+  // quelqu'un lui a ecrit.
+  //
+  // Une conversation se decrit par sa table, le cote ou l'on se tient, et
+  // l'autre personne :
+  //   { type:'support', je:'membre', autre:null }        un membre et l'equipe
+  //   { type:'support', je:'admin',  autre:<membre> }    l'equipe et un membre
+  //   { type:'coach',   je:'client', autre:<coach> }     un coache et son coach
+  //   { type:'coach',   je:'coach',  autre:<coache> }    un coach et un coache
+  //
+  // Deux inconnus ne peuvent pas s'ecrire : il n'existe entre eux aucun lien
+  // qui dise que l'un veut bien lire l'autre. C'est la base qui le refuse,
+  // pas cet ecran.
+  var conv = null;          // la conversation ouverte, ou null pour la boite
+  var convCle = '';         // ce qu'elle affiche : on ne repeint qu'au changement
+  var jetonBoite = 0;
+  var minuteurMessages = null;
+  var COULEUR_CONV = { membre:'var(--orange)', admin:'var(--yellow)', client:'var(--blue)', coach:'var(--green)' };
+
+  function convEquipe(){
+    return { type:'support', je:'membre', autre:null, nom:'Top Set', role:'L\'ÉQUIPE' };
+  }
+
+  function ouvrirBoite(){
+    fermerFeuilles();
+    conv = null;
+    montrerVue('messages');
+    window.scrollTo(0, 0);
+  }
+
+  // « depuis » : la page ou revenir. Sans elle, le retour mene a la boite.
+  function ouvrirConversation(c, depuis){
+    fermerFeuilles();
+    conv = c;
+    conv.depuis = depuis || null;
+    convCle = '';
+    document.getElementById('convFil').innerHTML = '<div class="fil-vide">Chargement…</div>';
+    document.getElementById('convCorps').value = '';
+    ajusterChamp();
+    document.getElementById('convMsg').hidden = true;
+    montrerVue('messages');
+  }
+
+  function renderMessages(){
+    var liste = document.getElementById('messagesListe');
+    var bloc  = document.getElementById('conv');
+    document.body.classList.toggle('en-conv', !!conv && Sync.estConnecte());
+    if (!Sync.estConnecte()){
+      conv = null;
+      document.getElementById('messagesTitre').textContent = 'MESSAGES';
+      bloc.hidden = true;
+      liste.hidden = false;
+      liste.innerHTML = '<div class="seances-vide">Les messages demandent un compte : c\'est lui qui dit '
+        + 'à qui tu écris, et qui peut te répondre. Sans compte, ton carnet marche exactement pareil.</div>'
+        + '<button type="button" class="btn-sheet primary" id="messagesConnexion">SE CONNECTER OU CRÉER UN COMPTE</button>';
+      return;
+    }
+    if (conv){
+      liste.hidden = true;
+      bloc.hidden = false;
+      renderConv();
+    } else {
+      bloc.hidden = true;
+      liste.hidden = false;
+      document.getElementById('messagesTitre').textContent = 'MESSAGES';
+      renderBoite();
+    }
+    relancerMinuteur();
+  }
+
+  // ------------------------------------------------------------ la boite
+  function renderBoite(){
+    var liste = document.getElementById('messagesListe');
+    if (liste.dataset.pret !== '1') liste.innerHTML = '<div class="admin-vide">Chargement…</div>';
+    var admin = Sync.estAdmin(), estCoach = Sync.estCoach();
+    var jeton = ++jetonBoite;
+    function rien(){ return []; }
+    Promise.all([
+      admin ? Promise.resolve(null) : Sync.apercuSupport().catch(function(e){ return { erreur:e }; }),
+      Sync.apercuCoach().catch(rien),
+      Sync.monCoach().catch(rien),
+      estCoach ? Sync.mesCoaches().catch(rien) : Promise.resolve([]),
+      admin ? Sync.adminFils().catch(rien) : Promise.resolve([])
+    ]).then(function(r){
+      if (jeton !== jetonBoite || conv || state.view !== 'messages') return;
+      var lignes = conversationsDe(r[0], r[1] || [], r[2] || [], r[3] || [], r[4] || [], admin);
+      liste.dataset.pret = '1';
+      liste.innerHTML = (lignes.length
+        ? lignes.map(ligneConvHTML).join('')
+        : '<div class="admin-vide">Aucune conversation pour l\'instant.</div>')
+        + '<p class="conv-aide">' + (admin
+            ? 'Chaque membre qui écrit a sa conversation ici. Pour écrire à quelqu\'un qui n\'a encore rien envoyé : ÉCRIRE, dans l\'espace admin.'
+            : 'L\'équipe Top Set, ton coach, tes coachés : chacun a sa conversation ici. Une pastille s\'allume sur la bulle quand quelqu\'un t\'a écrit.')
+        + '</p>';
+    });
+  }
+
+  function entreeCoach(je, autre, nom, role, apercu, ecrire){
+    return { type:'coach', je:je, autre:autre, nom:nom, role:role,
+             dernier: apercu ? apercu.dernier : null, nonLus: apercu ? apercu.nonLus : 0, ecrire:ecrire };
+  }
+
+  function conversationsDe(support, coachs, monCoachRows, coachesRows, fils, admin){
+    var out = [], moi = Sync.userId();
+    if (!admin){
+      var e = convEquipe();
+      e.dernier = support && support.dernier;
+      e.nonLus  = (support && support.nonLus) || 0;
+      e.erreur  = support && support.erreur;
+      out.push(e);
+    } else {
+      fils.forEach(function(f){
+        if (f.user_id === moi) return;
+        out.push({ type:'support', je:'admin', autre:f.user_id, nom:f.pseudo || 'Sans pseudo', role:'MEMBRE',
+                   dernier: f.dernier ? { corps:f.dernier, cree_le:f.dernier_le } : null,
+                   nonLus: Number(f.non_lus) || 0 });
+      });
+    }
+    var parCle = Object.create(null);
+    coachs.forEach(function(c){ parCle[c.jeSuis + ':' + c.autre] = c; });
+    var l = monCoachRows[0];
+    if (l && l.statut === 'actif'){
+      out.push(entreeCoach('client', l.coach_id, l.pseudo || 'Ton coach', 'TON COACH', parCle['client:' + l.coach_id], true));
+      delete parCle['client:' + l.coach_id];
+    }
+    coachesRows.forEach(function(c){
+      if (c.statut !== 'actif') return;
+      out.push(entreeCoach('coach', c.client_id, c.pseudo || 'Sans pseudo', 'COACHÉ', parCle['coach:' + c.client_id], true));
+      delete parCle['coach:' + c.client_id];
+    });
+    // Ce qui reste, c'est un suivi termine : le coache garde la conversation,
+    // il la relit, il n'y ecrit plus.
+    Object.keys(parCle).forEach(function(k){
+      var c = parCle[k];
+      out.push(entreeCoach(c.jeSuis, c.autre, c.jeSuis === 'client' ? 'Ton ancien coach' : 'Ancien coaché',
+                           'SUIVI TERMINÉ', c, false));
+    });
+    // La plus recente en haut ; celles qui n'ont pas encore commence, apres.
+    out.sort(function(a, b){
+      var da = a.dernier ? a.dernier.cree_le : '', db = b.dernier ? b.dernier.cree_le : '';
+      if (da === db) return 0;
+      if (!da) return 1;
+      if (!db) return -1;
+      return da < db ? 1 : -1;
+    });
+    return out;
+  }
+
+  function ligneConvHTML(c){
+    var d = c.dernier, apercu;
+    if (c.erreur) apercu = Sync.messageErreur(c.erreur);
+    else if (!d) apercu = c.ecrire === false ? 'Suivi terminé.'
+                        : (c.je === 'membre' ? 'Une question, un bug, une idée : écris-nous.'
+                                             : 'Pas encore de message — écris le premier.');
+    else apercu = (d.auteur === c.je ? 'Toi : ' : (d.auteur === 'systeme' ? 'Automatique : ' : ''))
+                + String(d.corps || '').replace(/\s+/g, ' ').slice(0, 140);
+    var initiale = String(c.nom || '?').trim().charAt(0) || '?';
+    return '<button type="button" class="conv-ligne' + (c.nonLus ? ' nonlu' : '') + '"'
+      + ' data-type="' + esc(c.type) + '" data-je="' + esc(c.je) + '" data-autre="' + esc(c.autre || '') + '"'
+      + ' data-nom="' + esc(c.nom) + '" data-role="' + esc(c.role) + '"'
+      + ' data-peut-ecrire="' + (c.ecrire === false ? '0' : '1') + '">'
+      + '<span class="conv-avatar" style="--c:' + (COULEUR_CONV[c.je] || 'var(--orange)') + '" aria-hidden="true">' + esc(initiale) + '</span>'
+      + '<span class="conv-milieu">'
+      +   '<span class="conv-nom"><span class="conv-nom-texte">' + esc(c.nom) + '</span>'
+      +     '<span class="conv-role">' + esc(c.role) + '</span></span>'
+      +   '<span class="conv-apercu">' + esc(apercu) + '</span>'
+      + '</span>'
+      + '<span class="conv-droite">'
+      +   (d ? '<span class="conv-quand">' + esc(quandListe(d.cree_le)) + '</span>' : '')
+      +   (c.nonLus ? '<span class="conv-compte" aria-label="' + c.nonLus + ' non lu' + (c.nonLus > 1 ? 's' : '') + '">'
+                    + (c.nonLus > 99 ? '99+' : c.nonLus) + '</span>' : '')
+      + '</span>'
+      + '</button>';
+  }
+
+  // ------------------------------------------------------ la conversation
+  function phraseConv(c){
+    if (c.ecrire === false) return 'Le suivi est terminé. Cette conversation reste la tienne : tu la relis quand tu veux.';
+    if (c.je === 'membre') return 'L\'équipe Top Set lit tout ce qui arrive ici — un bug, une question, une idée — et te répond dans cette conversation.';
+    if (c.je === 'admin') return 'Ta réponse arrive dans ses messages, avec une pastille sur la bulle en haut de son écran.';
+    if (c.je === 'client') return 'Ton coach lit ton carnet : parle-lui d\'une séance précise, d\'une douleur, du programme.';
+    return 'Il retrouve ton message dans la bulle en haut de son écran. Une séance à commenter ? Dis laquelle.';
+  }
+
+  function renderConv(){
+    var c = conv; if (!c) return;
+    document.getElementById('messagesTitre').textContent = String(c.nom || '').toUpperCase();
+    document.getElementById('convQui').textContent = phraseConv(c);
+    var peut = c.ecrire !== false;
+    document.getElementById('convSaisie').hidden = !peut;
+    var ferme = document.getElementById('convFerme');
+    ferme.hidden = peut;
+    ferme.textContent = peut ? '' : 'Tu peux relire cette conversation, plus y écrire.';
+    chargerConv('ouvrir');
+  }
+
+  function lireConv(c){
+    return c.type === 'coach' ? Sync.lireFilCoach(c.autre, c.je)
+                              : Sync.lireFil(c.je === 'admin' ? c.autre : null);
+  }
+
+  // Le fil est la page : c'est la page qui descend, et le champ de saisie
+  // reste colle en bas de l'ecran. Rien ne s'anime pour qui a demande le calme.
+  function presDuBas(){
+    return window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 160;
+  }
+  function allerEnBas(doux){
+    var calme = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    window.scrollTo({ top: document.documentElement.scrollHeight, behavior: (doux && !calme) ? 'smooth' : 'auto' });
+  }
+
+  // mode : 'ouvrir' (tout repeindre, descendre d'un coup), 'envoi' (tout
+  // repeindre, descendre en douceur), 'releve' (ne repeindre que si quelque
+  // chose est arrive, et ne descendre que si on etait deja en bas).
+  function chargerConv(mode){
+    var c = conv; if (!c) return;
+    var fil = document.getElementById('convFil');
+    lireConv(c).then(function(rows){
+      if (conv !== c) return;   // fermee ou changee pendant la requete
+      var dernier = rows[rows.length - 1];
+      var cle = rows.length + ':' + (dernier ? dernier.id : '');
+      if (mode === 'releve' && cle === convCle) return;
+      var enBas = mode !== 'releve' || presDuBas();
+      convCle = cle;
+      var vide = c.je === 'membre' ? null
+        : (c.je === 'client' ? 'Pas encore de message. Ton ressenti sur une séance, une douleur, une question : écris-le ici.'
+                             : 'Pas encore de message. Écris le premier.');
+      var attente = c.je === 'membre' ? attenteHTML(rows, 'membre')
+        : (c.je === 'client' ? attenteHTML(rows, 'client', 'Ton coach te répond dès que possible.') : '');
+      fil.innerHTML = bullesHTML(rows, c.je, c.nom, vide) + attente;
+      if (enBas) allerEnBas(mode === 'envoi');
+      // Ouvrir le fil, c'est avoir lu ce que l'AUTRE a ecrit. Pour l'equipe,
+      // l'accuse automatique est de son propre cote : il ne se « lit » pas.
+      var aLire = rows.filter(function(m){
+        return !m.lu && m.auteur !== c.je && !(c.je === 'admin' && m.auteur === 'systeme');
+      }).map(function(m){ return m.id; });
+      if (aLire.length){
+        (c.type === 'coach' ? Sync.marquerLusCoach(aLire) : Sync.marquerLus(aLire))
+          .then(function(){ majBadgeMessages(true); }, function(){});
+      }
+    }, function(e){
+      if (conv !== c || mode === 'releve') return;
+      fil.innerHTML = '<div class="fil-vide">' + esc(Sync.messageErreur(e)) + '</div>';
+    });
+  }
+
+  function ajusterChamp(){
+    var t = document.getElementById('convCorps');
+    if (!t) return;
+    t.style.height = 'auto';
+    t.style.height = Math.min(t.scrollHeight + 4, 140) + 'px';
+  }
+
+  function envoyerConv(){
+    var c = conv; if (!c || c.ecrire === false) return;
+    var champ = document.getElementById('convCorps');
+    var corps = champ.value.trim();
+    if (!corps){ champ.focus(); return; }
+    var b = document.getElementById('convEnvoyer');
+    b.disabled = true;
+    var envoi = c.type === 'coach'
+      ? Sync.envoyerMessageCoach(c.autre, c.je, corps)
+      : Sync.envoyerMessage(corps, c.je === 'admin' ? c.autre : null, c.je === 'admin');
+    envoi.then(function(){
+      if (conv !== c) return;
+      champ.value = '';
+      ajusterChamp();
+      document.getElementById('convMsg').hidden = true;
+      chargerConv('envoi');
+    }, function(err){
+      var m = document.getElementById('convMsg');
+      m.className = 'sheet-msg err';
+      m.textContent = Sync.messageErreur(err);
+      m.hidden = false;
+    }).then(function(){ b.disabled = false; });
+  }
+
+  // Les messages n'arrivent pas tout seuls : tant que la page est ouverte et
+  // visible, on regarde toutes les dix secondes dans une conversation, toutes
+  // les trente dans la boite. Rien quand l'onglet est cache ou ailleurs.
+  function relancerMinuteur(){
+    clearInterval(minuteurMessages);
+    minuteurMessages = null;
+    if (state.view !== 'messages' || document.hidden || !Sync.estConnecte()) return;
+    minuteurMessages = setInterval(function(){
+      if (state.view !== 'messages' || document.hidden){
+        clearInterval(minuteurMessages); minuteurMessages = null; return;
+      }
+      if (conv) chargerConv('releve'); else renderBoite();
+    }, conv ? 10000 : 30000);
+  }
+
+  // La pastille de la bulle, en haut de l'ecran : le total de ce qui attend,
+  // toutes conversations confondues. Deux comptages, jamais le contenu. Elle
+  // ne se rafraichit pas plus d'une fois toutes les huit secondes, sauf quand
+  // on vient de lire quelque chose.
+  var badgeQuand = 0;
+  function majBadgeMessages(forcer){
+    var b = document.getElementById('messagesBadge');
+    if (!b) return;
+    if (!Sync.estConnecte()){ b.hidden = true; return; }
+    if (!forcer && Date.now() - badgeQuand < 8000) return;
+    badgeQuand = Date.now();
+    Sync.nonLusTotal().then(function(n){
+      b.hidden = !n;
+      b.textContent = n > 99 ? '99+' : String(n);
+      var btn = document.getElementById('messagesBtn');
+      if (btn) btn.setAttribute('aria-label', n ? 'Messages — ' + n + ' non lu' + (n > 1 ? 's' : '') : 'Messages');
+    });
+  }
+  setInterval(function(){ if (!document.hidden) majBadgeMessages(true); }, 60000);
+  document.addEventListener('visibilitychange', function(){
+    if (document.hidden) return;
+    majBadgeMessages(true);
+    if (state.view === 'messages'){
+      if (conv) chargerConv('releve'); else renderBoite();
+      relancerMinuteur();
+    }
+  });
+
+  document.getElementById('messagesBtn').addEventListener('click', ouvrirBoite);
+  document.getElementById('messagesRetour').addEventListener('click', function(){
+    if (conv){
+      var depuis = conv.depuis;
+      conv = null;
+      if (depuis){ montrerVue(depuis); window.scrollTo(0, 0); return; }
+      renderMessages();
+      window.scrollTo(0, 0);
+      return;
+    }
+    montrerVue('planning');
+    window.scrollTo(0, 0);
+  });
+  document.getElementById('messagesRafraichir').addEventListener('click', function(){
+    if (conv) chargerConv('envoi'); else renderBoite();
+    majBadgeMessages(true);
+  });
+  document.getElementById('messagesListe').addEventListener('click', function(e){
+    if (e.target.closest('#messagesConnexion')){
+      Sync.modeAccueil('connexion');
+      Sync.montrerAccueil();
+      return;
+    }
+    var l = e.target.closest('.conv-ligne'); if (!l) return;
+    ouvrirConversation({ type:l.dataset.type, je:l.dataset.je, autre:l.dataset.autre || null,
+                         nom:l.dataset.nom, role:l.dataset.role, ecrire:l.dataset.peutEcrire !== '0' });
+  });
+  document.getElementById('convEnvoyer').addEventListener('click', envoyerConv);
+  // Entree envoie, Maj+Entree va a la ligne : la convention de toutes les
+  // messageries. Sur telephone, la touche du clavier dit « Envoyer ».
+  document.getElementById('convCorps').addEventListener('keydown', function(e){
+    if (e.key === 'Enter' && !e.shiftKey){
+      e.preventDefault();
+      envoyerConv();
+    }
+  });
+  document.getElementById('convCorps').addEventListener('input', ajusterChamp);
 
   // ==================================================================
   // COACH
@@ -2804,103 +3500,13 @@
      .then(function(){ b.disabled = false; b.textContent = avant; });
   });
 
-  // ------------------------------------------------- la conversation coach
-  // Une feuille, deux sens. « jeSuis » dit de quel cote on se tient ; tout le
-  // reste — qui est l'autre, ce qu'on marque lu — s'en deduit.
-  var filCoach = null;   // { autre, jeSuis:'coach'|'client', nom }
-
-  function ouvrirFilCoach(autre, jeSuis, nom){
-    filCoach = { autre: autre, jeSuis: jeSuis, nom: nom || '' };
-    closeDataSheet();
-    document.getElementById('coachFilTitre').textContent =
-      jeSuis === 'client' ? 'TON COACH' : (nom || 'COACHÉ').toUpperCase();
-    document.getElementById('coachFilNote').textContent = jeSuis === 'client'
-      ? 'Ton ressenti sur une séance, une douleur, une question sur le programme. Entrée envoie, Maj+Entrée va à la ligne.'
-      : 'Un conseil, un ajustement, une réponse à son ressenti. Entrée envoie, Maj+Entrée va à la ligne.';
-    document.getElementById('coachFilMsg').hidden = true;
-    document.getElementById('coachFilMessages').innerHTML = '<div class="fil-vide">Chargement…</div>';
-    document.getElementById('coachFilSheet').hidden = false;
-    chargerFilCoach();
-  }
-
-  function fermerFilCoach(){
-    document.getElementById('coachFilSheet').hidden = true;
-    var etait = filCoach;
-    filCoach = null;
-    majPastilleCompte();
-    // Les compteurs de la liste des coaches sont perimes des qu'on a lu.
-    if (etait && etait.jeSuis === 'coach' && !coachClient
-        && !document.getElementById('view-coach').hidden) renderCoach();
-  }
-
-  function chargerFilCoach(){
-    var f = filCoach; if (!f) return;
-    var fil = document.getElementById('coachFilMessages');
-    var enFace = f.jeSuis === 'client' ? 'coach' : 'client';
-    Sync.lireFilCoach(f.autre, f.jeSuis).then(function(rows){
-      if (filCoach !== f) return;   // ferme ou change entre-temps
-      fil.innerHTML = bullesHTML(rows, f.jeSuis,
-          f.nom || (f.jeSuis === 'client' ? 'Ton coach' : 'Coaché'),
-          f.jeSuis === 'client'
-            ? 'Pas encore de message. Ton ressenti sur une séance, une douleur, une question : écris-le ici.'
-            : 'Pas encore de message. Écris le premier : il le retrouvera dans son espace « Mon coach ».')
-        + (f.jeSuis === 'client' ? attenteHTML(rows, 'client', 'Ton coach te répond dès que possible.') : '');
-      filEnBas(fil);
-      var aLire = rows.filter(function(m){ return m.auteur === enFace && !m.lu; })
-                      .map(function(m){ return m.id; });
-      if (aLire.length) Sync.marquerLusCoach(aLire).then(majPastilleCompte, majPastilleCompte);
-    }, function(e){
-      if (filCoach !== f) return;
-      fil.innerHTML = '<div class="fil-vide">' + esc(Sync.messageErreur(e)) + '</div>';
-    });
-  }
-
-  // Le point sur le bouton du compte : c'est la porte d'entree des deux sens,
-  // « Mon coach » comme « Mes coachés ».
-  function majPastilleCompte(){
-    var p = document.getElementById('comptePastille');
-    if (!p) return;
-    if (!Sync.estConnecte()){ p.hidden = true; return; }
-    Sync.nonLusCoach().then(function(par){
-      var n = 0; Object.keys(par).forEach(function(k){ n += par[k]; });
-      p.hidden = !n;
-      p.title = n ? (n + ' message' + (n > 1 ? 's' : '') + ' de coaching non lu' + (n > 1 ? 's' : '')) : '';
-    });
-  }
-
-  document.getElementById('coachFilEnvoyer').addEventListener('click', function(){
-    if (!filCoach) return;
-    var champ = document.getElementById('coachFilCorps');
-    var corps = champ.value.trim();
-    if (!corps){ champ.focus(); return; }
-    var b = this, avant = b.textContent, f = filCoach;
-    b.disabled = true; b.textContent = 'ENVOI…';
-    Sync.envoyerMessageCoach(f.autre, f.jeSuis, corps).then(function(){
-      champ.value = '';
-      document.getElementById('coachFilMsg').hidden = true;
-      chargerFilCoach();
-    }, function(err){
-      var m = document.getElementById('coachFilMsg');
-      m.className = 'sheet-msg err';
-      m.textContent = Sync.messageErreur(err);
-      m.hidden = false;
-    }).then(function(){ b.disabled = false; b.textContent = avant; });
-  });
-
-  document.getElementById('coachFilCorps').addEventListener('keydown', function(e){
-    if (e.key === 'Enter' && !e.shiftKey){
-      e.preventDefault();
-      document.getElementById('coachFilEnvoyer').click();
-    }
-  });
-  document.getElementById('coachFilClose').addEventListener('click', fermerFilCoach);
-  document.getElementById('coachFilSheet').addEventListener('click', function(e){
-    if (e.target === this) fermerFilCoach();
-  });
-
   document.getElementById('monCoachEtat').addEventListener('click', function(e){
     var ecrire = e.target.closest('[data-fil-coach]');
-    if (ecrire){ ouvrirFilCoach(ecrire.dataset.filCoach, 'client', ecrire.dataset.nom); return; }
+    if (ecrire){
+      ouvrirConversation({ type:'coach', je:'client', autre:ecrire.dataset.filCoach,
+                           nom:ecrire.dataset.nom || 'Ton coach', role:'TON COACH' });
+      return;
+    }
     var b = e.target.closest('[data-couper]'); if (!b) return;
     if (!confirm('Couper l\'accès ? Ton coach ne verra plus rien immédiatement.')) return;
     Sync.revoquerLien(b.dataset.couper).then(function(){
@@ -2910,7 +3516,7 @@
   });
 
   document.getElementById('coachOuvrir').addEventListener('click', function(){
-    closeDataSheet();
+    fermerFeuilles();
     coachClient = null;
     montrerVue('coach');
     window.scrollTo(0, 0);
@@ -2946,10 +3552,9 @@
             var series = (ex.series || []).map(function(s){
               var t = TS.typeSerie(s);
               var classe = (top && s === top) ? 'top' : (t !== TS.TYPES.TRAVAIL ? t : '');
-              var p = (s.poids != null && s.poids !== '') ? formatWeight(Number(s.poids)) + ' kg' : '';
-              var r = s.reps ? String(s.reps) : '';
-              var txt = (p && r) ? p + ' × ' + r : (p || r || '—');
-              if (s.rpe != null) txt += ' · RPE ' + s.rpe;
+              var txt = perfTexte({ poids: (s.poids != null && s.poids !== '') ? Number(s.poids) : null,
+                                    reps: s.reps });
+              if (s.rpe != null) txt += (TS.serieAuTemps(s) ? ' · difficulté ' : ' · RPE ') + s.rpe;
               return '<span class="lect-serie ' + classe + '">' + esc(txt) + '</span>';
             }).join('');
             return '<div class="lect-exo">'
@@ -3020,7 +3625,11 @@
   document.getElementById('coachContenu').addEventListener('click', function(e){
     // Avant la carte : le bouton est DANS la carte, et la carte ouvre le carnet.
     var msg = e.target.closest('[data-fil-client]');
-    if (msg){ ouvrirFilCoach(msg.dataset.filClient, 'coach', msg.dataset.pseudo); return; }
+    if (msg){
+      ouvrirConversation({ type:'coach', je:'coach', autre:msg.dataset.filClient,
+                           nom:msg.dataset.pseudo || 'Coaché', role:'COACHÉ' }, 'coach');
+      return;
+    }
     var rep = e.target.closest('[data-repondre]');
     if (rep){
       rep.disabled = true;
@@ -3094,7 +3703,8 @@
           // Un retour sans auteur (compte supprime) n'a plus personne a qui
           // repondre : pas de bouton plutot qu'un bouton qui echoue.
           +   (x.user_id ? '<button type="button" class="admin-action" data-ecrire="' + esc(x.user_id)
-                         + '" data-pseudo="' + esc(x.pseudo || '') + '">RÉPONDRE</button>' : '')
+                         + '" data-pseudo="' + esc(x.pseudo || '') + '"'
+                         + (x.statut === 'nouveau' ? ' data-retour="' + esc(x.id) + '"' : '') + '>RÉPONDRE</button>' : '')
           +   (x.statut !== 'vu'      ? '<button type="button" class="admin-action" data-marquer="' + esc(x.id) + '" data-statut="vu">MARQUER LU</button>' : '')
           +   (x.statut !== 'traite'  ? '<button type="button" class="admin-action" data-marquer="' + esc(x.id) + '" data-statut="traite">TRAITÉ</button>' : '')
           +   (x.statut !== 'nouveau' ? '<button type="button" class="admin-action" data-marquer="' + esc(x.id) + '" data-statut="nouveau">ROUVRIR</button>' : '')
@@ -3117,42 +3727,6 @@
           + '</div>';
       }).join('');
     }, function(e){ notifs.innerHTML = '<div class="admin-vide">' + esc(Sync.messageErreur(e)) + '</div>'; });
-
-    // --- fils de discussion
-    var fils = document.getElementById('adminFilsListe');
-    if (adminFil){
-      fils.innerHTML = '<div class="admin-vide">Chargement…</div>';
-      Sync.lireFil(adminFil.user_id).then(function(rows){
-        fils.innerHTML =
-            '<div class="admin-carte-tete"><span class="admin-qui">'
-          +   (adminFil.pseudo ? esc(adminFil.pseudo) : '<span class="anon">sans pseudo</span>')
-          + '</span><button type="button" class="admin-action" id="filRetour">← TOUS LES FILS</button></div>'
-          + '<div class="fil">' + bullesHTML(rows, 'admin', adminFil.pseudo || 'Membre',
-              'Pas encore de message. Le tien arrivera dans la conversation de cette personne, '
-            + 'sous « Nous faire un retour ».') + '</div>'
-          + '<textarea id="adminMessageCorps" class="sheet-paste" rows="2" maxlength="4000" placeholder="Répondre…"></textarea>'
-          + '<button type="button" class="admin-action" id="adminMessageEnvoyer">ENVOYER LA RÉPONSE</button>';
-        filEnBas(fils.querySelector('.fil'));
-        var aLire = rows.filter(function(m){ return m.auteur === 'membre' && !m.lu; })
-                        .map(function(m){ return m.id; });
-        if (aLire.length) Sync.marquerLus(aLire);
-      }, function(e){ fils.innerHTML = '<div class="admin-vide">' + esc(Sync.messageErreur(e)) + '</div>'; });
-    } else {
-      Sync.adminFils().then(function(rows){
-        if (!rows.length){ fils.innerHTML = '<div class="admin-vide">Aucune conversation.</div>'; return; }
-        fils.innerHTML = rows.map(function(f){
-          return '<div class="admin-carte ' + (Number(f.non_lus) ? 'nouveau' : '') + '"'
-            + ' data-fil="' + esc(f.user_id) + '" data-pseudo="' + esc(f.pseudo || '') + '" role="button" tabindex="0">'
-            + '<div class="admin-carte-tete">'
-            +   '<span class="admin-qui">' + (f.pseudo ? esc(f.pseudo) : '<span class="anon">sans pseudo</span>') + '</span>'
-            +   (Number(f.non_lus) ? '<span class="admin-badge">' + f.non_lus + ' NON LU</span>' : '')
-            +   '<span class="admin-quand">' + esc(quandCourt(f.dernier_le)) + '</span>'
-            + '</div>'
-            + '<div class="admin-corps">' + esc(String(f.dernier || '').slice(0, 140)) + '</div>'
-            + '</div>';
-        }).join('');
-      }, function(e){ fils.innerHTML = '<div class="admin-vide">' + esc(Sync.messageErreur(e)) + '</div>'; });
-    }
 
     Sync.adminMembres().then(function(rows){
       if (!rows.length){
@@ -3178,7 +3752,6 @@
     });
   }
 
-  var adminFil = null;   // le fil ouvert dans l'espace admin, ou null
 
   document.getElementById('adminNotifsLues').addEventListener('click', function(){
     var b = this; b.disabled = true;
@@ -3186,36 +3759,11 @@
         .then(function(){ b.disabled = false; });
   });
 
-  document.getElementById('adminFilsListe').addEventListener('keydown', function(e){
-    if (e.key === 'Enter' && !e.shiftKey && e.target.id === 'adminMessageCorps'){
-      e.preventDefault();
-      var b = document.getElementById('adminMessageEnvoyer');
-      if (b) b.click();
-    }
-  });
-
-  document.getElementById('adminFilsListe').addEventListener('click', function(e){
-    if (e.target.closest('#filRetour')){ adminFil = null; renderAdmin(); return; }
-    if (e.target.closest('#adminMessageEnvoyer')){
-      var champ = document.getElementById('adminMessageCorps');
-      var corps = champ.value.trim();
-      if (!corps){ champ.focus(); return; }
-      var b = e.target.closest('#adminMessageEnvoyer');
-      b.disabled = true;
-      Sync.envoyerMessage(corps, adminFil.user_id, true)
-          .then(renderAdmin, function(err){ b.disabled = false; showToast(Sync.messageErreur(err)); });
-      return;
-    }
-    var carte = e.target.closest('[data-fil]');
-    if (carte){
-      adminFil = { user_id: carte.dataset.fil, pseudo: carte.dataset.pseudo };
-      renderAdmin();
-    }
-  });
-
   document.getElementById('adminRetourBtn').addEventListener('click', function(){
-    if (adminFil){ adminFil = null; renderAdmin(); return; }
     montrerVue('planning');
+  });
+  document.getElementById('adminVersMessages').addEventListener('click', function(){
+    ouvrirBoite();
   });
   document.getElementById('adminRafraichir').addEventListener('click', renderAdmin);
   document.getElementById('adminFiltres').addEventListener('click', function(e){
@@ -3224,20 +3772,15 @@
     this.querySelectorAll('.admin-filtre').forEach(function(x){ x.classList.toggle('active', x === b); });
     renderAdmin();
   });
-  // Ouvrir un fil, c'est pouvoir y ecrire — meme s'il est vide. Le bloc
-  // MESSAGES est au-dessus des retours : on y remonte, sinon le fil s'ouvre
-  // hors de l'ecran et rien ne semble s'etre passe.
-  function ouvrirFilAdmin(uid, pseudo){
-    adminFil = { user_id: uid, pseudo: pseudo };
-    renderAdmin();
-    var bloc = document.getElementById('adminFilsListe');
-    if (bloc && bloc.scrollIntoView) bloc.scrollIntoView({ block:'start' });
-  }
-
+  // Ouvrir un fil, c'est pouvoir y ecrire — meme s'il est vide : une
+  // conversation peut commencer par l'equipe. Repondre a un retour encore
+  // nouveau le passe en LU, parce que c'est ce qu'on vient de faire.
   ['adminRetoursListe', 'adminMembresListe'].forEach(function(id){
     document.getElementById(id).addEventListener('click', function(e){
       var b = e.target.closest('[data-ecrire]'); if (!b) return;
-      ouvrirFilAdmin(b.dataset.ecrire, b.dataset.pseudo);
+      if (b.dataset.retour) Sync.adminMarquer(b.dataset.retour, 'vu').catch(function(){});
+      ouvrirConversation({ type:'support', je:'admin', autre:b.dataset.ecrire,
+                           nom:b.dataset.pseudo || 'Membre', role:'MEMBRE' }, 'admin');
     });
   });
 
@@ -3249,7 +3792,7 @@
   });
 
   document.getElementById('compteAdmin').addEventListener('click', function(){
-    closeDataSheet();
+    fermerFeuilles();
     montrerVue('admin');
     window.scrollTo(0, 0);
   });
@@ -3259,10 +3802,13 @@
   document.getElementById('dataSheet').addEventListener('click', function(e){
     if (e.target === this) closeDataSheet();
   });
+  document.getElementById('profilBtn').addEventListener('click', openProfil);
+  document.getElementById('profilClose').addEventListener('click', closeProfil);
+  document.getElementById('profilSheet').addEventListener('click', function(e){
+    if (e.target === this) closeProfil();
+  });
   document.addEventListener('keydown', function(e){
-    if (e.key === 'Escape' && !document.getElementById('coachFilSheet').hidden) fermerFilCoach();
-    if (e.key === 'Escape' && !document.getElementById('retourSheet').hidden) fermerRetour();
-    if (e.key === 'Escape' && !document.getElementById('dataSheet').hidden) closeDataSheet();
+    if (e.key === 'Escape') fermerFeuilles();
   });
 
   function telechargerTexte(texte, nom, mime){
@@ -3343,10 +3889,11 @@
       return;
     }
     var fr = new FileReader();
+    var nomFichier = f.name || '';
     fr.onload = function(){
       document.getElementById('dataPaste').value = String(fr.result);
       disarmImport();
-      sheetMsg('warn', 'Fichier charg\u00e9. Appuie sur \u00ab REMPLACER MES DONN\u00c9ES \u00bb pour continuer.');
+      preparerImport(String(fr.result), nomFichier);
     };
     fr.onerror = function(){ sheetMsg('err', 'Lecture du fichier impossible.'); };
     fr.readAsText(f);
@@ -3355,46 +3902,15 @@
 
   document.getElementById('dataPaste').addEventListener('input', disarmImport);
 
-  // Import en deux temps : le premier appui montre ce qui va etre ecrase,
-  // le second seulement applique. Remplacer est irreversible.
+  // Un import AJOUTE, il ne remplace plus. Remplacer effacait le carnet en
+  // place par celui du fichier : une vieille sauvegarde importee par erreur
+  // faisait disparaitre des mois de seances. Ce qui est deja la ne bouge
+  // pas, ce qui manque arrive — voir fusionnerCarnets() dans intelligence.js.
   document.getElementById('dataImport').addEventListener('click', function(){
-    var btn = this;
-    if (pendingBackup){
-      state.sessions = pendingBackup.sessions;
-      if (pendingBackup.customExercises){
-        customExercises = pendingBackup.customExercises;
-        saveCustom();
-        rebuildLower();
-      }
-      saveLocal();
-      // Un import remplace tout le carnet. Sans marquer les journees, elles
-      // resteraient sur ce seul appareil : l'utilisateur croirait avoir
-      // restaure sur son compte alors que rien n'est parti.
-      Object.keys(state.sessions).forEach(function(ds){ Sync.marquerSale(ds); });
-      populateDatalist();
-      renderPlanning(true);
-      disarmImport();
-      document.getElementById('dataPaste').value = '';
-      refreshSheet();
-      sheetMsg('ok', 'Donn\u00e9es restaur\u00e9es : ' + pendingBackupLabel + '.');
-      showToast('Donn\u00e9es restaur\u00e9es');
-      return;
-    }
+    if (pendingBackup){ appliquerImport(); return; }
     var text = document.getElementById('dataPaste').value.trim();
-    if (!text){ sheetMsg('err', 'Choisis un fichier, ou colle le contenu de ta sauvegarde.'); return; }
-    var parsed = parseBackup(text);
-    if (parsed.error){ sheetMsg('err', parsed.error); return; }
-    pendingBackup = parsed;
-    pendingBackupLabel = parsed.jours + (parsed.jours > 1 ? ' jours' : ' jour') + ', ' +
-                         parsed.series + (parsed.series > 1 ? ' s\u00e9ries' : ' s\u00e9rie');
-    var now = backupStats();
-    btn.classList.add('armed');
-    btn.textContent = 'CONFIRMER LE REMPLACEMENT';
-    sheetMsg('warn',
-      'Tu as actuellement ' + now.jours + (now.jours > 1 ? ' jours' : ' jour') +
-      (now.jours > 1 ? ' enregistr\u00e9s' : ' enregistr\u00e9') +
-      '. Le fichier en contient ' + pendingBackupLabel +
-      '. Confirmer effacera d\u00e9finitivement les donn\u00e9es actuelles.');
+    if (!text){ sheetMsg('err', 'Choisis un fichier, ou colle le contenu d\'une sauvegarde.'); return; }
+    preparerImport(text, '');
   });
 
   // ==========================================================================
@@ -3858,6 +4374,10 @@
         return 'trop de tentatives — reessaie dans quelques minutes';
       if (/same as the old password|should be different/i.test(m))
         return 'choisis un mot de passe different de l ancien';
+      // Une table ou une fonction absente : le SQL de mise a jour n'a pas
+      // ete passe. Le dire, plutot que d'afficher un code d'erreur.
+      if (/PGRST20[25]|Could not find the (table|function)|does not exist/i.test(m))
+        return 'pas encore activé sur le serveur (la mise à jour SQL n\'a pas été passée)';
       if (/Auth session missing|session_not_found/i.test(m))
         return 'ce lien a expire — redemande-en un';
       return m;
@@ -4113,7 +4633,7 @@
         // Le bouton est dans le panneau. Dire « appuie sur ENVOYER » sans
         // montrer ce bouton, c'est envoyer quelqu'un chercher une porte
         // fermee : on ouvre le panneau a sa place.
-        setTimeout(openDataSheet, 400);
+        setTimeout(openProfil, 400);
         return Promise.resolve();
       }
       majMeta(function(x){ x.migrePour = user.id; });
@@ -4130,6 +4650,8 @@
       var sec = document.getElementById('compteSection');
       if (!sec) return;
       sec.hidden = !dispo();
+      var indispo = document.getElementById('compteIndispo');
+      if (indispo) indispo.hidden = dispo();
       if (!dispo()) return;
 
       var etat  = document.getElementById('compteEtat');
@@ -4141,8 +4663,7 @@
 
       deco.hidden = !!user;
       co.hidden   = !user;
-      if (typeof majPastilleRetour === 'function') majPastilleRetour();
-      if (typeof majPastilleCompte === 'function') majPastilleCompte();
+      if (typeof majBadgeMessages === 'function') majBadgeMessages();
 
       var ou = document.getElementById('dataOu');
       if (!user){
@@ -4369,17 +4890,46 @@
           return c.from('messages_support').update({ lu:true }).in('id', ids);
         }).then(function(r){ if (r.error) throw r.error; });
       },
-      // Un comptage, pas une lecture : la pastille n'a besoin que d'un nombre,
-      // et « head » evite de rapatrier trois cents messages pour l'obtenir.
-      // Elle ne doit jamais casser la page : en cas d'erreur elle rend zero.
-      nonLus:function(){
-        if (!user) return Promise.resolve(0);
+      userId:function(){ return user ? user.id : null; },
+
+      // Le dernier message du fil de support du membre, et ce qu'il n'a pas
+      // lu : ce que l'equipe a ecrit, et l'accuse automatique.
+      apercuSupport:function(){
+        if (!user) return Promise.resolve(null);
         return client().then(function(c){
           return c.from('messages_support')
-                  .select('id', { count:'exact', head:true })
-                  .eq('user_id', user.id).eq('auteur', 'admin').eq('lu', false);
+                  .select('auteur,corps,lu,cree_le')
+                  .eq('user_id', user.id)
+                  .order('cree_le', { ascending:false })
+                  .limit(300);
+        }).then(function(r){
+          if (r.error) throw r.error;
+          var rows = r.data || [];
+          return { dernier: rows[0] || null,
+                   nonLus: rows.filter(function(m){ return m.auteur !== 'membre' && !m.lu; }).length };
+        });
+      },
+
+      // La pastille : un total, deux comptages, jamais le contenu. « head »
+      // evite de rapatrier des centaines de messages pour obtenir un nombre.
+      // Elle ne doit jamais casser la page : une erreur compte pour zero.
+      //   · l'equipe compte ce que les membres ont ecrit, partout sauf chez elle ;
+      //   · un membre compte ce qu'on lui a ecrit, dans son propre fil ;
+      //   · tout le monde ajoute ses conversations de coaching.
+      nonLusTotal:function(){
+        if (!user) return Promise.resolve(0);
+        var admin = estAdmin();
+        var support = client().then(function(c){
+          var q = c.from('messages_support').select('id', { count:'exact', head:true }).eq('lu', false);
+          return admin ? q.eq('auteur', 'membre').neq('user_id', user.id)
+                       : q.eq('user_id', user.id).neq('auteur', 'membre');
         }).then(function(r){ return r.error ? 0 : (r.count || 0); },
                 function(){ return 0; });
+        var coach = Sync.nonLusCoach().then(function(par){
+          var n = 0; Object.keys(par).forEach(function(k){ n += par[k]; });
+          return n;
+        });
+        return Promise.all([support, coach]).then(function(t){ return t[0] + t[1]; });
       },
       adminFils:function(){ return rpcAdmin('admin_fils'); },
 
@@ -4435,6 +4985,29 @@
           });
           return par;
         }, function(){ return {}; });
+      },
+      // Chaque conversation de coaching, avec son dernier message et ce que
+      // l'autre a ecrit sans qu'on l'ait lu. RLS ne rend que les siennes ;
+      // on peut etre coach de quelqu'un et coache de quelqu'un d'autre.
+      apercuCoach:function(){
+        if (!user) return Promise.resolve([]);
+        return client().then(function(c){
+          return c.from('messages_coach')
+                  .select('coach_id,client_id,auteur,corps,lu,cree_le')
+                  .order('cree_le', { ascending:false })
+                  .limit(1000);
+        }).then(function(r){
+          if (r.error) throw r.error;
+          var par = Object.create(null);
+          (r.data || []).forEach(function(m){
+            var jeSuis = m.coach_id === user.id ? 'coach' : 'client';
+            var autre = jeSuis === 'coach' ? m.client_id : m.coach_id;
+            var k = jeSuis + ':' + autre;
+            if (!par[k]) par[k] = { jeSuis:jeSuis, autre:autre, dernier:m, nonLus:0 };
+            if (m.auteur !== jeSuis && !m.lu) par[k].nonLus++;
+          });
+          return Object.keys(par).map(function(k){ return par[k]; });
+        });
       },
       lireNotifs:function(){
         return client().then(function(c){
@@ -4542,7 +5115,7 @@
       occupe(this, '…', function(){ return Sync.enregistrerPseudo(p); });
     });
     document.getElementById('compteOuvrirAccueil').addEventListener('click', function(){
-      closeDataSheet();
+      fermerFeuilles();
       Sync.modeAccueil('connexion');
       Sync.montrerAccueil();
     });
