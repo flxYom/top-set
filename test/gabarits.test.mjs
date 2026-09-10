@@ -204,8 +204,8 @@ ok('mais il reste ferme si la base ne repond pas',
 
 ok('la bulle d attente existe et n est pas stockee',
    SRC.indexOf('function attenteHTML(') > -1
-   && SRC.indexOf('rows[rows.length - 1].auteur !== \'membre\'') > -1
-   && CONV.indexOf('attenteHTML(rows)') > -1);
+   && SRC.indexOf('rows[rows.length - 1].auteur !== monAuteur') > -1
+   && CONV.indexOf("attenteHTML(rows, 'membre')") > -1);
 
 ok('le fil descend sans emporter la page',
    SRC.indexOf('function filEnBas(') > -1
@@ -226,7 +226,7 @@ ok('des deux cotes',
 
 ok('le nom ne se met qu au-dessus de ce que dit l autre',
    corps('function bullesHTML(', 'function attenteHTML(')
-     .indexOf("(moi ? '' : esc(autre)") > -1);
+     .indexOf(": esc(qui) + ' · ')") > -1);
 
 ok('la pastille compte sans rapatrier le fil',
    SRC.indexOf("{ count:'exact', head:true }") > -1
@@ -242,7 +242,56 @@ ok('la pastille est un element vide, pas du texte injecte',
    || HTML.indexOf('id="retourPastille" hidden></span>') > -1);
 
 ok('et hidden la cache vraiment malgre display:inline-block',
-   HTML.indexOf('.pastille[hidden]{display:none;}') > -1);
+   HTML.indexOf('.pastille-fil[hidden]{display:none;}') > -1);
+
+console.log('\n== 12. Toute demande peut recevoir une reponse ==');
+// Un retour arrivait dans l'espace admin sans rien qui permette d'y repondre,
+// et le coach lisait un carnet sans pouvoir en parler. Ce qui suit fige les
+// portes d'entree des fils — et les pieges dans lesquels elles sont tombees.
+
+const BUL = corps('function bullesHTML(', 'function attenteHTML(');
+
+ok('l accuse automatique n est jamais « moi » pour un membre',
+   BUL.indexOf("var moi = sys ? (monAuteur === 'admin')") > -1);
+ok('et il se dit automatique, des deux cotes',
+   BUL.indexOf("'Top Set · automatique'") > -1 && BUL.indexOf("'automatique · '") > -1);
+
+ok('un retour se repond — s il a encore un auteur',
+   SRC.indexOf("(x.user_id ? '<button type=\"button\" class=\"admin-action\" data-ecrire=") > -1);
+ok('un inscrit s ecrit',
+   SRC.indexOf("'<button type=\"button\" class=\"admin-action\" data-ecrire=\"' + esc(x.user_id)") > -1);
+ok('ouvrir le fil remonte jusqu a lui',
+   corps('function ouvrirFilAdmin(', "['adminRetoursListe'").indexOf('scrollIntoView') > -1);
+
+// Les boutons sont DANS des cartes cliquables : si la carte est testee
+// d'abord, le bouton ouvre le carnet au lieu du fil.
+const LCOACH = corps("getElementById('coachContenu').addEventListener", '// ====');
+ok('le bouton MESSAGES passe avant la carte qui le contient',
+   LCOACH.indexOf('[data-fil-client]') > -1
+   && LCOACH.indexOf('[data-fil-client]') < LCOACH.indexOf('[data-ouvrir-coache]'));
+const LMON = corps("getElementById('monCoachEtat').addEventListener", "getElementById('coachOuvrir')");
+ok('et ECRIRE A TON COACH avant COUPER L ACCES',
+   LMON.indexOf('[data-fil-coach]') > -1
+   && LMON.indexOf('[data-fil-coach]') < LMON.indexOf('[data-couper]'));
+
+const CHF = corps('function chargerFilCoach(', 'function majPastilleCompte(');
+ok('une reponse lente n ecrit pas dans un fil qu on a quitte',
+   (CHF.match(/if \(filCoach !== f\) return;/g) || []).length === 2);
+ok('on ne marque lu que ce que l autre a ecrit',
+   CHF.indexOf('m.auteur === enFace && !m.lu') > -1);
+ok('le compteur coach ne casse jamais la page',
+   corps('nonLusCoach:function()', '},\r\n').length > 0
+   && SRC.indexOf('}, function(){ return {}; });') > -1);
+ok('Echap ferme la feuille du coach',
+   SRC.indexOf("!document.getElementById('coachFilSheet').hidden) fermerFilCoach();") > -1);
+
+// « .pastille » etait deja pris par les voyants d'etat. Une regle nue du meme
+// nom leur ajoutait une marge sans que rien ne le signale.
+ok('aucune regle nue « .pastille » ne deborde sur les voyants d etat',
+   !/\n\s*\.pastille\s*\{/.test(HTML));
+ok('les points de fil ont leur propre nom',
+   HTML.indexOf('class="pastille-fil" id="retourPastille"') > -1
+   && HTML.indexOf('class="pastille-fil" id="comptePastille"') > -1);
 
 console.log(`\n${pass} reussis, ${fail} echoues`);
 process.exit(fail ? 1 : 0);

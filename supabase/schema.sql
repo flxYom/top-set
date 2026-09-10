@@ -799,6 +799,7 @@ $$;
 create or replace function public.admin_retours(p_statut text default null)
 returns table (
   id      uuid,
+  user_id uuid,
   pseudo  text,
   type    text,
   corps   text,
@@ -817,7 +818,7 @@ begin
   end if;
 
   return query
-    select r.id, p.pseudo, r.type, r.corps, r.contexte, r.statut, r.cree_le
+    select r.id, r.user_id, p.pseudo, r.type, r.corps, r.contexte, r.statut, r.cree_le
     from public.retours r
     left join public.profils p on p.user_id = r.user_id
     where p_statut is null or r.statut = p_statut
@@ -1330,11 +1331,18 @@ create table if not exists public.messages_support (
 
 alter table public.messages_support drop constraint if exists messages_auteur_connu;
 alter table public.messages_support add  constraint messages_auteur_connu
-  check (auteur in ('membre', 'admin'));
+  check (auteur in ('membre', 'admin', 'systeme'));
 
 alter table public.messages_support drop constraint if exists messages_corps_borne;
 alter table public.messages_support add  constraint messages_corps_borne
   check (char_length(corps) between 1 and 4000);
+
+-- Un message peut venir d'un retour : le formulaire le recopie dans le fil,
+-- pour que la conversation commence par ce que la personne a demandé et non
+-- par un accusé de réception qui ne répond à rien. « set null » : effacer un
+-- retour ne doit pas trouer la conversation.
+alter table public.messages_support
+  add column if not exists retour_id uuid references public.retours (id) on delete set null;
 
 create index if not exists messages_fil_idx on public.messages_support (user_id, cree_le);
 create index if not exists messages_non_lus_idx on public.messages_support (user_id, auteur) where not lu;
@@ -1369,7 +1377,8 @@ create policy "Marquer les messages comme lus"
 -- droit de table dit la vraie règle — on ne marque que la lecture.
 revoke all on public.messages_support from anon;
 revoke all on public.messages_support from authenticated;
-grant  select, insert on public.messages_support to authenticated;
+grant  select on public.messages_support to authenticated;
+grant  insert (user_id, auteur, corps) on public.messages_support to authenticated;
 grant  update (lu)   on public.messages_support to authenticated;
 
 
@@ -1432,8 +1441,10 @@ begin
     values ('inscription', new.user_id, coalesce(new.pseudo, 'sans pseudo'));
 
   elsif tg_table_name = 'messages_support' then
-    -- Un message de l'administrateur ne se notifie pas à lui-même.
-    if new.auteur = 'membre' then
+    -- Un message de l'administrateur ne se notifie pas à lui-même. La copie
+    -- d'un retour non plus : le retour a déjà sa propre notification, et un
+    -- seul geste ne doit en produire qu'une.
+    if new.auteur = 'membre' and new.retour_id is null then
       insert into public.notifications_admin (type, user_id, contenu)
       values ('message', new.user_id, left(new.corps, 200));
     end if;
@@ -1522,8 +1533,120 @@ grant  execute on function public.admin_fils() to authenticated;
 -- service_role. Ça se fait dans Supabase → Authentication → Users, et c'est
 -- très bien ainsi : ces gestes-là méritent de sortir de l'app.
 
+-- --------------------------------------------------- l'accusé de réception
+-- Envoyer un retour dans le vide, c'est ne pas savoir s'il est parti. Ce
+-- déclencheur recopie le retour dans le fil du membre — la conversation
+-- commence par sa question — puis ajoute un accusé signé « systeme » :
+-- personne n'a encore lu son retour, et le signer « admin » serait un mensonge
+-- poli. La vraie réponse arrivera au même endroit.
+--
+-- SECURITY DEFINER parce qu'aucune policy n'autorise à écrire un message
+-- « systeme » — c'est justement ce qui garantit qu'aucun navigateur ne peut en
+-- fabriquer un.
+create or replace function public.accuser_retour()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  -- Deux lignes dans la même transaction partagent le même now() : sans
+  -- horodatage explicite, l'accusé pourrait s'afficher avant la question.
+  insert into public.messages_support (user_id, auteur, corps, retour_id, cree_le)
+  values (new.user_id, 'membre', new.corps, new.id, new.cree_le);
+
+  insert into public.messages_support (user_id, auteur, corps, retour_id, cree_le)
+  values (new.user_id, 'systeme',
+          'Bien reçu. On te répond ici même, dès que possible. '
+          || 'Tu peux ajouter des détails dans cette conversation en attendant.',
+          new.id, new.cree_le + interval '1 millisecond');
+  return null;
+end;
+$$;
+
+drop trigger if exists retours_accuse on public.retours;
+create trigger retours_accuse
+  after insert on public.retours
+  for each row when (new.user_id is not null)
+  execute function public.accuser_retour();
+
+
 -- ============================================================================
--- 12. SUPPRESSION DE COMPTE (RGPD — droit à l'effacement)
+-- 12. LA CONVERSATION COACH ↔ COACHÉ
+-- ============================================================================
+-- Même forme que la messagerie de support, autre paire. On ne réutilise pas
+-- messages_support : là-bas le fil appartient à une personne, et l'autre partie
+-- est « l'administration » — une seule et même personne pour tout le monde.
+-- Ici il y a deux comptes, et la question « qui a le droit d'écrire » se répond
+-- par le lien, pas par un rôle.
+
+create table if not exists public.messages_coach (
+  id        uuid primary key default gen_random_uuid(),
+  coach_id  uuid not null references auth.users (id) on delete cascade,
+  client_id uuid not null references auth.users (id) on delete cascade,
+  auteur    text not null,
+  corps     text not null,
+  lu        boolean not null default false,
+  cree_le   timestamptz not null default now()
+);
+
+alter table public.messages_coach drop constraint if exists mcoach_auteur_connu;
+alter table public.messages_coach add  constraint mcoach_auteur_connu
+  check (auteur in ('coach', 'client'));
+
+alter table public.messages_coach drop constraint if exists mcoach_corps_borne;
+alter table public.messages_coach add  constraint mcoach_corps_borne
+  check (char_length(corps) between 1 and 4000);
+
+alter table public.messages_coach drop constraint if exists mcoach_pas_soi_meme;
+alter table public.messages_coach add  constraint mcoach_pas_soi_meme
+  check (coach_id <> client_id);
+
+create index if not exists mcoach_fil_idx
+  on public.messages_coach (coach_id, client_id, cree_le);
+create index if not exists mcoach_non_lus_idx
+  on public.messages_coach (client_id, coach_id, auteur) where not lu;
+
+alter table public.messages_coach enable row level security;
+
+-- Le coaché garde son historique même après avoir coupé l'accès : c'est sa
+-- conversation, et couper le suivi n'efface pas ce qui s'est dit. Le coach,
+-- lui, ne lit que tant que le lien est actif — c'est exactement la règle du
+-- carnet, et elle ne doit pas se relâcher ici.
+drop policy if exists "Les deux lisent leur fil" on public.messages_coach;
+create policy "Les deux lisent leur fil"
+  on public.messages_coach for select
+  using (auth.uid() = client_id or public.coach_de(client_id));
+
+-- Écrire demande le lien ACTIF, et que l'auteur déclaré corresponde au rôle
+-- réel. Un coaché ne peut pas signer « coach », un coach ne peut pas écrire
+-- dans le fil de quelqu'un qu'il ne suit pas, et personne ne peut fabriquer
+-- une conversation entre deux inconnus.
+drop policy if exists "Les deux ecrivent dans leur fil" on public.messages_coach;
+create policy "Les deux ecrivent dans leur fil"
+  on public.messages_coach for insert
+  with check (
+    (auth.uid() = client_id and auteur = 'client' and public.mon_coach_id() = coach_id)
+    or (auth.uid() = coach_id and auteur = 'coach' and public.coach_de(client_id))
+  );
+
+drop policy if exists "Marquer le fil du coach comme lu" on public.messages_coach;
+create policy "Marquer le fil du coach comme lu"
+  on public.messages_coach for update
+  using      (auth.uid() = client_id or public.coach_de(client_id))
+  with check (auth.uid() = client_id or public.coach_de(client_id));
+
+-- Encore la même leçon : RLS filtre des lignes, pas des colonnes. Sans droit
+-- restreint à « lu », la policy ci-dessus laisserait réécrire le corps d'un
+-- message déjà envoyé.
+revoke all on public.messages_coach from anon;
+revoke all on public.messages_coach from authenticated;
+grant  select, insert on public.messages_coach to authenticated;
+grant  update (lu)   on public.messages_coach to authenticated;
+
+
+-- ============================================================================
+-- 13. SUPPRESSION DE COMPTE (RGPD — droit à l'effacement)
 -- ============================================================================
 -- Tout est en « on delete cascade » depuis auth.users : supprimer le compte
 -- efface séances, exercices, séries, exercices mémorisés et consentements.
