@@ -20,8 +20,11 @@ while it stays below `1.0.0`, breaking changes (in particular to the
   (`/exercices/planche-gainage`) — plus section hubs, a page on how the pages
   are made (`/methode-editoriale`) and a branded 404. 14 sources cited, each opened
   and labelled with what was read. Signed « Yom Industry × Claude
-  (Anthropic) ». The app footer links to them (**Apprendre**); the guide now
-  explains set types and links to the relevant pages.
+  (Anthropic) ». Everything sits under one main section, **Apprendre**
+  (`/apprendre`, listing every section and page): a fourth app tab next to
+  PLANNING, SÉANCES and RÉCAP opens a screen of six section cards, and every
+  content page carries the same sections as a bar under its header. The guide
+  now explains set types and the new tab, and links to the relevant pages.
 - **Content generator** (`scripts/contenu.mjs`, no dependency): builds the
   pages, hubs, 404 and `sitemap.xml` from `contenu/`, and refuses unknown
   citations, broken internal links, out-of-bounds or duplicated titles and
@@ -384,10 +387,11 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 - Links: the test now reads nested pages and clean URLs (`/guide`,
   `/documentation` → `documentation/index.html`), and checks that the app
-  leads to the content pages and that each one is two clicks from home (19 → 47).
+  leads to `/apprendre`, that it lists every content page, and that each page
+  carries the sections bar (19 → 63).
 - Guards: the content sources are not published, the generated pages and what
-  they load are; the 404 stays out of the sitemap; the app footer links to
-  « Apprendre » (152 → 163).
+  they load are; the 404 stays out of the sitemap; APPRENDRE is a main tab
+  with its own view, rendered without falling back to the recap (152 → 167).
 
 - 26 more static guards (125 → 151): search engine basics, what the site publishes, the realtime
   permission, the iOS rule staying last, sheets clearing the safe areas. The

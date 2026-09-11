@@ -44,9 +44,6 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{ou
 }
 .marque{color:var(--ink);font-weight:800;font-size:19px;letter-spacing:.02em;text-decoration:none;}
 .marque span{color:var(--orange);}
-.barre-nav{margin-left:auto;display:flex;align-items:center;gap:6px;}
-.barre-nav a{display:inline-flex;align-items:center;min-height:44px;padding:0 8px;color:var(--dim);font-size:14px;font-weight:700;text-decoration:none;}
-.barre-nav a:hover{color:var(--ink);}
 .bouton{
   display:inline-flex;align-items:center;justify-content:center;gap:8px;
   min-height:46px;padding:0 16px;
@@ -54,7 +51,22 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{ou
   color:#0d0c0a;font-size:14px;font-weight:800;letter-spacing:.04em;text-decoration:none;text-transform:uppercase;
 }
 .bouton:active{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--ink);}
-.barre .bouton{min-height:40px;padding:0 12px;font-size:12px;box-shadow:3px 3px 0 var(--ink);}
+.barre .bouton{margin-left:auto;min-height:40px;padding:0 12px;font-size:12px;box-shadow:3px 3px 0 var(--ink);}
+
+/* La barre des rubriques d'Apprendre : les memes cases que les onglets de
+   l'app. Elle defile en largeur sur telephone, la page jamais. */
+.rubriques{overflow-x:auto;border-bottom:2px solid var(--line);scrollbar-width:none;-webkit-overflow-scrolling:touch;}
+.rubriques::-webkit-scrollbar{display:none;}
+.rubriques div{display:flex;gap:6px;width:max-content;margin:0 auto;padding:10px max(18px,env(safe-area-inset-left)) 13px;}
+.rubriques a{
+  display:inline-flex;align-items:center;min-height:40px;padding:0 12px;
+  border:2px solid var(--line);color:var(--dim);text-decoration:none;white-space:nowrap;
+  font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;
+}
+.rubriques a:hover{color:var(--ink);border-color:var(--ink);}
+.rubriques a[aria-current]{background:var(--ink);color:#0d0c0a;border-color:var(--ink);box-shadow:3px 3px 0 var(--orange);}
+h2 a{color:inherit;text-decoration:none;}
+h2 a:hover{color:var(--orange);}
 
 /* ------------------------------------------------------------- page */
 .page{max-width:700px;margin:0 auto;padding:18px 18px 40px;}
@@ -141,5 +153,4 @@ figcaption{font-size:13px;color:var(--dim);margin-top:8px;line-height:1.5;}
 .pied nav{display:flex;flex-wrap:wrap;justify-content:center;gap:2px 6px;}
 .pied a{display:inline-flex;align-items:center;min-height:44px;padding:0 6px;color:var(--dim);font-size:13px;text-decoration:none;}
 .pied a:hover{color:var(--ink);text-decoration:underline;}
-@media (max-width:420px){.barre-nav a.facultatif{display:none;}}
 @media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;}}

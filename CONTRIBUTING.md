@@ -52,7 +52,7 @@ node test/intelligence.test.mjs && node test/gabarits.test.mjs && node test/lien
 `mentions-legales.html` are static pages sharing `legal.css`.
 
 The content pages (`documentation/`, `entrainement/`, `exercices/`,
-`outils/`, `carnet-de-musculation.html`, `methode-editoriale.html`,
+`outils/`, `apprendre.html`, `carnet-de-musculation.html`, `methode-editoriale.html`,
 `404.html`) and `sitemap.xml` are **generated**: edit their source in
 `contenu/`, then run `node scripts/contenu.mjs`. Never edit the generated
 files by hand — CI fails when they differ from their source. A page may only

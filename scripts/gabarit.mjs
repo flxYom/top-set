@@ -77,16 +77,17 @@ function tete(p, ctx){
   return L.filter(Boolean).join('\n');
 }
 
-function barre(){
+// Apprendre est une rubrique principale : ses sous-rubriques sont visibles en
+// haut de chaque page, comme les onglets de l'app, et non cachees en pied de
+// page. Celle ou l'on se trouve est allumee.
+function barre(p, ctx){
+  const liens = ctx.rubriques.map(r => `<a href="${r.url}"${r.url === p.rubriqueUrl ? ' aria-current="page"' : ''}>${esc(r.nav)}</a>`).join('');
   return `<a class="lien-evitement" href="#contenu">Aller au contenu</a>
 <header class="barre">
   <a class="marque" href="/">TOP<span>SET</span></a>
-  <nav class="barre-nav" aria-label="Rubriques">
-    <a href="/documentation">Apprendre</a>
-    <a class="facultatif" href="/outils">Outils</a>
-  </nav>
   <a class="bouton" href="/">Ouvrir le carnet</a>
-</header>`;
+</header>
+<nav class="rubriques" aria-label="Apprendre"><div>${liens}</div></nav>`;
 }
 
 function ariane(chemin){
@@ -99,9 +100,7 @@ function ariane(chemin){
 
 function pied(ctx){
   const liens = [
-    ...ctx.hubs.map(h => [h.url, h.nav]),
-    ['/carnet-de-musculation', 'Le carnet'],
-    ['/methode-editoriale', 'Méthode éditoriale'],
+    ...ctx.rubriques.map(r => [r.url, r.nav]),
     ['/guide', 'Comment ça marche'],
     ['/mentions-legales', 'Mentions légales'],
     ['/confidentialite', 'Confidentialité'],
@@ -155,7 +154,7 @@ export function pageContenu(p, ctx){
   return [
     tete(p, ctx),
     '<body>',
-    barre(),
+    barre(p, ctx),
     '<main class="page" id="contenu">',
     ariane(p.chemin),
     ...haut,
@@ -177,17 +176,22 @@ export function corpsHub(hub, enfants, ctx){
   L.push(enfants.length
     ? `<ul class="pages">` + enfants.map(e => `<li><a href="${e.url}"><strong>${esc(texteBrut(e.h1))}</strong><span>${esc(texteBrut(e.description))}</span></a></li>`).join('') + `</ul>`
     : `<p>Les premières pages de cette rubrique arrivent.</p>`);
-  // Les autres rubriques, avec leurs pages : depuis l'app, le lien
-  // « Apprendre » mene ici, et chaque page doit rester a deux clics de l'accueil.
-  L.push(`<h2 id="autres-rubriques">Les autres rubriques</h2>`);
-  for (const h of ctx.hubs.filter(x => x.url !== hub.url)){
+  L.push(`<p>Les autres rubriques sont en haut de la page, et toutes les pages sur <a href="/apprendre">Apprendre</a>. Tout ce qui s'explique ici se note dans <a href="/carnet-de-musculation">le carnet Top Set</a>, gratuit et sans compte.</p>`);
+  return L.join('\n');
+}
+
+// La page Apprendre : chaque rubrique avec toutes ses pages, puis le carnet et
+// la methode. Depuis l'app (onglet APPRENDRE), toute page est a deux gestes.
+export function corpsApprendre(ctx, carnet, methode){
+  const carte = e => `<li><a href="${e.url}"><strong>${esc(texteBrut(e.h1))}</strong><span>${esc(texteBrut(e.description))}</span></a></li>`;
+  const L = [];
+  for (const h of ctx.hubs){
     const pages = ctx.enfantsDe(h);
-    L.push(`<h3><a href="${h.url}">${esc(h.nav)}</a></h3>`);
-    L.push(pages.length
-      ? `<ul>` + pages.map(e => `<li><a href="${e.url}">${esc(texteBrut(e.h1))}</a></li>`).join('') + `</ul>`
-      : `<p>${esc(h.resume)}</p>`);
+    L.push(`<h2 id="${h.url.slice(1)}"><a href="${h.url}">${esc(h.nav)}</a></h2>`);
+    L.push(`<p>${esc(h.resume)}</p>`);
+    L.push(pages.length ? `<ul class="pages">${pages.map(carte).join('')}</ul>` : `<p>Les premières pages arrivent.</p>`);
   }
-  L.push(`<h2 id="le-carnet">Le carnet</h2>`);
-  L.push(`<p>Tout ce qui s'explique ici se note dans <a href="/carnet-de-musculation">Top Set, un carnet de musculation gratuit</a>, sans compte.</p>`);
+  L.push(`<h2 id="le-carnet">Le carnet et la méthode</h2>`);
+  L.push(`<ul class="pages">${[carnet, methode].filter(Boolean).map(carte).join('')}</ul>`);
   return L.join('\n');
 }

@@ -672,6 +672,7 @@ robots.txt               indexation
 sitemap.xml              plan du site, produit par scripts/contenu.mjs
 carnet-de-musculation.html  page produit (générée)
 methode-editoriale.html  qui écrit, sources, IA, relecture (générée)
+apprendre.html           la rubrique principale : toutes les rubriques et leurs pages (générée)
 documentation/  entrainement/  exercices/  outils/
                          pages de contenu et leurs rubriques (générées, commitées)
 404.html                 page d'erreur (générée, non indexée)
@@ -683,7 +684,7 @@ supabase-config.js       URL du projet + clé publique (voir Comptes)
 supabase/schema.sql      tables, politiques RLS et fonctions de synchro
 supabase/test/           le schéma testé sur un vrai Postgres (PGlite) : RLS (233),
                          montée depuis chaque version passée (11)
-test/                    logique métier (146), gardes de sécurité (163), liens (47)
+test/                    logique métier (146), gardes de sécurité (167), liens (63)
 LICENSE  SECURITY.md  CONTRIBUTING.md  CHANGELOG.md
 .github/                 modèles d'issues, workflow de CI
 .vercelignore            ce que le site ne publie pas : docs, schéma, tests, source du contenu
@@ -842,10 +843,18 @@ Le site ne se résume plus à l'app. À côté d'elle, des pages statiques
 répondent à de vraies recherches : une notion par page dans `/documentation`,
 des guides dans `/entrainement`, des exercices dans `/exercices`, des
 calculateurs dans `/outils`, plus une page produit (`/carnet-de-musculation`)
-et une page qui dit comment elles sont faites (`/methode-editoriale`). Le pied
-de page de l'app y mène par **Apprendre** ; c'est la seule modification de
-`index.html`, et le service worker n'a pas changé : chaque page visitée reste
-lisible hors ligne, comme le guide.
+et une page qui dit comment elles sont faites (`/methode-editoriale`). Tout est
+regroupé sous une rubrique principale, **Apprendre** (`/apprendre`), qui liste
+chaque rubrique et chacune de ses pages.
+
+Dans l'app, Apprendre est un **quatrième onglet**, à côté de PLANNING, SÉANCES
+et RÉCAP : un écran fixe de six cartes (documentation, entraînement, exercices,
+outils, le carnet, la méthode) et un bouton vers `/apprendre`. Il n'enregistre
+rien et ne calcule rien — la vue courante n'est pas stockée, et le rendu
+s'arrête là au lieu de retomber sur le récap. Sur les pages, une barre reprend
+ces rubriques sous l'en-tête, avec la rubrique courante allumée comme un onglet
+de l'app, et le fil d'Ariane passe par Apprendre. Le service worker n'a pas
+changé : chaque page visitée reste lisible hors ligne, comme le guide.
 
 Premières pages : le top set, le calculateur de 1RM, la page produit, le carnet
 de musculation pour l'EPS, la planche.

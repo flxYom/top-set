@@ -106,16 +106,23 @@ for (const p of LEGALES){
   ok('index.html renvoie vers ' + p, accueil.includes('href="' + p + '"'));
 }
 
-// Les pages de contenu : l'app y mene par « Apprendre », et chacune reste a
-// deux clics de l'accueil, parce que la page Apprendre les liste toutes.
+// Les pages de contenu : l'onglet APPRENDRE de l'app mene a la page
+// /apprendre, qui les liste toutes : chacune reste a deux gestes de l'accueil.
 console.log('\n== Les pages de contenu sont atteignables ==');
-ok('index.html renvoie vers /documentation (Apprendre)', accueil.includes('href="/documentation"'));
-const hub = reels.has('documentation/index.html') ? readFileSync(join(RACINE, 'documentation/index.html'), 'utf8') : '';
-const contenus = pages.filter(f => f.includes('/') && !f.endsWith('/index.html'));
-ok(contenus.length + ' page(s) de contenu dans les rubriques', contenus.length > 0);
+ok('index.html renvoie vers /apprendre', accueil.includes('href="/apprendre"'));
+const apprendre = reels.has('apprendre.html') ? readFileSync(join(RACINE, 'apprendre.html'), 'utf8') : '';
+ok('apprendre.html existe', apprendre.length > 0);
+const contenus = pages.filter(f => f.includes('/') && !f.endsWith('/index.html'))
+  .concat(['carnet-de-musculation.html', 'methode-editoriale.html'].filter(f => reels.has(f)));
+ok(contenus.length + ' page(s) de contenu', contenus.length > 2);
 for (const c of contenus){
   const u = '/' + c.replace(/\.html$/, '');
-  ok('/documentation mene a ' + u, hub.includes('href="' + u + '"'));
+  ok('/apprendre mene a ' + u, apprendre.includes('href="' + u + '"'));
+}
+// Chaque page de contenu porte la barre des rubriques d'Apprendre.
+for (const c of pages.filter(f => f.includes('/') || ['apprendre.html', 'carnet-de-musculation.html', 'methode-editoriale.html'].includes(f))){
+  const t = readFileSync(join(RACINE, c), 'utf8');
+  ok(c + ' : barre des rubriques', t.includes('<nav class="rubriques" aria-label="Apprendre">'));
 }
 
 console.log(`\n${pass} reussis, ${fail} echoues`);
