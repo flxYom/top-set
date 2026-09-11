@@ -717,7 +717,7 @@ supabase-config.js       URL du projet + clé publique (voir Comptes)
 supabase/schema.sql      tables, politiques RLS et fonctions de synchro
 supabase/test/           le schéma testé sur un vrai Postgres (PGlite) : RLS (239),
                          montée depuis chaque version passée (12)
-test/                    logique métier (161), gardes de sécurité (171), liens (123), gabarits de contenu (15)
+test/                    logique métier (161), gardes de sécurité (171), liens (119), gabarits de contenu (15)
 LICENSE  SECURITY.md  CONTRIBUTING.md  CHANGELOG.md
 .github/                 modèles d'issues, workflow de CI
 .vercelignore            ce que le site ne publie pas : docs, schéma, tests, source du contenu
@@ -889,12 +889,15 @@ ces rubriques sous l'en-tête, avec la rubrique courante allumée comme un ongle
 de l'app, et le fil d'Ariane passe par Apprendre. Le service worker n'a pas
 changé : chaque page visitée reste lisible hors ligne, comme le guide.
 
-Pages publiées : le top set, le calculateur de 1RM, la page produit, le carnet
-de musculation pour l'EPS, la planche ; puis, par lots de trois, l'échelle RPE,
+Pages publiées : le top set, le calculateur de 1RM, la page produit, la
+planche ; puis, par lots de trois, l'échelle RPE,
 le RIR et l'échec musculaire ; le 1RM, le back-off set et le tableau RPE ; la
 surcharge progressive, le nombre de répétitions et le nombre de séries par muscle ;
 le temps de repos, la stagnation et suivre sa progression ; le développé couché,
-le poids de la barre et un modèle de carnet pour Excel.
+le poids de la barre et un modèle de carnet pour Excel. Une page sur le carnet
+d'EPS des lycéens a été publiée puis retirée : ce n'est pas le public de Top Set.
+Son adresse redirige définitivement vers `/carnet-de-musculation` (`redirects`
+dans `vercel.json`), et son sujet est `RETIRED` dans la matrice.
 
 **Comment elles sont fabriquées.** Toujours pas de framework ni d'étape de
 construction chez Vercel. Chaque page a sa source dans `contenu/` : un fichier
@@ -946,7 +949,8 @@ trois pages : en dessous, elle existe mais reste hors du plan du site.
 
 **Les sources.** `contenu/sources.json` ne contient que des sources réellement
 ouvertes : DOI vérifié sur Crossref, résumé lu sur PubMed, texte intégral quand il
-est libre, texte officiel pour l'EPS. Le champ `lu` dit ce qui a été lu, et la
+est libre, texte officiel pour une règle (le règlement de force athlétique pour
+le poids d'une barre). Le champ `lu` dit ce qui a été lu, et la
 page l'affiche.
 
 **La signature.** « Par Yom Industry × Claude (Anthropic) » : l'aide de l'IA est

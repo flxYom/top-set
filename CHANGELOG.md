@@ -288,6 +288,16 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ### Removed
 
+- **The school PE (EPS) page and every mention of it.** French high-school
+  students are not Top Set's audience. `/entrainement/carnet-musculation-eps`
+  is deleted along with its two official-text sources; its address redirects
+  permanently to `/carnet-de-musculation` (the first `redirects` entry in
+  `vercel.json`), its topic is `RETIRED` in the matrix, and the product page,
+  the plank page, the editorial method, the Entraînement hub and the Apprendre
+  card no longer mention school or the baccalauréat. The top set page also
+  drops the sentence tying the app's name to the term: Top Set is the app's
+  name, not a word for a logbook. Service worker cache `topset-v17` →
+  `topset-v18`.
 - `set-domaine.mjs`. It replaced the placeholder domain everywhere; it served
   once, when `top-set.fr` arrived, and a one-off tool left in the repository
   is one more thing to keep working for nothing.

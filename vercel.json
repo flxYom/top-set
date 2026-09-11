@@ -2,6 +2,13 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "cleanUrls": true,
   "trailingSlash": false,
+  "redirects": [
+    {
+      "source": "/entrainement/carnet-musculation-eps",
+      "destination": "/carnet-de-musculation",
+      "permanent": true
+    }
+  ],
   "headers": [
     {
       "source": "/(.*)",

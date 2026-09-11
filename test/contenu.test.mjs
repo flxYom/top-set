@@ -120,7 +120,7 @@ cas('sans section « variantes »',
     d => modifier(d, PLANCHE, '<h2 id="variantes">', '<h2>'),
     'section obligatoire absente : <h2 id="variantes">');
 cas('sans aucune notion liee',
-    d => modifier(d, PLANCHE, '"related": ["/entrainement/carnet-musculation-eps", "/carnet-de-musculation", "/documentation/top-set-musculation"]', '"related": ["/carnet-de-musculation"]'),
+    d => modifier(d, PLANCHE, '"related": ["/entrainement/suivre-sa-progression", "/carnet-de-musculation", "/documentation/top-set-musculation"]', '"related": ["/carnet-de-musculation"]'),
     'aucune notion liée');
 
 console.log(`\n${pass} reussis, ${fail} echoues`);

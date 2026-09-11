@@ -10,7 +10,6 @@ Statuts : IDEA → RESEARCHED → PLANNED/SELECTED → DRAFT → PUBLISHED → N
 | /documentation/1rm-musculation | charge | informationnelle | 1rm musculation | PUBLISHED | formules-1rm | 2026-09-11 |
 | /documentation/back-off-set | top-set | informationnelle | back off set musculation | PUBLISHED | — | 2026-09-11 |
 | /documentation/rpe-musculation | intensite | informationnelle | rpe musculation | PUBLISHED | rpe-vs-borg | 2026-09-11 |
-| /entrainement/carnet-musculation-eps | suivi | informationnelle | carnet de musculation eps | PUBLISHED | — | 2026-09-11 |
 | /entrainement/nombre-de-repetitions | progression | informationnelle | nombre de répétitions hypertrophie | PUBLISHED | — | 2026-09-11 |
 | /entrainement/surcharge-progressive | progression | informationnelle | surcharge progressive musculation | PUBLISHED | — | 2026-09-11 |
 | /outils/calculateur-1rm | charge | outil | calcul 1rm | PUBLISHED | calculateur-1rm-rpe | 2026-09-11 |
