@@ -11,17 +11,17 @@ Pondération : demand ×2, relevance ×1.5, competition ×1.5, opportunity ×1.5
 | 1 | Le top set | top set musculation | top-set | définition (pilier) | 5 | 4 | 5 | 5 | 5 | 2 | 5 | 5 | **91** | PUBLISHED | /documentation/top-set-musculation | faible |
 | 2 | Le 1RM (répétition maximale) | 1rm musculation | charge | définition (pilier) | 5 | 5 | 2 | 3 | 5 | 5 | 5 | 5 | **86** | SELECTED | /documentation/1rm-musculation | faible |
 | 3 | Le back-off set | back off set musculation | top-set | définition | 5 | 3 | 5 | 5 | 4 | 2 | 5 | 5 | **85** | SELECTED | /documentation/back-off-set | faible |
-| 4 | L'échelle RPE en musculation | rpe musculation | intensite | définition (pilier) | 5 | 5 | 2 | 3 | 5 | 4 | 5 | 5 | **85** | SELECTED | /documentation/rpe-musculation | faible |
+| 4 | L'échelle RPE en musculation | rpe musculation | intensite | définition (pilier) | 5 | 5 | 2 | 3 | 5 | 4 | 5 | 5 | **85** | PUBLISHED | /documentation/rpe-musculation | faible |
 | 5 | Carnet d'entraînement de musculation pour l'EPS (bac) | carnet de musculation eps | suivi | guide | 5 | 5 | 3 | 5 | 3 | 2 | 4 | 5 | **84** | PUBLISHED | /entrainement/carnet-musculation-eps | faible |
 | 6 | Combien de répétitions pour l'hypertrophie | nombre de répétitions hypertrophie | progression | guide | 4 | 5 | 2 | 4 | 5 | 5 | 5 | 4 | **84** | SELECTED | /entrainement/nombre-de-repetitions | faible |
 | 7 | La surcharge progressive | surcharge progressive musculation | progression | guide (pilier) | 5 | 5 | 2 | 3 | 5 | 3 | 5 | 5 | **83** | SELECTED | /entrainement/surcharge-progressive | faible |
 | 8 | Calculateur de 1RM (avec RPE) | calcul 1rm | charge | outil | 5 | 5 | 1 | 3 | 4 | 5 | 5 | 5 | **82** | PUBLISHED | /outils/calculateur-1rm | faible |
-| 9 | Les répétitions en réserve (RIR) | rir musculation | intensite | définition | 5 | 4 | 2 | 3 | 4 | 4 | 5 | 5 | **79** | SELECTED | /documentation/rir-musculation | faible |
+| 9 | Les répétitions en réserve (RIR) | rir musculation | intensite | définition | 5 | 4 | 2 | 3 | 4 | 4 | 5 | 5 | **79** | PUBLISHED | /documentation/rir-musculation | faible |
 | 10 | Suivre sa progression en musculation | suivi progression musculation | suivi | guide (pilier) | 5 | 3 | 3 | 4 | 4 | 3 | 5 | 5 | **79** | SELECTED | /entrainement/suivre-sa-progression | faible |
 | 11 | Carnet de musculation gratuit (page produit) | carnet de musculation | suivi | page produit | 5 | 5 | 2 | 4 | 3 | 1 | 5 | 5 | **78** | PUBLISHED | /carnet-de-musculation | faible |
 | 12 | Combien de séries par muscle et par semaine | combien de séries par muscle par semaine | progression | guide | 4 | 5 | 1 | 3 | 5 | 5 | 5 | 4 | **78** | SELECTED | /entrainement/nombre-de-series-par-muscle | faible |
 | 13 | Temps de repos entre les séries | temps de repos musculation | progression | guide | 5 | 5 | 1 | 3 | 4 | 4 | 4 | 5 | **78** | SELECTED | /entrainement/temps-de-repos | faible |
-| 14 | L'échec musculaire | échec musculaire | intensite | guide | 4 | 5 | 2 | 3 | 5 | 3 | 5 | 4 | **77** | SELECTED | /documentation/echec-musculaire | faible |
+| 14 | L'échec musculaire | échec musculaire | intensite | guide | 4 | 5 | 2 | 3 | 5 | 3 | 5 | 4 | **77** | PUBLISHED | /documentation/echec-musculaire | faible |
 | 15 | Tableau RPE → % du 1RM | tableau rpe pourcentage | intensite | outil | 5 | 4 | 2 | 3 | 4 | 3 | 5 | 5 | **77** | SELECTED | /outils/tableau-rpe | faible |
 | 16 | Tableau des pourcentages du 1RM | pourcentage 1rm | charge | outil | 5 | 4 | 2 | 3 | 4 | 4 | 5 | 4 | **76** | IDEA | /outils/pourcentages-1rm | faible |
 | 17 | Progresser au développé couché | progresser développé couché | exercices | guide | 5 | 4 | 2 | 3 | 3 | 3 | 5 | 5 | **75** | IDEA | /entrainement/progresser-developpe-couche | faible |
@@ -118,7 +118,7 @@ Pondération : demand ×2, relevance ×1.5, competition ×1.5, opportunity ×1.5
 - **Concurrence** : DDG FR : mêmes pages que top set + un blog québécois ; beaucoup d'anglais
 - **Notes** : Distinct du pilier : combien réduire, combien de séries, back-off vs drop set. Le type « back-off » existe dans l'app.
 
-### L'échelle RPE en musculation — 85 (SELECTED)
+### L'échelle RPE en musculation — 85 (PUBLISHED)
 
 - **Requête** : rpe musculation · variantes : rpe musculation définition, échelle rpe musculation, tableau rpe musculation, rpe 8 musculation, rpe 9 musculation, c'est quoi rpe en muscu
 - **Intention** : informationnelle · **page parente** : /documentation
@@ -158,7 +158,7 @@ Pondération : demand ×2, relevance ×1.5, competition ×1.5, opportunity ×1.5
 - **Concurrence** : DDG FR : StrengthLevel (FR+EN), powerlifting.fr, une dizaine de calculateurs ; très concurrentiel
 - **Notes** : Faire mieux : plusieurs formules côte à côte avec leur marge d'erreur, entrée RPE, tractions lestées (poids du corps), résultat reportable dans le carnet. Réutilise intelligence.js (déjà testé).
 
-### Les répétitions en réserve (RIR) — 79 (SELECTED)
+### Les répétitions en réserve (RIR) — 79 (PUBLISHED)
 
 - **Requête** : rir musculation · variantes : rir musculation c'est quoi, rir 1 musculation, rir 2 musculation, répétitions en réserve
 - **Intention** : informationnelle · **page parente** : /documentation/rpe-musculation
@@ -198,7 +198,7 @@ Pondération : demand ×2, relevance ×1.5, competition ×1.5, opportunity ×1.5
 - **Concurrence** : DDG FR : 10 guides dont sites de marques
 - **Notes** : L'app note le repos par série ; un chrono est prévu.
 
-### L'échec musculaire — 77 (SELECTED)
+### L'échec musculaire — 77 (PUBLISHED)
 
 - **Requête** : échec musculaire · variantes : échec musculaire c'est quoi, aller à l'échec musculation, échec musculaire à chaque série, échec musculaire ou nerveux
 - **Intention** : informationnelle · **page parente** : /documentation/rpe-musculation

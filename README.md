@@ -558,7 +558,7 @@ supabase-config.js       project URL + public anon key (see Accounts)
 supabase/schema.sql      tables, RLS policies and sync functions
 supabase/test/           the schema tested on a real Postgres (PGlite): RLS (233),
                          upgrade from every past version (11)
-test/                    business logic (146), hardening guards (167), links (63), content templates (15)
+test/                    business logic (146), hardening guards (167), links (75), content templates (15)
 LICENSE  SECURITY.md  CONTRIBUTING.md  CHANGELOG.md
 .github/                 issue templates, CI workflow
 .vercelignore            what the site does not publish: docs, schema, tests, content sources
@@ -706,8 +706,9 @@ SÉANCES and RÉCAP: a static screen of six cards and a button to `/apprendre`;
 it stores and computes nothing. Content pages carry a bar with the same
 sections under the header, the current one lit like an app tab, and the
 breadcrumb goes through Apprendre. The service worker is unchanged, and every
-visited page stays readable offline. First pages: the top set, a 1RM calculator, the product
-page, a training log for French school PE (EPS), the plank.
+visited page stays readable offline. Published pages: the top set, a 1RM calculator, the product
+page, a training log for French school PE (EPS), the plank; then, in batches of
+three, the RPE scale, reps in reserve (RIR) and muscle failure.
 
 Still no framework and no build step on Vercel. Each page's source lives in
 `contenu/`: an HTML file whose first comment holds JSON metadata.

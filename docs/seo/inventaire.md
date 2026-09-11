@@ -9,17 +9,17 @@ Statuts : IDEA → RESEARCHED → PLANNED/SELECTED → DRAFT → PUBLISHED → N
 | /documentation/top-set-musculation | top-set | informationnelle | top set musculation | PUBLISHED | top-set-programme, types-de-series | 2026-09-11 |
 | /documentation/1rm-musculation | charge | informationnelle | 1rm musculation | SELECTED | formules-1rm | — |
 | /documentation/back-off-set | top-set | informationnelle | back off set musculation | SELECTED | — | — |
-| /documentation/rpe-musculation | intensite | informationnelle | rpe musculation | SELECTED | rpe-vs-borg | — |
+| /documentation/rpe-musculation | intensite | informationnelle | rpe musculation | PUBLISHED | rpe-vs-borg | 2026-09-11 |
 | /entrainement/carnet-musculation-eps | suivi | informationnelle | carnet de musculation eps | PUBLISHED | — | 2026-09-11 |
 | /entrainement/nombre-de-repetitions | progression | informationnelle | nombre de répétitions hypertrophie | SELECTED | — | — |
 | /entrainement/surcharge-progressive | progression | informationnelle | surcharge progressive musculation | SELECTED | — | — |
 | /outils/calculateur-1rm | charge | outil | calcul 1rm | PUBLISHED | calculateur-1rm-rpe | 2026-09-11 |
-| /documentation/rir-musculation | intensite | informationnelle | rir musculation | SELECTED | — | — |
+| /documentation/rir-musculation | intensite | informationnelle | rir musculation | PUBLISHED | — | 2026-09-11 |
 | /entrainement/suivre-sa-progression | suivi | informationnelle | suivi progression musculation | SELECTED | exemple-carnet | — |
 | /carnet-de-musculation | suivi | transactionnelle | carnet de musculation | PUBLISHED | application-gratuite, journal-entrainement | 2026-09-11 |
 | /entrainement/nombre-de-series-par-muscle | progression | informationnelle | combien de séries par muscle par semaine | SELECTED | volume-definition | — |
 | /entrainement/temps-de-repos | progression | informationnelle | temps de repos musculation | SELECTED | — | — |
-| /documentation/echec-musculaire | intensite | informationnelle | échec musculaire | SELECTED | — | — |
+| /documentation/echec-musculaire | intensite | informationnelle | échec musculaire | PUBLISHED | — | 2026-09-11 |
 | /outils/tableau-rpe | intensite | outil | tableau rpe pourcentage | SELECTED | — | — |
 | /exercices/planche-gainage | exercices | informationnelle | planche abdos combien de temps | PUBLISHED | — | 2026-09-11 |
 | /outils/modele-carnet-musculation | suivi | transactionnelle | carnet de musculation excel | SELECTED | — | — |

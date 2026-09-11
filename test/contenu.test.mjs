@@ -8,7 +8,7 @@
 //
 //   node test/contenu.test.mjs
 
-import { mkdtempSync, cpSync, readFileSync, writeFileSync, rmSync, mkdirSync } from 'fs';
+import { mkdtempSync, cpSync, readFileSync, writeFileSync, rmSync, mkdirSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { tmpdir } from 'os';
 import { spawnSync } from 'child_process';
@@ -95,15 +95,19 @@ cas('avec moins de trois termes associes',
 cas('avec un terme qui vise un sujet inconnu',
     d => modifier(d, TOPSET, '"sujet": "rpe"', '"sujet": "rpe-inexistant"'),
     'sujet inconnu « rpe-inexistant »');
-// Un sujet marque publie sans page : le terme deviendrait un lien mort.
+// Un sujet marque publie sans page : le terme deviendrait un lien mort. Le
+// sujet est choisi parmi ceux qui n'ont pas encore de page, pour que le test
+// reste valable a mesure que les pages paraissent.
 cas('avec un terme dont le sujet est publie mais sans page',
     d => {
       const p = join(d, 'docs/seo/sujets.json');
       const j = JSON.parse(readFileSync(p, 'utf8'));
-      j.sujets.find(s => s.id === 'rpe').status = 'PUBLISHED';
+      const sansPage = j.sujets.find(s => (s.status === 'SELECTED' || s.status === 'IDEA') && !existsSync(join(d, 'contenu', s.target_url + '.html')));
+      sansPage.status = 'PUBLISHED';
       writeFileSync(p, JSON.stringify(j, null, 2));
+      modifier(d, TOPSET, '"termes": [', `"termes": [\n    { "terme": "Témoin", "sujet": "${sansPage.id}", "def": "Un terme de test." },`);
     },
-    'RPE vise une page qui n\'existe pas');
+    'Témoin vise une page qui n\'existe pas');
 
 console.log('\n== Un exercice sans fiche complete est refuse ==');
 cas('sans respiration dans la fiche',
