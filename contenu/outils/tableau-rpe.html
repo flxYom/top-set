@@ -1,0 +1,133 @@
+<!--
+{
+  "type": "outil",
+  "title": "Tableau RPE : % du 1RM selon les répétitions et le RPE",
+  "description": "Le tableau RPE donne le pourcentage du 1RM pour chaque nombre de répétitions et RPE. Entre ton 1RM pour lire tes charges en kg. Sa méthode et ses limites.",
+  "h1": "Tableau RPE et pourcentage du 1RM",
+  "fil": "Tableau RPE",
+  "lede": "Pour chaque nombre de répétitions et chaque RPE, le pourcentage de ton 1RM à charger. Entre ton 1RM et le tableau passe en kilos. Il est calculé avec la même formule que le carnet Top Set — et plus bas, on te montre ce qu'en disent les mesures réelles.",
+  "primaryQuery": "tableau rpe pourcentage",
+  "published": "2026-09-11",
+  "reviewed": "2026-09-11",
+  "ordre": 2,
+  "sommaire": false,
+  "scripts": ["/intelligence.js", "/outils/tableau-rpe.js"],
+  "related": ["/documentation/rpe-musculation", "/outils/calculateur-1rm", "/documentation/1rm-musculation"],
+  "sources": {
+    "zourdos2016": "l'échelle RPE fondée sur les répétitions en réserve : RPE 10 = aucune, RPE 9 = une, RPE 8 = deux…",
+    "helms2016": "un tableau de conversion % du 1RM, répétitions et RIR fondé sur les notes moyennes de pratiquants de squat expérimentés ; à utiliser pour comprendre la relation, pas comme un outil de conversion exact, à cause des différences entre individus et des variations d'un jour à l'autre ; exemple : environ 83 % du 1RM pour 6 répétitions à l'échec, 5 à RPE 9 ou 4 à RPE 8.",
+    "nuzzo2024": "sur 269 études et 7 289 personnes : environ 5 répétitions à 90 % du 1RM et 15 à 70 % (tous exercices) ; environ 4, 9 et 14 au développé couché à 90, 80 et 70 % ; environ 9, 13 et 19 à la presse à cuisses ; écart type entre individus de 2,5 répétitions à 80 % et 4,4 à 60 % ; aux charges lourdes, les estimations rejoignent le tableau des manuels ; peu d'effet du sexe, de l'âge ou du niveau.",
+    "richens2014": "la formule d'Epley vient d'un tableau de charges d'entraîneur, pas d'une étude ; à 70 % du 1RM, des coureurs font 39,9 répétitions contre 17,9 pour des haltérophiles."
+  }
+}
+-->
+<div class="calc" id="calc-tableau">
+  <div class="champs">
+    <div class="champ">
+      <label for="t-rm">Ton 1RM (kg, facultatif)</label>
+      <input id="t-rm" type="text" inputmode="decimal" autocomplete="off" placeholder="par exemple 100">
+      <small>Tu ne le connais pas ? Estime-le avec le [[/outils/calculateur-1rm|calculateur]].</small>
+    </div>
+  </div>
+  <div class="resultat">
+    <div class="defile">
+      <table id="t-rpe">
+        <caption id="t-unite">En % du 1RM. Lignes : répétitions ; colonnes : RPE.</caption>
+        <thead><tr><th scope="col">Reps</th><th class="n" scope="col">RPE 10</th><th class="n" scope="col">9</th><th class="n" scope="col">8</th><th class="n" scope="col">7</th><th class="n" scope="col">6</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">1</th><td class="n" data-n="1">100</td><td class="n" data-n="2">94</td><td class="n" data-n="3">91</td><td class="n" data-n="4">88</td><td class="n" data-n="5">86</td></tr>
+          <tr><th scope="row">2</th><td class="n" data-n="2">94</td><td class="n" data-n="3">91</td><td class="n" data-n="4">88</td><td class="n" data-n="5">86</td><td class="n" data-n="6">83</td></tr>
+          <tr><th scope="row">3</th><td class="n" data-n="3">91</td><td class="n" data-n="4">88</td><td class="n" data-n="5">86</td><td class="n" data-n="6">83</td><td class="n" data-n="7">81</td></tr>
+          <tr><th scope="row">4</th><td class="n" data-n="4">88</td><td class="n" data-n="5">86</td><td class="n" data-n="6">83</td><td class="n" data-n="7">81</td><td class="n" data-n="8">79</td></tr>
+          <tr class="fort"><th scope="row">5</th><td class="n" data-n="5">86</td><td class="n" data-n="6">83</td><td class="n" data-n="7">81</td><td class="n" data-n="8">79</td><td class="n" data-n="9">77</td></tr>
+          <tr><th scope="row">6</th><td class="n" data-n="6">83</td><td class="n" data-n="7">81</td><td class="n" data-n="8">79</td><td class="n" data-n="9">77</td><td class="n" data-n="10">75</td></tr>
+          <tr><th scope="row">7</th><td class="n" data-n="7">81</td><td class="n" data-n="8">79</td><td class="n" data-n="9">77</td><td class="n" data-n="10">75</td><td class="n" data-n="11">73</td></tr>
+          <tr><th scope="row">8</th><td class="n" data-n="8">79</td><td class="n" data-n="9">77</td><td class="n" data-n="10">75</td><td class="n" data-n="11">73</td><td class="n" data-n="12">71</td></tr>
+          <tr><th scope="row">9</th><td class="n" data-n="9">77</td><td class="n" data-n="10">75</td><td class="n" data-n="11">73</td><td class="n" data-n="12">71</td><td class="n">—</td></tr>
+          <tr><th scope="row">10</th><td class="n" data-n="10">75</td><td class="n" data-n="11">73</td><td class="n" data-n="12">71</td><td class="n">—</td><td class="n">—</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>« — » : plus de 12 répétitions possibles, au-delà de ce que la formule estime correctement.</p>
+  </div>
+</div>
+
+<h2>Comment le lire</h2>
+<p>
+  Tu veux faire <strong>5 répétitions à RPE 8</strong> : ligne 5, colonne RPE 8,
+  <strong>81 %</strong>. Avec un 1RM de 100 kg, ça fait 81 kg. RPE 8, c'est deux
+  répétitions en réserve [@zourdos2016] : tu en ferais 7 à cette charge, et 7
+  répétitions à fond correspondent à environ 81 % du 1RM.
+</p>
+<p>
+  Chaque diagonale donne donc le même pourcentage : 5 répétitions à RPE 8, 6 à RPE 9 et
+  7 à RPE 10, c'est la même charge. Pour un demi-point (8,5), prends entre les deux
+  colonnes, ou le [[/outils/calculateur-1rm|calculateur]], qui accepte les demi-points.
+</p>
+
+<h2>D'où vient ce tableau</h2>
+<p>
+  Il est <strong>calculé</strong>, pas recopié : on ajoute aux répétitions faites
+  celles qu'il restait en réserve, puis on applique la formule d'Epley,
+  1RM = charge × (1 + répétitions ÷ 30). C'est la formule du carnet Top Set et du
+  calculateur, avec la même limite de 12 répétitions. Une exception : une répétition
+  vraiment à fond, c'est le 1RM lui-même, donc 100 % — Epley ajouterait 3 %.
+</p>
+<p>
+  La formule d'Epley vient elle-même d'un tableau de charges d'entraîneur, pas d'une
+  étude [@richens2014]. Et les tableaux RPE ne font pas mieux : celui que propose une
+  revue de 2016 repose sur les notes moyennes de quelques pratiquants de squat
+  expérimentés, et ses auteurs préviennent qu'il sert à comprendre la relation, pas à
+  convertir au kilo près [@helms2016]. Il tombe d'ailleurs au même endroit que le
+  nôtre : environ 83 % du 1RM pour 6 répétitions à l'échec, 5 à RPE 9 ou 4 à RPE 8
+  [@helms2016].
+</p>
+
+<h2>Ce que mesurent les études</h2>
+<p>
+  La plus grande synthèse sur le sujet a réuni 269 études et 7 289 personnes pour
+  mesurer combien de répétitions on fait réellement, à fond, à un pourcentage donné
+  [@nuzzo2024] :
+</p>
+<div class="defile">
+  <table>
+    <caption>Répétitions possibles à fond, selon le pourcentage du 1RM : la formule et les mesures</caption>
+    <thead><tr><th>Répétitions</th><th class="n">90 %</th><th class="n">80 %</th><th class="n">70 %</th></tr></thead>
+    <tbody>
+      <tr class="fort"><td>Formule d'Epley (ce tableau)</td><td class="n">3</td><td class="n">7–8</td><td class="n">13</td></tr>
+      <tr><td>Mesuré, tous exercices</td><td class="n">≈ 5</td><td class="n">—</td><td class="n">≈ 15</td></tr>
+      <tr><td>Mesuré, développé couché</td><td class="n">≈ 4</td><td class="n">≈ 9</td><td class="n">≈ 14</td></tr>
+      <tr><td>Mesuré, presse à cuisses</td><td class="n">≈ 9</td><td class="n">≈ 13</td><td class="n">≈ 19</td></tr>
+    </tbody>
+  </table>
+</div>
+<p>
+  Trois leçons. La formule prévoit <em>moins</em> de répétitions que les mesures : le
+  tableau propose donc plutôt des charges prudentes. L'écart est le plus faible aux
+  charges lourdes, et grandit quand la charge baisse [@nuzzo2024]. Selon l'exercice, l'écart est grand :
+  à la presse à cuisses, on fait bien plus de répétitions qu'au développé couché. Et
+  d'une personne à l'autre, il est plus grand encore : l'écart type est d'environ
+  2,5 répétitions à 80 % du 1RM et de 4,4 à 60 % [@nuzzo2024]. À 70 % du 1RM, des
+  coureurs d'endurance ont fait en moyenne 39,9 répétitions, des haltérophiles 17,9
+  [@richens2014].
+</p>
+
+<h2>Comment t'en servir</h2>
+<ul>
+  <li><strong>Comme point de départ</strong>, pour la première série. Ensuite, c'est le
+      RPE réel qui décide : si la série prévue à RPE 8 sort à RPE 9, baisse ; si elle
+      sort à RPE 7, monte. C'est tout l'intérêt de
+      [[/documentation/rpe-musculation|l'échelle RPE]].</li>
+  <li><strong>Aux charges lourdes surtout</strong> (peu de répétitions) : c'est là que
+      l'écart avec les mesures est le plus faible.</li>
+  <li><strong>Sur machine et pour les jambes</strong>, attends-toi à faire plus de
+      répétitions que le tableau ne l'annonce : pars un peu plus lourd, et ajuste au
+      RPE.</li>
+</ul>
+
+<h2>Le noter dans Top Set</h2>
+<p>
+  Dans le carnet, note le RPE de chaque série : l'app s'en sert pour te suggérer ta
+  prochaine charge, et compare d'une séance à l'autre le 1RM estimé de ton top set,
+  calculé avec la même formule que ce tableau.
+</p>

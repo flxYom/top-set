@@ -18,7 +18,7 @@ while it stays below `1.0.0`, breaking changes (in particular to the
   written from the February 2026 official texts
   (`/entrainement/carnet-musculation-eps`), and the plank
   (`/exercices/planche-gainage`) — plus section hubs, a page on how the pages
-  are made (`/methode-editoriale`) and a branded 404. 25 sources cited, each opened
+  are made (`/methode-editoriale`) and a branded 404. 31 sources cited, each opened
   and labelled with what was read. Signed « Yom Industry × Claude
   (Anthropic) ». Everything sits under one main section, **Apprendre**
   (`/apprendre`, listing every section and page): a fourth app tab next to
@@ -54,6 +54,16 @@ while it stays below `1.0.0`, breaking changes (in particular to the
   on PMC, Grgic 2022, Davies 2016, Vieira 2022…). The top set page's related
   terms now link to them on their own; the documentation hub, at four pages,
   becomes indexable.
+- **Content, batch 2 — load** (French): the 1RM (`/documentation/1rm-musculation`,
+  the pillar: testing or estimating it, what it is for, loads for strength or
+  muscle), the back-off set (`/documentation/back-off-set`: how much to drop,
+  how many sets, back-off vs drop set) and an **RPE table**
+  (`/outils/tableau-rpe`): % of 1RM for 1–10 reps at RPE 6–10, turned into kg
+  when a 1RM is entered, computed with the app's own Epley formula and 12-rep
+  limit (`outils/tableau-rpe.js`, reads `TS.epley`), and shown next to what
+  a 269-study meta-regression actually measured. 6 new sources (Nuzzo 2024 read
+  in full on PMC, Grgic 2020, Lopez 2021, Steele 2022, Sødal 2023, Havers
+  2026).
 - **SEO and content strategy** (`docs/seo/`, not published). An audit of the
   real site — the home page shows Googlebot 118 words and a sign-up screen, no
   page answers a search — research from Google autocomplete (155 seed queries,

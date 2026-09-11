@@ -552,13 +552,14 @@ documentation/  entrainement/  exercices/  outils/
 404.html                 error page (generated, not indexed)
 contenu.css              styles for the content pages
 outils/outils.js         calculators (external file: the CSP refuses inline scripts)
+outils/tableau-rpe.js    the RPE table: % of 1RM or kg, same formula as the log
 img/                     app screenshots for the product page (WebP)
 supabase.umd.js          supabase-js 2.115.0, loaded on demand
 supabase-config.js       project URL + public anon key (see Accounts)
 supabase/schema.sql      tables, RLS policies and sync functions
 supabase/test/           the schema tested on a real Postgres (PGlite): RLS (233),
                          upgrade from every past version (11)
-test/                    business logic (146), hardening guards (167), links (75), content templates (15)
+test/                    business logic (146), hardening guards (167), links (87), content templates (15)
 LICENSE  SECURITY.md  CONTRIBUTING.md  CHANGELOG.md
 .github/                 issue templates, CI workflow
 .vercelignore            what the site does not publish: docs, schema, tests, content sources
@@ -708,7 +709,8 @@ sections under the header, the current one lit like an app tab, and the
 breadcrumb goes through Apprendre. The service worker is unchanged, and every
 visited page stays readable offline. Published pages: the top set, a 1RM calculator, the product
 page, a training log for French school PE (EPS), the plank; then, in batches of
-three, the RPE scale, reps in reserve (RIR) and muscle failure.
+three, the RPE scale, reps in reserve (RIR) and muscle failure; the 1RM, the
+back-off set and an RPE table.
 
 Still no framework and no build step on Vercel. Each page's source lives in
 `contenu/`: an HTML file whose first comment holds JSON metadata.

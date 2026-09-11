@@ -678,13 +678,14 @@ documentation/  entrainement/  exercices/  outils/
 404.html                 page d'erreur (générée, non indexée)
 contenu.css              styles des pages de contenu
 outils/outils.js         calculateurs (fichier externe : la CSP refuse le script en ligne)
+outils/tableau-rpe.js    le tableau RPE : % du 1RM ou kg, même formule que le carnet
 img/                     captures de l'app pour la page produit (WebP)
 supabase.umd.js          supabase-js 2.115.0, chargé à la demande
 supabase-config.js       URL du projet + clé publique (voir Comptes)
 supabase/schema.sql      tables, politiques RLS et fonctions de synchro
 supabase/test/           le schéma testé sur un vrai Postgres (PGlite) : RLS (233),
                          montée depuis chaque version passée (11)
-test/                    logique métier (146), gardes de sécurité (167), liens (75), gabarits de contenu (15)
+test/                    logique métier (146), gardes de sécurité (167), liens (87), gabarits de contenu (15)
 LICENSE  SECURITY.md  CONTRIBUTING.md  CHANGELOG.md
 .github/                 modèles d'issues, workflow de CI
 .vercelignore            ce que le site ne publie pas : docs, schéma, tests, source du contenu
@@ -858,7 +859,7 @@ changé : chaque page visitée reste lisible hors ligne, comme le guide.
 
 Pages publiées : le top set, le calculateur de 1RM, la page produit, le carnet
 de musculation pour l'EPS, la planche ; puis, par lots de trois, l'échelle RPE,
-le RIR et l'échec musculaire.
+le RIR et l'échec musculaire ; le 1RM, le back-off set et le tableau RPE.
 
 **Comment elles sont fabriquées.** Toujours pas de framework ni d'étape de
 construction chez Vercel. Chaque page a sa source dans `contenu/` : un fichier

@@ -312,6 +312,79 @@
       "type": "revue systématique et méta-analyse (8 études)",
       "lu": "résumé",
       "verifie": "2026-09-11"
+    },
+    "steele2022": {
+      "auteurs": ["Steele J","Malleron T","Har-Nir I","Androulakis-Korakakis P","Wolf M","Fisher JP","Halperin I"],
+      "annee": 2022,
+      "titre": "Are Trainees Lifting Heavy Enough? Self-Selected Loads in Resistance Exercise: A Scoping Review and Exploratory Meta-analysis",
+      "revue": "Sports Medicine",
+      "ref": "52(12):2909-2923",
+      "doi": "10.1007/s40279-022-01717-9",
+      "pmid": "35790622",
+      "type": "revue de portée et méta-analyse exploratoire (18 études, 368 participants)",
+      "lu": "résumé",
+      "verifie": "2026-09-11"
+    },
+    "grgic2020": {
+      "auteurs": ["Grgic J","Lazinica B","Schoenfeld BJ","Pedisic Z"],
+      "annee": 2020,
+      "titre": "Test-Retest Reliability of the One-Repetition Maximum (1RM) Strength Assessment: a Systematic Review",
+      "revue": "Sports Medicine - Open",
+      "ref": "6(1):31",
+      "doi": "10.1186/s40798-020-00260-z",
+      "pmid": "32681399",
+      "type": "revue systématique (32 études, 1 595 participants)",
+      "lu": "résumé",
+      "verifie": "2026-09-11"
+    },
+    "lopez2021": {
+      "auteurs": ["Lopez P","Radaelli R","Taaffe DR","Newton RU","Galvão DA","Trajano GS","Teodoro JL","Kraemer WJ","Häkkinen K","Pinto RS"],
+      "annee": 2021,
+      "titre": "Resistance Training Load Effects on Muscle Hypertrophy and Strength Gain: Systematic Review and Network Meta-analysis",
+      "revue": "Medicine & Science in Sports & Exercise",
+      "ref": "53(6):1206-1216",
+      "doi": "10.1249/MSS.0000000000002585",
+      "pmid": "33433148",
+      "type": "revue systématique et méta-analyse en réseau (28 études, 747 participants)",
+      "lu": "résumé",
+      "verifie": "2026-09-11"
+    },
+    "nuzzo2024": {
+      "auteurs": ["Nuzzo JL","Pinto MD","Nosaka K","Steele J"],
+      "annee": 2024,
+      "titre": "Maximal Number of Repetitions at Percentages of the One Repetition Maximum: A Meta-Regression and Moderator Analysis of Sex, Age, Training Status, and Exercise",
+      "revue": "Sports Medicine",
+      "ref": "54(2):303-321",
+      "doi": "10.1007/s40279-023-01937-7",
+      "pmid": "37792272",
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC10933212/",
+      "type": "méta-régression (269 études, 7 289 personnes)",
+      "lu": "résumé et passages cités",
+      "verifie": "2026-09-11"
+    },
+    "sodal2023": {
+      "auteurs": ["Sødal LK","Kristiansen E","Larsen S","van den Tillaar R"],
+      "annee": 2023,
+      "titre": "Effects of Drop Sets on Skeletal Muscle Hypertrophy: A Systematic Review and Meta-analysis",
+      "revue": "Sports Medicine - Open",
+      "ref": "9(1):66",
+      "doi": "10.1186/s40798-023-00620-5",
+      "pmid": "37523092",
+      "type": "revue systématique et méta-analyse (6 études, 142 participants)",
+      "lu": "résumé",
+      "verifie": "2026-09-11"
+    },
+    "havers2026": {
+      "auteurs": ["Havers T","Micke F","Geisler S","Held S"],
+      "annee": 2026,
+      "titre": "Acute and Chronic Effects of Drop-Set Training: A Meta-Analysis and Systematic Review",
+      "revue": "Sports Medicine - Open",
+      "ref": "12(1):38",
+      "doi": "10.1186/s40798-026-01012-1",
+      "pmid": "41920484",
+      "type": "revue systématique et méta-analyse (12 études, 274 participants)",
+      "lu": "résumé",
+      "verifie": "2026-09-11"
     }
   }
 }
