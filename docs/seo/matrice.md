@@ -13,13 +13,13 @@ Pondération : demand ×2, relevance ×1.5, competition ×1.5, opportunity ×1.5
 | 3 | Le back-off set | back off set musculation | top-set | définition | 5 | 3 | 5 | 5 | 4 | 2 | 5 | 5 | **85** | PUBLISHED | /documentation/back-off-set | faible |
 | 4 | L'échelle RPE en musculation | rpe musculation | intensite | définition (pilier) | 5 | 5 | 2 | 3 | 5 | 4 | 5 | 5 | **85** | PUBLISHED | /documentation/rpe-musculation | faible |
 | 5 | Carnet d'entraînement de musculation pour l'EPS (bac) | carnet de musculation eps | suivi | guide | 5 | 5 | 3 | 5 | 3 | 2 | 4 | 5 | **84** | PUBLISHED | /entrainement/carnet-musculation-eps | faible |
-| 6 | Combien de répétitions pour l'hypertrophie | nombre de répétitions hypertrophie | progression | guide | 4 | 5 | 2 | 4 | 5 | 5 | 5 | 4 | **84** | SELECTED | /entrainement/nombre-de-repetitions | faible |
-| 7 | La surcharge progressive | surcharge progressive musculation | progression | guide (pilier) | 5 | 5 | 2 | 3 | 5 | 3 | 5 | 5 | **83** | SELECTED | /entrainement/surcharge-progressive | faible |
+| 6 | Combien de répétitions pour l'hypertrophie | nombre de répétitions hypertrophie | progression | guide | 4 | 5 | 2 | 4 | 5 | 5 | 5 | 4 | **84** | PUBLISHED | /entrainement/nombre-de-repetitions | faible |
+| 7 | La surcharge progressive | surcharge progressive musculation | progression | guide (pilier) | 5 | 5 | 2 | 3 | 5 | 3 | 5 | 5 | **83** | PUBLISHED | /entrainement/surcharge-progressive | faible |
 | 8 | Calculateur de 1RM (avec RPE) | calcul 1rm | charge | outil | 5 | 5 | 1 | 3 | 4 | 5 | 5 | 5 | **82** | PUBLISHED | /outils/calculateur-1rm | faible |
 | 9 | Les répétitions en réserve (RIR) | rir musculation | intensite | définition | 5 | 4 | 2 | 3 | 4 | 4 | 5 | 5 | **79** | PUBLISHED | /documentation/rir-musculation | faible |
 | 10 | Suivre sa progression en musculation | suivi progression musculation | suivi | guide (pilier) | 5 | 3 | 3 | 4 | 4 | 3 | 5 | 5 | **79** | SELECTED | /entrainement/suivre-sa-progression | faible |
 | 11 | Carnet de musculation gratuit (page produit) | carnet de musculation | suivi | page produit | 5 | 5 | 2 | 4 | 3 | 1 | 5 | 5 | **78** | PUBLISHED | /carnet-de-musculation | faible |
-| 12 | Combien de séries par muscle et par semaine | combien de séries par muscle par semaine | progression | guide | 4 | 5 | 1 | 3 | 5 | 5 | 5 | 4 | **78** | SELECTED | /entrainement/nombre-de-series-par-muscle | faible |
+| 12 | Combien de séries par muscle et par semaine | combien de séries par muscle par semaine | progression | guide | 4 | 5 | 1 | 3 | 5 | 5 | 5 | 4 | **78** | PUBLISHED | /entrainement/nombre-de-series-par-muscle | faible |
 | 13 | Temps de repos entre les séries | temps de repos musculation | progression | guide | 5 | 5 | 1 | 3 | 4 | 4 | 4 | 5 | **78** | SELECTED | /entrainement/temps-de-repos | faible |
 | 14 | L'échec musculaire | échec musculaire | intensite | guide | 4 | 5 | 2 | 3 | 5 | 3 | 5 | 4 | **77** | PUBLISHED | /documentation/echec-musculaire | faible |
 | 15 | Tableau RPE → % du 1RM | tableau rpe pourcentage | intensite | outil | 5 | 4 | 2 | 3 | 4 | 3 | 5 | 5 | **77** | PUBLISHED | /outils/tableau-rpe | faible |
@@ -134,7 +134,7 @@ Pondération : demand ×2, relevance ×1.5, competition ×1.5, opportunity ×1.5
 - **Concurrence** : DDG FR : PDF d'établissements, Scribd/Studocu, deux outils EPS (un sans bilan ni graphique)
 - **Notes** : Niche la plus proche du produit : un carnet gratuit, sans compte, exportable. Sources : textes officiels de l'EPS (référentiel du champ d'apprentissage) à lire avant rédaction ; ne rien affirmer sur les exigences du bac sans eux.
 
-### Combien de répétitions pour l'hypertrophie — 84 (SELECTED)
+### Combien de répétitions pour l'hypertrophie — 84 (PUBLISHED)
 
 - **Requête** : nombre de répétitions hypertrophie · variantes : combien de répétitions par série, combien de répétitions pour prendre du muscle, 8 à 12 répétitions
 - **Intention** : informationnelle · **page parente** : /entrainement/surcharge-progressive
@@ -142,7 +142,7 @@ Pondération : demand ×2, relevance ×1.5, competition ×1.5, opportunity ×1.5
 - **Concurrence** : DDG FR : la plupart répètent « 8 à 12 reps »
 - **Notes** : La littérature sur la charge et l'hypertrophie contredit la règle rigide des 8-12 : forte opportunité si sourcé correctement.
 
-### La surcharge progressive — 83 (SELECTED)
+### La surcharge progressive — 83 (PUBLISHED)
 
 - **Requête** : surcharge progressive musculation · variantes : surcharge progressive exemple, comment appliquer la surcharge progressive, surcharge progressive définition, c'est quoi la surcharge progressive
 - **Intention** : informationnelle · **page parente** : /entrainement
@@ -182,7 +182,7 @@ Pondération : demand ×2, relevance ×1.5, competition ×1.5, opportunity ×1.5
 - **Concurrence** : DDG FR : un domaine exact (carnetdemusculation.fr), des fiches d'app, des PDF, des comparatifs
 - **Notes** : Donne à Google le texte que l'accueil (l'app) ne peut pas porter : ce que fait TOP SET, captures, gratuit, sans compte, hors ligne, coach. Absorbe « application musculation gratuite ».
 
-### Combien de séries par muscle et par semaine — 78 (SELECTED)
+### Combien de séries par muscle et par semaine — 78 (PUBLISHED)
 
 - **Requête** : combien de séries par muscle par semaine · variantes : nombre de séries par muscle par semaine, combien de séries par muscle par séance, volume musculation, nombre de série optimal par muscle
 - **Intention** : informationnelle · **page parente** : /entrainement/surcharge-progressive

@@ -385,6 +385,92 @@
       "type": "revue systématique et méta-analyse (12 études, 274 participants)",
       "lu": "résumé",
       "verifie": "2026-09-11"
+    },
+    "acsm2026": {
+      "auteurs": ["Currier BS","D'Souza AC","Singh MAF","Lowisz CV","Rawson ES","Schoenfeld BJ","Smith-Ryan AE","Steen JP","Thomas GA","Triplett NT","Washington TA","Werner TJ","Phillips SM"],
+      "annee": 2026,
+      "titre": "American College of Sports Medicine Position Stand. Resistance Training Prescription for Muscle Function, Hypertrophy, and Physical Performance in Healthy Adults: An Overview of Reviews",
+      "revue": "Medicine & Science in Sports & Exercise",
+      "ref": "58(4):851-872",
+      "doi": "10.1249/MSS.0000000000003897",
+      "pmid": "41843416",
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC12965823/",
+      "type": "position officielle (American College of Sports Medicine) : synthèse de 137 revues systématiques, plus de 30 000 participants",
+      "lu": "résumé et passages cités",
+      "verifie": "2026-09-11"
+    },
+    "plotkin2022": {
+      "auteurs": ["Plotkin D","Coleman M","Van Every D","Maldonado J","Oberlin D","Israetel M","Feather J","Alto A","Vigotsky AD","Schoenfeld BJ"],
+      "annee": 2022,
+      "titre": "Progressive overload without progressing load? The effects of load or repetition progression on muscular adaptations",
+      "revue": "PeerJ",
+      "ref": "10:e14142",
+      "doi": "10.7717/peerj.14142",
+      "pmid": "36199287",
+      "type": "essai randomisé (43 pratiquants entraînés, 8 semaines)",
+      "lu": "résumé",
+      "verifie": "2026-09-11"
+    },
+    "pelland2026": {
+      "auteurs": ["Pelland JC","Remmert JF","Robinson ZP","Hinson SR","Zourdos MC"],
+      "annee": 2026,
+      "titre": "The Resistance Training Dose Response: Meta-Regressions Exploring the Effects of Weekly Volume and Frequency on Muscle Hypertrophy and Strength Gains",
+      "revue": "Sports Medicine",
+      "ref": "56(2):481-505",
+      "doi": "10.1007/s40279-025-02344-w",
+      "pmid": "41343037",
+      "type": "méta-régressions (67 études, 2 058 participants)",
+      "lu": "résumé",
+      "verifie": "2026-09-11"
+    },
+    "schoenfeld2021": {
+      "auteurs": ["Schoenfeld BJ","Grgic J","Van Every DW","Plotkin DL"],
+      "annee": 2021,
+      "titre": "Loading Recommendations for Muscle Strength, Hypertrophy, and Local Endurance: A Re-Examination of the Repetition Continuum",
+      "revue": "Sports",
+      "ref": "9(2):32",
+      "doi": "10.3390/sports9020032",
+      "pmid": "33671664",
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7927075/",
+      "type": "revue narrative",
+      "lu": "résumé et passages cités",
+      "verifie": "2026-09-11"
+    },
+    "bazvalle2022": {
+      "auteurs": ["Baz-Valle E","Balsalobre-Fernández C","Alix-Fages C","Santos-Concejero J"],
+      "annee": 2022,
+      "titre": "A Systematic Review of The Effects of Different Resistance Training Volumes on Muscle Hypertrophy",
+      "revue": "Journal of Human Kinetics",
+      "ref": "81:199-210",
+      "doi": "10.2478/hukin-2022-0017",
+      "pmid": "35291645",
+      "type": "revue systématique et méta-analyse (7 essais, pratiquants entraînés)",
+      "lu": "résumé",
+      "verifie": "2026-09-11"
+    },
+    "schoenfeld2017vol": {
+      "auteurs": ["Schoenfeld BJ","Ogborn D","Krieger JW"],
+      "annee": 2017,
+      "titre": "Dose-response relationship between weekly resistance training volume and increases in muscle mass: A systematic review and meta-analysis",
+      "revue": "Journal of Sports Sciences",
+      "ref": "35(11):1073-1082",
+      "doi": "10.1080/02640414.2016.1210197",
+      "pmid": "27433992",
+      "type": "revue systématique et méta-analyse (15 études)",
+      "lu": "résumé",
+      "verifie": "2026-09-11"
+    },
+    "schoenfeld2019freq": {
+      "auteurs": ["Schoenfeld BJ","Grgic J","Krieger J"],
+      "annee": 2019,
+      "titre": "How many times per week should a muscle be trained to maximize muscle hypertrophy? A systematic review and meta-analysis of studies examining the effects of resistance training frequency",
+      "revue": "Journal of Sports Sciences",
+      "ref": "37(11):1286-1295",
+      "doi": "10.1080/02640414.2018.1555906",
+      "pmid": "30558493",
+      "type": "revue systématique et méta-analyse (25 études)",
+      "lu": "résumé",
+      "verifie": "2026-09-11"
     }
   }
 }
