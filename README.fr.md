@@ -27,7 +27,7 @@ c'est exactement à ça que sert ce repo pour l'instant.
 
 <p align="center">
   <img src="screenshots/planning.png" width="240" alt="Planning de la semaine : les boutons messages, profil et données de l'en-tête, le bandeau du jour, les jours de la semaine et les groupes travaillés" />
-  <img src="screenshots/session.png" width="240" alt="Saisie du développé couché : les séries de la dernière fois, la charge suggérée, puis le top set avec ses boutons, son RPE et son repos" />
+  <img src="screenshots/session.png" width="240" alt="Saisie du développé couché : la charge suggérée, puis une série par ligne — type, dernière fois, poids, reps, RPE, coche — et les outils de la série en cours" />
   <img src="screenshots/recap.png" width="240" alt="Récap de la semaine : volume levé, séries, séances, mouvements, et la bande d'assiduité" />
 </p>
 <p align="center"><sub>Planning · Saisie d'une série · Récap hebdomadaire — vrais écrans, avec des chiffres de démo pour ces captures.</sub></p>
@@ -63,17 +63,40 @@ jour, tu ajoutes des exercices, tu ajoutes des séries. Les flèches changent de
 semaine, et le bouton `AUJOURD'HUI` te ramène — il passe en orange dès que tu
 t'es éloigné de la semaine en cours.
 
-**Duplication de série.** `+ SÉRIE` recopie la précédente : poids, reps, RPE,
-repos. Seul `fait` repart à zéro. Sur cinq séries identiques, tu en saisis une et
-tu appuies quatre fois.
+**Une série, une ligne.** `SÉRIE · PRÉC. · KG · REPS · RPE · ✓`, la grille de
+Strong ou Hevy, reprise parce que c'est celle qu'on connaît. Avant, chaque série
+prenait trois lignes — poids, puis type, puis RPE et repos — et un exercice de
+cinq séries remplissait deux écrans. Le **numéro** porte le type : on le touche,
+le menu natif s'ouvre, et `TOP`, `B.O.` ou `ÉCH.` prend sa place. **PRÉC.**
+montre la même série la dernière fois (la 3e en face de la 3e) et la recopie
+d'un appui dans *sa* ligne — poids, reps, type ; le RPE reste celui d'aujourd'hui.
+Une série **faite** perd ses cadres et se lit comme du texte ; elle reste
+modifiable d'un appui.
 
-**Incréments.** `−` et `+` ajoutent ou retirent 2,5 kg sans ouvrir le clavier.
-C'est le geste le plus fréquent entre deux séries : il coûte un appui.
+**La série ouverte.** Une seule par exercice, encadrée en orange : par défaut la
+première pas encore faite. Dessous, ses outils — `−` `+` (2,5 kg, ou 5 s au
+temps), le repos, le commentaire, la corbeille. Cocher replie la série et ouvre la
+suivante ; toucher un champ d'une autre série l'ouvre, sans rendu, pour garder le
+clavier. Seuls un champ ou un menu ouvrent une série : un bouton qui prenait le
+focus déplaçait la barre entre l'appui et le relâchement, et l'appui tombait à
+côté. C'est un état d'écran, en mémoire, jamais enregistré.
+
+**La carte.** Le groupe musculaire est une pastille dans l'en-tête (`PECS`,
+`DOS`…), avec le menu natif posé dessus. Au temps, superset et suppression
+passent dans le menu `⋯` : ils servaient rarement et prenaient la place d'une
+série. La carte est un conteneur (`container-type: inline-size`) : sous 310 px
+utiles — petit téléphone, superset sur un écran de 360 px — la colonne PRÉC.
+cède sa place aux chiffres du jour, et la ligne *Dernière fois* liste alors les
+séries précédentes.
+
+**Duplication de série.** `+ SÉRIE` recopie la précédente : poids, reps, RPE,
+repos. Seul `fait` repart à zéro, et le commentaire ne se recopie pas. Sur cinq
+séries identiques, tu en saisis une et tu appuies quatre fois.
 
 **Au temps : gainage, planche, chaise.** Un exercice tenu se mesure en secondes.
 Taper « Planche » ou « Gainage » bascule la série en durée pendant la frappe —
-`−` et `+` y valent 5 secondes — et un bouton de la carte bascule n'importe
-quel autre exercice. Sous la série, la *difficulté* ressentie de 1 à 10 remplace
+`−5` et `+5` y remplacent les pas de 2,5 kg — et le menu `⋯` bascule n'importe
+quel autre exercice. Dans la colonne `DIFF.`, la *difficulté* ressentie de 1 à 10 remplace
 les reps en réserve, qui n'ont pas de sens pour une planche. Le record est la
 série la plus longue, la fiche de l'exercice trace le meilleur temps séance après
 séance, le récap l'affiche en minutes.
@@ -89,21 +112,29 @@ volume, ni dans le 1RM estimé, ni dans les records par reps.
 
 **RPE par série.** Échelle des répétitions en réserve, de 10 à 6 par demi-points :
 10 c'est l'échec, 9 il t'en restait une, 8 il t'en restait deux. Facultatif —
-laisse vide, rien ne casse.
+laisse vide, rien ne casse. La cellule n'a la place que du chiffre : la phrase
+(« RPE 8 — 2 reps en réserve ») passe un instant en bas de l'écran quand on
+choisit, parce qu'une infobulle ne s'affiche pas sur un téléphone.
 
 **Repos par série**, et non par exercice, repris automatiquement à la duplication.
 
-**Un commentaire par exercice.** Une case facultative sous les séries, pour ce
-que les chiffres ne disent pas : « dernière série assistée », « avec bandes »,
-« un peu fatigué ». La fois suivante, il s'affiche sous *Dernière fois*, à côté
-des chiffres qu'il explique ; on le relit aussi dans la fiche de la séance,
-l'historique de l'exercice et le carnet lu par le coach. Il appartient au jour :
-*Sélectionner pour le jour affiché* recopie les séries, pas le commentaire.
-500 caractères au plus, dans l'app comme en base. Le champ `note` n'existe que
-s'il est rempli : les carnets d'avant n'ont rien à migrer, et le tableur le
-porte en dernière colonne, `Commentaire`, répétée sur chaque série de
-l'exercice — trier le tableur ne le sépare pas de ses chiffres. Un tableur
-sans cette colonne se réimporte comme avant.
+**Un commentaire par série.** Pour ce que les chiffres ne disent pas :
+« assistée », « avec bandes », « un peu fatigué ». `+ COMMENTAIRE`, à côté de
+`+ SÉRIE`, l'ajoute à la dernière série faite — c'est juste après qu'on y
+pense — et la bulle des outils à n'importe quelle autre. Il s'écrit sous la
+série, comme du texte ; vidé, il disparaît. La fois suivante, il s'affiche sous
+*Dernière fois* avec le numéro de sa série (« S3 : assistée ») ; on le relit
+aussi dans la fiche de la séance, l'historique de l'exercice et le carnet lu par
+le coach. *Sélectionner pour le jour affiché* recopie les séries, pas les
+commentaires. 500 caractères au plus, dans l'app comme en base. Le champ `note`
+d'une série n'existe que s'il est rempli, et le tableur le porte en dernière
+colonne, `Commentaire`, sur la ligne de sa série.
+
+Le commentaire était d'abord **par exercice** : trop vague pour dire laquelle
+avait été assistée. `normalizeExercise()` range un ancien commentaire d'exercice
+sur sa dernière série (après le sien, s'il y en avait un), là où « assisté sur
+la dernière » voulait dire quelque chose ; rien ne se perd. Un exercice sans
+série garde le sien, faute d'endroit où le poser.
 
 **Mémoire des exercices.** Tape un exercice absent de la base et il est retenu
 pour la prochaine fois, groupe musculaire compris. L'enregistrement se fait quand
@@ -246,6 +277,15 @@ en attente vit dans le `localStorage` et repart sur l'événement `online` et au
 retour sur l'onglet. **Une journée ne quitte la file que si le serveur a
 confirmé.**
 
+**Une base en retard ne mange pas les commentaires.** Les commentaires ont
+demandé deux colonnes, `exercices.note` puis `series.note`, ajoutées quand
+`schema.sql` est relancé. Une base qui ne les a pas encore renvoie des lignes
+**sans la clé** `note` : `jourDistant()` le lit comme « la base ne sait pas », pas
+comme « commentaire effacé », et garde celui du téléphone — l'exercice retrouvé
+par son identifiant, sinon par sa place et son nom (la base fabrique ses propres
+identifiants), la série par son identifiant, sinon par sa place. Une base à jour
+renvoie `note: null`, et là, on la suit.
+
 Clés de stockage : `musculation_sessions` (le carnet), `topset_custom_exercises`
 (exercices mémorisés), `topset_sync` (file d'attente et curseur de synchro),
 `topset_conflits` (la version perdante d'un conflit, jamais jetée en silence).
@@ -285,8 +325,7 @@ qu'Excel en fait quand il le réenregistre : virgules au lieu de points-virgules
 dates en JJ/MM/AAAA. Il passe ensuite par exactement le même nettoyage qu'un
 fichier JSON. Au passage, l'import relit enfin le **titre** des séances : il
 voyageait dans la sauvegarde sans jamais être relu. La colonne `Commentaire`
-est relue une fois par exercice : le premier non vide gagne, pour qu'un tableur
-fait à la main puisse ne l'écrire qu'une fois.
+est relue sur la série de sa ligne, comme l'export l'écrit.
 
 **Garde-fou contre l'écrasement.** `saveLocal()` réécrit le carnet entier à chaque
 sauvegarde. Si `state.sessions` était vide au mauvais moment — chargement raté,
@@ -715,9 +754,9 @@ img/                     captures de l'app pour la page produit (WebP)
 supabase.umd.js          supabase-js 2.115.0, chargé à la demande
 supabase-config.js       URL du projet + clé publique (voir Comptes)
 supabase/schema.sql      tables, politiques RLS et fonctions de synchro
-supabase/test/           le schéma testé sur un vrai Postgres (PGlite) : RLS (239),
-                         montée depuis chaque version passée (12)
-test/                    logique métier (161), gardes de sécurité (171), liens (119), gabarits de contenu (15)
+supabase/test/           le schéma testé sur un vrai Postgres (PGlite) : RLS (246),
+                         montée depuis chaque version passée (13)
+test/                    logique métier (162), gardes de sécurité (172), liens (119), gabarits de contenu (15)
 LICENSE  SECURITY.md  CONTRIBUTING.md  CHANGELOG.md
 .github/                 modèles d'issues, workflow de CI
 .vercelignore            ce que le site ne publie pas : docs, schéma, tests, source du contenu

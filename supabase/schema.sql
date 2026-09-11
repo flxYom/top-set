@@ -124,6 +124,24 @@ begin
   end if;
 end $$;
 
+-- Le commentaire d'une série : « assistée », « avec bandes ». Il remplace le
+-- commentaire par exercice, trop vague pour dire laquelle l'a été : l'app
+-- range un ancien commentaire d'exercice sur sa dernière série. La colonne
+-- exercices.note reste, pour les journées que personne n'a rouvertes depuis.
+-- Même borne, même troncature dans pousser_jour.
+alter table public.series add column if not exists note text;
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint where conname = 'series_note_bornee'
+  ) then
+    alter table public.series
+      add constraint series_note_bornee
+      check (note is null or char_length(note) <= 500);
+  end if;
+end $$;
+
 create index if not exists seances_user_maj_idx  on public.seances   (user_id, updated_at desc);
 create index if not exists seances_user_date_idx on public.seances   (user_id, date desc);
 create index if not exists exercices_seance_idx  on public.exercices (user_id, seance_id, ordre);
@@ -317,7 +335,7 @@ begin
     j := 0;
     for v_se in select * from jsonb_array_elements(coalesce(v_ex -> 'series', '[]'::jsonb))
     loop
-      insert into public.series (id, exercice_id, user_id, ordre, poids, reps, rpe, repos, type, fait)
+      insert into public.series (id, exercice_id, user_id, ordre, poids, reps, rpe, repos, type, fait, note)
       values (public.uuid_ou_neuf(v_se ->> 'id'), v_ex_id, v_user, j,
               nullif(v_se ->> 'poids', '')::numeric,
               coalesce(v_se ->> 'reps', ''),
@@ -326,7 +344,8 @@ begin
               -- Un type inconnu vaut mieux perdu que stocke : la contrainte
               -- refuserait la ligne entiere et la journee ne partirait plus.
               nullif(v_se ->> 'type', ''),
-              coalesce((v_se ->> 'fait')::boolean, false));
+              coalesce((v_se ->> 'fait')::boolean, false),
+              nullif(left(btrim(coalesce(v_se ->> 'note', '')), 500), ''));
       j := j + 1;
     end loop;
     i := i + 1;
@@ -405,7 +424,8 @@ as $$
                     'rpe',   se.rpe,
                     'repos', coalesce(se.repos, ''),
                     'type',  se.type,
-                    'fait',  se.fait
+                    'fait',  se.fait,
+                    'note',  se.note
                   ) order by se.ordre)
                 from public.series se where se.user_id = e.user_id and se.exercice_id = e.id
               ), '[]'::jsonb)
@@ -1254,7 +1274,8 @@ as $$
                     'rpe',   se.rpe,
                     'repos', coalesce(se.repos, ''),
                     'type',  se.type,
-                    'fait',  se.fait
+                    'fait',  se.fait,
+                    'note',  se.note
                   ) order by se.ordre)
                 from public.series se where se.user_id = e.user_id and se.exercice_id = e.id
               ), '[]'::jsonb)

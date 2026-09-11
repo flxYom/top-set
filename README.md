@@ -29,7 +29,7 @@ repository is for right now.
 
 <p align="center">
   <img src="screenshots/planning.png" width="240" alt="Weekly planning: the header's messages, profile and data buttons, today's chest-day banner, the week's day pills and the muscle groups trained" />
-  <img src="screenshots/session.png" width="240" alt="Logging the bench press: last time's sets, the suggested load, then the top set with its steppers, RPE and rest" />
+  <img src="screenshots/session.png" width="240" alt="Logging the bench press: the suggested load, then one set per row — type, last time, weight, reps, RPE, check — and the tools of the current set" />
   <img src="screenshots/recap.png" width="240" alt="Weekly recap: volume lifted, sets, sessions, movements, and the assiduity strip" />
 </p>
 <p align="center"><sub>Planning · Logging a set · Weekly recap — real screens, seeded with placeholder numbers for these screenshots.</sub></p>
@@ -65,20 +65,44 @@ repository is for right now.
 add sets. Arrows move between weeks; an `AUJOURD'HUI` button jumps back to today
 and turns orange as soon as you have navigated away from the current week.
 
-**Set duplication.** `+ SÉRIE` copies the previous set — weight, reps, RPE, rest.
-Only `fait` resets. Five identical sets means typing one and tapping four times.
+**One set, one row.** `SÉRIE · PRÉC. · KG · REPS · RPE · ✓`, the grid of Strong
+or Hevy, kept because it is the one people know. Each set used to take three
+rows — weight, then type, then RPE and rest — and a five-set exercise filled two
+screens. The **number** carries the set type: tap it, the native menu opens, and
+`TOP`, `B.O.` or `ÉCH.` takes its place. **PRÉC.** shows the same set last time
+(the 3rd facing the 3rd) and copies it into *its* row with one tap — weight,
+reps, type; the RPE stays today's. A **done** set loses its borders and reads
+like text; one tap still edits it.
 
-**Steppers.** `−` and `+` add or remove 2.5 kg without opening the keyboard. It
-is the most frequent action between two sets, so it costs one tap.
+**The open set.** One per exercise, outlined in orange: by default the first one
+not done yet. Under it, its tools — `−` `+` (2.5 kg, or 5 s for timed sets),
+rest, comment, bin. Checking a set folds it and opens the next; focusing a field
+of another set opens that one, without a re-render, so the keyboard stays up.
+Only a field or a menu opens a set: a button that took focus moved the toolbar
+between press and release, and the tap landed elsewhere. It is screen state,
+kept in memory, never saved.
+
+**The card.** The muscle group is a chip in the header (`PECS`, `DOS`…) with the
+native menu laid over it. Timed mode, superset and delete move to the `⋯` menu:
+they were rarely used and took the room of a set. The card is a container
+(`container-type: inline-size`): under 310 px of usable width — small phone,
+superset on a 360 px screen — the PRÉC. column gives way to today's numbers, and
+the *Dernière fois* line lists last time's sets instead.
+
+**Set duplication.** `+ SÉRIE` copies the previous set — weight, reps, RPE, rest.
+Only `fait` resets, and the comment is not copied. Five identical sets means
+typing one and tapping four times.
 
 **RPE per set.** Reps-in-reserve scale, 10 down to 6 in half points: 10 is
 failure, 9 leaves one rep, 8 leaves two. Optional — leave it empty and nothing
-breaks.
+breaks. The cell only fits the number, so the sentence (« RPE 8 — 2 reps en
+réserve ») flashes at the bottom of the screen when you pick one: a tooltip
+never shows on a phone.
 
 **Timed exercises: planks, wall sits, dead hangs.** A hold is measured in
 seconds. Typing « Planche » or « Gainage » switches the set to a duration as you
-type — `−` and `+` then step by 5 s — and a card button switches any other
-exercise. Under the set, a 1–10 *difficulty* replaces reps in reserve, which
+type — `−5` and `+5` replace the 2.5 kg steps — and the `⋯` menu switches any
+other exercise. In the `DIFF.` column, a 1–10 *difficulty* replaces reps in reserve, which
 mean nothing for a plank. The record is the longest hold, the exercise page
 charts the best time session after session, the recap shows minutes.
 
@@ -90,16 +114,22 @@ toward no volume, no estimated 1RM and no rep record.
 
 **Rest per set**, not per exercise, and carried over when a set is duplicated.
 
-**A comment per exercise.** An optional field under the sets, for what the
-numbers don't say: « last set assisted », « with bands », « a bit tired ». Next
-time it shows under *Dernière fois*, next to the numbers it explains; it also
-appears in the session sheet, the exercise history and the logbook a coach
-reads. It belongs to the day: copying a session copies the sets, not the
-comment. At most 500 characters, in the app and in the database. The `note`
-field only exists when filled in, so older logbooks have nothing to migrate;
-the CSV carries it as a last column, `Commentaire`, repeated on every set of
-the exercise so sorting the sheet never separates it from its numbers. A CSV
-without that column imports as before.
+**A comment per set.** For what the numbers don't say: « assisted », « with
+bands », « a bit tired ». `+ COMMENTAIRE`, next to `+ SÉRIE`, adds one to the
+last set done — right after is when you think of it — and the speech bubble in
+the tools to any other set. It is written under the set, like text; emptied, it
+disappears. Next time it shows under *Dernière fois* with its set number
+(« S3 : assistée »); it also appears in the session sheet, the exercise history
+and the logbook a coach reads. Copying a session copies the sets, not the
+comments. At most 500 characters, in the app and in the database. A set's `note`
+field only exists when filled in, and the CSV carries it as a last column,
+`Commentaire`, on its set's row.
+
+The comment was first **per exercise**: too vague to say which set had been
+assisted. `normalizeExercise()` moves an old exercise comment onto its last set
+(before that set's own, if it had one), where « assisted on the last one » meant
+something; nothing is lost. An exercise with no set keeps its own, having
+nowhere to put it.
 
 **Exercise memory.** Type an exercise that is not in the built-in list and it is
 remembered for next time, muscle group included. Saved on blur rather than on
@@ -222,6 +252,14 @@ a request per keystroke. Offline, the queue of pending days lives in
 `localStorage` and is replayed on the `online` event and when the tab regains
 focus. **A day only leaves the queue once the server has confirmed it.**
 
+**A database that lags behind does not eat comments.** Comments needed two
+columns, `exercices.note` then `series.note`, added when `schema.sql` is re-run.
+A database without them yet returns rows **without the** `note` **key**:
+`jourDistant()` reads that as "the database doesn't know", not "comment deleted",
+and keeps the phone's — the exercise found by id, else by position and name (the
+database mints its own ids), the set by id, else by position. An up-to-date
+database returns `note: null`, and then it is followed.
+
 Storage keys: `musculation_sessions` (the logbook), `topset_custom_exercises`
 (remembered exercises), `topset_sync` (queue and sync cursor), `topset_conflits`
 (the losing side of a conflict, never discarded silently).
@@ -258,8 +296,7 @@ Importing the same file twice adds nothing.
 **The CSV imports back.** `lireCsvCarnet()` reads the exported CSV, and what
 Excel makes of it when it re-saves it: commas instead of semicolons, DD/MM/YYYY
 dates. It then goes through exactly the same cleaning as a JSON file. The
-`Commentaire` column is read once per exercise: the first non-empty one wins, so
-a hand-made sheet can write it just once.
+`Commentaire` column is read onto the set of its row, as the export writes it.
 
 **Overwrite guard.** `saveLocal()` rewrites the whole logbook on every save. If
 `state.sessions` were empty at the wrong moment — a failed load, corrupted JSON —
@@ -587,9 +624,9 @@ img/                     app screenshots for the product page (WebP)
 supabase.umd.js          supabase-js 2.115.0, loaded on demand
 supabase-config.js       project URL + public anon key (see Accounts)
 supabase/schema.sql      tables, RLS policies and sync functions
-supabase/test/           the schema tested on a real Postgres (PGlite): RLS (239),
-                         upgrade from every past version (12)
-test/                    business logic (161), hardening guards (171), links (119), content templates (15)
+supabase/test/           the schema tested on a real Postgres (PGlite): RLS (246),
+                         upgrade from every past version (13)
+test/                    business logic (162), hardening guards (172), links (119), content templates (15)
 LICENSE  SECURITY.md  CONTRIBUTING.md  CHANGELOG.md
 .github/                 issue templates, CI workflow
 .vercelignore            what the site does not publish: docs, schema, tests, content sources

@@ -429,19 +429,20 @@ titre('Relire le tableur exporte');
     typeof TS.lireCsvCarnet('Nom;Age\nPaul;30\n').erreur === 'string');
   ok('un tableur vide aussi', typeof TS.lireCsvCarnet('').erreur === 'string');
 
-  // Le commentaire : derniere colonne de l'export, repetee sur chaque serie.
+  // Le commentaire : derniere colonne de l'export, celui de la serie de la ligne.
   const avecNote = 'Date;Exercice;Serie;Poids (kg);Repetitions;Fait;Commentaire\r\n'
-    + '2026-09-03;Squat;1;100;5;oui;Dernière assistée\r\n'
-    + '2026-09-03;Squat;2;100;5;oui;Dernière assistée\r\n'
+    + '2026-09-03;Squat;1;100;5;oui;\r\n'
+    + '2026-09-03;Squat;2;100;5;oui;Assistée\r\n'
     + '2026-09-03;Curl;1;12;10;oui;\r\n'
     + '2026-09-03;Rowing;1;60;8;oui;\r\n'
     + "2026-09-03;Rowing;2;60;8;oui;'-10 % de charge, fatigué\r\n";
   const rn = TS.lireCsvCarnet(avecNote).sessions['2026-09-03'].exercises;
-  egal('le commentaire est relu, une fois par exercice', rn[0].note, 'Dernière assistée');
-  ok('un exercice sans commentaire n en porte pas', !('note' in rn[1]));
-  egal('un commentaire ecrit sur une seule serie suffit, et perd son apostrophe', rn[2].note, '-10 % de charge, fatigué');
+  egal('le commentaire est relu sur sa serie', rn[0].series.map(s => s.note), [undefined, 'Assistée']);
+  ok('une serie sans commentaire n en porte pas', !('note' in rn[0].series[0]) && !('note' in rn[1].series[0]));
+  ok('l exercice lui-meme n en porte plus', rn.every(e => !('note' in e)));
+  egal('le commentaire perd son apostrophe de protection', rn[2].series[1].note, '-10 % de charge, fatigué');
   ok('un ancien export, sans la colonne, se relit sans commentaire',
-     r.sessions['2026-09-01'].exercises.every(e => !('note' in e)));
+     r.sessions['2026-09-01'].exercises.every(e => e.series.every(s => !('note' in s))));
 }
 
 // ----------------------------------------------------------------
@@ -459,7 +460,8 @@ titre('Les modeles de carnet publies sur /outils se reimportent');
   egal('le groupe musculaire est reconnu', lundi.map(e => e.groupe), ['Jambes', 'Pectoraux', 'Abdos']);
   egal('le RPE a demi-point est lu', lundi[0].series[2].rpe, 7.5);
   egal('la planche garde sa duree', lundi[2].series[0].reps, '60 s');
-  egal('le commentaire de l exemple est relu', lundi[1].note, 'Dernière série assistée');
+  egal('le commentaire de l exemple est relu, sur la derniere serie',
+       lundi[1].series.map(s => s.note || ''), ['', '', '', 'Dernière série assistée']);
   // « Exactement le format de l'export » : les colonnes sont relues dans
   // app.js, pas recopiees ici — sinon le test suivrait le modele, pas l'app.
   const src = readFileSync(join(ICI, '..', 'app.js'), 'utf8');

@@ -697,18 +697,18 @@
         ex = { nom: nom, groupe: C.groupe > -1 ? texteCsv(l[C.groupe]) : '', repos: '', series: [] };
         jour.exercises.push(ex);
       }
-      // L'export repete le commentaire sur chaque serie ; un tableur fait a
-      // la main ne l'ecrit souvent qu'une fois. Le premier non vide gagne.
+      // Le commentaire est celui de la serie de la ligne, comme a l'export.
       var note = C.note > -1 ? texteCsv(l[C.note]) : '';
-      if (note && !ex.note) ex.note = note;
       var fait = C.fait > -1 ? String(l[C.fait] || '').trim().toLowerCase() : '';
-      ex.series.push({
+      var serie = {
         poids: poids,
         reps: reps,
         rpe: C.rpe > -1 ? nombreCsv(l[C.rpe]) : null,
         repos: C.repos > -1 ? texteCsv(l[C.repos]) : '',
         fait: fait === 'oui' || fait === 'true' || fait === '1' || fait === 'x'
-      });
+      };
+      if (note) serie.note = note;
+      ex.series.push(serie);
       dernier = { ds: ds, nom: nom, num: num, ex: ex };
       lues++;
     });

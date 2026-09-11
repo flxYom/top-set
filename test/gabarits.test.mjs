@@ -42,7 +42,11 @@ SRC.split('\n').forEach((l, i) => {
 ok('aucun « + ex.id + » ou « + s.id + » nu', nus.length === 0, nus.join(' | '));
 
 const echappes = (SRC.match(/esc\((?:ex|s)\.id\)/g) || []).length;
-ok('les identifiants passent bien par esc()', echappes >= 20, echappes + ' occurrence(s)');
+ok('les identifiants passent bien par esc()', echappes >= 6, echappes + ' occurrence(s)');
+// La carte d'exercice echappe les siens une fois, dans sid et eid, puis ne
+// se sert que d'eux.
+ok('la carte les echappe avant de s en servir',
+   SRC.indexOf('var sid = esc(s.id);') > -1 && SRC.indexOf('var eid = esc(ex.id);') > -1);
 
 console.log('\n== 2. esc() couvre les cinq caracteres ==');
 const bloc = SRC.slice(SRC.indexOf('function esc(s)'), SRC.indexOf('function esc(s)') + 500);
@@ -52,7 +56,9 @@ const bloc = SRC.slice(SRC.indexOf('function esc(s)'), SRC.indexOf('function esc
 
 console.log('\n== 3. Un identifiant reste un identifiant ==');
 ok('ID_SUR existe', /var ID_SUR\s*=\s*\/\^\[A-Za-z0-9_-\]\{1,64\}\$\//.test(SRC));
-ok('idSur() est applique aux exercices', (SRC.match(/idSur\(ex[^)]*genId\)/g) || []).length >= 2);
+// Les deux formes d'exercice (series, ou l'ancien poids/reps) sortent par le
+// meme retour de normalizeExercise().
+ok('idSur() est applique aux exercices', (SRC.match(/idSur\(ex[^)]*genId\)/g) || []).length >= 1);
 ok('idSur() est applique aux series',    /idSur\(s && s\.id, genSerieId\)/.test(SRC));
 // Les identifiants que l'app fabrique doivent evidemment passer son propre filtre.
 const ID_SUR = /^[A-Za-z0-9_-]{1,64}$/;
@@ -66,7 +72,7 @@ const ID_SUR = /^[A-Za-z0-9_-]{1,64}$/;
 
 console.log('\n== 4. Le groupe est une valeur close ==');
 ok('groupeSur() existe', /function groupeSur\(g\)/.test(SRC));
-ok('il est applique a la normalisation', (SRC.match(/groupeSur\(ex/g) || []).length >= 2);
+ok('il est applique a la normalisation', (SRC.match(/groupeSur\(ex/g) || []).length >= 1);
 
 console.log('\n== 5. Le CSV ne fabrique pas de formule ==');
 ok('csvTexte() existe', /function csvTexte\(v\)/.test(SRC));
@@ -315,7 +321,7 @@ ok('le record au temps est la serie la plus longue', SRC.indexOf('function recor
 ok('la bascule n encombre pas un exercice deja note en kilos',
    SRC.indexOf('auTemps || nomAuTemps(ex.nom) || !series.some(serieRemplie)') > -1);
 ok('le mode choisi survit a la normalisation',
-   (SRC.match(/mesure:mesure/g) || []).length === 2);
+   (SRC.match(/mesure:mesure/g) || []).length === 1);
 
 console.log('\n== 16. Importer ajoute, ne remplace plus ==');
 ok('plus de bouton REMPLACER', HTML.indexOf('REMPLACER MES DONN') === -1 && SRC.indexOf('REMPLACER MES DONN') === -1);
@@ -426,7 +432,7 @@ ok('un comptage perime ne rallume pas la pastille',
 ok('ouvrir la boite recompte la pastille',
    /function ouvrirBoite\(\)\{[\s\S]{0,160}majBadgeMessages\(true\);/.test(SRC));
 ok('le champ commentaire fait 16 px sous iOS, sinon Safari zoome',
-   /@supports \(-webkit-touch-callout:none\)\{[\s\S]{0,300}\.ex-note\{font-size:16px;\}/.test(HTML));
+   /@supports \(-webkit-touch-callout:none\)\{[\s\S]{0,300}\.serie-note\{font-size:16px;\}/.test(HTML));
 
 console.log(`\n${pass} reussis, ${fail} echoues`);
 process.exit(fail ? 1 : 0);

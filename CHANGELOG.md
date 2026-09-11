@@ -9,6 +9,34 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ## [Unreleased]
 
+### Changed
+
+- **The exercise card, rebuilt around one row per set.** `SÉRIE · PRÉC. · KG ·
+  REPS · RPE · ✓`, the layout of Strong and Hevy, replaces three rows per set
+  (weight, then a full-width type menu, then RPE, rest and delete). The set
+  number is the type menu (`TOP`, `B.O.`, `ÉCH.` take its place); `PRÉC.` shows
+  the same set last time and copies weight, reps and type into that row; a done
+  set loses its borders and reads like text. Only the open set — the first not
+  done, or the one being edited — shows its tools: `−` `+`, rest, comment,
+  delete. Checking a set folds it and opens the next. The muscle group becomes a
+  header chip; timed mode, superset and delete move to a `⋯` menu. Under 310 px
+  of card width (container query) the `PRÉC.` column gives way and *Dernière
+  fois* lists last time's sets. Picking an RPE now shows its meaning (« RPE 8 —
+  2 reps en réserve »), which was only a tooltip and never showed on a phone.
+- **Comments are per set, not per exercise.** `+ COMMENTAIRE`, next to
+  `+ SÉRIE`, adds one to the last set done; each set's tools add one to any
+  other. They show under *Dernière fois* with their set number, in the session
+  sheet, the history and the coach's view. A new nullable `series.note` column
+  (≤ 500, trimmed and truncated by `pousser_jour`, returned by both pulls);
+  `normalizeExercise()` moves an existing exercise comment onto its last set.
+  The CSV `Commentaire` column is now the comment of its row's set, on export
+  and import; the published example follows. A database without the column
+  cannot erase a set comment kept on the phone.
+- **Guide and pages** describe the new card: steps 3 to 6 of the guide, and the
+  « note it in Top Set » paragraphs of the back-off, failure, RIR, RPE, rest,
+  plank and top set pages. New captures of the card on the product page and in
+  both READMEs. Service worker cache `topset-v18` → `topset-v19`.
+
 ### Added
 
 - **A comment per exercise.** An optional field under the sets — « last set
@@ -494,6 +522,13 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ### Tests
 
+- RLS: a set comment makes the round trip in its set's place, is trimmed,
+  truncated to 500, null when blank or absent, always returned as a key,
+  refused over 500 by the table, and read by the coach (246). Upgrade test:
+  13 past schema versions. Logic: the CSV comment lands on its row's set, and
+  the published example's on the last bench set (162). Guards follow the new
+  card: ids escaped once into `sid`/`eid`, the set comment field at 16 px on
+  iOS (172).
 - RLS: a comment makes the round trip, is trimmed, truncated to 500 without
   blocking the day, becomes null when blank, is always returned as a key, is
   refused over 500 by the table itself, and is read by the coach (239).
