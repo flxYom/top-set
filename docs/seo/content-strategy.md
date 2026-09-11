@@ -277,13 +277,17 @@ page à deux clics de l'accueil) complètent en CI.
 
 **Rubriques** : une rubrique n'est indexable qu'à partir de **3 pages**. En dessous, sa page existe (fil
 d'Ariane, navigation) mais porte `noindex,follow` et reste hors du plan du site : une liste d'un lien
-serait une page mince. La page `/documentation` (lien « Apprendre » de l'app) liste aussi les pages des
-autres rubriques.
+serait une page mince.
+
+**Apprendre, rubrique principale** (demande du 11/09) : `/apprendre` regroupe les quatre rubriques, la
+page produit et la méthode, avec toutes leurs pages ; toujours indexable. Dans l'app, c'est le
+4e onglet (écran fixe de six cartes, rien de stocké). Sur chaque page de contenu, une barre des rubriques
+sous l'en-tête ; le fil d'Ariane est Accueil › Apprendre › rubrique › page.
 
 **Intégration à l'existant, sans toucher à l'app :**
 
-- un lien « Apprendre » dans le pied de page de l'app vers `/documentation` (seule modification de
-  `index.html`) : toutes les pages à 2 clics de l'accueil au plus ;
+- dans l'app, un onglet **APPRENDRE** (vue fixe, rien de stocké) et un lien de pied de page, tous deux
+  vers `/apprendre` : toutes les pages à 2 gestes de l'accueil ;
 - `sw.js` : aucune logique à changer (réseau d'abord, chaque page visitée consultable hors ligne) ; à
   surveiller : le cache des pages visitées n'a pas de limite — à borner si le site grossit ;
 - `.vercelignore` : ajouter `contenu/`, `scripts/` (`docs/` l'est déjà) ;
@@ -384,6 +388,7 @@ pas des certitudes.
 | 11/09/2026 | Pilote de 5 pages avant toute production. |
 | 11/09/2026 | Signature « Yom Industry × Claude (Anthropic) » ; l'IA n'est pas un auteur dans le JSON-LD. |
 | 11/09/2026 | Pas de photos : schémas SVG dans la page, captures de l'app pour la page produit. |
-| 11/09/2026 | Rubriques indexables à partir de 3 pages ; `/documentation` liste toutes les pages (2 clics). |
+| 11/09/2026 | Rubriques indexables à partir de 3 pages. |
+| 11/09/2026 | Apprendre devient une rubrique principale : 4e onglet de l'app, page `/apprendre`, barre des rubriques sur chaque page (au lieu d'un lien de pied de page). |
 | 11/09/2026 | Pilote publié avant la relecture humaine, parce que le domaine n'est pas encore indexé ; la mention « relu » attend la relecture réelle. |
 | 11/09/2026 | Le calculateur de 1RM charge `intelligence.js` : même formule (Epley) et même limite (12 répétitions) que le carnet. |

@@ -122,7 +122,7 @@
   }
 
   .topbar{position:sticky;top:0;z-index:20;background:var(--bg);padding:14px 0 12px;}
-  .topbar-inner{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;}
+  .topbar-inner{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;}
   .topbar-tab{
     border:2px solid var(--line);
     background:transparent;
@@ -136,6 +136,34 @@
     border:2.5px solid var(--ink);
     box-shadow:3px 3px 0 var(--orange);
   }
+  /* Quatre onglets sur un petit telephone : « APPRENDRE » doit tenir sans
+     deborder de sa case. */
+  @media (max-width:400px){ .topbar-tab{font-size:11px;letter-spacing:.02em;padding:14px 2px;} }
+
+  /* ---------- Apprendre ----------
+     Un ecran de rubriques, en HTML fixe : les rubriques changent rarement, les
+     pages qu'elles contiennent sont listees par /apprendre et par chaque
+     rubrique. Rien n'est stocke, rien n'est calcule. */
+  .apprendre-tete h2{font-size:26px;font-weight:800;letter-spacing:-.01em;line-height:1.1;margin:4px 0 6px;}
+  .apprendre-tete p{color:var(--dim);font-size:14px;line-height:1.5;margin:0;}
+  .apprendre-grille{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;}
+  .apprendre-carte{
+    display:flex;flex-direction:column;gap:6px;min-height:112px;padding:13px 13px 14px;
+    border:2.5px solid var(--line);border-top:6px solid var(--c,var(--ink));
+    background:var(--panel);color:var(--ink);text-decoration:none;
+  }
+  .apprendre-carte:active{transform:translate(2px,2px);}
+  .apprendre-carte:focus-visible{outline:3px solid var(--yellow);outline-offset:2px;}
+  .apprendre-carte strong{font-size:14px;font-weight:800;letter-spacing:.05em;}
+  .apprendre-carte span{font-size:13px;line-height:1.4;color:var(--dim);}
+  .apprendre-carte.doc{--c:var(--orange);}
+  .apprendre-carte.entr{--c:var(--blue);}
+  .apprendre-carte.exo{--c:var(--green);}
+  .apprendre-carte.outil{--c:var(--yellow);}
+  .apprendre-carte.carnet{--c:var(--ink);}
+  .apprendre-carte.methode{--c:var(--dim);}
+  a.btn-add{display:flex;align-items:center;justify-content:center;text-decoration:none;}
+  .apprendre-note{color:var(--dim);font-size:12.5px;line-height:1.5;margin:0;}
 
   .view{display:flex;flex-direction:column;gap:14px;}
 
@@ -1590,6 +1618,7 @@
       <button type="button" class="topbar-tab active" data-view="planning">PLANNING</button>
       <button type="button" class="topbar-tab" data-view="seances">SÉANCES</button>
       <button type="button" class="topbar-tab" data-view="recap">RÉCAP</button>
+      <button type="button" class="topbar-tab" data-view="apprendre">APPRENDRE</button>
     </div>
   </nav>
 
@@ -1653,6 +1682,23 @@
     <div id="recapHeatmap"></div>
     <div id="recapMuscle"></div>
     <div class="recap-groups" id="recapGroups"></div>
+  </section>
+
+  <section class="view" id="view-apprendre" hidden>
+    <div class="apprendre-tete">
+      <h2>Apprendre</h2>
+      <p>Les notions, les exercices et les outils de la musculation, expliqués et sourcés. Ce que tu y apprends se note ensuite ici.</p>
+    </div>
+    <div class="apprendre-grille">
+      <a class="apprendre-carte doc" href="/documentation"><strong>DOCUMENTATION</strong><span>Les notions, une par page, sources à l'appui.</span></a>
+      <a class="apprendre-carte entr" href="/entrainement"><strong>ENTRAÎNEMENT</strong><span>Progresser, suivre, tenir un carnet d'EPS.</span></a>
+      <a class="apprendre-carte exo" href="/exercices"><strong>EXERCICES</strong><span>Bien se placer, puis progresser.</span></a>
+      <a class="apprendre-carte outil" href="/outils"><strong>OUTILS</strong><span>Le calculateur de 1RM, avec la formule de ton carnet.</span></a>
+      <a class="apprendre-carte carnet" href="/carnet-de-musculation"><strong>LE CARNET</strong><span>Tout ce que Top Set fait pour toi.</span></a>
+      <a class="apprendre-carte methode" href="/methode-editoriale"><strong>MÉTHODE</strong><span>Qui écrit, quelles sources, le rôle de l'IA.</span></a>
+    </div>
+    <a class="btn-add" href="/apprendre">TOUTES LES PAGES ›</a>
+    <p class="apprendre-note">Ces pages s'ouvrent comme le guide. Sans réseau, seules celles que tu as déjà lues restent disponibles.</p>
   </section>
 
   <section class="view" id="view-coach" hidden>
@@ -1730,7 +1776,7 @@
   <footer class="legal-footer">
     <button type="button" id="lienRetour">Nous faire un retour</button>
     <span class="sep">·</span>
-    <a href="/documentation">Apprendre</a>
+    <a href="/apprendre">Apprendre</a>
     <span class="sep">·</span>
     <a href="guide.html">Comment ça marche</a>
     <span class="sep">·</span>

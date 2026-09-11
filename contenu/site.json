@@ -7,11 +7,20 @@
     { "url": "/confidentialite", "lastmod": "2026-09-11" },
     { "url": "/cgu", "lastmod": "2026-09-11" }
   ],
+  "apprendre": {
+    "url": "/apprendre",
+    "nav": "Apprendre",
+    "title": "Apprendre la musculation : notions, exercices, outils",
+    "description": "Toutes les pages de Top Set pour apprendre la musculation : notions expliquées, guides, exercices et calculateurs, sources vérifiables à l'appui.",
+    "h1": "Apprendre",
+    "lede": "Comprendre, apprendre, s'entraîner, suivre, progresser. Les notions, les exercices et les outils de la musculation, expliqués et sourcés — et tout se note ensuite dans ton carnet.",
+    "published": "2026-09-11"
+  },
   "hubs": [
     {
       "url": "/documentation",
       "nav": "Documentation",
-      "resume": "Les notions, une par page : top set, RPE, 1RM, échec…",
+      "resume": "Les notions de la musculation, une par page, sources à l'appui.",
       "title": "Documentation musculation : les notions expliquées",
       "description": "Top set, back-off, RPE, 1RM : chaque notion de la musculation expliquée sur une page, avec des exemples chiffrés et des sources vérifiables.",
       "h1": "Documentation",

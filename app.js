@@ -1888,6 +1888,9 @@
     else if (state.view === 'coach') renderCoach();
     else if (state.view === 'admin') renderAdmin();
     else if (state.view === 'messages') renderMessages();
+    // Apprendre est un ecran fixe : rien a recalculer, et surtout pas le recap
+    // (qui chargerait Chart.js pour une vue cachee).
+    else if (state.view === 'apprendre') return;
     else renderRecap();
   }
 
@@ -1897,7 +1900,7 @@
   // donnerait l'impression d'avoir perdu sa place.
   var seancesOnglet = 'mes';
 
-  var VUES = ['planning','seances','seance','exercice','recap','coach','admin','messages'];
+  var VUES = ['planning','seances','seance','exercice','recap','apprendre','coach','admin','messages'];
   function montrerVue(vue){
     state.view = vue;
     // La fiche n'a pas d'onglet : c'est une page ou l'on entre depuis la

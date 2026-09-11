@@ -348,7 +348,7 @@ for (const x of ['supabase/', 'test/', 'docs/', '.github/', 'screenshots/', 'CHA
   ok('pas publie : ' + x, IGN.includes(x));
 // L'inverse compte autant : les pages generees et ce qu'elles chargent doivent
 // etre servis. Un « outils/ » ecarte par megarde casserait le calculateur.
-for (const x of ['documentation/', 'entrainement/', 'exercices/', 'outils/', 'img/', 'contenu.css', 'intelligence.js'])
+for (const x of ['documentation/', 'entrainement/', 'exercices/', 'outils/', 'img/', 'contenu.css', 'intelligence.js', 'apprendre.html'])
   ok('publie : ' + x, !IGN.includes(x) && !IGN.includes(x.replace(/\/$/, '')));
 const PRECHARGE = (SW.match(/A_PRECHARGER = \[([\s\S]*?)\]/) || [])[1] || '';
 ok('et rien de ce que le service worker precharge n en fait partie',
@@ -404,7 +404,15 @@ for (const p of ['/', '/guide', '/confidentialite', '/cgu', '/mentions-legales']
 // Le plan est desormais produit par scripts/contenu.mjs, qui y ajoute les pages
 // de contenu indexables ; la 404 et les rubriques trop minces n'y sont pas.
 ok('la page 404 n est pas dans le plan du site', PLAN.indexOf('/404') === -1);
-ok('l app mene aux pages Apprendre', HTML.indexOf('<a href="/documentation">Apprendre</a>') > -1);
+// Apprendre est une rubrique principale de l'app, pas un lien de pied de page.
+ok('APPRENDRE est un onglet de l app, a cote de PLANNING, SEANCES et RECAP',
+   /id="mainTabs"[\s\S]*?data-view="apprendre"[\s\S]*?<\/div>/.test(HTML)
+   && /\.topbar-inner\{[^}]*repeat\(4,/.test(HTML));
+ok('et sa vue existe, avec un lien vers la page Apprendre',
+   /id="view-apprendre"[\s\S]*?href="\/apprendre"[\s\S]*?<\/section>/.test(HTML));
+ok('l app sait l afficher sans passer par le recap',
+   /var VUES = \[[^\]]*'apprendre'/.test(SRC) && SRC.indexOf("else if (state.view === 'apprendre') return;") > -1);
+ok('le pied de page de l app y mene aussi', HTML.indexOf('<a href="/apprendre">Apprendre</a>') > -1);
 
 console.log(`\n${pass} reussis, ${fail} echoues`);
 process.exit(fail ? 1 : 0);

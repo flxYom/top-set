@@ -16,7 +16,7 @@ import { readFileSync, writeFileSync, existsSync, readdirSync, statSync, mkdirSy
 import { gzipSync } from 'zlib';
 import { join, dirname, relative } from 'path';
 import { fileURLToPath } from 'url';
-import { SITE, texteBrut, ligneSource, pageContenu, corpsHub } from './gabarit.mjs';
+import { SITE, texteBrut, ligneSource, pageContenu, corpsHub, corpsApprendre } from './gabarit.mjs';
 
 const RACINE = join(dirname(fileURLToPath(import.meta.url)), '..');
 const CONTENU = join(RACINE, 'contenu');
@@ -68,12 +68,14 @@ function lirePage(chemin){
 const hubDe = url => SITECFG.hubs.find(h => url.startsWith(h.url + '/'));
 const fichierDe = url => url === '/404' ? '404.html'
   : SITECFG.hubs.some(h => h.url === url) ? url.slice(1) + '/index.html'
+  : url === SITECFG.apprendre.url ? 'apprendre.html'
   : url.slice(1) + '.html';
 
 const pages = fichiersContenu().sort().map(lirePage).filter(Boolean);
 const STATIQUES = SITECFG.statiques.map(s => s.url);
 const connues = new Map();   // url -> { h1, description } pour les liens et « à lire ensuite »
 for (const h of SITECFG.hubs) connues.set(h.url, h);
+connues.set(SITECFG.apprendre.url, SITECFG.apprendre);
 for (const p of pages) connues.set(p.url, p);
 for (const u of STATIQUES) if (!connues.has(u)) connues.set(u, { url: u });
 
@@ -152,7 +154,17 @@ for (const [cle, s] of Object.entries(BIBLIO)){
 // ------------------------------------------------------------ construction
 const enfantsDe = h => pages.filter(p => hubDe(p.url) === h)
   .sort((a, b) => (a.ordre || 99) - (b.ordre || 99) || a.url.localeCompare(b.url));
-const ctx = { hubs: SITECFG.hubs, enfantsDe };
+// La rubrique principale et ses sous-rubriques, dans l'ordre de la barre.
+const APPRENDRE = SITECFG.apprendre;
+const rubriques = [{ url: APPRENDRE.url, nav: APPRENDRE.nav }, ...SITECFG.hubs.map(h => ({ url: h.url, nav: h.nav })),
+                   { url: '/carnet-de-musculation', nav: 'Le carnet' }, { url: '/methode-editoriale', nav: 'Méthode' }];
+const ctx = { hubs: SITECFG.hubs, enfantsDe, rubriques };
+// Accueil > Apprendre > rubrique > page : le fil d'Ariane dit la structure.
+const racineApprendre = [{ nom: 'Accueil', url: '/' }, { nom: APPRENDRE.nav, url: APPRENDRE.url }];
+const fil = chemin => ({
+  '@context': 'https://schema.org', '@type': 'BreadcrumbList',
+  itemListElement: chemin.map((e, i) => ({ '@type': 'ListItem', position: i + 1, name: e.nom, item: SITE + (e.url === '/' ? '/' : e.url) }))
+});
 const sorties = new Map();
 const plan = [];
 const CHAMPS = ['type', 'title', 'description', 'h1', 'published', 'reviewed'];
@@ -185,14 +197,11 @@ for (const p of pages){
     return { url: u, h1: cible.h1, description: cible.description };
   }).filter(Boolean);
 
-  const chemin = [{ nom: 'Accueil', url: '/' }];
+  const chemin = [...racineApprendre];
   if (hub) chemin.push({ nom: hub.nav, url: hub.url });
   chemin.push({ nom: p.fil || texteBrut(p.h1), url: p.url });
   const url = SITE + p.url;
-  const jsonld = [{
-    '@context': 'https://schema.org', '@type': 'BreadcrumbList',
-    itemListElement: chemin.map((e, i) => ({ '@type': 'ListItem', position: i + 1, name: e.nom, item: SITE + (e.url === '/' ? '/' : e.url) }))
-  }];
+  const jsonld = [fil(chemin)];
   if (T.article) jsonld.push({
     '@context': 'https://schema.org', '@type': 'Article',
     headline: texteBrut(p.h1), description: texteBrut(p.description),
@@ -213,7 +222,7 @@ for (const p of pages){
   });
 
   const page = { ...p, ...t, liees, chemin, jsonld, indexable: true, signe: T.signe, jsonldArticle: T.article,
-                 rubrique: hub ? hub.nav : p.rubrique };
+                 rubrique: hub ? hub.nav : p.rubrique, rubriqueUrl: hub ? hub.url : p.url };
   sorties.set(fichierDe(p.url), pageContenu(page, ctx));
   plan.push({ url: p.url, lastmod: p.reviewed });
 }
@@ -225,14 +234,25 @@ for (const h of SITECFG.hubs){
   bornes('site.json ' + h.url, h);
   const enfants = enfantsDe(h);
   const indexable = enfants.length >= INDEXABLE_DES;
-  const chemin = [{ nom: 'Accueil', url: '/' }, { nom: h.nav, url: h.url }];
+  const chemin = [...racineApprendre, { nom: h.nav, url: h.url }];
   const page = {
-    ...h, corps: corpsHub(h, enfants, ctx), toc: [], liees: [], chemin, indexable, rubrique: null,
-    jsonld: [{ '@context': 'https://schema.org', '@type': 'BreadcrumbList',
-      itemListElement: chemin.map((e, i) => ({ '@type': 'ListItem', position: i + 1, name: e.nom, item: SITE + (e.url === '/' ? '/' : e.url) })) }]
+    ...h, corps: corpsHub(h, enfants, ctx), toc: [], liees: [], chemin, indexable, rubrique: null, rubriqueUrl: h.url,
+    jsonld: [fil(chemin)]
   };
   sorties.set(fichierDe(h.url), pageContenu(page, ctx));
   if (indexable) plan.push({ url: h.url, lastmod: enfants.map(e => e.reviewed).sort().pop() });
+}
+
+// La page Apprendre, rubrique principale : toujours indexable, elle liste tout.
+{
+  bornes('site.json ' + APPRENDRE.url, APPRENDRE);
+  const page = {
+    ...APPRENDRE, corps: corpsApprendre(ctx, connues.get('/carnet-de-musculation'), connues.get('/methode-editoriale')),
+    toc: [], liees: [], chemin: racineApprendre, indexable: true, rubrique: null, rubriqueUrl: APPRENDRE.url,
+    jsonld: [fil(racineApprendre)]
+  };
+  sorties.set(fichierDe(APPRENDRE.url), pageContenu(page, ctx));
+  plan.push({ url: APPRENDRE.url, lastmod: pages.map(e => e.reviewed).sort().pop() });
 }
 
 // La 404 : jamais indexee, jamais dans le plan du site.
@@ -296,5 +316,5 @@ if (VERIF){
     mkdirSync(dirname(join(RACINE, f)), { recursive: true });
     writeFileSync(join(RACINE, f), t, 'utf8');
   }
-  console.log(`${sorties.size} fichiers écrits (${pages.length} pages, ${SITECFG.hubs.length} rubriques, 404, sitemap.xml)`);
+  console.log(`${sorties.size} fichiers écrits (${pages.length} pages, Apprendre, ${SITECFG.hubs.length} rubriques, 404, sitemap.xml)`);
 }
