@@ -237,6 +237,28 @@ ok('defaire le superset le retire vraiment',
    r.rows[0].j['2026-09-08'].exercises[0].bloc === null,
    JSON.stringify(r.rows[0].j['2026-09-08'].exercises[0].bloc));
 
+console.log('\n== 13 bis. Le commentaire d un exercice fait l aller-retour ==');
+await as(A, `select public.pousser_jour('2026-09-08'::date, $1::jsonb)`, [JSON.stringify([
+  { id: 'b1', nom: 'Bench', groupe: 'Pectoraux', note: '  Assisté sur la dernière  ', series: [{ poids: 80, reps: '5' }] },
+  { id: 'b2', nom: 'Curl',  groupe: 'Bras',      note: 'x'.repeat(600),               series: [{ poids: 12, reps: '10' }] },
+  { id: 'b3', nom: 'Rowing', groupe: 'Dos',      note: '   ',                          series: [{ poids: 60, reps: '8' }] }
+])]);
+r = await as(A, `select public.tirer_jours(null) as j`);
+const notes = r.rows[0].j['2026-09-08'].exercises;
+ok('le commentaire revient, sans ses espaces', notes[0].note === 'Assisté sur la dernière', JSON.stringify(notes[0].note));
+ok('un commentaire trop long est tronque a 500, la journee passe quand meme',
+   notes[1].note.length === 500, 'longueur=' + notes[1].note.length);
+ok('un commentaire blanc devient null', notes[2].note === null, JSON.stringify(notes[2].note));
+// L'app distingue « pas de commentaire » (null) de « base pas encore a jour »
+// (cle absente) : la cle doit donc toujours etre la.
+ok('la cle note est toujours rendue', notes.every(e => 'note' in e), JSON.stringify(notes.map(e => Object.keys(e))));
+await refuse('la base refuse un commentaire de plus de 500 caracteres', () =>
+  db.query(`update public.exercices set note = repeat('x', 501) where user_id = $1`, [A]));
+// On remet la journee telle que les sections suivantes l'attendent.
+await as(A, `select public.pousser_jour('2026-09-08'::date, $1::jsonb)`, [JSON.stringify([
+  { id: 'b1', nom: 'Bench', groupe: 'Pectoraux', series: [{ poids: 80, reps: '5' }] }
+])]);
+
 console.log('\n== 14. Les noms d exercices memorises suivent le compte ==');
 await as(A, `select public.pousser_exos_perso($1::jsonb)`, [JSON.stringify([
   { cle: 'bench leger', nom: 'Bench leger', groupe: 'Pectoraux' },
@@ -561,7 +583,7 @@ await as(C, `select public.toucher_profil($1)`, ['Carole']);
 
 // B a un carnet : c'est lui qu'on protege.
 await as(B, `select public.pousser_jour('2026-10-01'::date, $1::jsonb)`, [JSON.stringify([
-  { id: 'bx1', nom: 'Squat', groupe: 'Jambes', series: [{ poids: 140, reps: '3', rpe: 9 }] }
+  { id: 'bx1', nom: 'Squat', groupe: 'Jambes', note: 'Dernière rep assistée', series: [{ poids: 140, reps: '3', rpe: 9 }] }
 ])]);
 
 console.log('  -- avant tout lien');
@@ -616,6 +638,9 @@ ok('et il voit bien les series',
    rr.rows[0].j['2026-10-01'].exercises[0].series[0].poids === '140.00' ||
    Number(rr.rows[0].j['2026-10-01'].exercises[0].series[0].poids) === 140,
    JSON.stringify(rr.rows[0].j['2026-10-01'].exercises[0].series[0]));
+ok('et le commentaire de l exercice',
+   rr.rows[0].j['2026-10-01'].exercises[0].note === 'Dernière rep assistée',
+   JSON.stringify(rr.rows[0].j['2026-10-01'].exercises[0].note));
 
 rr = await as(A, `select pseudo from public.profils where user_id = $1`, [B]);
 ok('le coach voit le pseudo de son coache', rr.rows.length === 1, JSON.stringify(rr.rows));

@@ -1,20 +1,20 @@
-﻿Date;Jour;Exercice;Groupe;Serie;Poids (kg);Repetitions;RPE;Repos (s);Volume (kg);Fait
-2026-09-07;Lundi;Squat;Jambes;1;115;5;8;180;575;oui
-2026-09-07;Lundi;Squat;Jambes;2;100;5;7;150;500;oui
-2026-09-07;Lundi;Squat;Jambes;3;100;5;7,5;150;500;oui
-2026-09-07;Lundi;Squat;Jambes;4;100;5;8;150;500;oui
-2026-09-07;Lundi;Développé couché;Pectoraux;1;80;5;8;150;400;oui
-2026-09-07;Lundi;Développé couché;Pectoraux;2;70;8;8;120;560;oui
-2026-09-07;Lundi;Développé couché;Pectoraux;3;70;8;8,5;120;560;oui
-2026-09-07;Lundi;Développé couché;Pectoraux;4;70;7;9;120;490;oui
-2026-09-07;Lundi;Planche;Abdos;1;;60 s;7;60;;oui
-2026-09-07;Lundi;Planche;Abdos;2;;55 s;8;60;;oui
-2026-09-10;Jeudi;Soulevé de terre;Dos;1;140;3;8;180;420;oui
-2026-09-10;Jeudi;Soulevé de terre;Dos;2;120;5;7;150;600;oui
-2026-09-10;Jeudi;Soulevé de terre;Dos;3;120;5;7,5;150;600;oui
-2026-09-10;Jeudi;Tractions;Dos;1;5;6;8;120;30;oui
-2026-09-10;Jeudi;Tractions;Dos;2;5;6;8,5;120;30;oui
-2026-09-10;Jeudi;Tractions;Dos;3;;8;9;120;;oui
-2026-09-10;Jeudi;Développé militaire;Épaules;1;42,5;8;8;120;340;oui
-2026-09-10;Jeudi;Développé militaire;Épaules;2;42,5;8;8,5;120;340;oui
-2026-09-10;Jeudi;Développé militaire;Épaules;3;42,5;7;9;120;297,5;oui
+﻿Date;Jour;Exercice;Groupe;Serie;Poids (kg);Repetitions;RPE;Repos (s);Volume (kg);Fait;Commentaire
+2026-09-07;Lundi;Squat;Jambes;1;115;5;8;180;575;oui;
+2026-09-07;Lundi;Squat;Jambes;2;100;5;7;150;500;oui;
+2026-09-07;Lundi;Squat;Jambes;3;100;5;7,5;150;500;oui;
+2026-09-07;Lundi;Squat;Jambes;4;100;5;8;150;500;oui;
+2026-09-07;Lundi;Développé couché;Pectoraux;1;80;5;8;150;400;oui;Dernière série assistée
+2026-09-07;Lundi;Développé couché;Pectoraux;2;70;8;8;120;560;oui;Dernière série assistée
+2026-09-07;Lundi;Développé couché;Pectoraux;3;70;8;8,5;120;560;oui;Dernière série assistée
+2026-09-07;Lundi;Développé couché;Pectoraux;4;70;7;9;120;490;oui;Dernière série assistée
+2026-09-07;Lundi;Planche;Abdos;1;;60 s;7;60;;oui;
+2026-09-07;Lundi;Planche;Abdos;2;;55 s;8;60;;oui;
+2026-09-10;Jeudi;Soulevé de terre;Dos;1;140;3;8;180;420;oui;
+2026-09-10;Jeudi;Soulevé de terre;Dos;2;120;5;7;150;600;oui;
+2026-09-10;Jeudi;Soulevé de terre;Dos;3;120;5;7,5;150;600;oui;
+2026-09-10;Jeudi;Tractions;Dos;1;5;6;8;120;30;oui;
+2026-09-10;Jeudi;Tractions;Dos;2;5;6;8,5;120;30;oui;
+2026-09-10;Jeudi;Tractions;Dos;3;;8;9;120;;oui;
+2026-09-10;Jeudi;Développé militaire;Épaules;1;42,5;8;8;120;340;oui;
+2026-09-10;Jeudi;Développé militaire;Épaules;2;42,5;8;8,5;120;340;oui;
+2026-09-10;Jeudi;Développé militaire;Épaules;3;42,5;7;9;120;297,5;oui;

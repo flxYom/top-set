@@ -11,6 +11,17 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ### Added
 
+- **A comment per exercise.** An optional field under the sets — « last set
+  assisted », « with bands », « a bit tired ». It shows again under *Dernière
+  fois* next time, in the session sheet, the exercise history and the logbook a
+  coach reads. Stored as an optional `note` field (absent when empty, so no
+  migration), up to 500 characters, synced through a new nullable
+  `exercices.note` column: `pousser_jour` trims and truncates it, `tirer_jours`
+  and `tirer_jours_de` return it. Until `schema.sql` is re-run, a database
+  without the column cannot erase a comment kept on the phone. The CSV export
+  gains a last column, `Commentaire`, which the importer reads back; the
+  published Excel template and example follow.
+
 - **Content pages** (French), next to the app: the top set
   (`/documentation/top-set-musculation`), a 1RM calculator using the app's own
   Epley formula and 12-rep limit (`/outils/calculateur-1rm`), a product page
@@ -218,6 +229,21 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ### Changed
 
+- **Privacy policy 3.1.** Names the publisher and every party involved:
+  Resend (account emails, Plus Five Five, Inc., SCCs and EU-U.S. DPF per its
+  DPA), OVH (domain and DNS), and Claude (Anthropic), which helps write the
+  code and pages and receives nothing from the app. Drops the « no analytics »
+  promise, since measuring the site's performance is planned, and says the
+  page will describe any new processing before it starts. Comments added to
+  what an account records. The « What changed » section is gone: each change
+  now sits in the section it concerns. `VERSION_POLITIQUE` → `3.1`.
+- **Guide.** Removes the timed-exercise section and the « two accounts on one
+  phone » section; « Back up your data » becomes a short « Export your
+  sessions » (JSON or CSV), placed after the account section; the coaching
+  step loses « chacun de son côté »; explains the new comment field and that
+  the message badge goes out once the conversation is open.
+- Service worker cache `topset-v16` → `topset-v17`.
+
 - **Privacy policy 3.0 and terms of use 2.0.** The policy described an account
   that only copied the logbook; it now says what messages, feedback, the
   profile and coaching record, who sees what, on which legal basis, for how
@@ -270,6 +296,15 @@ while it stays below `1.0.0`, breaking changes (in particular to the
   for a `.seance-item` class no screen uses any more.
 
 ### Fixed
+
+- **The message badge stayed lit after reading.** It was counted before the
+  profile arrived, so the administrator was counted as a member, on their own
+  support thread (test feedback, never shown in their inbox, never marked
+  read); the 8-second throttle then held back the correct count for a minute.
+  The count now waits for the role (`profilConnu()`), opening the inbox
+  recounts, a token stops a stale count from relighting the badge, and opening
+  a member's thread marks that member's message and feedback notifications
+  read.
 
 - **CI was red on Linux.** A guard located the messaging section of `app.js`
   by searching for Windows line endings (CRLF); Git writes CRLF on Windows
@@ -446,6 +481,15 @@ while it stays below `1.0.0`, breaking changes (in particular to the
   on every new table; RLS was catching it, but silently and on one layer only.
 
 ### Tests
+
+- RLS: a comment makes the round trip, is trimmed, truncated to 500 without
+  blocking the day, becomes null when blank, is always returned as a key, is
+  refused over 500 by the table itself, and is read by the coach (239).
+- Logic: the CSV comment column is read once per exercise and loses its
+  anti-formula apostrophe, an old CSV without it still imports, and both
+  published templates carry the export's columns, read from `app.js` (161).
+- Guards: the badge count waits for the role, a stale count cannot relight it,
+  opening the inbox recounts, and the comment field is 16 px on iOS (171).
 
 - Links: the test now reads nested pages and clean URLs (`/guide`,
   `/documentation` → `documentation/index.html`), and checks that the app

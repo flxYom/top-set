@@ -11,7 +11,7 @@
 <meta property="og:site_name" content="Top Set">
 <meta property="og:locale" content="fr_FR">
 <meta property="og:title" content="Comment ça marche — Top Set">
-<meta property="og:description" content="Prendre Top Set en main : ta première séance, l'échelle RPE, le récap et la sauvegarde de tes données.">
+<meta property="og:description" content="Prendre Top Set en main : ta première séance, l'échelle RPE, le récap, ton compte et l'export de tes séances.">
 <meta property="og:url" content="https://www.top-set.fr/guide">
 <meta property="og:image" content="https://www.top-set.fr/og-image.png">
 <meta property="og:image:width" content="1200">
@@ -50,7 +50,7 @@
     </p>
     <p>
       Ce guide explique l'app. Les notions de musculation — le top set, le 1RM,
-      la planche… — ont leurs propres pages, sources à l'appui : c'est l'onglet
+      le RPE… — ont leurs propres pages, sources à l'appui : c'est l'onglet
       <span class="touche">APPRENDRE</span>, ou <a href="/apprendre">la page
       Apprendre</a>.
     </p>
@@ -142,6 +142,21 @@
       </div>
     </div>
 
+    <div class="etape">
+      <div class="num">6</div>
+      <div class="corps">
+        <h3>Un commentaire, si tu veux</h3>
+        <p>
+          Sous les séries de chaque exercice, une case facultative pour ce que
+          les chiffres ne disent pas : « dernière série assistée », « avec
+          bandes », « un peu fatigué ». La fois suivante, il s'affiche sous
+          <span class="touche">DERNIÈRE FOIS</span>, à côté de tes chiffres : tu
+          sais pourquoi ils étaient là. Tu le retrouves aussi dans la fiche de la
+          séance et dans l'historique de l'exercice.
+        </p>
+      </div>
+    </div>
+
     <div class="note">
       <p>
         Les onglets <strong>PLANNING</strong>, <strong>SÉANCES</strong>,
@@ -214,39 +229,6 @@
   </section>
 
   <section>
-    <h2>Gainage, planche : au temps</h2>
-    <p>
-      Une planche ne se compte pas en répétitions, elle se tient. Tape
-      <strong>Planche</strong> ou <strong>Gainage</strong> comme nom d'exercice
-      et la série passe toute seule en secondes : les boutons
-      <span class="touche">−</span> <span class="touche">+</span> retirent ou
-      ajoutent 5 secondes, et la case à côté prend la durée — 45, 60, 90…
-    </p>
-    <p>
-      Sous chaque série, tu notes la <strong>difficulté</strong> ressentie, de
-      1 à 10 (10 = impossible de tenir une seconde de plus), et le
-      <strong>repos</strong>. Le nombre de séries, c'est le nombre de lignes,
-      comme pour le reste.
-    </p>
-    <p>
-      Pour un autre exercice tenu — chaise, suspension à la barre, L-sit… —
-      appuie sur <span class="touche">◷ PASSER AU TEMPS</span> sur sa carte.
-      L'app s'en souvient la fois suivante.
-    </p>
-    <div class="note">
-      <p>
-        Ton record, c'est ta série la plus longue : l'étoile s'allume quand tu
-        la bats. La fiche de l'exercice trace ton meilleur temps séance après
-        séance, et le récap l'affiche en minutes et secondes.
-      </p>
-    </div>
-    <p>
-      Combien de temps tenir, les erreurs à éviter et comment progresser :
-      <a href="/exercices/planche-gainage">la page sur la planche</a>.
-    </p>
-  </section>
-
-  <section>
     <h2>Le récap</h2>
     <p>
       L'onglet <span class="touche">RÉCAP</span> résume ce que tu as fait, sur la
@@ -270,47 +252,6 @@
       <a href="/entrainement/suivre-sa-progression">suivre sa progression</a> ; et si
       elle ne bouge plus : <a href="/entrainement/stagnation">la stagnation</a>.
     </p>
-  </section>
-
-  <section>
-    <h2>Sauvegarde tes données — c'est important</h2>
-    <p>
-      Tes séances vivent dans le navigateur de <strong>cet appareil</strong>. Ce n'est
-      pas un serveur : personne d'autre ne les a, moi non plus.
-    </p>
-    <p>Ce qui les efface définitivement :</p>
-    <ul>
-      <li>vider les données de navigation ;</li>
-      <li>changer de téléphone ;</li>
-      <li>utiliser la navigation privée.</li>
-    </ul>
-    <p>
-      Le bouton <span class="touche orange">⇅</span> en haut, c'est
-      <strong>tes données</strong>. Il te dit combien de jours et de séries tu
-      as, et te laisse <strong>télécharger un fichier de sauvegarde</strong>.
-      Garde-le quelque part — c'est ce qui te permettra de tout retrouver sur
-      un nouveau téléphone, en le réimportant depuis le même bouton.
-    </p>
-    <p>
-      Le même panneau propose aussi un <strong>export en tableur (.csv)</strong>,
-      à ouvrir dans Excel, Numbers ou Google Sheets : une ligne par série, avec
-      le poids, les répétitions, le RPE et le volume. Il se réimporte aussi, tout
-      comme le <a href="/outils/modele-carnet-musculation">modèle Excel</a> du site. La
-      sauvegarde la plus complète reste le <strong>.json</strong> : elle garde
-      aussi les titres de tes séances et tes exercices mémorisés.
-    </p>
-    <p>
-      <strong>Importer n'écrase rien.</strong> Le fichier est ajouté à ce que tu
-      as déjà : les séances qui te manquent arrivent, celles que tu as ne
-      bougent pas. Avant d'ajouter, l'app te dit exactement ce qui va arriver —
-      « 25 séries sur 4 jours » — et réimporter deux fois le même fichier
-      n'ajoute rien de plus.
-    </p>
-    <div class="note">
-      <p>
-        Prends l'habitude d'exporter une fois par mois. Ça prend cinq secondes.
-      </p>
-    </div>
   </section>
 
   <section>
@@ -353,6 +294,27 @@
   </section>
 
   <section>
+    <h2>Exporter tes séances</h2>
+    <p>
+      Si tu veux une copie de ton carnet ailleurs, ou le relire dans un tableur :
+      le bouton <span class="touche orange">⇅</span>, en haut de l'écran, c'est
+      <strong>tes données</strong>. Deux formats, au choix :
+    </p>
+    <ul>
+      <li><strong>.json</strong> — la copie complète : tes séances, leurs titres et
+          tes exercices mémorisés.</li>
+      <li><strong>.csv</strong> — un tableur à ouvrir dans Excel, Numbers ou Google
+          Sheets : une ligne par série, avec le poids, les répétitions, le RPE, le
+          repos, le volume et ton commentaire.</li>
+    </ul>
+    <p>
+      Les deux se réimportent depuis le même bouton, tout comme le
+      <a href="/outils/modele-carnet-musculation">modèle Excel</a> du site.
+      Importer n'écrase rien : ce qui te manque arrive, le reste ne bouge pas.
+    </p>
+  </section>
+
+  <section>
     <h2>Travailler avec un coach</h2>
     <p>
       Top Set ne t'impose personne&nbsp;: par défaut ton carnet n'est vu que par
@@ -379,7 +341,7 @@
         <h3>Il doit accepter</h3>
         <p>
           Tant qu'il ne l'a pas fait, <strong>il ne voit rien</strong>. Il faut
-          que vous soyez d'accord tous les deux, chacun de son côté.
+          que vous soyez d'accord tous les deux.
         </p>
       </div>
     </div>
@@ -390,7 +352,7 @@
         <h3>Ce qu'il voit, et ce qu'il ne voit pas</h3>
         <p>
           Il <strong>lit</strong> tes séances&nbsp;: exercices, séries, charges,
-          RPE. Il ne peut <strong>rien modifier ni effacer</strong>. Il ne voit
+          RPE, commentaires. Il ne peut <strong>rien modifier ni effacer</strong>. Il ne voit
           ni ton email, ni tes retours, ni quoi que ce soit d'autre de ton
           compte.
         </p>
@@ -454,38 +416,6 @@
   </section>
 
   <section>
-    <h2>Deux comptes sur le même téléphone</h2>
-    <p>
-      Ton carnet suit <strong>ton compte</strong>, pas l'appareil. Si quelqu'un
-      d'autre se connecte sur ton téléphone, il ne voit pas tes séances : le
-      carnet présent est <strong>mis de côté</strong> et le sien apparaît à la
-      place.
-    </p>
-    <p>
-      Rien n'est effacé. Quand tu te reconnectes, ton carnet revient tout seul,
-      exactement là où tu l'avais laissé — y compris les journées qui n'étaient
-      pas encore parties sur ton compte.
-    </p>
-    <p>
-      Même chose quand tu te <strong>déconnectes</strong>&nbsp;: ton carnet est mis
-      de côté et l'app redevient vierge. Quelqu'un qui ouvre le téléphone après
-      toi ne voit rien de tes séances, même sans se connecter. Elles reviennent
-      dès que tu te reconnectes.
-    </p>
-    <div class="note">
-      <p>
-        Un carnet mis de côté n'est récupérable que par le compte à qui il
-        appartient. C'est volontaire&nbsp;: personne d'autre ne doit pouvoir le
-        reprendre, même en se connectant sur le même téléphone.
-      </p>
-      <p>
-        Une règle simple pour s'y retrouver&nbsp;:
-        <strong>une adresse email = un carnet.</strong>
-      </p>
-    </div>
-  </section>
-
-  <section>
     <h2>L'installer sur ton téléphone</h2>
     <p>
       Top Set s'installe comme une vraie application, sans passer par un store :
@@ -525,7 +455,8 @@
     </ul>
     <p>
       Quand quelqu'un t'a écrit, une <strong>pastille</strong> s'allume sur la
-      bulle, avec le nombre de messages qui t'attendent. Dans une
+      bulle, avec le nombre de messages qui t'attendent. Elle s'éteint dès que tu
+      as ouvert la conversation. Dans une
       conversation, tes messages sont à droite, en orange ; ceux de l'autre à
       gauche. Les nouveaux arrivent tout seuls tant que la conversation est
       ouverte.
