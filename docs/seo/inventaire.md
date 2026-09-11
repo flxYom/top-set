@@ -15,15 +15,15 @@ Statuts : IDEA → RESEARCHED → PLANNED/SELECTED → DRAFT → PUBLISHED → N
 | /entrainement/surcharge-progressive | progression | informationnelle | surcharge progressive musculation | PUBLISHED | — | 2026-09-11 |
 | /outils/calculateur-1rm | charge | outil | calcul 1rm | PUBLISHED | calculateur-1rm-rpe | 2026-09-11 |
 | /documentation/rir-musculation | intensite | informationnelle | rir musculation | PUBLISHED | — | 2026-09-11 |
-| /entrainement/suivre-sa-progression | suivi | informationnelle | suivi progression musculation | SELECTED | exemple-carnet | — |
+| /entrainement/suivre-sa-progression | suivi | informationnelle | suivi progression musculation | PUBLISHED | exemple-carnet | 2026-09-11 |
 | /carnet-de-musculation | suivi | transactionnelle | carnet de musculation | PUBLISHED | application-gratuite, journal-entrainement | 2026-09-11 |
 | /entrainement/nombre-de-series-par-muscle | progression | informationnelle | combien de séries par muscle par semaine | PUBLISHED | volume-definition | 2026-09-11 |
-| /entrainement/temps-de-repos | progression | informationnelle | temps de repos musculation | SELECTED | — | — |
+| /entrainement/temps-de-repos | progression | informationnelle | temps de repos musculation | PUBLISHED | — | 2026-09-11 |
 | /documentation/echec-musculaire | intensite | informationnelle | échec musculaire | PUBLISHED | — | 2026-09-11 |
 | /outils/tableau-rpe | intensite | outil | tableau rpe pourcentage | PUBLISHED | — | 2026-09-11 |
 | /exercices/planche-gainage | exercices | informationnelle | planche abdos combien de temps | PUBLISHED | — | 2026-09-11 |
 | /outils/modele-carnet-musculation | suivi | transactionnelle | carnet de musculation excel | SELECTED | — | — |
-| /entrainement/stagnation | progression | informationnelle | stagnation musculation | SELECTED | — | — |
+| /entrainement/stagnation | progression | informationnelle | stagnation musculation | PUBLISHED | — | 2026-09-11 |
 | /exercices/developpe-couche | exercices | informationnelle | développé couché | SELECTED | — | — |
 | /documentation/poids-de-la-barre | exercices | informationnelle | combien pèse la barre développé couché | SELECTED | — | — |
 | /outils/pourcentages-1rm | charge | outil | pourcentage 1rm | IDEA | — | — |

@@ -471,6 +471,90 @@
       "type": "revue systématique et méta-analyse (25 études)",
       "lu": "résumé",
       "verifie": "2026-09-11"
+    },
+    "grgic2017rest": {
+      "auteurs": ["Grgic J","Lazinica B","Mikulic P","Krieger JW","Schoenfeld BJ"],
+      "annee": 2017,
+      "titre": "The effects of short versus long inter-set rest intervals in resistance training on measures of muscle hypertrophy: A systematic review",
+      "revue": "European Journal of Sport Science",
+      "ref": "17(8):983-993",
+      "doi": "10.1080/17461391.2017.1340524",
+      "pmid": "28641044",
+      "type": "revue systématique (6 études)",
+      "lu": "résumé",
+      "verifie": "2026-09-11"
+    },
+    "grgic2018rest": {
+      "auteurs": ["Grgic J","Schoenfeld BJ","Skrepnik M","Davies TB","Mikulic P"],
+      "annee": 2018,
+      "titre": "Effects of Rest Interval Duration in Resistance Training on Measures of Muscular Strength: A Systematic Review",
+      "revue": "Sports Medicine",
+      "ref": "48(1):137-151",
+      "doi": "10.1007/s40279-017-0788-x",
+      "pmid": "28933024",
+      "type": "revue systématique (23 études, 491 participants)",
+      "lu": "résumé",
+      "verifie": "2026-09-11"
+    },
+    "singer2024": {
+      "auteurs": ["Singer A","Wolf M","Generoso L","Arias E","Delcastillo K","Echevarria E","Martinez A","Androulakis Korakakis P","Refalo MC","Swinton PA","Schoenfeld BJ"],
+      "annee": 2024,
+      "titre": "Give it a rest: a systematic review with Bayesian meta-analysis on the effect of inter-set rest interval duration on muscle hypertrophy",
+      "revue": "Frontiers in Sports and Active Living",
+      "ref": "6:1429789",
+      "doi": "10.3389/fspor.2024.1429789",
+      "pmid": "39205815",
+      "type": "revue systématique et méta-analyse bayésienne (9 études)",
+      "lu": "résumé",
+      "verifie": "2026-09-11"
+    },
+    "harkin2016": {
+      "auteurs": ["Harkin B","Webb TL","Chang BP","Prestwich A","Conner M","Kellar I","Benn Y","Sheeran P"],
+      "annee": 2016,
+      "titre": "Does monitoring goal progress promote goal attainment? A meta-analysis of the experimental evidence",
+      "revue": "Psychological Bulletin",
+      "ref": "142(2):198-229",
+      "doi": "10.1037/bul0000025",
+      "pmid": "26479070",
+      "type": "méta-analyse d'essais randomisés (138 études, 19 951 participants), tous domaines",
+      "lu": "résumé",
+      "verifie": "2026-09-11"
+    },
+    "michie2009": {
+      "auteurs": ["Michie S","Abraham C","Whittington C","McAteer J","Gupta S"],
+      "annee": 2009,
+      "titre": "Effective techniques in healthy eating and physical activity interventions: a meta-regression",
+      "revue": "Health Psychology",
+      "ref": "28(6):690-701",
+      "doi": "10.1037/a0016136",
+      "pmid": "19916637",
+      "type": "méta-régression (122 évaluations, 44 747 participants)",
+      "lu": "résumé",
+      "verifie": "2026-09-11"
+    },
+    "coleman2024": {
+      "auteurs": ["Coleman M","Burke R","Augustin F","Piñero A","Maldonado J","Fisher JP","Israetel M","Androulakis Korakakis P","Swinton P","Oberlin D","Schoenfeld BJ"],
+      "annee": 2024,
+      "titre": "Gaining more from doing less? The effects of a one-week deload period during supervised resistance training on muscular adaptations",
+      "revue": "PeerJ",
+      "ref": "12:e16777",
+      "doi": "10.7717/peerj.16777",
+      "pmid": "38274324",
+      "type": "essai randomisé (39 pratiquants entraînés, 9 semaines)",
+      "lu": "résumé",
+      "verifie": "2026-09-11"
+    },
+    "craven2022": {
+      "auteurs": ["Craven J","McCartney D","Desbrow B","Sabapathy S","Bellinger P","Roberts L","Irwin C"],
+      "annee": 2022,
+      "titre": "Effects of Acute Sleep Loss on Physical Performance: A Systematic and Meta-Analytical Review",
+      "revue": "Sports Medicine",
+      "ref": "52(11):2669-2690",
+      "doi": "10.1007/s40279-022-01706-y",
+      "pmid": "35708888",
+      "type": "revue systématique et méta-analyse (69 publications)",
+      "lu": "résumé",
+      "verifie": "2026-09-11"
     }
   }
 }
