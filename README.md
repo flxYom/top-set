@@ -14,9 +14,11 @@ A weightlifting logbook that runs entirely in the browser. You log sets, weights
 reps and RPE during a session; it gives you volume, records and progression over
 time.
 
-No account. No sign-up. No server holding your data. Everything lives in the
-browser's `localStorage`, on the device you use. That is a deliberate trade, and
-it cuts both ways — see [Where your data lives](#where-your-data-lives).
+The account is optional. Without one, everything lives in the browser's
+`localStorage`, on the device you use, and no server sees anything. With one,
+the logbook is also copied to Supabase and follows you from device to device,
+and messaging opens up: the team, your coach, your clients. See
+[Where your data lives](#where-your-data-lives).
 
 The interface is in French.
 
@@ -26,9 +28,9 @@ or missing, [open an issue](../../issues/new/choose) — that is exactly what th
 repository is for right now.
 
 <p align="center">
-  <img src="screenshots/planning.png" width="240" alt="Weekly planning screen: day pills for the week, a chest-day summary banner, and a logged bench press exercise" />
-  <img src="screenshots/session.png" width="240" alt="Logging a set: weight and rep steppers, RPE, rest, and the duplicated third set" />
-  <img src="screenshots/recap.png" width="240" alt="Weekly recap: volume lifted, sessions, sets, an assiduity heatmap, and the muscle-group split" />
+  <img src="screenshots/planning.png" width="240" alt="Weekly planning: the header's messages, profile and data buttons, today's chest-day banner, the week's day pills and the muscle groups trained" />
+  <img src="screenshots/session.png" width="240" alt="Logging the bench press: last time's sets, the suggested load, then the top set with its steppers, RPE and rest" />
+  <img src="screenshots/recap.png" width="240" alt="Weekly recap: volume lifted, sets, sessions, movements, and the assiduity strip" />
 </p>
 <p align="center"><sub>Planning · Logging a set · Weekly recap — real screens, seeded with placeholder numbers for these screenshots.</sub></p>
 
@@ -72,6 +74,19 @@ is the most frequent action between two sets, so it costs one tap.
 failure, 9 leaves one rep, 8 leaves two. Optional — leave it empty and nothing
 breaks.
 
+**Timed exercises: planks, wall sits, dead hangs.** A hold is measured in
+seconds. Typing « Planche » or « Gainage » switches the set to a duration as you
+type — `−` and `+` then step by 5 s — and a card button switches any other
+exercise. Under the set, a 1–10 *difficulty* replaces reps in reserve, which
+mean nothing for a plank. The record is the longest hold, the exercise page
+charts the best time session after session, the recap shows minutes.
+
+The duration lives **in the reps field, written with its unit**: `45 s`. That
+field is already free text, so the database, the sync, the backup and the CSV
+carry it without any format change. The unit is mandatory: a bare `45` stays
+45 reps — guessing would reinterpret sets already logged. A duration counts
+toward no volume, no estimated 1RM and no rep record.
+
 **Rest per set**, not per exercise, and carried over when a set is duplicated.
 
 **Exercise memory.** Type an exercise that is not in the built-in list and it is
@@ -82,6 +97,33 @@ each keystroke, so you do not end up with `B`, `Be`, `Ben`.
 records and a muscle-group split — over a week, a month or a year.
 
 **Progression chart** per exercise, drawn from your own history.
+
+**Feedback.** A link at the bottom of every screen opens a form: a bug, an idea,
+a question. It lands in the database, not in a mailbox, and the app takes you
+straight to your conversation with the team, where the reply will arrive.
+
+**Messages.** A speech bubble in the header opens every conversation in one
+place — the Top Set team, your coach, your clients — with a badge counting what
+is waiting. See [Messaging](#messaging).
+
+**Three doors in the header.** The messages bubble, the **profile** silhouette
+(account, pseudonym, coach, sync) and `⇅` for **data** (backup, CSV, import).
+Account and files used to share one sheet, which had become a catch-all.
+
+**Built for the phone.** Tabs stay at the top while scrolling — including in
+the installed iPhone app, where they used to slide under the status bar. A
+back-to-top arrow appears once you are a screen down. Double-tapping `+` adds
+5 kg instead of zooming (`touch-action: manipulation`), and focusing a field no
+longer zooms Safari: on iOS every field is at least 16 px, the size below which
+Safari zooms in on its own — and never zooms back out. That rule is **the last
+one in the stylesheet**: at equal specificity the rule written lower wins, and
+placed higher it lost to the message field, which stayed at 14 px. A guard
+checks it.
+
+Sheets (data, profile, feedback) and the welcome screen leave room for the
+clock and the battery, and their header — with the close button — stays at the
+top while they scroll. In the installed app a tall sheet slid its × under the
+status bar, where it could not be tapped.
 
 **Decimal input that actually works.** The weight field accepts both `62,5` and
 `62.5`. A French keyboard offers a comma, and `<input type="number">` silently
@@ -105,9 +147,9 @@ clearing site data, switching phones, or browsing in a private window.
 logbook opens on any device. The phone keeps its copy either way: the account
 does not replace local storage, it backs it up.
 
-Seven tables. Five carry the logbook — `seances`, `exercices`, `series`,
-`exercices_perso`, `consentements` — and no one ever sees another person's row.
-Two came later:
+Eleven tables. Five carry the logbook — `seances`, `exercices`, `series`,
+`exercices_perso`, `consentements` — and no one ever sees another person's row,
+except the coach you opened your logbook to, read-only. The others came later:
 
 - **`profils`** — pseudonym, role, sign-up date, last-seen date. The pseudonym
   still lives in the account metadata; this column is a queryable mirror of it,
@@ -116,6 +158,12 @@ Two came later:
 - **`retours`** — user feedback. Deleting an account does not erase the
   feedback, it anonymises it (`on delete set null`): leaving is a right,
   erasing a bug you reported is not.
+- **`liens_coach`** — who coaches whom, and since when. See
+  [The coach link](#the-coach-link).
+- **`messages_support`** and **`messages_coach`** — the two halves of
+  messaging. See [Messaging](#messaging).
+- **`notifications_admin`** — what the team should see go by, written only by
+  triggers.
 
 ### One logbook per account
 
@@ -176,8 +224,28 @@ Since the browser is the only copy, the app takes losing it seriously.
 your custom exercises. Download it, share it, or copy it as text. That file is
 the only copy that survives a wiped browser.
 
-**Import** is two-step: the first press shows what you have now and what the file
-contains, the second applies it. Replacing is irreversible, so it asks twice.
+**Importing adds, it no longer replaces.** Replacing wiped the logbook in place
+with the file's: an old backup imported by mistake erased months of sessions.
+`fusionnerCarnets()`, in `intelligence.js` and therefore tested, adds what is
+missing and never touches what is there:
+
+- a missing day arrives whole, with its title;
+- in an existing day, an exercise is matched by id, or by name and filled sets —
+  which is what lets the CSV, which has no ids, double nothing;
+- it is a multiset, not a set: two « Pompes × 20 » cards on the same day are two
+  exercises done, and stay two;
+- an id already used elsewhere in the logbook is replaced. In the database an
+  exercise is unique per person across all days: a duplicate would block that
+  day's sync forever.
+
+The first press shows what will arrive — « 25 séries sur 4 jours (dont 3 que tu
+n'avais pas) » — the second applies it, redoing the merge on the logbook as it
+is at that moment. Only the days that changed are sent to the account.
+Importing the same file twice adds nothing.
+
+**The CSV imports back.** `lireCsvCarnet()` reads the exported CSV, and what
+Excel makes of it when it re-saves it: commas instead of semicolons, DD/MM/YYYY
+dates. It then goes through exactly the same cleaning as a JSON file.
 
 **Overwrite guard.** `saveLocal()` rewrites the whole logbook on every save. If
 `state.sessions` were empty at the wrong moment — a failed load, corrupted JSON —
@@ -188,7 +256,8 @@ that single call would erase everything, permanently and silently. So:
 - Every save keeps the **previous version** under a recovery key.
 - Unreadable JSON is **set aside** rather than overwritten.
 - A `RÉCUPÉRER N JOURS` button appears in the `⇅` panel whenever a recoverable
-  copy holds more than what is currently loaded.
+  copy holds more than what is currently loaded. Recovering means importing that
+  copy: what is missing comes back, what is there does not move.
 
 ---
 
@@ -218,8 +287,7 @@ error".
 
 ## Privacy by construction
 
-The privacy policy claims nothing leaves your device. That claim is enforced,
-not just written:
+What the privacy policy states is enforced technically, not just written:
 
 **No third-party requests.** Bricolage Grotesque, Chart.js and supabase-js are all
 served from the site itself. Loading them from a CDN would send every visitor's IP
@@ -250,8 +318,8 @@ key. No legitimate data is rewritten: `test/gabarits.test.mjs` asserts that ever
 historical identifier passes the filter.
 
 **Nothing is downloaded for people who do not have an account.** supabase-js is
-209 KB and is fetched only when a session already exists or the account panel is
-opened.
+209 KB and is fetched only when a session already exists, or at the moment you
+sign in.
 
 **Row Level Security on every table.** Each row carries its owner's id, and the
 database refuses any read or write that does not match the authenticated user.
@@ -259,8 +327,21 @@ Foreign keys are composite `(user_id, id)`, so a row cannot even structurally
 belong to someone else's session. The client never sends a `user_id`: it comes
 from the JWT, server-side.
 
-**No cookies, no analytics, no trackers.** The only processing that exists is the
-host's own access logs, and the privacy page says so.
+**No cookies, no analytics, no trackers.** Without an account, the only
+processing that exists is the host's own access logs.
+
+**The privacy policy follows the app.** Version 3.0 states, feature by feature,
+what an account records, who sees it — yourself, your coach, the team — on what
+legal basis and for how long. The accepted version is stored with every
+consent: at sign-up, and with every coaching request. The latter used to be
+sent without a number, and the database recorded « 1 », a version that never
+existed.
+
+**Admin notifications leave with the account.** They were `on delete set null`,
+to keep a trace without the person being identifiable — but a notification
+carries the pseudonym or the first 200 characters of a message, so an orphaned
+one still was. They now cascade, and the schema deletes those already
+orphaned. Only feedback survives a deleted account, without its author.
 
 ---
 
@@ -312,6 +393,21 @@ asserts it never becomes `security definer`.
 acceptance, what the coach cannot do, the third party who is neither side, the
 rejected second coach, revocation, ending the coaching, and `anon` throughout.
 
+### The coach ↔ client conversation
+
+A table of its own, `messages_coach`, rather than a reuse of support messaging:
+there, the other side is "the team", the same for everyone; here it is two
+accounts, and the right to write is read **from the link**, not from a role.
+
+- **Writing** requires an *active* link, and the declared author must match the
+  real side: a client cannot sign as coach, a coach cannot write to someone they
+  do not coach, and nobody can create a thread between two strangers.
+- **Reading**: the client keeps the history even after cutting access — it is
+  their conversation. The coach loses read access on the break, as with the
+  logbook. The administrator does not see it.
+- **Rewriting** is impossible: the update privilege is limited to the `lu`
+  column. **Deleting** too: there is no `delete` policy.
+
 ---
 
 ## Feedback and administration
@@ -331,11 +427,46 @@ The bounds live in the database, not in the form — `check` constraints on the
 kind, the status, the body length and the context size. You do not defend a table
 with JavaScript.
 
+A trigger, `accuser_retour()`, copies every feedback into its author's thread,
+then adds an acknowledgement signed `systeme` rather than `admin` — nobody has
+read it yet. No policy lets anyone write a `systeme` message, administrator
+included: only the trigger can, which is what makes it credible.
+
+### Messaging
+
+One thread per member, the same from both sides: a message written by the
+administrator still carries the member's `user_id`, otherwise there would be no
+conversation, only two lists. **The insert policy checks that the declared
+author matches the caller's real role** — a member cannot insert a message
+signed `admin`, even by crafting the request by hand.
+
+Support and coaching each had their own thread, in two different sheets, and a
+ticket reached the admin space with nothing to reply with. There is now **one
+inbox**, behind the header bubble. Two tables underneath, because the right to
+write is decided differently — a role on one side, a link on the other — but a
+single door on screen:
+
+| Who is looking | Table | With whom |
+|---|---|---|
+| a member | `messages_support` | the Top Set team |
+| the team | `messages_support` | every member who wrote |
+| a client | `messages_coach` | their coach |
+| a coach | `messages_coach` | each of their clients |
+
+The team can write to anyone from the admin space (**ÉCRIRE**, **RÉPONDRE**).
+**Two strangers cannot write to each other**, and it is the database that
+refuses, not the screen. New messages are fetched every 10 s while a
+conversation is open and visible, every 30 s in the inbox, never while the tab
+is hidden. The badge is two `head:true` counts — numbers, not hundreds of
+messages — at most once every 8 s, and zero on error.
+
 ### The admin space
 
-Restricted to the `admin` role. Eight counters (sign-ups, new and active at 7 and
-30 days, sessions, sets, pending feedback), the feedback list with controls to
-mark items read or handled, and the member list sorted by last visit.
+Restricted to the `admin` role. Ten counters (sign-ups, new and active at 7 and
+30 days, sessions, sets, pending feedback, unread messages, notifications), the
+notifications, a way into the inbox, the feedback list — each with
+**RÉPONDRE**, **MARQUER LU** and **TRAITÉ** — and the member list sorted by last
+visit, each with **ÉCRIRE**.
 
 **What it does not show:** no email address, and no logbook row. The four
 functions return aggregates only. An administrator sees *how many* sessions are
@@ -362,8 +493,9 @@ where user_id = (select id from auth.users where email = 'you@example.com');
 No framework. No build step. No bundler. No dependencies to install.
 
 One HTML file carrying the markup and inline CSS, plus static assets.
-`index.html` is about 182 KB, of which roughly 119 KB is a base64 texture; the
-app's JavaScript sits beside it in `app.js` (166 KB).
+`index.html` is about 204 KB, of which roughly 119 KB is a base64 texture; the
+app's JavaScript sits beside it in `app.js` (237 KB), and the tested business
+logic in `intelligence.js` (31 KB).
 
 **Why the JS is not inline.** It was, until the security audit. An inline script
 forces `script-src 'self' 'unsafe-inline'` in the Content-Security-Policy — and
@@ -377,8 +509,9 @@ execution order is unchanged.
 `style="--card-color:…"` attribute, style injection cannot execute script, and
 extracting the stylesheet would not remove the need.
 
-Chart.js 4.4.1 is the only library, loaded on demand the first time you open a
-progression chart.
+Two libraries, each loaded only when it is needed: Chart.js 4.4.1 the first time
+you open a progression chart, supabase-js 2.115.0 when an account comes into
+play.
 
 This is a deliberate choice for an app of this size: no toolchain to maintain, no
 version drift, and the whole thing can be opened, read and edited in one file.
@@ -410,24 +543,31 @@ robots.txt  sitemap.xml  indexing
 supabase.umd.js          supabase-js 2.115.0, loaded on demand
 supabase-config.js       project URL + public anon key (see Accounts)
 supabase/schema.sql      tables, RLS policies and sync functions
-supabase/test/           the schema's RLS test bench (PGlite) — 124 tests
-test/                    business logic (87), hardening guards (50), links (19)
-set-domaine.mjs          replaces the placeholder domain everywhere
+supabase/test/           the schema tested on a real Postgres (PGlite): RLS (233),
+                         upgrade from every past version (11)
+test/                    business logic (146), hardening guards (139), links (19)
 LICENSE  SECURITY.md  CONTRIBUTING.md  CHANGELOG.md
-.github/                 issue templates, PR template, CI workflow
+.github/                 issue templates, CI workflow
+.vercelignore            what the site does not publish: docs, schema, tests
 ```
 
 Icons and the social image are generated from geometry by a script rather than
 drawn by hand, so changing a brand colour means changing one value and re-running
-it.
+it. That script lives outside the repository, with the logo sources.
+
+Not everything in the repository is a page of the site: `.vercelignore` keeps
+the docs, the schema and the tests off it. `top-set.fr/supabase/schema.sql` used
+to be readable by anyone — nothing secret, security rests on RLS and not on the
+schema being hidden, but nothing to serve either.
 
 ---
 
 ## Accounts and Supabase
 
 Accounts are **optional**. Without `supabase-config.js` — or with
-`window.TOPSET_SUPABASE` set to `null` — the account panel disappears and the app
-is a pure local logbook. Nothing breaks, no dead buttons.
+`window.TOPSET_SUPABASE` set to `null` — the profile says accounts are not
+available, the messages bubble disappears, and the app is a pure local logbook.
+Nothing breaks, no dead buttons.
 
 There is **no build step and no runtime environment variables**: a static site has
 no server to read them. The two values live in `supabase-config.js`, committed to
@@ -468,9 +608,18 @@ The database rules are tested against a real Postgres (PGlite), not mocked:
 cd supabase/test && npm install && npm test
 ```
 
-39 checks: writes, replaying a day without duplicates, incremental pull, isolation
-between two users, refusing to graft a row onto someone else's session, anonymous
-visitors getting nothing, cascade on account deletion.
+`test-rls.mjs` attacks the rules from the `authenticated` role, as the browser
+would: writes, replaying a day without duplicates, isolation between users, the
+coach link, messaging, notifications, anonymous visitors, cascade on account
+deletion.
+
+`test-montee.mjs` installs **every past version** of the schema on a fresh
+database, adds data, then applies the current one twice. The production database
+is never empty, and that is where things break: a function whose return columns
+change passes on a fresh database, and Postgres refuses to "replace" it on the
+real one. In the Supabase SQL editor that single error rolls back the whole
+script, silently. It happened once; table-returning functions are now dropped
+before being recreated, and this test runs in CI with the full history.
 
 ---
 
@@ -490,17 +639,17 @@ Opening `index.html` directly works too — the only thing that breaks over
 ## Deploying
 
 Built for static hosting. On Vercel: import the repository, pick **Other** as the
-framework preset, deploy. `vercel.json` handles headers and caching.
+framework preset, deploy. `vercel.json` handles headers and caching,
+`.vercelignore` what must not be published.
 
-The domain appears 23 times across the HTML, `robots.txt` and `sitemap.xml` —
-Open Graph tags, canonical links, sitemap URLs. One command updates all of them:
+The site lives on `top-set.fr`, which redirects to `www.top-set.fr`. The domain
+is written out in the Open Graph tags, canonical links, `robots.txt` and
+`sitemap.xml`; the script that replaced it everywhere served once, when the
+placeholder domain gave way to the real one, and has been removed.
 
-```bash
-node set-domaine.mjs yourdomain.com
-```
-
-It accepts `https://your.site/`, `www.your.site` or `your.site`, and refuses
-anything that is not a domain.
+**On every release that touches the app**, the service worker version
+(`VERSION` in `sw.js`) moves up one notch: that is what tells phones to replace
+the cached shell.
 
 ---
 
@@ -516,12 +665,10 @@ Worth doing on iOS for a reason beyond convenience: Safari may clear
 `localStorage` for a site not visited in about a week, but not for a site
 installed on the home screen.
 
-**Not offline yet.** There is no service worker: opening the app still needs a
-network connection (`index.html` is served `no-cache` on purpose, so you always
-get the latest version). Once the page is loaded, whatever is already in
-`localStorage` stays readable even if the connection drops mid-session — but
-launching Top Set with no connection at all doesn't work today. Real offline
-support is on the [roadmap](#roadmap).
+**Offline.** A service worker keeps the app's shell: it opens with no network,
+in a basement gym, and the logbook is in `localStorage`. The page goes to the
+network first so you always get the latest version, and nothing coming from
+Supabase is ever cached.
 
 ---
 
@@ -530,8 +677,8 @@ support is on the [roadmap](#roadmap).
 - **Not an automatic trainer.** It records what you did; it does not tell you what to do.
 - **Not a medical device.** Weights and RPE are what you typed. Nothing is checked,
   validated or advised.
-- **Not multi-device.** There is no sync, by design, for now.
-- **Not social.** No feed, no friends, no leaderboard.
+- **Not social.** No feed, no friends, no leaderboard. You write to the team,
+  your coach or your clients — to no one else.
 
 ---
 

@@ -3926,9 +3926,15 @@
   // journee entiere de facon atomique, ce qui elimine par construction les
   // doublons, les fusions partielles et les series orphelines.
 
-  // Version de la politique de confidentialite acceptee a l'inscription. La
-  // changer implique de redemander l'accord : c'est ce que la page promet.
-  var VERSION_POLITIQUE = '2.0';
+  // Version de la politique de confidentialite, enregistree avec chaque
+  // consentement : a l'inscription, et a chaque demande de coaching. Elle suit
+  // le numero ecrit en haut de confidentialite.html.
+  //
+  // La 3.0 ne redemande rien aux comptes existants : elle decrit ce que les
+  // gens declenchent eux-memes (un message, un retour) et le coaching, qui a
+  // deja son propre accord. Une version qui ajouterait un traitement que
+  // personne n'a demande, lui, devrait reposer la question.
+  var VERSION_POLITIQUE = '3.0';
   var SYNC_KEY      = 'topset_sync';
   var CONFLITS_KEY  = 'topset_conflits';
 
@@ -4652,6 +4658,10 @@
       sec.hidden = !dispo();
       var indispo = document.getElementById('compteIndispo');
       if (indispo) indispo.hidden = dispo();
+      // Sans comptes, personne a qui ecrire : la bulle menerait a un
+      // formulaire de connexion qui ne peut pas aboutir.
+      var bulle = document.getElementById('messagesBtn');
+      if (bulle) bulle.hidden = !dispo();
       if (!dispo()) return;
 
       var etat  = document.getElementById('compteEtat');
@@ -4831,9 +4841,7 @@
     }
 
     return {
-      dispo:dispo, demarrer:demarrer, marquerSale:marquerSale, majUI:majUI,
-      toucherProfil:toucherProfil, estAdmin:estAdmin,
-      profil:function(){ return profil; },
+      demarrer:demarrer, marquerSale:marquerSale, majUI:majUI, estAdmin:estAdmin,
       estCoach:function(){ return !!(profil && profil.est_coach); },
       codeCoach:function(){ return profil && profil.code_coach; },
       devenirCoach:function(){
@@ -4848,7 +4856,10 @@
         });
       },
       demanderCoach:function(code){
-        return rpcAdmin('demander_coach', { p_code: String(code || '').toUpperCase().trim() });
+        // Sans la version, la base enregistrait l'accord de coaching sous « 1 »,
+        // une politique qui n'a jamais existe.
+        return rpcAdmin('demander_coach', { p_code: String(code || '').toUpperCase().trim(),
+                                            p_version_politique: VERSION_POLITIQUE });
       },
       repondreDemande:function(lien, oui){
         return rpcAdmin('repondre_demande', { p_lien: lien, p_accepte: !!oui });
@@ -5026,10 +5037,9 @@
       adminMembres:function(){ return rpcAdmin('admin_membres'); },
       adminRetours:function(s){ return rpcAdmin('admin_retours', { p_statut: s || null }); },
       adminMarquer:function(id, s){ return rpcAdmin('admin_marquer_retour', { p_id:id, p_statut:s }); },
-      marquerExos:marquerExos, pousserExos:pousserExos, tirerExos:tirerExos,
-      marquerTitre:marquerTitre, pousserTitres:pousserTitres,
+      marquerExos:marquerExos, marquerTitre:marquerTitre,
       enregistrerPseudo:enregistrerPseudo, envoyerLienMdp:envoyerLienMdp,
-      changerMdp:changerMdp, modeAccueil:modeAccueil, nomAffiche:nomAffiche,
+      changerMdp:changerMdp, modeAccueil:modeAccueil,
       montrerAccueil:montrerAccueil, fermerAccueil:fermerAccueil,
       synchroniser:synchroniser, migrer:migrer,
       connecter:connecter, inscrire:inscrire, deconnecter:deconnecter,

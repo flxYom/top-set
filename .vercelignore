@@ -1,14 +1,27 @@
+# Ce qui est dans le depot sans etre une page du site. Sans ce fichier,
+# Vercel publie tout : top-set.fr/supabase/schema.sql, les tests, le journal
+# des modifications... Rien de secret, mais rien a servir non plus.
+
 # Copies de securite locales : elles ne doivent jamais etre servies en ligne.
-# Sans ce fichier, index.html.before-backup serait accessible publiquement.
 *.before-*
 *.bak
 
 # Fichiers de travail
 *.zip
 
-# Outil local, pas une page du site
-set-domaine.mjs
-
-# Fichiers de depot, pas des pages du site
+# Documentation du depot
 README.md
 README.fr.md
+CHANGELOG.md
+CONTRIBUTING.md
+SECURITY.md
+LICENSE
+screenshots/
+
+# Base de donnees et tests
+supabase/
+test/
+
+# Configuration des outils
+.github/
+.htmlvalidate.json

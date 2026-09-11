@@ -40,7 +40,14 @@ caveat (the web app manifest needs an actual server, not `file://`).
 
 ## Project structure
 
-The whole app is one file, `index.html` (markup, CSS and JS inline).
+The app is `index.html` (markup and CSS), `app.js` (the interface and the
+sync) and `intelligence.js` (pure business logic, tested). Run the tests
+before sending anything:
+
+```bash
+node test/intelligence.test.mjs && node test/gabarits.test.mjs && node test/liens.test.mjs
+```
+
 `guide.html`, `cgu.html`, `confidentialite.html` and
 `mentions-legales.html` are static pages sharing `legal.css`. See the
 README's [Project structure](README.md#project-structure) section for

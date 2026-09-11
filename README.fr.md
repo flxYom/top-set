@@ -14,9 +14,10 @@ Un carnet de musculation qui tourne entièrement dans le navigateur. Tu notes te
 séries, tes charges, tes répétitions et ton RPE pendant la séance ; il te rend le
 volume, les records et la progression dans le temps.
 
-Pas de compte. Pas d'inscription. Aucun serveur qui détient tes données. Tout vit
-dans le `localStorage` du navigateur, sur l'appareil que tu utilises. C'est un
-choix assumé, et il coupe dans les deux sens — voir
+Le compte est facultatif. Sans lui, tout vit dans le `localStorage` du
+navigateur, sur l'appareil que tu utilises, et aucun serveur ne voit rien. Avec
+lui, le carnet est en plus copié chez Supabase et te suit d'un appareil à
+l'autre, et la messagerie s'ouvre : l'équipe, ton coach, tes coachés. Voir
 [Où vivent tes données](#où-vivent-tes-données).
 
 **C'est une bêta**, utilisée et développée au jour le jour par son auteur. Attends-toi
@@ -25,9 +26,9 @@ un truc est cassé, confus ou manquant, [ouvre une issue](../../issues/new/choos
 c'est exactement à ça que sert ce repo pour l'instant.
 
 <p align="center">
-  <img src="screenshots/planning.png" width="240" alt="Écran de planning hebdomadaire : jours de la semaine, bandeau récap du jour, exercice développé couché noté" />
-  <img src="screenshots/session.png" width="240" alt="Saisie d'une série : steppers de poids et répétitions, RPE, repos, et la troisième série dupliquée" />
-  <img src="screenshots/recap.png" width="240" alt="Récap hebdomadaire : volume levé, séances, séries, assiduité, et répartition par groupe musculaire" />
+  <img src="screenshots/planning.png" width="240" alt="Planning de la semaine : les boutons messages, profil et données de l'en-tête, le bandeau du jour, les jours de la semaine et les groupes travaillés" />
+  <img src="screenshots/session.png" width="240" alt="Saisie du développé couché : les séries de la dernière fois, la charge suggérée, puis le top set avec ses boutons, son RPE et son repos" />
+  <img src="screenshots/recap.png" width="240" alt="Récap de la semaine : volume levé, séries, séances, mouvements, et la bande d'assiduité" />
 </p>
 <p align="center"><sub>Planning · Saisie d'une série · Récap hebdomadaire — vrais écrans, avec des chiffres de démo pour ces captures.</sub></p>
 
@@ -130,7 +131,15 @@ d'état. Une flèche « revenir en haut » apparaît dès qu'on est descendu d'u
 écran. Deux appuis rapides sur `+` ajoutent 5 kg au lieu de zoomer
 (`touch-action: manipulation`), et toucher un champ ne fait plus zoomer
 Safari : sous iOS, tous les champs sont écrits en 16 px au moins, la taille en
-dessous de laquelle Safari zoome d'office.
+dessous de laquelle Safari zoome d'office — et ne dézoome plus. Cette règle est
+**la dernière de la feuille de style** : à spécificité égale, c'est la règle
+écrite plus bas qui gagne, et placée plus haut elle perdait contre le champ de
+la messagerie, qui restait en 14 px. Un garde-fou le vérifie.
+
+Les feuilles (données, profil, retour) et l'écran d'accueil laissent la place
+de l'heure et de la batterie, et leur en-tête — avec la croix — reste en haut
+quand on les fait défiler. Dans l'app installée, une feuille haute glissait sa
+croix sous la barre d'état : on ne pouvait plus la fermer.
 
 **Une virgule qui marche vraiment.** Le champ poids accepte `62,5` comme `62.5`.
 Un clavier français propose une virgule, et `<input type="number">` la refuse en
@@ -155,9 +164,10 @@ privé.
 carnet s'ouvre sur n'importe quel appareil. Le téléphone garde sa copie dans les
 deux cas : le compte ne remplace pas le stockage local, il le sauvegarde.
 
-Sept tables au total. Cinq portent le carnet — `seances`, `exercices`, `series`,
+Onze tables au total. Cinq portent le carnet — `seances`, `exercices`, `series`,
 `exercices_perso`, `consentements` — et personne n'y voit jamais la ligne d'un
-autre. Deux sont venues après :
+autre, sauf le coach à qui l'on a ouvert son carnet, en lecture seule. Les autres
+sont venues après :
 
 - **`profils`** — pseudo, rôle, date d'inscription, date de dernière visite. Le
   pseudo continue de vivre dans les métadonnées du compte : cette colonne n'en
@@ -166,6 +176,12 @@ autre. Deux sont venues après :
 - **`retours`** — les retours utilisateurs. Supprimer son compte n'efface pas le
   retour, ça le rend anonyme (`on delete set null`) : partir est un droit,
   effacer un bug signalé n'en est pas un.
+- **`liens_coach`** — qui suit qui, et depuis quand. Voir
+  [Le lien coach ↔ coaché](#le-lien-coach--coaché).
+- **`messages_support`** et **`messages_coach`** — les deux moitiés de la
+  messagerie. Voir [La messagerie](#la-messagerie).
+- **`notifications_admin`** — ce que l'équipe doit voir passer, écrit
+  uniquement par des déclencheurs.
 
 ### Un carnet par compte
 
@@ -321,7 +337,7 @@ mémorisés sont repassés clé par clé. Aucune donnée légitime n'est réécr
 le filtre.
 
 **Rien n'est téléchargé pour qui n'a pas de compte.** supabase-js pèse 209 Ko et
-n'est chargé que si une session existe déjà ou si le panneau compte est ouvert.
+n'est chargé que si une session existe déjà, ou au moment où l'on se connecte.
 
 **Row Level Security sur toutes les tables.** Chaque ligne porte l'identifiant de
 son propriétaire, et la base refuse toute lecture ou écriture qui ne correspond
@@ -343,9 +359,17 @@ appartient bien à l'appelant, la policy passerait, et n'importe qui deviendrait
 administrateur depuis la console de son navigateur. Tout passe par
 `toucher_profil()`.
 
-**Aucun cookie, aucune mesure d'audience, aucun traceur.** Le seul traitement qui
-existe, ce sont les journaux d'accès de l'hébergeur, et la page de confidentialité
-le dit.
+**Aucun cookie, aucune mesure d'audience, aucun traceur.** Sans compte, le seul
+traitement qui existe, ce sont les journaux d'accès de l'hébergeur.
+
+**La politique de confidentialité suit l'app.** La version 3.0 dit, fonction par
+fonction, ce qu'un compte enregistre, qui le voit — soi, son coach, l'équipe —,
+sur quelle base légale et pour combien de temps. La version acceptée est
+enregistrée avec chaque consentement : à l'inscription, et à chaque demande de
+coaching. Cette dernière partait sans numéro, et la base inscrivait « 1 », une
+version qui n'a jamais existé. La 3.0 ne redemande rien aux comptes existants :
+elle décrit ce que les gens déclenchent eux-mêmes (écrire, envoyer un retour) et
+le coaching, qui a déjà son propre accord.
 
 ---
 
@@ -549,6 +573,14 @@ version base de données de « relire la source plutôt que croire le corps de l
 requête » — la règle qu'on applique côté serveur ailleurs, obtenue ici sans
 serveur.
 
+**Elles partent avec le compte.** Elles étaient en `on delete set null`, pour
+garder la trace de ce qui s'était passé sans que la personne soit
+identifiable. Mais une notification porte le pseudo (inscription) ou les 200
+premiers caractères d'un message : orpheline, elle l'était encore. Elles sont
+désormais en cascade, et le schéma efface celles qui étaient déjà orphelines.
+Seuls les retours survivent à un compte supprimé — sans auteur, et sans
+notification qui le nomme.
+
 ### L'espace administrateur
 
 Réservé au rôle `admin`. Il montre dix compteurs (inscrits, nouveaux et actifs à
@@ -585,8 +617,9 @@ Aucun framework. Aucune étape de build. Aucun bundler. Aucune dépendance à
 installer.
 
 Un fichier HTML avec le CSS en ligne, plus des fichiers statiques.
-`index.html` pèse environ 182 Ko, dont à peu près 119 Ko de texture en base64 ;
-le JavaScript de l'app vit à côté, dans `app.js` (166 Ko).
+`index.html` pèse environ 204 Ko, dont à peu près 119 Ko de texture en base64 ;
+le JavaScript de l'app vit à côté, dans `app.js` (237 Ko), et la logique métier
+testée dans `intelligence.js` (31 Ko).
 
 **Pourquoi le JS n'est pas en ligne, lui.** Il l'a été jusqu'à l'audit de
 sécurité. Un script en ligne oblige à écrire `script-src 'self' 'unsafe-inline'`
@@ -601,8 +634,9 @@ façon de passer à `script-src 'self'`. Il est chargé à la même place, en fi
 attribut `style="--card-color:…"`, une injection de style ne peut pas exécuter
 de script, et sortir la feuille de style ne supprimerait pas le besoin.
 
-Chart.js 4.4.1 est la seule bibliothèque, chargée à la demande la première fois
-qu'on ouvre un graphique de progression.
+Deux bibliothèques, chacune chargée seulement quand elle sert : Chart.js 4.4.1 la
+première fois qu'on ouvre un graphique de progression, supabase-js 2.115.0 quand
+un compte entre en jeu.
 
 C'est un choix assumé pour une app de cette taille : aucune chaîne d'outils à
 maintenir, aucune dérive de versions, et l'ensemble s'ouvre, se lit et se modifie
@@ -635,24 +669,32 @@ robots.txt  sitemap.xml  indexation
 supabase.umd.js          supabase-js 2.115.0, chargé à la demande
 supabase-config.js       URL du projet + clé publique (voir Comptes)
 supabase/schema.sql      tables, politiques RLS et fonctions de synchro
-supabase/test/           le banc d'essai RLS du schéma (PGlite) — 124 tests
-test/                    logique métier (87), gardes de sécurité (50), liens (19)
-set-domaine.mjs          remplace le domaine provisoire partout
+supabase/test/           le schéma testé sur un vrai Postgres (PGlite) : RLS (233),
+                         montée depuis chaque version passée (11)
+test/                    logique métier (146), gardes de sécurité (139), liens (19)
 LICENSE  SECURITY.md  CONTRIBUTING.md  CHANGELOG.md
-.github/                 templates d'issues/PR, workflow de CI
+.github/                 modèles d'issues, workflow de CI
+.vercelignore            ce que le site ne publie pas : docs, schéma, tests
 ```
 
 Les icônes et l'image de partage sont générées à partir de leur géométrie par un
 script plutôt que dessinées à la main : changer une couleur de marque, c'est
-changer une valeur et relancer.
+changer une valeur et relancer. Ce script vit hors du dépôt, avec les sources du
+logo.
+
+Tout ce qui est dans le dépôt n'est pas une page du site : `.vercelignore` écarte
+la documentation, le schéma et les tests. Avant, `top-set.fr/supabase/schema.sql`
+était lisible par n'importe qui — rien de secret, la sécurité tient à RLS et pas
+au secret du schéma, mais rien à servir non plus.
 
 ---
 
 ## Comptes et Supabase
 
 Les comptes sont **facultatifs**. Sans `supabase-config.js` — ou avec
-`window.TOPSET_SUPABASE` à `null` — le panneau compte disparaît et l'app est un
-carnet purement local. Rien ne casse, aucun bouton mort.
+`window.TOPSET_SUPABASE` à `null` — le profil dit que les comptes ne sont pas
+disponibles, la bulle des messages disparaît, et l'app est un carnet purement
+local. Rien ne casse, aucun bouton mort.
 
 Il n'y a **ni étape de build ni variable d'environnement à l'exécution** : un site
 statique n'a pas de serveur pour les lire. Les deux valeurs vivent dans
@@ -727,17 +769,16 @@ Ouvrir `index.html` directement fonctionne aussi — la seule chose qui casse en
 
 Conçu pour de l'hébergement statique. Sur Vercel : importer le dépôt, choisir
 **Other** comme framework, déployer. `vercel.json` s'occupe des en-têtes et du
-cache.
+cache, `.vercelignore` de ce qui ne doit pas être publié.
 
-Le domaine apparaît 23 fois dans le HTML, `robots.txt` et `sitemap.xml` — balises
-Open Graph, liens canoniques, URL du sitemap. Une seule commande met tout à jour :
+Le site vit sur `top-set.fr`, qui redirige vers `www.top-set.fr`. Le domaine est
+écrit en dur dans les balises Open Graph, les liens canoniques, `robots.txt` et
+`sitemap.xml` ; le script qui le remplaçait partout a servi une fois, au passage
+du domaine provisoire au vrai, et a été retiré.
 
-```bash
-node set-domaine.mjs mondomaine.fr
-```
-
-Elle accepte `https://mon.site/`, `www.mon.site` ou `mon.site`, et refuse ce qui
-n'est pas un domaine.
+**À chaque mise en ligne qui touche l'app**, la version du service worker
+(`VERSION` dans `sw.js`) avance d'un cran : c'est ce qui dit aux téléphones de
+remplacer la coquille gardée en cache.
 
 ---
 

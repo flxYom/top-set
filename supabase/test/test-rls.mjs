@@ -954,6 +954,10 @@ console.log('\n== 25. Suppression du compte ==');
 // precedente ajoute une journee, et le test se met alors a mentir.
 const avantB = (await db.query(
   "select count(*)::int n from public.seances where user_id = $1", [B])).rows[0].n;
+const notifsA = (await db.query(
+  "select count(*)::int n from public.notifications_admin where user_id = $1", [A])).rows[0].n;
+const notifsAutres = (await db.query(
+  "select count(*)::int n from public.notifications_admin where user_id <> $1", [A])).rows[0].n;
 await db.query('delete from auth.users where id = $1', [A]);
 r = await db.query(`select (select count(*) from public.seances   where user_id = $1)::int s,
                            (select count(*) from public.exercices where user_id = $1)::int e,
@@ -974,6 +978,15 @@ r = await db.query(`select user_id, corps from public.retours where corps = 'Le 
 ok('le retour de A survit, sans son auteur',
    r.rows.length === 1 && r.rows[0].user_id === null,
    JSON.stringify(r.rows));
+
+// Une notification porte le pseudo ou le debut d'un message : orpheline, elle
+// restait identifiable. Elle part avec le compte.
+r = await db.query(`select (select count(*) from public.notifications_admin where user_id is null)::int orph,
+                           (select count(*) from public.notifications_admin)::int total`);
+ok('les notifications de A partent avec lui', notifsA > 0 && r.rows[0].orph === 0,
+   'avant=' + notifsA + ' orphelines=' + r.rows[0].orph);
+ok('et celles des autres restent', r.rows[0].total === notifsAutres,
+   r.rows[0].total + ' vs ' + notifsAutres);
 
 console.log(`\n${pass} reussis, ${fail} echoues`);
 process.exit(fail ? 1 : 0);

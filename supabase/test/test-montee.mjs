@@ -84,6 +84,14 @@ for (const v of versions){
         ('11111111-1111-1111-1111-111111111111', 'bug', 'Le chrono deraille', 'nouveau'),
         ('11111111-1111-1111-1111-111111111111', 'idee', 'Un mode sombre', 'traite')`);
     }
+    // Un compte supprime sous l'ancienne regle : sa notification est restee,
+    // sans auteur mais avec son pseudo. La montee doit la faire disparaitre.
+    const aNotifs = (await db.query(
+      `select to_regclass('public.notifications_admin') is not null as oui`)).rows[0].oui;
+    if (aNotifs){
+      await db.exec(`insert into public.notifications_admin (type, user_id, contenu)
+                     values ('inscription', null, 'Pseudo parti')`);
+    }
     etape = 'montee vers la version actuelle';
     await db.exec(ACTUEL);
     etape = 'deuxieme passage';
@@ -106,6 +114,15 @@ for (const v of versions){
         `select count(*)::int n from public.notifications_admin where type = 'message'`)).rows[0].n;
       if (bruit !== 0) throw new Error('le rattrapage a produit ' + bruit + ' notification(s)');
     }
+    if (aNotifs){
+      const orph = (await db.query(
+        `select count(*)::int n from public.notifications_admin where user_id is null`)).rows[0].n;
+      if (orph !== 0) throw new Error(orph + ' notification(s) orpheline(s) survivent a la montee');
+    }
+    const regle = (await db.query(
+      `select confdeltype from pg_constraint where conname = 'notifications_admin_user_id_fkey'`)).rows[0];
+    if (!regle || regle.confdeltype !== 'c')
+      throw new Error('les notifications ne partent pas avec le compte (' + JSON.stringify(regle) + ')');
     pass++;
     console.log('  OK   depuis ' + v.h + ' — ' + v.titre + (aRetours ? '  (+ rattrapage des retours)' : ''));
   } catch (e) {

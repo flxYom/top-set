@@ -32,7 +32,7 @@
     ACCUEIL
   </a>
   <h1>Politique de confidentialité</h1>
-  <p class="maj">Version 2.0 — 7 septembre 2026</p>
+  <p class="maj">Version 3.0 — 11 septembre 2026</p>
 
   <section>
     <h2>En une phrase</h2>
@@ -41,9 +41,10 @@
       C'est le fonctionnement par défaut : ni inscription, ni serveur.
     </p>
     <p>
-      Si <em>tu</em> décides de créer un compte, tes séances sont alors copiées sur un
-      serveur pour que tu les retrouves sur tes autres appareils. Rien n'est envoyé
-      avant cette décision, et elle se prend en une fois, explicitement.
+      Si <em>tu</em> décides de créer un compte, tes séances sont copiées sur un
+      serveur pour que tu les retrouves sur tes autres appareils, et tu peux écrire
+      à l'équipe, à ton coach ou à tes coachés. Rien n'est envoyé avant cette
+      décision, et elle se prend en une fois, explicitement.
     </p>
   </section>
 
@@ -67,27 +68,87 @@
     <p>
       <strong>Avec un compte</strong>, une copie est en plus enregistrée chez
       <strong>Supabase</strong>, notre hébergeur de base de données (serveurs situés
-      dans l'Union européenne). Sont alors transmis : ton adresse email, un mot de
-      passe chiffré, et le contenu de tes séances. Le téléphone garde sa copie : le
-      compte ne la remplace pas.
+      dans l'Union européenne). Le téléphone garde sa copie : le compte ne la
+      remplace pas.
     </p>
     <p>
       Chaque enregistrement porte l'identifiant de son propriétaire, et la base refuse
       au niveau du moteur toute lecture ou écriture qui ne correspond pas au compte
       connecté <em>(Row Level Security)</em>. Un utilisateur ne peut pas atteindre les
-      séances d'un autre, même en modifiant l'application dans son navigateur.
+      données d'un autre, même en modifiant l'application dans son navigateur.
     </p>
+  </section>
+
+  <section>
+    <h2>Ce qu'un compte enregistre</h2>
+    <ul>
+      <li><strong>Ton compte</strong> : ton adresse email, et ton mot de passe sous une
+          forme hachée que personne ne peut relire — l'éditeur non plus.</li>
+      <li><strong>Ton carnet</strong> : séances et leurs titres, exercices, séries,
+          charges, répétitions, durées, RPE, temps de repos, exercices mémorisés.</li>
+      <li><strong>Ton profil</strong> : ton pseudo si tu en choisis un, ta date
+          d'inscription, la date de ta dernière ouverture de l'application et, si tu
+          es coach, ton code d'invitation.</li>
+      <li><strong>Tes accords</strong> : la date et la version de cette politique au
+          moment où tu as créé ton compte, et au moment où tu as demandé un coach.</li>
+      <li><strong>Tes messages</strong> : ce que tu écris à l'équipe, à ton coach ou à
+          tes coachés, avec sa date et le fait qu'il a été lu.</li>
+      <li><strong>Tes retours</strong> : le texte, sa nature (bug, idée, question) et
+          de quoi reproduire un problème — l'écran où tu étais, la taille de l'écran,
+          l'identifiant de ton navigateur tronqué à 160 caractères, et si
+          l'application est installée. Rien de ton carnet.</li>
+      <li><strong>Le lien avec ton coach</strong> : qui suit qui, depuis quand, et
+          s'il est actif.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Qui voit quoi</h2>
+    <ul>
+      <li><strong>Toi</strong> : tout ce qui précède.</li>
+      <li><strong>Ton coach</strong>, seulement si tu lui as demandé et qu'il a
+          accepté : ton carnet, en lecture seule, ton pseudo et votre conversation.
+          Jamais ton adresse email, tes retours ni ta conversation avec l'équipe. Tu
+          coupes son accès quand tu veux, depuis ton profil, avec effet immédiat ;
+          votre conversation reste lisible de ton côté.</li>
+      <li><strong>Tes coachés</strong>, si tu es coach : ton pseudo et votre
+          conversation.</li>
+      <li><strong>L'équipe Top Set</strong>, dans l'application : ton pseudo, tes dates
+          d'inscription et de dernière visite, le <em>nombre</em> de tes séances et la
+          date de la dernière — jamais leur contenu —, tes retours et ta conversation
+          avec l'équipe. Pas ton adresse email.</li>
+      <li><strong>Personne d'autre.</strong> Deux personnes sans lien de coaching ne
+          peuvent ni s'écrire ni voir quoi que ce soit l'une de l'autre.</li>
+    </ul>
     <p class="dim">
-      Base légale : ton consentement (article 6.1.a du RGPD), donné à la création du
-      compte. Tu peux le retirer à tout moment en supprimant ton compte ; tes séances
-      restent alors sur ton appareil.
+      En dehors de l'application, l'éditeur administre la base chez Supabase et
+      peut techniquement tout y consulter. Il ne le fait que pour la maintenance,
+      pour répondre à une demande de ta part, ou si la loi l'y oblige.
     </p>
+  </section>
+
+  <section>
+    <h2>Pourquoi c'est permis</h2>
+    <ul>
+      <li><strong>Le carnet sur le serveur</strong> : ton consentement (article 6.1.a
+          du RGPD), donné à la création du compte. Tu le retires en supprimant ton
+          compte ; tes séances restent alors sur ton appareil.</li>
+      <li><strong>Le coaching</strong> : ton consentement, donné à part, daté et
+          versionné, au moment où tu demandes un coach. Tu le retires en coupant
+          l'accès.</li>
+      <li><strong>Les messages et les retours</strong> : l'exécution du service que tu
+          demandes (article 6.1.b) — un message est enregistré pour pouvoir être
+          remis et relu.</li>
+      <li><strong>Les dates d'inscription et de dernière visite</strong> : l'intérêt
+          légitime de l'éditeur (article 6.1.f) à savoir si l'application sert, sans
+          aucune mesure d'audience ni traceur.</li>
+    </ul>
   </section>
 
   <section>
     <h2>Ce qu'on ne fait pas</h2>
     <ul>
-      <li>Aucun compte imposé : il est facultatif, et l'application est complète sans lui.</li>
+      <li>Aucun compte imposé : il est facultatif, et le carnet est complet sans lui.</li>
       <li>Aucun cookie — ni technique, ni publicitaire.</li>
       <li>Aucune mesure d'audience, aucun traceur, aucun outil d'analyse.</li>
       <li>Aucune publicité, aucune revente de données.</li>
@@ -97,13 +158,13 @@
   </section>
 
   <section>
-    <h2>Le seul traitement qui existe</h2>
+    <h2>Les prestataires</h2>
     <p>
-      Pour que la page s'affiche, ton navigateur doit la demander à l'hébergeur.
-      <strong>Vercel Inc.</strong> conserve à cette occasion des journaux techniques
-      contenant notamment ton adresse IP, la page demandée et la date. C'est le
-      fonctionnement normal de tout site web, et c'est le seul traitement de données
-      personnelles lié à Top Set.
+      <strong>Vercel Inc.</strong> héberge le site. Pour que la page s'affiche, ton
+      navigateur doit la lui demander, et il conserve à cette occasion des journaux
+      techniques contenant notamment ton adresse IP, la page demandée et la date.
+      C'est le fonctionnement normal de tout site web, et c'est le seul traitement
+      qui concerne aussi les visiteurs sans compte.
     </p>
     <p class="dim">
       Base légale : intérêt légitime (article 6.1.f du RGPD) — servir le site et
@@ -112,25 +173,57 @@
       <em>EU-U.S. Data Privacy Framework</em>. Détails :
       <a href="https://vercel.com/legal/privacy-policy" rel="noopener noreferrer" target="_blank">politique de confidentialité de Vercel</a>.
     </p>
+    <p>
+      <strong>Supabase</strong> (Supabase Pte. Ltd., Singapour) héberge la base de données et les comptes, et
+      envoie les emails de réinitialisation du mot de passe. Il n'intervient que si tu
+      as un compte.
+    </p>
+    <p class="dim">
+      Les données sont stockées sur des serveurs situés dans l'Union européenne.
+      Supabase opère depuis Singapour et les États-Unis ; un éventuel transfert hors de
+      l'Union est encadré par les clauses contractuelles types de la Commission européenne.
+      Détails :
+      <a href="https://supabase.com/privacy" rel="noopener noreferrer" target="_blank">politique de confidentialité de Supabase</a>.
+    </p>
+  </section>
+
+  <section>
+    <h2>Combien de temps</h2>
+    <p>
+      Tant que ton compte existe. Il n'y a pas de purge automatique : un carnet
+      d'entraînement sert justement à relire les mois passés.
+    </p>
+    <p>
+      Supprimer ton compte efface le reste, sauf <strong>tes retours</strong> : ils
+      restent, mais sans rien qui te désigne — ni ton identifiant, ni ton pseudo.
+      Signaler un bug est un geste qu'on garde ; savoir qui l'a signalé, non. Si un
+      retour contient lui-même des informations personnelles, demande-nous de
+      l'effacer aussi.
+    </p>
   </section>
 
   <section>
     <h2>Tes droits</h2>
     <p>
-      Le RGPD te donne un droit d'accès, de rectification, d'effacement et de
-      portabilité sur tes données. Ici, ces droits s'exercent <strong>directement depuis
-      l'application</strong>, sans avoir à écrire à qui que ce soit :
+      Le RGPD te donne un droit d'accès, de rectification, d'effacement, de
+      portabilité et d'opposition sur tes données. La plupart s'exercent
+      <strong>directement depuis l'application</strong> :
     </p>
     <ul>
-      <li><strong>Accéder / exporter</strong> : bouton ⇅ → « Télécharger le fichier ».</li>
-      <li><strong>Rectifier</strong> : modifier ou supprimer une série dans l'application.</li>
-      <li><strong>Effacer</strong> : vider les données du site dans les réglages de ton
-          navigateur efface tout, définitivement.</li>
+      <li><strong>Accéder / exporter</strong> : bouton ⇅ → « Sauvegarde complète (.json) »
+          pour le carnet ; tes messages se relisent dans la bulle en haut de l'écran.</li>
+      <li><strong>Rectifier</strong> : modifier une série, une séance ou ton pseudo
+          dans l'application.</li>
+      <li><strong>Retirer l'accès d'un coach</strong> : depuis ton profil, à tout moment.</li>
+      <li><strong>Effacer</strong> : sans compte, vider les données du site dans les
+          réglages de ton navigateur efface tout, définitivement. Avec un compte,
+          voir ci-dessous.</li>
     </ul>
     <p>
-      Pour les journaux techniques de l'hébergeur, adresse-toi à Vercel via le lien
-      ci-dessus. Pour toute autre question, écris à l'adresse indiquée dans les
-      <a href="mentions-legales.html">mentions légales</a>.
+      Pour tout le reste — une copie de ce que la base contient sur toi, par
+      exemple — écris à l'adresse indiquée dans les
+      <a href="mentions-legales.html">mentions légales</a>. Pour les journaux
+      techniques de l'hébergeur, adresse-toi à Vercel via le lien ci-dessus.
     </p>
     <p class="dim">
       Tu peux également introduire une réclamation auprès de la CNIL —
@@ -141,19 +234,34 @@
   <section>
     <h2>Supprimer ton compte</h2>
     <p>
-      La suppression d'un compte efface définitivement, côté serveur, tes séances, tes
-      exercices, tes séries et tes exercices mémorisés — la base est configurée pour
-      les effacer en cascade, rien ne survit à l'opération. Écris à l'adresse indiquée
-      dans les <a href="mentions-legales.html">mentions légales</a>.
+      Écris à l'adresse indiquée dans les <a href="mentions-legales.html">mentions
+      légales</a>, depuis l'adresse de ton compte. La suppression efface
+      définitivement, côté serveur, tes séances, tes exercices, tes séries, tes
+      exercices mémorisés, ton profil, tes accords, tes liens de coaching et tes
+      conversations — la base est configurée pour les effacer en cascade. Seuls tes
+      retours restent, sans rien qui te désigne.
     </p>
     <p class="dim">
-      Les données présentes sur ton téléphone ne sont pas touchées par cette
-      suppression : elles t'appartiennent et restent là où elles sont.
+      Une conversation appartient aux deux personnes qui l'ont eue : si ton coach ou
+      ton coaché supprime son compte, votre conversation disparaît aussi. Les données
+      présentes sur ton téléphone ne sont pas touchées par la suppression : elles
+      t'appartiennent et restent là où elles sont.
+    </p>
+  </section>
+
+  <section>
+    <h2>Ce qui a changé</h2>
+    <p>
+      <strong>Version 3.0 (11 septembre 2026).</strong> La version 2.0 décrivait un
+      compte qui ne servait qu'à copier le carnet. Depuis, l'application permet
+      d'écrire à l'équipe, d'envoyer un retour et de se faire suivre par un coach :
+      cette page dit désormais ce que ces fonctions enregistrent, qui le voit, sur
+      quelle base et pour combien de temps. Rien n'est collecté sans un geste de ta
+      part — écrire, envoyer, demander un coach.
     </p>
     <p>
-      Cette page est en version 2.0. Top Set est en bêta et évolue vite : si un
-      traitement nouveau apparaît, cette politique sera mise à jour et sa version
-      incrémentée.
+      Top Set est en bêta et évolue vite : si un traitement nouveau apparaît, cette
+      politique sera mise à jour et sa version incrémentée.
     </p>
   </section>
 
