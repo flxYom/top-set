@@ -553,13 +553,14 @@ documentation/  entrainement/  exercices/  outils/
 contenu.css              styles for the content pages
 outils/outils.js         calculators (external file: the CSP refuses inline scripts)
 outils/tableau-rpe.js    the RPE table: % of 1RM or kg, same formula as the log
+outils/*.csv             blank and sample log templates in the export format (re-importable, tested)
 img/                     app screenshots for the product page (WebP)
 supabase.umd.js          supabase-js 2.115.0, loaded on demand
 supabase-config.js       project URL + public anon key (see Accounts)
 supabase/schema.sql      tables, RLS policies and sync functions
 supabase/test/           the schema tested on a real Postgres (PGlite): RLS (233),
                          upgrade from every past version (11)
-test/                    business logic (146), hardening guards (167), links (111), content templates (15)
+test/                    business logic (154), hardening guards (167), links (123), content templates (15)
 LICENSE  SECURITY.md  CONTRIBUTING.md  CHANGELOG.md
 .github/                 issue templates, CI workflow
 .vercelignore            what the site does not publish: docs, schema, tests, content sources
@@ -711,7 +712,8 @@ visited page stays readable offline. Published pages: the top set, a 1RM calcula
 page, a training log for French school PE (EPS), the plank; then, in batches of
 three, the RPE scale, reps in reserve (RIR) and muscle failure; the 1RM, the
 back-off set and an RPE table; progressive overload, rep ranges and sets per
-muscle; rest times, plateaus and tracking your progress.
+muscle; rest times, plateaus and tracking your progress; the bench press, bar
+weights and a spreadsheet log template.
 
 Still no framework and no build step on Vercel. Each page's source lives in
 `contenu/`: an HTML file whose first comment holds JSON metadata.
@@ -732,8 +734,9 @@ the matrix links to its page on its own, the day that page ships. An
 **exercise** needs its **fiche** (muscles, equipment, level, movement,
 breathing), shown before the table of contents with its citations numbered
 like the rest, its « setup and execution », « common mistakes » and
-« variations » sections, at least one related notion, and a related exercise as
-soon as another one exists. « À lire ensuite » labels each linked page with its
+« variations » sections, at least one related notion, and a related exercise
+once at least three other exercise pages exist (before that, the link would be
+artificial: the bench press has nothing to do with the plank). « À lire ensuite » labels each linked page with its
 section. `test/contenu.test.mjs` strips these from a copy of the site and
 checks that the generator refuses, saying what is missing.
 

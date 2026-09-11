@@ -22,10 +22,10 @@ Statuts : IDEA → RESEARCHED → PLANNED/SELECTED → DRAFT → PUBLISHED → N
 | /documentation/echec-musculaire | intensite | informationnelle | échec musculaire | PUBLISHED | — | 2026-09-11 |
 | /outils/tableau-rpe | intensite | outil | tableau rpe pourcentage | PUBLISHED | — | 2026-09-11 |
 | /exercices/planche-gainage | exercices | informationnelle | planche abdos combien de temps | PUBLISHED | — | 2026-09-11 |
-| /outils/modele-carnet-musculation | suivi | transactionnelle | carnet de musculation excel | SELECTED | — | — |
+| /outils/modele-carnet-musculation | suivi | transactionnelle | carnet de musculation excel | PUBLISHED | — | 2026-09-11 |
 | /entrainement/stagnation | progression | informationnelle | stagnation musculation | PUBLISHED | — | 2026-09-11 |
-| /exercices/developpe-couche | exercices | informationnelle | développé couché | SELECTED | — | — |
-| /documentation/poids-de-la-barre | exercices | informationnelle | combien pèse la barre développé couché | SELECTED | — | — |
+| /exercices/developpe-couche | exercices | informationnelle | développé couché | PUBLISHED | — | 2026-09-11 |
+| /documentation/poids-de-la-barre | exercices | informationnelle | combien pèse la barre développé couché | PUBLISHED | — | 2026-09-11 |
 | /outils/pourcentages-1rm | charge | outil | pourcentage 1rm | IDEA | — | — |
 | /entrainement/progresser-developpe-couche | exercices | informationnelle | progresser développé couché | IDEA | — | — |
 | /documentation/autoregulation | intensite | informationnelle | autorégulation musculation | IDEA | — | — |

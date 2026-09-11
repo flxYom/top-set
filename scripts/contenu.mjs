@@ -48,6 +48,7 @@ const SECTIONS = {
   erreurs: 'les erreurs fréquentes', execution: 'la position et l\'exécution', variantes: 'les variantes et la progression'
 };
 const LUS = ['résumé', 'résumé et passages cités', 'passages cités', 'texte intégral'];
+const EXOS_LIES_DES = 3;   // autres fiches d'exercice a partir desquelles un exercice lie est exige
 const ACTIFS_PUBLIES = ['PUBLISHED', 'NEEDS_UPDATE'];
 
 const erreurs = [];
@@ -241,7 +242,9 @@ for (const p of pages){
   if (T.article && !(p.keyPoints || []).length) err(p.source, '« keyPoints » (l\'essentiel) manquant');
 
   // « À lire ensuite » dit de quelle rubrique vient chaque page. Un exercice
-  // renvoie a au moins une notion, et a un autre exercice des qu'il en existe.
+  // renvoie a au moins une notion, et a un autre exercice des qu'il en existe
+  // assez pour qu'un lien soit pertinent : relier le developpe couche a la
+  // planche parce que ce sont les deux seules fiches serait un lien artificiel.
   const rubriqueDe = u => (hubDe(u) || rubriques.find(r => r.url === u) || {}).nav || '';
   const liees = (p.related || []).map(u => {
     const cible = connues.get(u);
@@ -251,7 +254,7 @@ for (const p of pages){
   if (p.type === 'exercice'){
     const rel = p.related || [];
     const autres = pages.filter(q => q.type === 'exercice' && q.url !== p.url);
-    if (autres.length && !autres.some(q => rel.includes(q.url))) err(p.source, '« related » : aucun exercice lié, alors que d\'autres fiches existent');
+    if (autres.length >= EXOS_LIES_DES && !autres.some(q => rel.includes(q.url))) err(p.source, `« related » : aucun exercice lié, alors que ${autres.length} autres fiches existent`);
     if (!rel.some(u => /^\/(documentation|entrainement)\//.test(u))) err(p.source, '« related » : aucune notion liée (documentation ou entraînement)');
   }
 

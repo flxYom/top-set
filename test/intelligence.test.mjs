@@ -9,6 +9,7 @@
 import { createRequire } from 'module';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { readFileSync } from 'fs';
 
 const ICI = dirname(fileURLToPath(import.meta.url));
 const TS = createRequire(import.meta.url)(join(ICI, '..', 'intelligence.js'));
@@ -427,6 +428,26 @@ titre('Relire le tableur exporte');
   ok('un tableur etranger est refuse avec une raison',
     typeof TS.lireCsvCarnet('Nom;Age\nPaul;30\n').erreur === 'string');
   ok('un tableur vide aussi', typeof TS.lireCsvCarnet('').erreur === 'string');
+}
+
+// ----------------------------------------------------------------
+titre('Les modeles de carnet publies sur /outils se reimportent');
+{
+  // La page /outils/modele-carnet-musculation promet qu'un tableur rempli se
+  // réimporte dans Top Set : on relit les fichiers réellement publiés.
+  const lire = f => readFileSync(join(ICI, '..', 'outils', f), 'utf8');
+  const exemple = TS.lireCsvCarnet(lire('exemple-carnet-musculation.csv'));
+  ok('l exemple se lit sans erreur', !exemple.erreur, exemple.erreur);
+  egal('deux seances', Object.keys(exemple.sessions || {}), ['2026-09-07', '2026-09-10']);
+  egal('dix-neuf series', exemple.series, 19);
+  const lundi = exemple.sessions['2026-09-07'].exercises;
+  egal('trois exercices le lundi, dans l ordre', lundi.map(e => e.nom), ['Squat', 'Développé couché', 'Planche']);
+  egal('le groupe musculaire est reconnu', lundi.map(e => e.groupe), ['Jambes', 'Pectoraux', 'Abdos']);
+  egal('le RPE a demi-point est lu', lundi[0].series[2].rpe, 7.5);
+  egal('la planche garde sa duree', lundi[2].series[0].reps, '60 s');
+  const vierge = TS.lireCsvCarnet(lire('modele-carnet-musculation.csv'));
+  ok('le modele vierge a les colonnes attendues (vide, donc refuse avec une raison)',
+     typeof vierge.erreur === 'string' && /vide/i.test(vierge.erreur), vierge.erreur);
 }
 
 // ----------------------------------------------------------------

@@ -555,6 +555,65 @@
       "type": "revue systématique et méta-analyse (69 publications)",
       "lu": "résumé",
       "verifie": "2026-09-11"
+    },
+    "ipf2026": {
+      "auteurs": ["International Powerlifting Federation"],
+      "annee": 2026,
+      "titre": "IPF Technical Rulebook, effective 1 March 2026",
+      "revue": "International Powerlifting Federation",
+      "ref": "sections 2 (barres, disques, colliers) et 4.2 (développé couché)",
+      "url": "https://www.powerlifting.sport/fileadmin/ipf/data/rules/technical-rules/english/2026_IPF_Technical_Rulebook__effective_01_March_2026__v3.pdf",
+      "type": "règlement technique officiel (fédération internationale de force athlétique)",
+      "lu": "passages cités",
+      "verifie": "2026-09-11"
+    },
+    "stastny2017": {
+      "auteurs": ["Stastny P","Gołaś A","Blazek D","Maszczyk A","Wilk M","Pietraszewski P","Petr M","Uhlir P","Zając A"],
+      "annee": 2017,
+      "titre": "A systematic review of surface electromyography analyses of the bench press movement task",
+      "revue": "PLoS One",
+      "ref": "12(2):e0171632",
+      "doi": "10.1371/journal.pone.0171632",
+      "pmid": "28170449",
+      "type": "revue systématique (14 études d'électromyographie)",
+      "lu": "résumé",
+      "verifie": "2026-09-11"
+    },
+    "rodriguezridao2020": {
+      "auteurs": ["Rodríguez-Ridao D","Antequera-Vique JA","Martín-Fuentes I","Muyor JM"],
+      "annee": 2020,
+      "titre": "Effect of Five Bench Inclinations on the Electromyographic Activity of the Pectoralis Major, Anterior Deltoid, and Triceps Brachii during the Bench Press Exercise",
+      "revue": "International Journal of Environmental Research and Public Health",
+      "ref": "17(19):7339",
+      "doi": "10.3390/ijerph17197339",
+      "pmid": "33049982",
+      "type": "étude transversale (30 adultes entraînés, électromyographie)",
+      "lu": "résumé",
+      "verifie": "2026-09-11"
+    },
+    "hackett2013": {
+      "auteurs": ["Hackett DA","Chow CM"],
+      "annee": 2013,
+      "titre": "The Valsalva maneuver: its effect on intra-abdominal pressure and safety issues during resistance exercise",
+      "revue": "Journal of Strength and Conditioning Research",
+      "ref": "27(8):2338-2345",
+      "doi": "10.1519/JSC.0b013e31827de07d",
+      "pmid": "23222073",
+      "type": "revue narrative",
+      "lu": "résumé",
+      "verifie": "2026-09-11"
+    },
+    "noteboom2024": {
+      "auteurs": ["Noteboom L","Belli I","Hoozemans MJM","Seth A","Veeger HEJ","Van Der Helm FCT"],
+      "annee": 2024,
+      "titre": "Effects of bench press technique variations on musculoskeletal shoulder loads and potential injury risk",
+      "revue": "Frontiers in Physiology",
+      "ref": "15:1393235",
+      "doi": "10.3389/fphys.2024.1393235",
+      "pmid": "38974522",
+      "type": "étude biomécanique (10 athlètes de force expérimentés, modèle musculosquelettique)",
+      "lu": "résumé",
+      "verifie": "2026-09-11"
     }
   }
 }
