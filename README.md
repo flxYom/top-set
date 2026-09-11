@@ -90,6 +90,17 @@ toward no volume, no estimated 1RM and no rep record.
 
 **Rest per set**, not per exercise, and carried over when a set is duplicated.
 
+**A comment per exercise.** An optional field under the sets, for what the
+numbers don't say: « last set assisted », « with bands », « a bit tired ». Next
+time it shows under *Dernière fois*, next to the numbers it explains; it also
+appears in the session sheet, the exercise history and the logbook a coach
+reads. It belongs to the day: copying a session copies the sets, not the
+comment. At most 500 characters, in the app and in the database. The `note`
+field only exists when filled in, so older logbooks have nothing to migrate;
+the CSV carries it as a last column, `Commentaire`, repeated on every set of
+the exercise so sorting the sheet never separates it from its numbers. A CSV
+without that column imports as before.
+
 **Exercise memory.** Type an exercise that is not in the built-in list and it is
 remembered for next time, muscle group included. Saved on blur rather than on
 each keystroke, so you do not end up with `B`, `Be`, `Ben`.
@@ -246,7 +257,9 @@ Importing the same file twice adds nothing.
 
 **The CSV imports back.** `lireCsvCarnet()` reads the exported CSV, and what
 Excel makes of it when it re-saves it: commas instead of semicolons, DD/MM/YYYY
-dates. It then goes through exactly the same cleaning as a JSON file.
+dates. It then goes through exactly the same cleaning as a JSON file. The
+`Commentaire` column is read once per exercise: the first non-empty one wins, so
+a hand-made sheet can write it just once.
 
 **Overwrite guard.** `saveLocal()` rewrites the whole logbook on every save. If
 `state.sessions` were empty at the wrong moment — a failed load, corrupted JSON —
@@ -328,10 +341,16 @@ Foreign keys are composite `(user_id, id)`, so a row cannot even structurally
 belong to someone else's session. The client never sends a `user_id`: it comes
 from the JWT, server-side.
 
-**No cookies, no analytics, no trackers.** Without an account, the only
-processing that exists is the host's own access logs.
+**No cookies, no trackers today.** Without an account, the only processing that
+exists is the host's own access logs. The policy no longer promises « no
+analytics »: measuring the site's performance is planned, and it will be
+described on the page before it starts.
 
-**The privacy policy follows the app.** Version 3.0 states, feature by feature,
+**The privacy policy follows the app.** Version 3.1 names the publisher and
+everyone involved — Vercel, Supabase, Resend for account emails, OVH for the
+domain, and Claude (Anthropic), which helps write the code and the pages without
+being connected to the app — and adds comments to the logbook. Like 3.0, it asks
+nothing again of existing accounts. Version 3.0 already stated, feature by feature,
 what an account records, who sees it — yourself, your coach, the team — on what
 legal basis and for how long. The accepted version is stored with every
 consent: at sign-up, and with every coaching request. The latter used to be
@@ -461,6 +480,16 @@ conversation is open and visible, every 30 s in the inbox, never while the tab
 is hidden. The badge is two `head:true` counts — numbers, not hundreds of
 messages — at most once every 8 s, and zero on error.
 
+**The count waits for the profile.** It used to run before `toucher_profil()`
+answered, so the administrator was counted as a member, on their own support
+thread — the one holding their test feedback, which their inbox never shows and
+nothing therefore marked read. The badge stayed lit on a message nobody could
+open, and the real count, held back by the 8 s limit, arrived a minute later.
+`profilConnu()` now waits for the role, opening the inbox recounts, and a token
+stops a count started before a read from relighting the badge after it.
+Opening a member's thread also marks that member's message and feedback
+notifications read; sign-ups and coaching requests stay.
+
 ### The admin space
 
 Restricted to the `admin` role. Ten counters (sign-ups, new and active at 7 and
@@ -558,9 +587,9 @@ img/                     app screenshots for the product page (WebP)
 supabase.umd.js          supabase-js 2.115.0, loaded on demand
 supabase-config.js       project URL + public anon key (see Accounts)
 supabase/schema.sql      tables, RLS policies and sync functions
-supabase/test/           the schema tested on a real Postgres (PGlite): RLS (233),
-                         upgrade from every past version (11)
-test/                    business logic (154), hardening guards (167), links (123), content templates (15)
+supabase/test/           the schema tested on a real Postgres (PGlite): RLS (239),
+                         upgrade from every past version (12)
+test/                    business logic (161), hardening guards (171), links (123), content templates (15)
 LICENSE  SECURITY.md  CONTRIBUTING.md  CHANGELOG.md
 .github/                 issue templates, CI workflow
 .vercelignore            what the site does not publish: docs, schema, tests, content sources

@@ -592,6 +592,28 @@
     text-decoration:underline;text-underline-offset:3px;cursor:pointer;
   }
 
+  /* Le commentaire : une ligne, discrete tant qu'elle est vide. C'est ce
+     que les chiffres ne disent pas — assiste, bandes, fatigue. */
+  .ex-note{
+    width:100%;box-sizing:border-box;min-height:40px;
+    background:var(--panel2);border:2px dashed var(--line);
+    color:var(--ink);font-family:inherit;font-size:13px;font-weight:700;
+    padding:8px 10px;
+  }
+  .ex-note::placeholder{color:var(--dim);font-weight:600;}
+  .ex-note:not(:placeholder-shown){border-style:solid;}
+  .ex-note:focus{outline:none;border-color:var(--blue);border-style:solid;}
+  /* Le commentaire relu ailleurs : sous « derniere fois », dans la fiche
+     d'une seance, l'historique d'un exercice, le carnet lu par le coach. */
+  .ex-prev-note,.fiche-exo-note,.lect-note{
+    margin-top:6px;font-size:12px;line-height:1.4;font-style:italic;
+    color:var(--ink);overflow-wrap:anywhere;
+  }
+  .exo-jour-note{
+    flex-basis:100%;font-size:11.5px;line-height:1.35;font-style:italic;
+    color:var(--dim);overflow-wrap:anywhere;
+  }
+
   .ex-actions{display:flex;flex-direction:column;gap:6px;}
   .btn-lien{
     width:100%;min-height:40px;padding:0 10px;
@@ -1591,7 +1613,7 @@
      la messagerie zoomait. test/gabarits.test.mjs le verifie. */
   @supports (-webkit-touch-callout:none){
     .sheet-input,.sheet-paste,.ex-name,.ex-groupe,.serie-type,.serie-rpe,
-    .serie-repos,.seance-creer-date,.alias-select,.conv-champ{font-size:16px;}
+    .serie-repos,.seance-creer-date,.alias-select,.conv-champ,.ex-note{font-size:16px;}
     @media (max-width:380px){ .serie-poids,.serie-reps,.serie-duree{font-size:16px;} }
   }
 </style>

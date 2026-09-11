@@ -93,6 +93,18 @@ laisse vide, rien ne casse.
 
 **Repos par série**, et non par exercice, repris automatiquement à la duplication.
 
+**Un commentaire par exercice.** Une case facultative sous les séries, pour ce
+que les chiffres ne disent pas : « dernière série assistée », « avec bandes »,
+« un peu fatigué ». La fois suivante, il s'affiche sous *Dernière fois*, à côté
+des chiffres qu'il explique ; on le relit aussi dans la fiche de la séance,
+l'historique de l'exercice et le carnet lu par le coach. Il appartient au jour :
+*Sélectionner pour le jour affiché* recopie les séries, pas le commentaire.
+500 caractères au plus, dans l'app comme en base. Le champ `note` n'existe que
+s'il est rempli : les carnets d'avant n'ont rien à migrer, et le tableur le
+porte en dernière colonne, `Commentaire`, répétée sur chaque série de
+l'exercice — trier le tableur ne le sépare pas de ses chiffres. Un tableur
+sans cette colonne se réimporte comme avant.
+
 **Mémoire des exercices.** Tape un exercice absent de la base et il est retenu
 pour la prochaine fois, groupe musculaire compris. L'enregistrement se fait quand
 tu quittes le champ, pas à chaque lettre — sinon tu te retrouverais avec `B`,
@@ -272,7 +284,9 @@ Réimporter deux fois le même fichier n'ajoute rien.
 qu'Excel en fait quand il le réenregistre : virgules au lieu de points-virgules,
 dates en JJ/MM/AAAA. Il passe ensuite par exactement le même nettoyage qu'un
 fichier JSON. Au passage, l'import relit enfin le **titre** des séances : il
-voyageait dans la sauvegarde sans jamais être relu.
+voyageait dans la sauvegarde sans jamais être relu. La colonne `Commentaire`
+est relue une fois par exercice : le premier non vide gagne, pour qu'un tableur
+fait à la main puisse ne l'écrire qu'une fois.
 
 **Garde-fou contre l'écrasement.** `saveLocal()` réécrit le carnet entier à chaque
 sauvegarde. Si `state.sessions` était vide au mauvais moment — chargement raté,
@@ -360,10 +374,16 @@ appartient bien à l'appelant, la policy passerait, et n'importe qui deviendrait
 administrateur depuis la console de son navigateur. Tout passe par
 `toucher_profil()`.
 
-**Aucun cookie, aucune mesure d'audience, aucun traceur.** Sans compte, le seul
-traitement qui existe, ce sont les journaux d'accès de l'hébergeur.
+**Aucun cookie, aucun traceur aujourd'hui.** Sans compte, le seul traitement qui
+existe, ce sont les journaux d'accès de l'hébergeur. La politique ne promet plus
+« aucune mesure d'audience » : une mesure des performances du site est prévue,
+et elle sera décrite sur la page avant de commencer.
 
-**La politique de confidentialité suit l'app.** La version 3.0 dit, fonction par
+**La politique de confidentialité suit l'app.** La version 3.1 nomme l'éditeur et
+tous les intervenants — Vercel, Supabase, Resend pour les emails du compte, OVH
+pour le domaine, et Claude (Anthropic), qui aide à écrire le code et les pages
+sans être branché à l'app —, et ajoute les commentaires au carnet. Comme la 3.0,
+elle ne redemande rien aux comptes existants. La 3.0 disait déjà, fonction par
 fonction, ce qu'un compte enregistre, qui le voit — soi, son coach, l'équipe —,
 sur quelle base légale et pour combien de temps. La version acceptée est
 enregistrée avec chaque consentement : à l'inscription, et à chaque demande de
@@ -562,10 +582,21 @@ en cas d'erreur : une pastille ne doit jamais empêcher une page de s'afficher.
 L'équipe compte ce que les membres ont écrit ; un membre compte ce qu'on lui a
 écrit ; tout le monde ajoute ses conversations de coaching.
 
+**Le comptage attend le profil.** Il partait avant que `toucher_profil()` ait
+répondu : l'administrateur était compté comme un membre, sur son propre fil de
+support — celui de ses retours d'essai, que sa boîte ne lui montre jamais, donc
+que rien ne marquait lu. La pastille restait allumée sur un message que
+personne ne pouvait ouvrir, et le vrai compte, retenu par la limite des huit
+secondes, n'arrivait qu'une minute plus tard. `profilConnu()` fait attendre le
+rôle ; ouvrir la boîte recompte ; et un jeton empêche un comptage parti avant
+une lecture de rallumer la pastille après elle.
+
 ### Les notifications
 
 Une table sans **aucune** policy d'insertion : personne ne peut en fabriquer une
-depuis le navigateur. Elles sont écrites par des déclencheurs `security definer`
+depuis le navigateur. Ouvrir le fil d'un membre marque lues ses notifications de
+message et de retour — on vient de les lire ; les inscriptions et les demandes
+de coaching restent. Elles sont écrites par des déclencheurs `security definer`
 posés sur `profils`, `messages_support`, `retours` et `liens_coach`.
 
 Ces déclencheurs ne lisent aucun paramètre venu du client : ce qu'ils
@@ -684,9 +715,9 @@ img/                     captures de l'app pour la page produit (WebP)
 supabase.umd.js          supabase-js 2.115.0, chargé à la demande
 supabase-config.js       URL du projet + clé publique (voir Comptes)
 supabase/schema.sql      tables, politiques RLS et fonctions de synchro
-supabase/test/           le schéma testé sur un vrai Postgres (PGlite) : RLS (233),
-                         montée depuis chaque version passée (11)
-test/                    logique métier (154), gardes de sécurité (167), liens (123), gabarits de contenu (15)
+supabase/test/           le schéma testé sur un vrai Postgres (PGlite) : RLS (239),
+                         montée depuis chaque version passée (12)
+test/                    logique métier (161), gardes de sécurité (171), liens (123), gabarits de contenu (15)
 LICENSE  SECURITY.md  CONTRIBUTING.md  CHANGELOG.md
 .github/                 modèles d'issues, workflow de CI
 .vercelignore            ce que le site ne publie pas : docs, schéma, tests, source du contenu

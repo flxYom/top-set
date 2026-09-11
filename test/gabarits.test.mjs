@@ -414,5 +414,19 @@ ok('l app sait l afficher sans passer par le recap',
    /var VUES = \[[^\]]*'apprendre'/.test(SRC) && SRC.indexOf("else if (state.view === 'apprendre') return;") > -1);
 ok('le pied de page de l app y mene aussi', HTML.indexOf('<a href="/apprendre">Apprendre</a>') > -1);
 
+console.log('\n== La pastille des messages ==');
+// Comptee avant l'arrivee du profil, elle traitait l'administrateur en membre,
+// sur un fil qu'il n'ouvre jamais : elle restait allumee sur un message que
+// personne ne pouvait lire. Le vrai scenario tourne dans Chrome, hors CI ;
+// ici on empeche la rechute.
+ok('le comptage attend de connaitre le role',
+   /nonLusTotal:function\(\)\{[\s\S]{0,120}profilConnu\(\)\.then/.test(SRC));
+ok('un comptage perime ne rallume pas la pastille',
+   /var jeton = \+\+badgeJeton;[\s\S]{0,80}if \(jeton !== badgeJeton\) return;/.test(SRC));
+ok('ouvrir la boite recompte la pastille',
+   /function ouvrirBoite\(\)\{[\s\S]{0,160}majBadgeMessages\(true\);/.test(SRC));
+ok('le champ commentaire fait 16 px sous iOS, sinon Safari zoome',
+   /@supports \(-webkit-touch-callout:none\)\{[\s\S]{0,300}\.ex-note\{font-size:16px;\}/.test(HTML));
+
 console.log(`\n${pass} reussis, ${fail} echoues`);
 process.exit(fail ? 1 : 0);

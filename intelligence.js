@@ -673,7 +673,8 @@
     var C = {
       date: col('date'), exo: col('exercice'), groupe: col('groupe'), serie: col('serie'),
       poids: col('poidskg', 'poids'), reps: col('repetitions', 'reps'), rpe: col('rpe'),
-      repos: col('reposs', 'repos'), fait: col('fait')
+      repos: col('reposs', 'repos'), fait: col('fait'),
+      note: col('commentaire', 'commentaires', 'note', 'notes')
     };
     if (C.date < 0 || C.exo < 0 || (C.poids < 0 && C.reps < 0)) {
       return { erreur: 'Ce tableur ne vient pas de Top Set : il faut au moins les colonnes Date, Exercice, et Poids ou Répétitions.' };
@@ -696,6 +697,10 @@
         ex = { nom: nom, groupe: C.groupe > -1 ? texteCsv(l[C.groupe]) : '', repos: '', series: [] };
         jour.exercises.push(ex);
       }
+      // L'export repete le commentaire sur chaque serie ; un tableur fait a
+      // la main ne l'ecrit souvent qu'une fois. Le premier non vide gagne.
+      var note = C.note > -1 ? texteCsv(l[C.note]) : '';
+      if (note && !ex.note) ex.note = note;
       var fait = C.fait > -1 ? String(l[C.fait] || '').trim().toLowerCase() : '';
       ex.series.push({
         poids: poids,

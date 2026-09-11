@@ -428,6 +428,20 @@ titre('Relire le tableur exporte');
   ok('un tableur etranger est refuse avec une raison',
     typeof TS.lireCsvCarnet('Nom;Age\nPaul;30\n').erreur === 'string');
   ok('un tableur vide aussi', typeof TS.lireCsvCarnet('').erreur === 'string');
+
+  // Le commentaire : derniere colonne de l'export, repetee sur chaque serie.
+  const avecNote = 'Date;Exercice;Serie;Poids (kg);Repetitions;Fait;Commentaire\r\n'
+    + '2026-09-03;Squat;1;100;5;oui;Dernière assistée\r\n'
+    + '2026-09-03;Squat;2;100;5;oui;Dernière assistée\r\n'
+    + '2026-09-03;Curl;1;12;10;oui;\r\n'
+    + '2026-09-03;Rowing;1;60;8;oui;\r\n'
+    + "2026-09-03;Rowing;2;60;8;oui;'-10 % de charge, fatigué\r\n";
+  const rn = TS.lireCsvCarnet(avecNote).sessions['2026-09-03'].exercises;
+  egal('le commentaire est relu, une fois par exercice', rn[0].note, 'Dernière assistée');
+  ok('un exercice sans commentaire n en porte pas', !('note' in rn[1]));
+  egal('un commentaire ecrit sur une seule serie suffit, et perd son apostrophe', rn[2].note, '-10 % de charge, fatigué');
+  ok('un ancien export, sans la colonne, se relit sans commentaire',
+     r.sessions['2026-09-01'].exercises.every(e => !('note' in e)));
 }
 
 // ----------------------------------------------------------------
@@ -445,6 +459,15 @@ titre('Les modeles de carnet publies sur /outils se reimportent');
   egal('le groupe musculaire est reconnu', lundi.map(e => e.groupe), ['Jambes', 'Pectoraux', 'Abdos']);
   egal('le RPE a demi-point est lu', lundi[0].series[2].rpe, 7.5);
   egal('la planche garde sa duree', lundi[2].series[0].reps, '60 s');
+  egal('le commentaire de l exemple est relu', lundi[1].note, 'Dernière série assistée');
+  // « Exactement le format de l'export » : les colonnes sont relues dans
+  // app.js, pas recopiees ici — sinon le test suivrait le modele, pas l'app.
+  const src = readFileSync(join(ICI, '..', 'app.js'), 'utf8');
+  const colonnes = JSON.parse(src.match(/var CSV_COLONNES = (\[[^\]]*\])/)[1].replace(/'/g, '"'));
+  for (const f of ['modele-carnet-musculation.csv', 'exemple-carnet-musculation.csv']) {
+    const entete = lire(f).replace(/^﻿/, '').split(/\r?\n/)[0];
+    egal(f + ' a les colonnes de l export, dans l ordre', entete, colonnes.join(';'));
+  }
   const vierge = TS.lireCsvCarnet(lire('modele-carnet-musculation.csv'));
   ok('le modele vierge a les colonnes attendues (vide, donc refuse avec une raison)',
      typeof vierge.erreur === 'string' && /vide/i.test(vierge.erreur), vierge.erreur);

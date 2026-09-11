@@ -193,6 +193,15 @@
     return (typeof s.poids === 'number' && !isNaN(s.poids)) || (s.reps!=null && String(s.reps).trim()!=='');
   }
 
+  // Le commentaire d'un exercice. 500 caracteres : de quoi dire comment ca
+  // s'est passe, pas de quoi faire d'un fichier importe un mega-octet de
+  // texte. La base a la meme borne.
+  var NOTE_MAX = 500;
+  function noteSure(v){
+    if (typeof v !== 'string' || !v.trim()) return undefined;
+    return v.slice(0, NOTE_MAX);
+  }
+
   // Migration silencieuse : d'anciennes entrées ({poids,reps} directement sur
   // l'exercice) deviennent une série unique. Ne perd aucune donnée existante.
   function normalizeSerie(s, reposHerite){
@@ -221,8 +230,12 @@
     // Au temps ou en repetitions, quand l'utilisateur l'a dit lui-meme.
     // Absent sinon : le nom et les valeurs saisies suffisent a le deduire.
     var mesure = (ex && (ex.mesure === 'temps' || ex.mesure === 'reps')) ? ex.mesure : undefined;
+    // Le commentaire du jour — « assisté sur la dernière », « avec bandes ».
+    // Absent quand il est vide, comme bloc et mesure : les carnets d'avant
+    // n'en ont pas, et n'ont rien a gagner a porter un champ vide.
+    var note = noteSure(ex && ex.note);
     if (ex && Array.isArray(ex.series)){
-      return { id:idSur(ex.id, genId), nom:ex.nom||'', groupe:groupeSur(ex.groupe), repos:ex.repos||'', bloc:bloc, mesure:mesure, series:ex.series.map(function(s){
+      return { id:idSur(ex.id, genId), nom:ex.nom||'', groupe:groupeSur(ex.groupe), repos:ex.repos||'', bloc:bloc, mesure:mesure, note:note, series:ex.series.map(function(s){
         return normalizeSerie(s, ex.repos);
       }) };
     }
@@ -230,7 +243,7 @@
     if (ex && (ex.poids!=null || (ex.reps!=null && String(ex.reps).trim()!==''))){
       series.push(normalizeSerie({ poids:ex.poids, reps:ex.reps }, ex.repos));
     }
-    return { id:idSur(ex&&ex.id, genId), nom:(ex&&ex.nom)||'', groupe:groupeSur(ex&&ex.groupe), repos:(ex&&ex.repos)||'', bloc:bloc, mesure:mesure, series:series };
+    return { id:idSur(ex&&ex.id, genId), nom:(ex&&ex.nom)||'', groupe:groupeSur(ex&&ex.groupe), repos:(ex&&ex.repos)||'', bloc:bloc, mesure:mesure, note:note, series:series };
   }
 
   // ---------- state ----------
@@ -412,12 +425,15 @@
     if (!norm) return [];
     var out = [];
     Object.keys(state.sessions).sort().forEach(function(ds){
-      var series = [];
+      var series = [], notes = [];
       state.sessions[ds].exercises.forEach(function(e){
         if (!e.nom || cleCanonique(e.nom) !== norm) return;
         (e.series||[]).forEach(function(s){ if (hasData(s)) series.push(s); });
+        if (e.note && e.note.trim()) notes.push(e.note.trim());
       });
-      if (series.length) out.push({ date:ds, series:series });
+      // La note voyage avec la seance, pour « derniere fois » et
+      // l'historique. Les calculs ne la lisent pas.
+      if (series.length) out.push({ date:ds, series:series, note:notes.join(' · ') });
     });
     return out;
   }
@@ -1019,9 +1035,14 @@
         + '</button>';
     }).join('');
 
+    // « Assisté sur la dernière » change la lecture de ces chiffres : le
+    // commentaire de ce jour-la s'affiche avec eux.
+    var jourPrec = seances.filter(function(j){ return j.date === prec.date; })[0];
+    var notePrec = jourPrec && jourPrec.note;
     var html = '<div class="ex-prev">'
       + '<div class="ex-prev-tete">DERNIÈRE FOIS · ' + esc(quand.toUpperCase()) + '</div>'
       + '<div class="ex-prev-series">' + puces + '</div>'
+      + (notePrec ? '<div class="ex-prev-note">« ' + esc(notePrec) + ' »</div>' : '')
       + '</div>';
 
     // La cible s'appuie sur tout l'historique et pas seulement sur la
@@ -1100,6 +1121,12 @@
       +   '<select class="ex-groupe" data-field="groupe" data-id="'+ esc(ex.id) +'">'+groupOptions+'</select>'
       +   '<div class="ex-prev-zone">' + hintHTML + '</div>'
       +   '<div class="series-list">'+seriesHTML+'</div>'
+      // Facultatif, et pour l'exercice entier : ce que les chiffres ne disent
+      // pas. 16 px, sinon Safari zoome sur le champ.
+      +   '<input type="text" class="ex-note" maxlength="'+NOTE_MAX+'" enterkeyhint="done" autocomplete="off"'
+      +     ' placeholder="Commentaire (facultatif) : assisté, bandes, fatigué…"'
+      +     ' aria-label="Commentaire sur l\'exercice"'
+      +     ' data-field="note" data-id="'+ esc(ex.id) +'" value="'+esc(ex.note||'')+'">'
       +   '<div class="ex-actions">'
       +     '<button type="button" class="btn-add-serie" data-action="add-serie" data-id="'+ esc(ex.id) +'">+ SÉRIE'+(series.length?' (reprend la précédente)':'')+'</button>'
       // La bascule ne sert qu'avant de noter, ou pour un exercice deja au
@@ -1486,6 +1513,7 @@
             return '<span class="fiche-serie' + (s.fait ? ' fait' : '') + '">' + esc(perfTexte(s)) + '</span>';
           }).join('')
         + '</div>'
+        + (e.note ? '<div class="fiche-exo-note">« ' + esc(e.note.trim()) + ' »</div>' : '')
         + (tenues.length
             ? ligneProgressionDuree(e.nom, ds, Math.max.apply(null, tenues))
             : ligneProgression(e.nom, ds, meilleure))
@@ -1805,6 +1833,7 @@
                 var estTop = jTop && s === jTop;
                 return '<span class="exo-jour-serie' + (estTop ? ' top' : '') + '">' + esc(perfTexte(s)) + '</span>';
               }).join('')
+            + (j.note ? '<span class="exo-jour-note">« ' + esc(j.note) + ' »</span>' : '')
             + '</span>'
             + '<span class="exo-jour-fleche">›</span>'
             + '</button>';
@@ -2067,6 +2096,8 @@
     if (!ex) return;
 
     ex[field] = t.value;
+    // Un commentaire efface ne laisse pas de champ vide derriere lui.
+    if (field === 'note' && !t.value.trim()) delete ex.note;
 
     if (field==='nom'){
       var match = findExerciseMatch(t.value);
@@ -2538,8 +2569,12 @@
   // ne sert qu'a relire ailleurs — une ligne par serie, point-virgule en
   // separateur et virgule decimale, parce que c'est ce qu'attend un Excel
   // configure en francais.
+  // Le commentaire vient en dernier : un tableur fait avec l'ancien export
+  // reste lisible, et une colonne ajoutee a droite ne decale rien. Il est
+  // repete sur chaque serie de l'exercice : trier le tableur ne le separe
+  // pas de ses chiffres.
   var CSV_COLONNES = ['Date','Jour','Exercice','Groupe','Serie','Poids (kg)',
-                      'Repetitions','RPE','Repos (s)','Volume (kg)','Fait'];
+                      'Repetitions','RPE','Repos (s)','Volume (kg)','Fait','Commentaire'];
   function csvChamp(v){
     var t = (v == null) ? '' : String(v);
     return /[";\r\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t;
@@ -2554,8 +2589,8 @@
   // regression pour une charge negative parfaitement legitime.
   //
   // Impact sur le format : une cellule dont le contenu commence reellement par
-  // l'un de ces caracteres s'affiche avec une apostrophe devant. Le CSV ne se
-  // reimporte pas dans Top Set, donc aucun aller-retour n'en depend.
+  // l'un de ces caracteres s'affiche avec une apostrophe devant. Le retour
+  // dans Top Set la retire (texteCsv, dans intelligence.js).
   function csvTexte(v){
     var t = (v == null) ? '' : String(v);
     if (/^[=+\-@\t\r]/.test(t)) t = "'" + t;
@@ -2583,7 +2618,8 @@
             csvChamp(csvNombre(s.poids)), csvTexte(s.reps || ''),
             csvChamp(csvNombre(s.rpe)),
             csvTexte(s.repos || ''), csvChamp(csvNombre(serieVolume(s))),
-            csvChamp(s.fait ? 'oui' : 'non')
+            csvChamp(s.fait ? 'oui' : 'non'),
+            csvTexte((ex.note || '').trim())
           ].join(';'));
         });
       });
@@ -3068,11 +3104,14 @@
     return { type:'support', je:'membre', autre:null, nom:'Top Set', role:'L\'ÉQUIPE' };
   }
 
+  // Ouvrir la boite recompte aussi la pastille : elle doit dire ce que la
+  // liste montre, pas ce qui etait vrai il y a une minute.
   function ouvrirBoite(){
     fermerFeuilles();
     conv = null;
     montrerVue('messages');
     window.scrollTo(0, 0);
+    majBadgeMessages(true);
   }
 
   // « depuis » : la page ou revenir. Sans elle, le retour mene a la boite.
@@ -3285,6 +3324,9 @@
         (c.type === 'coach' ? Sync.marquerLusCoach(aLire) : Sync.marquerLus(aLire))
           .then(function(){ majBadgeMessages(true); }, function(){});
       }
+      // Cote equipe, chaque message d'un membre a aussi fait une notification
+      // dans l'espace admin. Avoir lu le fil, c'est les avoir lues.
+      if (c.je === 'admin' && (aLire.length || mode === 'ouvrir')) Sync.notifsLuesDe(c.autre).catch(function(){});
     }, function(e){
       if (conv !== c || mode === 'releve') return;
       fil.innerHTML = '<div class="fil-vide">' + esc(Sync.messageErreur(e)) + '</div>';
@@ -3341,14 +3383,18 @@
   // toutes conversations confondues. Deux comptages, jamais le contenu. Elle
   // ne se rafraichit pas plus d'une fois toutes les huit secondes, sauf quand
   // on vient de lire quelque chose.
-  var badgeQuand = 0;
+  // Deux comptages peuvent se croiser : seul le dernier demande a le droit
+  // d'ecrire, sinon un vieux chiffre rallume la pastille qu'on vient d'eteindre.
+  var badgeQuand = 0, badgeJeton = 0;
   function majBadgeMessages(forcer){
     var b = document.getElementById('messagesBadge');
     if (!b) return;
-    if (!Sync.estConnecte()){ b.hidden = true; return; }
+    if (!Sync.estConnecte()){ b.hidden = true; badgeJeton++; return; }
     if (!forcer && Date.now() - badgeQuand < 8000) return;
     badgeQuand = Date.now();
+    var jeton = ++badgeJeton;
     Sync.nonLusTotal().then(function(n){
+      if (jeton !== badgeJeton) return;
       b.hidden = !n;
       b.textContent = n > 99 ? '99+' : String(n);
       var btn = document.getElementById('messagesBtn');
@@ -3560,9 +3606,13 @@
               if (s.rpe != null) txt += (TS.serieAuTemps(s) ? ' · difficulté ' : ' · RPE ') + s.rpe;
               return '<span class="lect-serie ' + classe + '">' + esc(txt) + '</span>';
             }).join('');
+            // Le commentaire est souvent ce qu'un coach veut lire en premier :
+            // « assisté », « douleur au coude ».
+            var note = (typeof ex.note === 'string' && ex.note.trim()) ? ex.note.trim() : '';
             return '<div class="lect-exo">'
               + '<div class="lect-nom">' + esc(ex.nom || 'Sans nom') + '</div>'
               + '<div class="lect-series">' + (series || '<span class="lect-serie">aucune série</span>') + '</div>'
+              + (note ? '<div class="lect-note">« ' + esc(note) + ' »</div>' : '')
               + '</div>';
           }).join('');
           return '<div class="lect-jour">'
@@ -3937,7 +3987,13 @@
   // gens declenchent eux-memes (un message, un retour) et le coaching, qui a
   // deja son propre accord. Une version qui ajouterait un traitement que
   // personne n'a demande, lui, devrait reposer la question.
-  var VERSION_POLITIQUE = '3.0';
+  //
+  // La 3.1 non plus : le commentaire d'un exercice est tape par la personne
+  // elle-meme, et le reste nomme des intervenants qui etaient deja la
+  // (l'editeur, Resend, OVH, et Claude qui n'a acces a rien). Elle retire la
+  // promesse « aucune mesure d'audience » sans en ajouter une : le jour ou il
+  // y en aura une, la page le dira avant, et la question se reposera ici.
+  var VERSION_POLITIQUE = '3.1';
   var SYNC_KEY      = 'topset_sync';
   var CONFLITS_KEY  = 'topset_conflits';
 
@@ -4008,7 +4064,11 @@
           auth: { persistSession:true, autoRefreshToken:true, detectSessionInUrl:true }
         });
         sb.auth.onAuthStateChange(function(_evt, session){
+          var avant = user ? user.id : null;
           user = session ? session.user : null;
+          // Un autre compte, c'est un autre role : le profil de l'ancien ne
+          // doit pas servir a compter la pastille du nouveau.
+          if ((user ? user.id : null) !== avant){ profil = null; profilCharge = null; }
           majUI();
         });
         return sb.auth.getSession().then(function(r){
@@ -4023,7 +4083,23 @@
       return state.sessions[ds] || { date:ds, exercises:[] };
     }
     function jourDistant(ds, d){
-      var j = { date:ds, exercises:(d && d.exercises || []).map(normalizeExercise) };
+      // Une base qui n'a pas encore la colonne « note » renvoie des exercices
+      // sans la cle. Ce n'est pas « commentaire efface » : c'est « la base
+      // ne sait pas ». Le commentaire d'ici reste, au lieu de disparaitre au
+      // premier tirage. Une base a jour renvoie note:null, et la, on suit.
+      // Les identifiants locaux (« x… ») ne sont pas ceux de la base, qui en
+      // fabrique des neufs : on retrouve l'exercice par sa place et son nom.
+      var locaux = (state.sessions[ds] || {}).exercises || [];
+      var distants = (d && d.exercises || []).map(function(e, i){
+        if (!e || ('note' in e)) return e;
+        var l = locaux.filter(function(x){ return x.id === e.id; })[0];
+        if (!l && locaux[i] && (locaux[i].nom || '') === (e.nom || '')) l = locaux[i];
+        if (!l || !l.note) return e;
+        var c = {}; Object.keys(e).forEach(function(k){ c[k] = e[k]; });
+        c.note = l.note;
+        return c;
+      });
+      var j = { date:ds, exercises:distants.map(normalizeExercise) };
       if (d && typeof d.titre === 'string' && d.titre.trim()) j.titre = d.titre.trim();
       return j;
     }
@@ -4483,6 +4559,7 @@
       return client().then(function(c){ return c.auth.signOut(); }).then(function(){
         user = null;
         profil = null;
+        profilCharge = null;
         var range = 0;
         if (partant){
           range = rangerCarnet(partant);
@@ -4773,8 +4850,9 @@
         // que se date la visite, et ici qu'on apprend qu'on est administrateur.
         // Ne le faire que dans apresConnexion() revenait a ne compter que les
         // gens qui viennent de taper leur mot de passe — c'est-a-dire presque
-        // personne, puisque la session dure des semaines.
-        toucherProfil().then(majUI);
+        // personne, puisque la session dure des semaines. La pastille a pu
+        // demander le profil juste avant : une seule visite datee, pas deux.
+        profilConnu().then(majUI);
       }).catch(function(){ /* hors ligne au demarrage : le local suffit */ });
 
       // La reconnexion relance ce qui attend. C'est tout le mecanisme de retry :
@@ -4792,9 +4870,10 @@
     // ce miroir personne ne peut savoir qui est revenu cette semaine, ni
     // meme afficher le pseudo de quelqu'un d'autre.
     var profil = null;
+    var profilCharge = null;   // la derniere lecture du profil, en cours ou finie
     function toucherProfil(){
-      if (!user){ profil = null; return Promise.resolve(null); }
-      return client().then(function(c){
+      if (!user){ profil = null; profilCharge = null; return Promise.resolve(null); }
+      return profilCharge = client().then(function(c){
         return c.rpc('toucher_profil', { p_pseudo: pseudoDe(user) || null });
       }).then(function(r){
         if (r.error) throw r.error;
@@ -4809,6 +4888,11 @@
       });
     }
     function estAdmin(){ return !!(profil && profil.role === 'admin'); }
+    // Ce qui depend du role attend de le connaitre. La pastille se comptait
+    // avant l'arrivee du profil : l'administrateur etait compte comme un
+    // membre, sur son propre fil qu'il n'ouvre jamais, et la pastille restait
+    // allumee sur un message que personne ne pouvait lire.
+    function profilConnu(){ return profilCharge || toucherProfil(); }
 
     // ------------------------------------------------------------ retours
     // Insertion directe plutot qu'une fonction : la policy WITH CHECK impose
@@ -4932,18 +5016,21 @@
       //   · tout le monde ajoute ses conversations de coaching.
       nonLusTotal:function(){
         if (!user) return Promise.resolve(0);
-        var admin = estAdmin();
-        var support = client().then(function(c){
-          var q = c.from('messages_support').select('id', { count:'exact', head:true }).eq('lu', false);
-          return admin ? q.eq('auteur', 'membre').neq('user_id', user.id)
-                       : q.eq('user_id', user.id).neq('auteur', 'membre');
-        }).then(function(r){ return r.error ? 0 : (r.count || 0); },
-                function(){ return 0; });
-        var coach = Sync.nonLusCoach().then(function(par){
-          var n = 0; Object.keys(par).forEach(function(k){ n += par[k]; });
-          return n;
+        return profilConnu().then(function(){
+          if (!user) return 0;
+          var admin = estAdmin();
+          var support = client().then(function(c){
+            var q = c.from('messages_support').select('id', { count:'exact', head:true }).eq('lu', false);
+            return admin ? q.eq('auteur', 'membre').neq('user_id', user.id)
+                         : q.eq('user_id', user.id).neq('auteur', 'membre');
+          }).then(function(r){ return r.error ? 0 : (r.count || 0); },
+                  function(){ return 0; });
+          var coach = Sync.nonLusCoach().then(function(par){
+            var n = 0; Object.keys(par).forEach(function(k){ n += par[k]; });
+            return n;
+          });
+          return Promise.all([support, coach]).then(function(t){ return t[0] + t[1]; });
         });
-        return Promise.all([support, coach]).then(function(t){ return t[0] + t[1]; });
       },
       adminFils:function(){ return rpcAdmin('admin_fils'); },
 
@@ -5034,6 +5121,16 @@
       notifsLues:function(){
         return client().then(function(c){
           return c.from('notifications_admin').update({ lu:true }).eq('lu', false);
+        }).then(function(r){ if (r.error) throw r.error; });
+      },
+      // Les messages et les retours d'un membre, une fois son fil ouvert. Les
+      // inscriptions et les demandes de coaching restent : elles ne se lisent
+      // pas dans une conversation.
+      notifsLuesDe:function(membre){
+        if (!membre) return Promise.resolve();
+        return client().then(function(c){
+          return c.from('notifications_admin').update({ lu:true })
+                  .eq('user_id', membre).in('type', ['message', 'retour']).eq('lu', false);
         }).then(function(r){ if (r.error) throw r.error; });
       },
       adminApercu:function(){ return rpcAdmin('admin_apercu'); },

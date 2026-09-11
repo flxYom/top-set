@@ -107,6 +107,23 @@ end $$;
 -- et qu'un exercice seul ne doit rien avoir a porter.
 alter table public.exercices add column if not exists bloc text;
 
+-- Le commentaire d'un exercice, ce jour-là : « assisté sur la dernière »,
+-- « avec bandes ». Nullable, pour la même raison que bloc : la plupart des
+-- exercices n'en ont pas. 500 caractères, comme dans l'app — pousser_jour
+-- tronque avant d'écrire, pour que la contrainte ne refuse jamais une journée.
+alter table public.exercices add column if not exists note text;
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint where conname = 'exercices_note_bornee'
+  ) then
+    alter table public.exercices
+      add constraint exercices_note_bornee
+      check (note is null or char_length(note) <= 500);
+  end if;
+end $$;
+
 create index if not exists seances_user_maj_idx  on public.seances   (user_id, updated_at desc);
 create index if not exists seances_user_date_idx on public.seances   (user_id, date desc);
 create index if not exists exercices_seance_idx  on public.exercices (user_id, seance_id, ordre);
@@ -289,12 +306,13 @@ begin
   for v_ex in select * from jsonb_array_elements(coalesce(p_exercices, '[]'::jsonb))
   loop
     v_ex_id := public.uuid_ou_neuf(v_ex ->> 'id');
-    insert into public.exercices (id, seance_id, user_id, ordre, nom, groupe, repos, bloc)
+    insert into public.exercices (id, seance_id, user_id, ordre, nom, groupe, repos, bloc, note)
     values (v_ex_id, v_seance, v_user, i,
             coalesce(v_ex ->> 'nom', ''),
             coalesce(nullif(v_ex ->> 'groupe', ''), 'Autre'),
             v_ex ->> 'repos',
-            nullif(v_ex ->> 'bloc', ''));
+            nullif(v_ex ->> 'bloc', ''),
+            nullif(left(btrim(coalesce(v_ex ->> 'note', '')), 500), ''));
 
     j := 0;
     for v_se in select * from jsonb_array_elements(coalesce(v_ex -> 'series', '[]'::jsonb))
@@ -377,6 +395,7 @@ as $$
               'groupe', e.groupe,
               'repos', coalesce(e.repos, ''),
               'bloc', e.bloc,
+              'note', e.note,
               'series', coalesce((
                 select jsonb_agg(
                   jsonb_build_object(
@@ -1225,6 +1244,7 @@ as $$
               'groupe', e.groupe,
               'repos', coalesce(e.repos, ''),
               'bloc', e.bloc,
+              'note', e.note,
               'series', coalesce((
                 select jsonb_agg(
                   jsonb_build_object(
