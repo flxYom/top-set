@@ -1,0 +1,61 @@
+{
+ "_note": "Après la mise en conformité des gabarits (commit 48bcf5c). Lighthouse 12, mobile, production. Même format que lighthouse-2026-09-11-pilote.json. La page Top set a grossi (7,1 → 10,5 Ko compressés) : trois mesures, la première à 98 (LCP 1,5 s), les deux suivantes à 100 (LCP 1,3 s) — l'écart est du bruit de mesure.",
+ "top-set": [
+  {
+   "url": "https://www.top-set.fr/documentation/top-set-musculation",
+   "date": "2026-09-11T14:58:29.193Z",
+   "scores": {
+    "performance": 98,
+    "accessibility": 100,
+    "best-practices": 100,
+    "seo": 100
+   },
+   "LCP": "1.5 s",
+   "CLS": "0",
+   "TBT": "0 ms",
+   "poids": "Total size was 91 KiB"
+  },
+  {
+   "url": "https://www.top-set.fr/documentation/top-set-musculation",
+   "date": "2026-09-11T14:59:06.559Z",
+   "scores": {
+    "performance": 100,
+    "accessibility": 100,
+    "best-practices": 100,
+    "seo": 100
+   },
+   "LCP": "1.3 s",
+   "CLS": "0.003",
+   "TBT": "0 ms",
+   "poids": "Total size was 91 KiB"
+  },
+  {
+   "url": "https://www.top-set.fr/documentation/top-set-musculation",
+   "date": "2026-09-11T14:59:22.618Z",
+   "scores": {
+    "performance": 100,
+    "accessibility": 100,
+    "best-practices": 100,
+    "seo": 100
+   },
+   "LCP": "1.3 s",
+   "CLS": "0.003",
+   "TBT": "0 ms",
+   "poids": "Total size was 91 KiB"
+  }
+ ],
+ "planche": {
+  "url": "https://www.top-set.fr/exercices/planche-gainage",
+  "date": "2026-09-11T14:58:44.533Z",
+  "scores": {
+   "performance": 100,
+   "accessibility": 100,
+   "best-practices": 100,
+   "seo": 100
+  },
+  "LCP": "1.2 s",
+  "CLS": "0.001",
+  "TBT": "0 ms",
+  "poids": "Total size was 86 KiB"
+ }
+}
