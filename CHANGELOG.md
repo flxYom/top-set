@@ -18,7 +18,7 @@ while it stays below `1.0.0`, breaking changes (in particular to the
   written from the February 2026 official texts
   (`/entrainement/carnet-musculation-eps`), and the plank
   (`/exercices/planche-gainage`) — plus section hubs, a page on how the pages
-  are made (`/methode-editoriale`) and a branded 404. 31 sources cited, each opened
+  are made (`/methode-editoriale`) and a branded 404. 38 sources cited, each opened
   and labelled with what was read. Signed « Yom Industry × Claude
   (Anthropic) ». Everything sits under one main section, **Apprendre**
   (`/apprendre`, listing every section and page): a fourth app tab next to
@@ -64,6 +64,16 @@ while it stays below `1.0.0`, breaking changes (in particular to the
   a 269-study meta-regression actually measured. 6 new sources (Nuzzo 2024 read
   in full on PMC, Grgic 2020, Lopez 2021, Steele 2022, Sødal 2023, Havers
   2026).
+- **Content, batch 3 — progression** (French), in `/entrainement`: progressive
+  overload (the pillar: the levers, load vs reps, double progression), how many
+  reps to build muscle (the « 8–12 » rule against the evidence) and how many
+  sets per muscle per week (how to count, the dose-response, how the app's recap
+  counts). Built on the American College of Sports Medicine's 2026 position
+  stand, read in full on PMC, and 6 more sources (Pelland 2026, Plotkin 2022,
+  Schoenfeld 2021 read on PMC, Baz-Valle 2022…). The training hub, at four
+  pages, becomes indexable. The guide's recap section now says the muscle-group
+  count includes warm-ups, and that the exercise chart plots the top set's
+  estimated 1RM (it said « your loads »).
 - **SEO and content strategy** (`docs/seo/`, not published). An audit of the
   real site — the home page shows Googlebot 118 words and a sign-up screen, no
   page answers a search — research from Google autocomplete (155 seed queries,
