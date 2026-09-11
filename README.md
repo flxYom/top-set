@@ -838,9 +838,9 @@ client's logbook, and a per-session debrief. `profils` is the foundation for
 all of it — that is why it was written first.
 
 **Still open:** the return leg of the password-reset link has never been
-exercised with a real email. Resend's DNS records are published on `top-set.fr`;
-what remains is wiring the API key into Supabase's SMTP settings and doing a full
-round trip.
+exercised with a real email. Resend's DNS records are published on `top-set.fr`
+and the API key is wired into Supabase's SMTP settings (per the owner, 11
+September 2026 — not verified from the repo); what remains is a full round trip.
 
 ---
 
