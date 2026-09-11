@@ -1,0 +1,59 @@
+{
+ "_note": "Après la publication des 5 lots (commit cd32e69). Lighthouse 12, mobile, production, un échantillon d'une page par lot ou presque. Même format que lighthouse-2026-09-11-gabarits.json.",
+ "rpe": {
+  "url": "https://www.top-set.fr/documentation/rpe-musculation",
+  "date": "2026-09-11T15:57:33.383Z",
+  "scores": {
+   "performance": 98,
+   "accessibility": 100,
+   "best-practices": 100,
+   "seo": 100
+  },
+  "LCP": "1.3 s",
+  "CLS": "0",
+  "TBT": "0 ms",
+  "poids": "Total size was 88 KiB"
+ },
+ "tableau-rpe": {
+  "url": "https://www.top-set.fr/outils/tableau-rpe",
+  "date": "2026-09-11T15:57:54.206Z",
+  "scores": {
+   "performance": 100,
+   "accessibility": 100,
+   "best-practices": 100,
+   "seo": 100
+  },
+  "LCP": "1.3 s",
+  "CLS": "0.015",
+  "TBT": "10 ms",
+  "poids": "Total size was 96 KiB"
+ },
+ "series-par-muscle": {
+  "url": "https://www.top-set.fr/entrainement/nombre-de-series-par-muscle",
+  "date": "2026-09-11T15:58:13.506Z",
+  "scores": {
+   "performance": 98,
+   "accessibility": 100,
+   "best-practices": 100,
+   "seo": 100
+  },
+  "LCP": "1.3 s",
+  "CLS": "0",
+  "TBT": "0 ms",
+  "poids": "Total size was 86 KiB"
+ },
+ "developpe-couche": {
+  "url": "https://www.top-set.fr/exercices/developpe-couche",
+  "date": "2026-09-11T15:58:33.225Z",
+  "scores": {
+   "performance": 100,
+   "accessibility": 100,
+   "best-practices": 100,
+   "seo": 100
+  },
+  "LCP": "1.4 s",
+  "CLS": "0.016",
+  "TBT": "0 ms",
+  "poids": "Total size was 117 KiB"
+ }
+}
