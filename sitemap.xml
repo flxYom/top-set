@@ -3,31 +3,45 @@
   <url>
     <loc>https://www.top-set.fr/</loc>
     <lastmod>2026-09-11</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>1.0</priority>
   </url>
   <url>
     <loc>https://www.top-set.fr/guide</loc>
     <lastmod>2026-09-11</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
   </url>
   <url>
     <loc>https://www.top-set.fr/mentions-legales</loc>
     <lastmod>2026-09-11</lastmod>
-    <changefreq>yearly</changefreq>
-    <priority>0.3</priority>
   </url>
   <url>
     <loc>https://www.top-set.fr/confidentialite</loc>
     <lastmod>2026-09-11</lastmod>
-    <changefreq>yearly</changefreq>
-    <priority>0.3</priority>
   </url>
   <url>
     <loc>https://www.top-set.fr/cgu</loc>
     <lastmod>2026-09-11</lastmod>
-    <changefreq>yearly</changefreq>
-    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://www.top-set.fr/carnet-de-musculation</loc>
+    <lastmod>2026-09-11</lastmod>
+  </url>
+  <url>
+    <loc>https://www.top-set.fr/documentation/top-set-musculation</loc>
+    <lastmod>2026-09-11</lastmod>
+  </url>
+  <url>
+    <loc>https://www.top-set.fr/entrainement/carnet-musculation-eps</loc>
+    <lastmod>2026-09-11</lastmod>
+  </url>
+  <url>
+    <loc>https://www.top-set.fr/exercices/planche-gainage</loc>
+    <lastmod>2026-09-11</lastmod>
+  </url>
+  <url>
+    <loc>https://www.top-set.fr/methode-editoriale</loc>
+    <lastmod>2026-09-11</lastmod>
+  </url>
+  <url>
+    <loc>https://www.top-set.fr/outils/calculateur-1rm</loc>
+    <lastmod>2026-09-11</lastmod>
   </url>
 </urlset>

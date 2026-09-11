@@ -1,7 +1,7 @@
 # Stratégie SEO et contenu — TOP SET
 
 > Mémoire stratégique du référencement. À relire avant toute nouvelle page.
-> **Dernière analyse : 11 septembre 2026.** Étape en cours : **B–D terminées, E à valider.**
+> **Dernière analyse : 11 septembre 2026.** Étape en cours : **E (infrastructure) et F (pilote) faites — G (validation) en cours.**
 
 **Objectif** — faire de top-set.fr une ressource de référence en musculation, organisée autour d'un parcours :
 **comprendre → apprendre → s'entraîner → suivre → progresser**. L'application reste le produit ; le
@@ -20,6 +20,8 @@ Fichiers liés :
 | `matrice.md` | la matrice classée, avec les signaux sujet par sujet (généré) |
 | `inventaire.md` | une ligne par URL : statut, requête, sujets absorbés (généré) |
 | `recherche/` | les données brutes, datées : autocomplétion Google, concurrence, PubMed, Lighthouse |
+| `../../contenu/` | la source des pages publiées, `sources.json` (bibliographie), `site.json` (rubriques, pages fixes, 404) |
+| `../../scripts/contenu.mjs` | le générateur et ses vérifications ; `gabarit.mjs`, le rendu HTML |
 
 ---
 
@@ -231,14 +233,17 @@ toujours en ouvrant les fichiers.
 
 ```
 contenu/                          ← source (non publiée)
-  sources.json                    ← bibliographie : auteurs, année, titre, revue, DOI, PMID, type, niveau lu
+  sources.json                    ← bibliographie : auteurs, année, titre, revue, DOI, PMID, type, ce qui a été lu
+  site.json                       ← rubriques (hubs), pages écrites à la main du plan du site, 404
   documentation/top-set-musculation.html
-  entrainement/…  exercices/…  outils/…  carnet-de-musculation.html
+  entrainement/…  exercices/…  outils/…  carnet-de-musculation.html  methode-editoriale.html
 scripts/contenu.mjs               ← générateur + vérifications (non publié)
-scripts/gabarits/*.mjs            ← ContentPage et variantes : définition, guide, exercice, outil, produit, hub
+scripts/gabarit.mjs               ← le rendu : une fonction pour les pages, une pour les hubs
 documentation/top-set-musculation.html   ← généré, commité, servi à /documentation/top-set-musculation
-contenu.css                       ← styles des pages de contenu, sur les jetons de legal.css
+documentation/index.html          ← hub généré, servi à /documentation
+contenu.css                       ← styles des pages de contenu, mêmes jetons que legal.css
 outils/outils.js                  ← JS des calculateurs (fichier externe : CSP)
+img/                              ← captures de l'app (WebP) pour la page produit
 sitemap.xml                       ← régénéré avec toutes les pages indexables
 ```
 
@@ -246,7 +251,8 @@ sitemap.xml                       ← régénéré avec toutes les pages indexab
 `slug`, `section`, `type`, `title`, `description`, `h1`, `primaryQuery`, `parent`, `related`, `published`,
 `reviewed`, `author`. Le corps est du HTML simple avec deux conventions :
 
-- `[[rpe-musculation|l'échelle RPE]]` → lien interne vérifié (le générateur échoue si la page n'existe pas) ;
+- `[[/documentation/rpe-musculation|l'échelle RPE]]` → lien interne vérifié, par son chemin complet (le
+  générateur échoue si la page n'existe pas) ;
 - `[@zourdos2016]` → appel de note numéroté, relié à l'entrée de `sources.json` (le générateur échoue si la
   source n'existe pas, ou si une source est listée sans être citée).
 
@@ -261,10 +267,18 @@ il est pertinent, et le JSON-LD :
   ni note, Google n'en tire pas de résultat enrichi, et on ne le promet pas ;
 - **pas de `FAQPage`**. Des questions/réponses peuvent exister pour le lecteur, sans balisage.
 
-**Vérifications automatiques** (échec = pas de publication) : titres et descriptions uniques et bornés,
-un H1, canonical = URL, page dans le sitemap, parent existant, aucune page orpheline, liens internes
-résolus, sources citées et existantes, JSON-LD valide, pas de script en ligne, `html-validate`, et un
-contrôle de poids par page.
+**Vérifications automatiques** (échec = pas de publication) : titres (≤ 60) et descriptions (110–160)
+bornés et uniques sur tout le site, pages écrites à la main comprises ; un seul H1 ; liens internes
+résolus ; chaque source citée existe et dit ce qu'elle soutient ici ; aucune source listée sans être
+citée ; pas de script, de style ni de gestionnaire d'événement en ligne ; poids par page ; la page
+correspond à un sujet `PUBLISHED` de la matrice, sur la même requête, avec la même date de revue ;
+fichiers générés à jour. `html-validate` et `test/liens.test.mjs` (liens, casse, ancres, et chaque
+page à deux clics de l'accueil) complètent en CI.
+
+**Rubriques** : une rubrique n'est indexable qu'à partir de **3 pages**. En dessous, sa page existe (fil
+d'Ariane, navigation) mais porte `noindex,follow` et reste hors du plan du site : une liste d'un lien
+serait une page mince. La page `/documentation` (lien « Apprendre » de l'app) liste aussi les pages des
+autres rubriques.
 
 **Intégration à l'existant, sans toucher à l'app :**
 
@@ -280,15 +294,20 @@ contrôle de poids par page.
 hors outils, images en `loading="lazy"` avec dimensions, LCP < 2 s et CLS < 0,05 au Lighthouse mobile.
 Mesure avant/après à chaque étape.
 
-**Illustrations** : schémas SVG générés, dans la charte (profil de charge top set / back-off, échelle
-RPE/RIR, comparaison des formules du 1RM) — originaux, légers, nets. Pour les exercices, des photos
-**faites par nous**, cohérentes entre elles (même salle, même cadrage) : c'est aussi une preuve
-d'expérience. Pour chaque image : objectif pédagogique, ratio, emplacement, texte alternatif, nom de
-fichier, poids cible (≤ 60 Ko, WebP/AVIF).
+**Illustrations** : schémas SVG dessinés pour chaque page, dans la charte, écrits directement dans la
+page (aucune requête de plus) avec un titre accessible — profil de charge top set / back-off, position
+et erreurs de la planche. **Pas de photos** pour l'instant (décision du 11/09) : des schémas pour les
+exercices, et de vraies captures de l'app (carnet de démonstration, WebP, 18 à 27 Ko) pour la page
+produit. Pour chaque image : objectif pédagogique, texte alternatif, dimensions, poids ≤ 60 Ko.
 
 ## Crédibilité (E-E-A-T) et IA
 
-- Chaque page : auteur, date de publication, date de dernière vérification, sources.
+- Chaque page : signature « Par Yom Industry × Claude (Anthropic) », date de publication, date de
+  vérification des sources, sources. « Relu par Yom Industry le … » ne s'affiche que quand le champ
+  `relu` est rempli dans la source : la relecture humaine n'est jamais annoncée avant d'avoir eu lieu.
+- JSON-LD `Article` : l'auteur est l'organisation Yom Industry (l'éditeur). L'IA est nommée dans la
+  signature visible et expliquée sur `/methode-editoriale`, pas déclarée comme auteur dans les données
+  structurées.
 - Une page `/methode-editoriale` : comment un sujet est choisi, recherché, sourcé, relu ; ce que l'IA fait
   (recherche, structure, brouillon) et ce qu'elle ne fait pas (être une source) ; comment signaler une
   erreur.
@@ -306,9 +325,9 @@ fichier, poids cible (≤ 60 Ko, WebP/AVIF).
 | A. Audit | fait | ce document | — |
 | B. Recherche | fait | `recherche/` | — |
 | C. Notation | fait | `sujets.json`, `matrice.md` | `matrice.mjs --verifier` |
-| D. Architecture | fait, **à valider** | sections C et F ci-dessus | — |
-| E. Infrastructure | générateur, gabarits, `contenu.css`, hubs, 404, méthode éditoriale, lien « Apprendre », CI | pages hub en ligne | tests + Lighthouse + app intacte (tous les tests existants) |
-| F. Pilote | les 5 pages ci-dessus, sources lues une à une | 5 pages publiées | relecture par toi avant publication |
+| D. Architecture | fait, validé le 11/09 | sections C et F ci-dessus | — |
+| E. Infrastructure | fait le 11/09 : générateur, gabarit, `contenu.css`, hubs, 404, méthode éditoriale, lien « Apprendre », CI | pages hub en ligne | tests + Lighthouse + app intacte (tous les tests existants) |
+| F. Pilote | fait le 11/09 : les 5 pages, 14 sources ouvertes une à une | 5 pages publiées | relecture par toi : en ligne, avant l'indexation (le domaine n'est pas encore indexé) ; chaque page relue reçoit son champ `relu` |
 | G. Validation | rendu Googlebot, mobile, accessibilité, performance, canonical, sitemap, JSON-LD (Test des résultats enrichis), Inspection d'URL | rapport de validation | seuils du budget |
 | H. Production | les 15 autres pages, par cluster (pilier d'abord) | ~3 pages par session | idem + inventaire à jour |
 
@@ -320,7 +339,7 @@ fichier, poids cible (≤ 60 Ko, WebP/AVIF).
 | Cache hors ligne qui grossit | chaque page visitée est gardée ; borner le cache `COURANT` quand le site dépasse quelques dizaines de pages |
 | Performance | pages statiques sans JS, budget chiffré, Lighthouse avant/après |
 | Duplication avec le guide | le guide garde l'aide de l'app et renvoie vers la documentation |
-| Cannibalisation | une requête = une page, contrôlé par `matrice.mjs` ; paires surveillées : RPE/RIR, répétitions/force-ou-hypertrophie, 1RM/calculateur/pourcentages, échauffement/séries d'échauffement, développé couché/progresser au développé couché, carnet/suivre sa progression |
+| Cannibalisation | une requête = une page, contrôlé par `matrice.mjs` ; paires surveillées : RPE/RIR, répétitions/force-ou-hypertrophie, 1RM/calculateur/pourcentages, échauffement/séries d'échauffement, développé couché/progresser au développé couché, carnet/suivre sa progression, accueil/page produit (le titre de l'accueil contient « carnet de musculation » : surveiller dans Search Console quelle page Google choisit) |
 | Contenu faible | pas de page sans sources lues et sans exemple concret ; relecture avant publication |
 | Sujets santé | exclus de la première vague (douleurs : retirés) ; nutrition reportée |
 | Dépendances | aucune : générateur en Node pur |
@@ -341,14 +360,18 @@ fichier, poids cible (≤ 60 Ko, WebP/AVIF).
 Tant que le site est neuf, les seuils sont bas (quelques dizaines d'impressions) : on cherche des tendances,
 pas des certitudes.
 
-## Décisions à prendre (toi)
+## Décisions prises (11/09/2026)
 
-1. **Auteur affiché** : ton nom (déjà public dans les mentions légales) ou un pseudo ? Et ce qu'on peut
-   dire de vrai sur ton expérience (années de pratique, coaching…).
-2. **Mention de l'IA** sur la page méthode éditoriale : d'accord sur le principe décrit plus haut ?
-3. **Photos d'exercices** : peux-tu en faire (même salle, même cadrage) ? Sinon, schémas uniquement.
-4. **Le pilote** : ces 5 pages, dans cet ordre ?
-5. **Les deux hôtes vercel.app** : sont-ils à toi ?
+1. **Auteur affiché** : « Yom Industry × Claude (Anthropic) ». Aucune expérience ni aucun titre revendiqué.
+2. **Mention de l'IA** : oui, expliquée sur `/methode-editoriale`.
+3. **Photos d'exercices** : non — schémas dessinés et captures de l'app.
+4. **Le pilote** : validé, les 5 pages.
+5. **Les deux hôtes vercel.app** sont à toi. Vérifié le 11/09 : ce sont deux **autres projets Vercel**,
+   pas ce site — `top-set.vercel.app` (ancienne app Next.js, redirige vers `/login`, « Hypertrophy
+   training. Built for lifters. ») et `topset-web.vercel.app` (ancienne app React, une `<div>` vide pour
+   les robots). Ce site-ci répond sur `top-set-yom-nutrition.vercel.app`, déjà en `noindex` d'office.
+   À faire côté Vercel, par toi : si ces deux projets ne servent plus, les supprimer, ou rediriger leur
+   domaine vers `www.top-set.fr`.
 
 ## Journal des décisions
 
@@ -359,3 +382,8 @@ pas des certitudes.
 | 11/09/2026 | Nutrition reportée ; questions de douleur exclues. |
 | 11/09/2026 | Pas de `FAQPage` ; `SoftwareApplication` seulement sur la page produit. |
 | 11/09/2026 | Pilote de 5 pages avant toute production. |
+| 11/09/2026 | Signature « Yom Industry × Claude (Anthropic) » ; l'IA n'est pas un auteur dans le JSON-LD. |
+| 11/09/2026 | Pas de photos : schémas SVG dans la page, captures de l'app pour la page produit. |
+| 11/09/2026 | Rubriques indexables à partir de 3 pages ; `/documentation` liste toutes les pages (2 clics). |
+| 11/09/2026 | Pilote publié avant la relecture humaine, parce que le domaine n'est pas encore indexé ; la mention « relu » attend la relecture réelle. |
+| 11/09/2026 | Le calculateur de 1RM charge `intelligence.js` : même formule (Epley) et même limite (12 répétitions) que le carnet. |

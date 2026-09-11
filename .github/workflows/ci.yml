@@ -36,6 +36,13 @@ jobs:
       - name: SEO topic matrix
         run: node docs/seo/matrice.mjs --verifier
 
+      # Les pages de contenu sont generees depuis contenu/ et commitees. Echec si
+      # une source citee n'existe pas, si un lien interne vise une page absente,
+      # si un titre ou une description sort des bornes, si une page depasse son
+      # budget de poids, ou si un fichier genere n'est plus a jour.
+      - name: Content pages
+        run: node scripts/contenu.mjs --verifier
+
       # Remplace lychee-action, qui echouait a chaque execution sans qu'on
       # puisse reproduire l'echec en local ni lire utilement son journal. Ce
       # test-ci tourne a l'identique sur une machine de dev et ici, et il
@@ -45,7 +52,7 @@ jobs:
         run: node test/liens.test.mjs
 
       - name: Lint HTML
-        run: npx --yes html-validate "*.html"
+        run: npx --yes html-validate "*.html" "documentation/*.html" "entrainement/*.html" "exercices/*.html" "outils/*.html"
 
   schema:
     name: Database schema and RLS

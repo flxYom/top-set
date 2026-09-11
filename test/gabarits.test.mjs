@@ -340,8 +340,12 @@ console.log('\n== 18. Ce que le site publie ==');
 // Vercel publie tout le depot, sauf ce que .vercelignore ecarte. Le schema,
 // les tests et le journal y etaient lisibles : rien de secret, rien a servir.
 const IGN = readFileSync(new URL('../.vercelignore', import.meta.url), 'utf8').split(/\r?\n/).map(l => l.trim());
-for (const x of ['supabase/', 'test/', 'docs/', '.github/', 'screenshots/', 'CHANGELOG.md', 'README.md'])
+for (const x of ['supabase/', 'test/', 'docs/', '.github/', 'screenshots/', 'CHANGELOG.md', 'README.md', 'contenu/', 'scripts/'])
   ok('pas publie : ' + x, IGN.includes(x));
+// L'inverse compte autant : les pages generees et ce qu'elles chargent doivent
+// etre servis. Un « outils/ » ecarte par megarde casserait le calculateur.
+for (const x of ['documentation/', 'entrainement/', 'exercices/', 'outils/', 'img/', 'contenu.css', 'intelligence.js'])
+  ok('publie : ' + x, !IGN.includes(x) && !IGN.includes(x.replace(/\/$/, '')));
 const PRECHARGE = (SW.match(/A_PRECHARGER = \[([\s\S]*?)\]/) || [])[1] || '';
 ok('et rien de ce que le service worker precharge n en fait partie',
    !IGN.filter(x => x && !x.startsWith('#'))
@@ -393,6 +397,10 @@ ok('un favicon d au moins 48 px est annonce, la taille que Google demande',
 const PLAN = readFileSync(new URL('sitemap.xml', RACINE), 'utf8');
 for (const p of ['/', '/guide', '/confidentialite', '/cgu', '/mentions-legales'])
   ok('le plan du site liste ' + p, PLAN.indexOf('<loc>https://www.top-set.fr' + p + '</loc>') > -1);
+// Le plan est desormais produit par scripts/contenu.mjs, qui y ajoute les pages
+// de contenu indexables ; la 404 et les rubriques trop minces n'y sont pas.
+ok('la page 404 n est pas dans le plan du site', PLAN.indexOf('/404') === -1);
+ok('l app mene aux pages Apprendre', HTML.indexOf('<a href="/documentation">Apprendre</a>') > -1);
 
 console.log(`\n${pass} reussis, ${fail} echoues`);
 process.exit(fail ? 1 : 0);

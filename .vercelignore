@@ -25,6 +25,11 @@ test/
 # Strategie SEO, recherches et donnees de travail
 docs/
 
+# Source des pages de contenu et leur generateur : seules les pages produites
+# (documentation/, entrainement/, exercices/, outils/...) sont servies.
+contenu/
+scripts/
+
 # Configuration des outils
 .github/
 .htmlvalidate.json

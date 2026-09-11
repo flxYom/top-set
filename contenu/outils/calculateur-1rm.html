@@ -1,0 +1,179 @@
+<!--
+{
+  "type": "outil",
+  "title": "Calculateur de 1RM : estime ta charge maximale",
+  "description": "Calcule ton 1RM estimé à partir d'une série : poids, répétitions, RPE. Formules d'Epley et de Brzycki, charges par répétitions et limites expliquées.",
+  "h1": "Calculateur de 1RM",
+  "fil": "Calculateur de 1RM",
+  "lede": "Entre le poids et les répétitions d'une série faite à fond, ou presque : le calculateur estime la charge que tu pourrais soulever une seule fois. C'est la même formule que dans le carnet Top Set.",
+  "primaryQuery": "calcul 1rm",
+  "published": "2026-09-11",
+  "reviewed": "2026-09-11",
+  "ordre": 1,
+  "sommaire": false,
+  "scripts": ["/intelligence.js", "/outils/outils.js"],
+  "related": ["/documentation/top-set-musculation", "/carnet-de-musculation"],
+  "sources": {
+    "richens2014": "la formule d'Epley vient d'un tableau de charges, pas d'une étude ; Brzycki ne dit pas sur quelles données repose la sienne ; à 70 % du 1RM, des coureurs font 39,9 répétitions contre 17,9 pour des haltérophiles.",
+    "macarilla2022": "cite un travail de 2014 où Epley et Brzycki estimaient le 1RM au squat à environ 3 kg près, à partir de séries de 3 ou 5 répétitions ; rappelle qu'un test de 1RM prend du temps, fatigue et peut être risqué pour un débutant.",
+    "reynolds2006": "sur 70 personnes, les séries de 5 répétitions maximales prédisent le mieux le 1RM ; pas plus de 10 répétitions dans une formule linéaire.",
+    "zourdos2016": "l'échelle RPE fondée sur les répétitions en réserve : RPE 10 = aucune, RPE 9 = une, RPE 8 = deux…",
+    "larsen2021": "le jugement des répétitions en réserve est moins précis chez les débutants et sur les séries longues."
+  }
+}
+-->
+<div class="calc" id="calc1rm">
+  <div class="champs">
+    <div class="champ">
+      <label for="c-poids">Charge (kg)</label>
+      <input id="c-poids" type="text" inputmode="decimal" autocomplete="off" value="100">
+      <small>Traction ou dips lestés : le lest seul.</small>
+    </div>
+    <div class="champ">
+      <label for="c-reps">Répétitions</label>
+      <input id="c-reps" type="text" inputmode="numeric" autocomplete="off" value="5">
+      <small>De 1 à 12.</small>
+    </div>
+    <div class="champ">
+      <label for="c-rpe">RPE (facultatif)</label>
+      <select id="c-rpe">
+        <option value="">À l'échec</option>
+        <option value="10">10 — plus aucune</option>
+        <option value="9.5">9,5</option>
+        <option value="9">9 — une en réserve</option>
+        <option value="8.5">8,5</option>
+        <option value="8">8 — deux en réserve</option>
+        <option value="7.5">7,5</option>
+        <option value="7">7 — trois en réserve</option>
+      </select>
+    </div>
+    <div class="champ">
+      <label for="c-pdc">Poids du corps (kg)</label>
+      <input id="c-pdc" type="text" inputmode="decimal" autocomplete="off" placeholder="facultatif">
+      <small>Seulement pour tractions et dips.</small>
+    </div>
+  </div>
+  <div class="resultat" aria-live="polite">
+    <span class="grand" id="c-rm">116,5 kg</span>
+    <p id="c-detail">1RM estimé avec la formule d'Epley, celle du carnet Top Set. Avec Brzycki : 112,5 kg.</p>
+    <p class="alerte" id="c-alerte" hidden></p>
+  </div>
+</div>
+
+<h2>Tes charges de travail</h2>
+<p>
+  À partir du 1RM estimé, deux tableaux. Le premier donne la charge avec laquelle tu
+  devrais pouvoir faire un nombre donné de répétitions, à l'échec ; le second, les
+  pourcentages courants du 1RM. Ils se mettent à jour avec le calculateur.
+</p>
+<div class="defile">
+  <table>
+    <caption>Charge estimée pour un nombre de répétitions à l'échec (formule d'Epley inversée), en kg</caption>
+    <thead><tr><th>Répétitions</th><th class="n">Charge</th></tr></thead>
+    <tbody id="c-table-reps">
+      <tr><td>2</td><td class="n">109,5</td></tr><tr><td>3</td><td class="n">106</td></tr>
+      <tr><td>4</td><td class="n">103</td></tr><tr><td>5</td><td class="n">100</td></tr>
+      <tr><td>6</td><td class="n">97</td></tr><tr><td>8</td><td class="n">92</td></tr>
+      <tr><td>10</td><td class="n">87,5</td></tr><tr><td>12</td><td class="n">83,5</td></tr>
+    </tbody>
+  </table>
+</div>
+<div class="defile">
+  <table>
+    <caption>Pourcentages du 1RM estimé, arrondis au demi-kilo</caption>
+    <thead><tr><th>% du 1RM</th><th class="n">Charge</th></tr></thead>
+    <tbody id="c-table-pct">
+      <tr><td>100 %</td><td class="n">116,5</td></tr><tr><td>95 %</td><td class="n">111</td></tr>
+      <tr><td>90 %</td><td class="n">105</td></tr><tr><td>85 %</td><td class="n">99</td></tr>
+      <tr><td>80 %</td><td class="n">93,5</td></tr><tr><td>75 %</td><td class="n">87,5</td></tr>
+      <tr><td>70 %</td><td class="n">81,5</td></tr><tr><td>65 %</td><td class="n">76</td></tr>
+      <tr><td>60 %</td><td class="n">70</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>Comment c'est calculé</h2>
+<p>Deux formules sont très répandues. Top Set utilise la première.</p>
+<ul>
+  <li><strong>Epley</strong> : 1RM = charge × (1 + répétitions ÷ 30)</li>
+  <li><strong>Brzycki</strong> : 1RM = charge × 36 ÷ (37 − répétitions)</li>
+</ul>
+<div class="defile">
+  <table>
+    <caption>1RM estimé pour une série à 100 kg, selon la formule (kg)</caption>
+    <thead><tr><th>Répétitions</th><th class="n">Epley</th><th class="n">Brzycki</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td class="n">103,3</td><td class="n">100</td></tr>
+      <tr><td>3</td><td class="n">110</td><td class="n">105,9</td></tr>
+      <tr><td>5</td><td class="n">116,7</td><td class="n">112,5</td></tr>
+      <tr><td>8</td><td class="n">126,7</td><td class="n">124,1</td></tr>
+      <tr><td>10</td><td class="n">133,3</td><td class="n">133,3</td></tr>
+      <tr><td>12</td><td class="n">140</td><td class="n">144</td></tr>
+    </tbody>
+  </table>
+</div>
+<p>
+  Les deux se rejoignent vers 10 répétitions. En dessous, Epley donne un chiffre plus
+  haut ; au-dessus, c'est Brzycki. Particularité d'Epley : pour une seule répétition,
+  elle ajoute 3 %. Si tu as fait une répétition vraiment à fond, ton 1RM est
+  simplement cette charge.
+</p>
+
+<h2>D'où viennent ces formules</h2>
+<p>
+  D'aucune grande étude. La formule d'Epley vient d'un tableau de charges publié par un
+  entraîneur, pas d'une recherche scientifique, et l'article de Brzycki ne dit pas sur
+  quelles données repose la sienne [@richens2014]. Elles ont été testées depuis : dans un
+  travail de 2014 sur des joueurs de football américain universitaires, les deux
+  estimaient le 1RM au squat à environ 3 kg près, à partir de séries de 3 ou
+  5 répétitions [@macarilla2022].
+</p>
+
+<h2>Jusqu'où c'est fiable</h2>
+<ul>
+  <li><strong>Moins il y a de répétitions, mieux c'est.</strong> Sur 70 personnes, les
+      séries de 5 répétitions maximales prédisent le mieux le 1RM ; les auteurs
+      déconseillent de dépasser 10 répétitions [@reynolds2006]. Le carnet Top Set
+      s'arrête à 12, et le calculateur aussi.</li>
+  <li><strong>La formule est une moyenne, pas toi.</strong> À 70 % du 1RM, des coureurs
+      d'endurance ont fait en moyenne 39,9 répétitions, contre 17,9 pour des
+      haltérophiles [@richens2014]. Selon ton profil, ton vrai 1RM peut s'écarter de
+      plusieurs kilos de l'estimation.</li>
+  <li><strong>Seule une série à fond compte.</strong> Une série arrêtée loin de l'échec
+      sous-estime ton 1RM, sauf si tu indiques ton RPE.</li>
+</ul>
+
+<h2>Avec le RPE</h2>
+<p>
+  Si ta série n'était pas à l'échec, le RPE dit combien de répétitions il te restait :
+  RPE 8, c'est deux en réserve [@zourdos2016]. Le calculateur les ajoute à celles que
+  tu as faites. Exemple : 100 kg × 5 à RPE 8 compte comme 7 répétitions possibles,
+  soit un 1RM estimé de 123,5 kg.
+</p>
+<p class="note">
+  Estimer ses répétitions en réserve s'apprend : chez les débutants et sur les séries
+  longues, c'est moins précis [@larsen2021]. Si tu débutes, préfère une série courte
+  et proche de l'échec, en sécurité.
+</p>
+
+<h2>Tractions et dips</h2>
+<p>
+  Au poids du corps, la charge réelle est ton poids plus le lest. Indique ton poids du
+  corps : le calculateur estime le 1RM total, puis le lest maximal. Exemple : 80 kg de
+  poids du corps, 20 kg de lest, 5 tractions donnent un 1RM total de 116,5 kg, soit un
+  lest maximal estimé de 36,5 kg.
+</p>
+
+<h2>Pourquoi estimer plutôt que tester</h2>
+<p>
+  Un vrai test de 1RM prend du temps, fatigue, et peut être risqué pour quelqu'un qui
+  ne maîtrise pas encore la technique [@macarilla2022]. Estimer à partir de tes séries
+  habituelles ne demande rien de plus que ce que tu notes déjà.
+</p>
+
+<h2>Le suivre dans ton carnet</h2>
+<p>
+  Le carnet Top Set fait ce calcul tout seul, à chaque séance : il estime le 1RM de ton
+  [[/documentation/top-set-musculation|top set]] et le compare d'une séance à l'autre. Il
+  garde aussi tes records par nombre de répétitions : 1, 3, 5, 8, 10 et 12.
+</p>
