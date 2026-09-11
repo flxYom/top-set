@@ -1,0 +1,59 @@
+{
+ "_note": "Après la mise en ligne du pilote (commit f6a8b6c). Lighthouse 12, mobile, production. Même format que lighthouse-2026-09-11.json (avant). Les pages Top set, Planche et EPS sont nouvelles ; l'accueil n'a changé que d'un lien.",
+ "accueil": {
+  "url": "https://www.top-set.fr/",
+  "date": "2026-09-11T11:24:26.679Z",
+  "scores": {
+   "performance": 90,
+   "accessibility": 96,
+   "best-practices": 100,
+   "seo": 100
+  },
+  "LCP": "2.4 s",
+  "CLS": "0.128",
+  "TBT": "20 ms",
+  "poids": "Total size was 267 KiB"
+ },
+ "top-set": {
+  "url": "https://www.top-set.fr/documentation/top-set-musculation",
+  "date": "2026-09-11T11:23:28.979Z",
+  "scores": {
+   "performance": 100,
+   "accessibility": 100,
+   "best-practices": 100,
+   "seo": 100
+  },
+  "LCP": "1.2 s",
+  "CLS": "0.002",
+  "TBT": "0 ms",
+  "poids": "Total size was 87 KiB"
+ },
+ "planche": {
+  "url": "https://www.top-set.fr/exercices/planche-gainage",
+  "date": "2026-09-11T11:23:47.683Z",
+  "scores": {
+   "performance": 100,
+   "accessibility": 100,
+   "best-practices": 100,
+   "seo": 100
+  },
+  "LCP": "1.2 s",
+  "CLS": "0.001",
+  "TBT": "0 ms",
+  "poids": "Total size was 86 KiB"
+ },
+ "carnet-eps": {
+  "url": "https://www.top-set.fr/entrainement/carnet-musculation-eps",
+  "date": "2026-09-11T11:24:08.255Z",
+  "scores": {
+   "performance": 100,
+   "accessibility": 100,
+   "best-practices": 100,
+   "seo": 100
+  },
+  "LCP": "1.2 s",
+  "CLS": "0.001",
+  "TBT": "0 ms",
+  "poids": "Total size was 86 KiB"
+ }
+}
