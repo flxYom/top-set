@@ -9,8 +9,8 @@ Pondération : demand ×2, relevance ×1.5, competition ×1.5, opportunity ×1.5
 | # | Sujet | Requête principale | Cluster | Type | Rel | Dem | Conc | Opp | Aut | Src | Liens | Prod | **Note** | Statut | URL | Risque |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | 1 | Le top set | top set musculation | top-set | définition (pilier) | 5 | 4 | 5 | 5 | 5 | 2 | 5 | 5 | **91** | PUBLISHED | /documentation/top-set-musculation | faible |
-| 2 | Le 1RM (répétition maximale) | 1rm musculation | charge | définition (pilier) | 5 | 5 | 2 | 3 | 5 | 5 | 5 | 5 | **86** | SELECTED | /documentation/1rm-musculation | faible |
-| 3 | Le back-off set | back off set musculation | top-set | définition | 5 | 3 | 5 | 5 | 4 | 2 | 5 | 5 | **85** | SELECTED | /documentation/back-off-set | faible |
+| 2 | Le 1RM (répétition maximale) | 1rm musculation | charge | définition (pilier) | 5 | 5 | 2 | 3 | 5 | 5 | 5 | 5 | **86** | PUBLISHED | /documentation/1rm-musculation | faible |
+| 3 | Le back-off set | back off set musculation | top-set | définition | 5 | 3 | 5 | 5 | 4 | 2 | 5 | 5 | **85** | PUBLISHED | /documentation/back-off-set | faible |
 | 4 | L'échelle RPE en musculation | rpe musculation | intensite | définition (pilier) | 5 | 5 | 2 | 3 | 5 | 4 | 5 | 5 | **85** | PUBLISHED | /documentation/rpe-musculation | faible |
 | 5 | Carnet d'entraînement de musculation pour l'EPS (bac) | carnet de musculation eps | suivi | guide | 5 | 5 | 3 | 5 | 3 | 2 | 4 | 5 | **84** | PUBLISHED | /entrainement/carnet-musculation-eps | faible |
 | 6 | Combien de répétitions pour l'hypertrophie | nombre de répétitions hypertrophie | progression | guide | 4 | 5 | 2 | 4 | 5 | 5 | 5 | 4 | **84** | SELECTED | /entrainement/nombre-de-repetitions | faible |
@@ -22,7 +22,7 @@ Pondération : demand ×2, relevance ×1.5, competition ×1.5, opportunity ×1.5
 | 12 | Combien de séries par muscle et par semaine | combien de séries par muscle par semaine | progression | guide | 4 | 5 | 1 | 3 | 5 | 5 | 5 | 4 | **78** | SELECTED | /entrainement/nombre-de-series-par-muscle | faible |
 | 13 | Temps de repos entre les séries | temps de repos musculation | progression | guide | 5 | 5 | 1 | 3 | 4 | 4 | 4 | 5 | **78** | SELECTED | /entrainement/temps-de-repos | faible |
 | 14 | L'échec musculaire | échec musculaire | intensite | guide | 4 | 5 | 2 | 3 | 5 | 3 | 5 | 4 | **77** | PUBLISHED | /documentation/echec-musculaire | faible |
-| 15 | Tableau RPE → % du 1RM | tableau rpe pourcentage | intensite | outil | 5 | 4 | 2 | 3 | 4 | 3 | 5 | 5 | **77** | SELECTED | /outils/tableau-rpe | faible |
+| 15 | Tableau RPE → % du 1RM | tableau rpe pourcentage | intensite | outil | 5 | 4 | 2 | 3 | 4 | 3 | 5 | 5 | **77** | PUBLISHED | /outils/tableau-rpe | faible |
 | 16 | Tableau des pourcentages du 1RM | pourcentage 1rm | charge | outil | 5 | 4 | 2 | 3 | 4 | 4 | 5 | 4 | **76** | IDEA | /outils/pourcentages-1rm | faible |
 | 17 | Progresser au développé couché | progresser développé couché | exercices | guide | 5 | 4 | 2 | 3 | 3 | 3 | 5 | 5 | **75** | IDEA | /entrainement/progresser-developpe-couche | faible |
 | 18 | Exemple de carnet d'entraînement rempli | exemple carnet d'entraînement musculation | suivi | guide | 5 | 3 | 3 | 4 | 3 | 2 | 4 | 5 | **74** | MERGE | /entrainement/suivre-sa-progression | faible |
@@ -102,7 +102,7 @@ Pondération : demand ×2, relevance ×1.5, competition ×1.5, opportunity ×1.5
 - **Concurrence** : DDG FR : un fil de forum, un blog de coach (~850 mots, 0 source), une page d'éditeur d'app (FR/EN mêlés, 0 source), puis vidéos et réseaux
 - **Notes** : Le nom de la marque. Aucune méta-analyse sur la méthode nommée : s'appuyer sur RPE/RIR, proximité de l'échec et charge, et le dire. Désambiguïser (barre chocolatée « Top Set » dans l'autocomplétion).
 
-### Le 1RM (répétition maximale) — 86 (SELECTED)
+### Le 1RM (répétition maximale) — 86 (PUBLISHED)
 
 - **Requête** : 1rm musculation · variantes : 1rm signification, c'est quoi 1rm en musculation, rm musculation définition, 1 rm musculation
 - **Intention** : informationnelle · **page parente** : /documentation
@@ -110,7 +110,7 @@ Pondération : demand ×2, relevance ×1.5, competition ×1.5, opportunity ×1.5
 - **Concurrence** : DDG FR : surtout des calculateurs ; peu de pages de définition sourcées
 - **Notes** : Inclut les formules (Epley, Brzycki…) et leur précision : fusion de l'id formules-1rm. L'app affiche un 1RM estimé.
 
-### Le back-off set — 85 (SELECTED)
+### Le back-off set — 85 (PUBLISHED)
 
 - **Requête** : back off set musculation · variantes : back off set musculation définition, back off set vs drop set, c'est quoi un back off en musculation
 - **Intention** : informationnelle · **page parente** : /documentation/top-set-musculation
@@ -206,7 +206,7 @@ Pondération : demand ×2, relevance ×1.5, competition ×1.5, opportunity ×1.5
 - **Concurrence** : DDG FR : 10 blogs, un site résume « ce que dit la recherche »
 - **Notes** : Méta-analyses récentes sur la proximité de l'échec (à vérifier une à une avant rédaction).
 
-### Tableau RPE → % du 1RM — 77 (SELECTED)
+### Tableau RPE → % du 1RM — 77 (PUBLISHED)
 
 - **Requête** : tableau rpe pourcentage · variantes : calcul rpe musculation, tableau rpe powerlifting, tableau rpe rir
 - **Intention** : outil · **page parente** : /documentation/rpe-musculation
