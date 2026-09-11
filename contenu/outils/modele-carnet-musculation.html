@@ -1,0 +1,92 @@
+<!--
+{
+  "type": "outil",
+  "title": "Carnet de musculation Excel : modèle gratuit (CSV)",
+  "description": "Un modèle de carnet de musculation pour Excel, LibreOffice ou Google Sheets, au format CSV. Remplis-le, ajoute tes formules, réimporte-le dans Top Set.",
+  "h1": "Modèle de carnet de musculation pour Excel",
+  "fil": "Modèle Excel",
+  "lede": "Tu préfères un tableur ? Voici un modèle de carnet de musculation, gratuit, qui s'ouvre dans Excel, LibreOffice ou Google Sheets. Il a exactement le format de l'export de Top Set : ce que tu y notes se réimporte dans l'app, le jour où tu veux.",
+  "primaryQuery": "carnet de musculation excel",
+  "published": "2026-09-11",
+  "reviewed": "2026-09-11",
+  "ordre": 3,
+  "sommaire": false,
+  "related": ["/carnet-de-musculation", "/entrainement/suivre-sa-progression", "/outils/calculateur-1rm"],
+  "sources": {
+    "harkin2016": "sur 138 essais randomisés, suivre ses progrès aide à atteindre ses objectifs, davantage quand l'information est notée.",
+    "reynolds2006": "sur 70 personnes, les séries de 5 répétitions maximales prédisent le mieux le 1RM ; pas plus de 10 répétitions dans une formule linéaire."
+  }
+}
+-->
+<div class="calc">
+  <p><strong>Deux fichiers, au choix :</strong></p>
+  <ul>
+    <li><a href="/outils/modele-carnet-musculation.csv" download>Le modèle vierge</a> — juste les colonnes, prêt à remplir.</li>
+    <li><a href="/outils/exemple-carnet-musculation.csv" download>Un exemple rempli</a> — deux séances d'une semaine, pour voir comment noter.</li>
+  </ul>
+  <p>Format CSV, séparateur point-virgule, virgule décimale : ce qu'attend un Excel réglé en français. Aucune macro, aucune inscription.</p>
+</div>
+
+<h2>Les colonnes</h2>
+<p>Une ligne par série. Seules <strong>Date</strong>, <strong>Exercice</strong> et <strong>Poids</strong> ou <strong>Répétitions</strong> sont indispensables.</p>
+<div class="defile">
+  <table>
+    <caption>Les colonnes du modèle, dans l'ordre</caption>
+    <thead><tr><th>Colonne</th><th>Ce que tu y mets</th></tr></thead>
+    <tbody>
+      <tr><td>Date</td><td>2026-09-07 ou 07/09/2026</td></tr>
+      <tr><td>Jour</td><td>Lundi… (facultatif)</td></tr>
+      <tr><td>Exercice</td><td>Développé couché, Squat… Toujours le même nom pour le même mouvement</td></tr>
+      <tr><td>Groupe</td><td>Pectoraux, Dos, Épaules, Bras, Jambes, Abdos, Cardio ou Autre</td></tr>
+      <tr><td>Serie</td><td>1, 2, 3… : le numéro de la série dans l'exercice</td></tr>
+      <tr><td>Poids (kg)</td><td>La charge totale, barre comprise : 82,5</td></tr>
+      <tr><td>Repetitions</td><td>8, ou une durée pour un exercice tenu : 45 s</td></tr>
+      <tr><td>RPE</td><td>La difficulté, de 6 à 10 (facultatif)</td></tr>
+      <tr><td>Repos (s)</td><td>Le repos après la série, en secondes (facultatif)</td></tr>
+      <tr><td>Volume (kg)</td><td>Poids × répétitions (facultatif, voir les formules)</td></tr>
+      <tr><td>Fait</td><td>oui ou non (facultatif)</td></tr>
+    </tbody>
+  </table>
+</div>
+<p>
+  Pour la charge : [[/documentation/poids-de-la-barre|combien pèse la barre]]. Pour le
+  RPE : [[/documentation/rpe-musculation|l'échelle RPE]].
+</p>
+
+<h2>Des formules utiles</h2>
+<p>
+  Ajoute des colonnes à droite du tableau : l'import de Top Set les ignorera. Avec la
+  ligne 2 comme exemple (F = poids, G = répétitions) :
+</p>
+<ul>
+  <li><strong>Volume</strong> : <code>=F2*G2</code></li>
+  <li><strong>1RM estimé</strong> (formule d'Epley, celle de l'app) :
+      <code>=F2*(1+G2/30)</code>. À n'utiliser que pour des séries courtes : au-delà de
+      10 répétitions, ces formules deviennent peu fiables [@reynolds2006]. Le
+      [[/outils/calculateur-1rm|calculateur de 1RM]] explique pourquoi.</li>
+</ul>
+
+<h2>Le réimporter dans Top Set</h2>
+<ol>
+  <li>Dans le tableur, enregistre en <strong>CSV</strong> (Excel : « CSV (séparateur :
+      point-virgule) » ; Google Sheets : Fichier › Télécharger › CSV).</li>
+  <li>Dans l'app, touche le bouton <strong>⇅</strong> en haut de l'écran (tes données),
+      puis <strong>Choisir un fichier</strong> dans « Importer ».</li>
+  <li>Appuie sur <strong>Ajouter à mes données</strong>.</li>
+</ol>
+<p>
+  L'import <strong>ajoute</strong> ce qui manque et ne remplace rien : ce qui est déjà
+  dans ton carnet ne bouge pas, et réimporter deux fois le même fichier n'ajoute rien de
+  plus. Les virgules décimales et les dates au format 07/09/2026 sont comprises.
+</p>
+
+<h2>Tableur ou app ?</h2>
+<p>
+  Noter, c'est ce qui compte : suivre ses progrès aide à atteindre ses objectifs,
+  davantage quand on note [@harkin2016]. Le tableur a un avantage : tu le modèles comme
+  tu veux. Il a un inconvénient : tout ce qui se calcule, c'est à toi de le faire. Le
+  [[/carnet-de-musculation|carnet Top Set]] fait les calculs à ta place — dernière
+  séance, top set, 1RM estimé, records, charge suggérée — sans compte et hors ligne, et
+  il exporte vers ce même format quand tu veux revenir au tableur. Voir aussi
+  [[/entrainement/suivre-sa-progression|comment suivre sa progression]].
+</p>

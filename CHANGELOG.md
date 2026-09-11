@@ -18,7 +18,7 @@ while it stays below `1.0.0`, breaking changes (in particular to the
   written from the February 2026 official texts
   (`/entrainement/carnet-musculation-eps`), and the plank
   (`/exercices/planche-gainage`) — plus section hubs, a page on how the pages
-  are made (`/methode-editoriale`) and a branded 404. 45 sources cited, each opened
+  are made (`/methode-editoriale`) and a branded 404. 50 sources cited, each opened
   and labelled with what was read. Signed « Yom Industry × Claude
   (Anthropic) ». Everything sits under one main section, **Apprendre**
   (`/apprendre`, listing every section and page): a fourth app tab next to
@@ -82,6 +82,17 @@ while it stays below `1.0.0`, breaking changes (in particular to the
   and 2018, Harkin 2016, Michie 2009, Coleman 2024, Craven 2022). The plateau
   page says plainly that nutrition is not covered yet rather than advise
   without sources.
+- **Content, batch 5 — exercises and tools** (French): the bench press
+  (`/exercices/developpe-couche`, the full exercise template: fiche, drawn
+  profile diagram, setup from the IPF 2026 rulebook, EMG review, incline study,
+  Valsalva review, shoulder-load study), how much the bar weighs
+  (`/documentation/poids-de-la-barre`: 20 kg per the IPF, other bars left
+  unquantified rather than guessed) and a spreadsheet log template
+  (`/outils/modele-carnet-musculation`, two CSV files in the app's exact export
+  format; 8 new logic tests prove the published files re-import). The outils
+  hub, at three pages, becomes indexable. The 15 selected topics are all
+  published. The generator now asks for a related exercise only once three
+  other exercise pages exist, so it no longer forces an irrelevant link.
 - **SEO and content strategy** (`docs/seo/`, not published). An audit of the
   real site — the home page shows Googlebot 118 words and a sign-up screen, no
   page answers a search — research from Google autocomplete (155 seed queries,

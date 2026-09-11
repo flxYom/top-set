@@ -679,13 +679,14 @@ documentation/  entrainement/  exercices/  outils/
 contenu.css              styles des pages de contenu
 outils/outils.js         calculateurs (fichier externe : la CSP refuse le script en ligne)
 outils/tableau-rpe.js    le tableau RPE : % du 1RM ou kg, même formule que le carnet
+outils/*.csv             modèle de carnet vierge et exemple, au format de l'export (réimportables, testés)
 img/                     captures de l'app pour la page produit (WebP)
 supabase.umd.js          supabase-js 2.115.0, chargé à la demande
 supabase-config.js       URL du projet + clé publique (voir Comptes)
 supabase/schema.sql      tables, politiques RLS et fonctions de synchro
 supabase/test/           le schéma testé sur un vrai Postgres (PGlite) : RLS (233),
                          montée depuis chaque version passée (11)
-test/                    logique métier (146), gardes de sécurité (167), liens (111), gabarits de contenu (15)
+test/                    logique métier (154), gardes de sécurité (167), liens (123), gabarits de contenu (15)
 LICENSE  SECURITY.md  CONTRIBUTING.md  CHANGELOG.md
 .github/                 modèles d'issues, workflow de CI
 .vercelignore            ce que le site ne publie pas : docs, schéma, tests, source du contenu
@@ -861,7 +862,8 @@ Pages publiées : le top set, le calculateur de 1RM, la page produit, le carnet
 de musculation pour l'EPS, la planche ; puis, par lots de trois, l'échelle RPE,
 le RIR et l'échec musculaire ; le 1RM, le back-off set et le tableau RPE ; la
 surcharge progressive, le nombre de répétitions et le nombre de séries par muscle ;
-le temps de repos, la stagnation et suivre sa progression.
+le temps de repos, la stagnation et suivre sa progression ; le développé couché,
+le poids de la barre et un modèle de carnet pour Excel.
 
 **Comment elles sont fabriquées.** Toujours pas de framework ni d'étape de
 construction chez Vercel. Chaque page a sa source dans `contenu/` : un fichier
@@ -894,7 +896,8 @@ chaque type, et refuse une page qui en oublie une partie :
   respiration), affichée avant le sommaire et dont les sources sont numérotées
   comme le reste ; ses sections « position et exécution », « erreurs
   fréquentes » et « variantes » ; au moins une notion liée, et un autre exercice
-  lié dès qu'il en existe un.
+  lié dès qu'au moins trois autres fiches existent (avant, le lien serait
+  artificiel : le développé couché n'a rien à voir avec la planche).
 
 « À lire ensuite » affiche la rubrique de chaque page liée. `test/contenu.test.mjs`
 retire ces éléments à une copie du site et vérifie que le générateur refuse bien,

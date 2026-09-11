@@ -30,13 +30,13 @@ Pondération : demand ×2, relevance ×1.5, competition ×1.5, opportunity ×1.5
 | 20 | La planche (gainage) : combien de temps | planche abdos combien de temps | exercices | exercice | 5 | 4 | 2 | 3 | 3 | 3 | 4 | 5 | **74** | PUBLISHED | /exercices/planche-gainage | faible |
 | 21 | L'autorégulation | autorégulation musculation | intensite | définition | 5 | 1 | 4 | 4 | 4 | 3 | 4 | 5 | **73** | IDEA | /documentation/autoregulation | faible |
 | 22 | Progresser au soulevé de terre | comment progresser au soulevé de terre | exercices | guide | 5 | 3 | 3 | 3 | 3 | 3 | 4 | 5 | **73** | IDEA | /entrainement/progresser-souleve-de-terre | faible |
-| 23 | Modèle de carnet de musculation (Excel / CSV) | carnet de musculation excel | suivi | outil | 5 | 4 | 3 | 4 | 2 | 1 | 3 | 5 | **72** | SELECTED | /outils/modele-carnet-musculation | faible |
+| 23 | Modèle de carnet de musculation (Excel / CSV) | carnet de musculation excel | suivi | outil | 5 | 4 | 3 | 4 | 2 | 1 | 3 | 5 | **72** | PUBLISHED | /outils/modele-carnet-musculation | faible |
 | 24 | Combien de fois s'entraîner par semaine | fréquence entraînement musculation | progression | guide | 3 | 5 | 2 | 3 | 4 | 5 | 4 | 3 | **72** | IDEA | /entrainement/frequence | faible |
 | 25 | Sortir d'une stagnation | stagnation musculation | progression | guide | 5 | 3 | 2 | 3 | 4 | 2 | 5 | 5 | **72** | PUBLISHED | /entrainement/stagnation | faible |
 | 26 | Le record personnel (PR) | pr musculation | charge | définition | 5 | 2 | 4 | 4 | 3 | 1 | 4 | 5 | **71** | IDEA | /documentation/record-personnel | faible |
 | 27 | Tester son 1RM sans se blesser | comment tester son 1rm | charge | guide | 4 | 3 | 3 | 3 | 4 | 4 | 4 | 4 | **71** | IDEA | /entrainement/tester-son-1rm | moyen |
 | 28 | Programmer top set + back-off | top set back off programme | top-set | guide | 5 | 2 | 4 | 4 | 3 | 2 | 3 | 5 | **71** | MERGE | /documentation/top-set-musculation | faible |
-| 29 | Développé couché | développé couché | exercices | exercice | 4 | 5 | 1 | 2 | 4 | 3 | 5 | 4 | **70** | SELECTED | /exercices/developpe-couche | faible |
+| 29 | Développé couché | développé couché | exercices | exercice | 4 | 5 | 1 | 2 | 4 | 3 | 5 | 4 | **70** | PUBLISHED | /exercices/developpe-couche | faible |
 | 30 | La périodisation | périodisation musculation | progression | guide | 4 | 3 | 3 | 3 | 4 | 5 | 4 | 3 | **70** | IDEA | /entrainement/periodisation | faible |
 | 31 | À quelle vitesse progresser | progression musculation 3 mois | progression | guide | 4 | 3 | 3 | 3 | 3 | 3 | 4 | 5 | **70** | IDEA | /entrainement/vitesse-de-progression | moyen |
 | 32 | Soulevé de terre | soulevé de terre | exercices | exercice | 4 | 5 | 1 | 2 | 4 | 3 | 5 | 4 | **70** | IDEA | /exercices/souleve-de-terre | faible |
@@ -54,7 +54,7 @@ Pondération : demand ×2, relevance ×1.5, competition ×1.5, opportunity ×1.5
 | 44 | La méthode 5/3/1 de Wendler | 5/3/1 wendler | programmes | guide | 4 | 3 | 3 | 4 | 3 | 1 | 4 | 4 | **66** | IDEA | /entrainement/wendler-531 | faible |
 | 45 | Application de musculation gratuite | application musculation gratuite | suivi | page produit | 5 | 5 | 1 | 2 | 2 | 1 | 3 | 5 | **65** | MERGE | /carnet-de-musculation | faible |
 | 46 | Force ou hypertrophie | force ou hypertrophie | progression | guide | 4 | 2 | 3 | 3 | 4 | 4 | 4 | 3 | **65** | IDEA | /entrainement/force-ou-hypertrophie | faible |
-| 47 | Combien pèse la barre ? | combien pèse la barre développé couché | exercices | définition | 4 | 3 | 4 | 4 | 2 | 1 | 3 | 4 | **65** | SELECTED | /documentation/poids-de-la-barre | faible |
+| 47 | Combien pèse la barre ? | combien pèse la barre développé couché | exercices | définition | 4 | 3 | 4 | 4 | 2 | 1 | 3 | 4 | **65** | PUBLISHED | /documentation/poids-de-la-barre | faible |
 | 48 | Programme débutant en salle | programme musculation débutant | programmes | guide | 3 | 5 | 1 | 2 | 3 | 3 | 5 | 4 | **65** | IDEA | /entrainement/programme-debutant | moyen |
 | 49 | Les types de séries | types de séries musculation | top-set | définition | 4 | 1 | 4 | 3 | 4 | 2 | 5 | 4 | **65** | MERGE | /documentation/top-set-musculation | faible |
 | 50 | Programme full body | full body programme musculation | programmes | guide | 3 | 5 | 1 | 2 | 3 | 3 | 4 | 4 | **64** | IDEA | /entrainement/full-body | faible |
@@ -269,7 +269,7 @@ Pondération : demand ×2, relevance ×1.5, competition ×1.5, opportunity ×1.5
 - **Demande** : autocomplétion : présent
 - **Concurrence** : non mesurée
 
-### Modèle de carnet de musculation (Excel / CSV) — 72 (SELECTED)
+### Modèle de carnet de musculation (Excel / CSV) — 72 (PUBLISHED)
 
 - **Requête** : carnet de musculation excel · variantes : carnet de musculation pdf, tableau suivi musculation, modèle carnet de musculation excel
 - **Intention** : transactionnelle · **page parente** : /carnet-de-musculation
@@ -316,7 +316,7 @@ Pondération : demand ×2, relevance ×1.5, competition ×1.5, opportunity ×1.5
 - **Concurrence** : DDG : pages anglaises (Andy Baker, BarBend)
 - **Notes** : Même intention que le pilier : fusionné dans /documentation/top-set-musculation (section exemples squat/développé/soulevé).
 
-### Développé couché — 70 (SELECTED)
+### Développé couché — 70 (PUBLISHED)
 
 - **Requête** : développé couché · variantes : développé couché haltère, développé couché technique, développé couché muscles
 - **Intention** : informationnelle · **page parente** : /exercices
@@ -454,7 +454,7 @@ Pondération : demand ×2, relevance ×1.5, competition ×1.5, opportunity ×1.5
 - **Concurrence** : non mesurée
 - **Notes** : CANNIBALISATION possible avec repetitions : à différencier ou fusionner.
 
-### Combien pèse la barre ? — 65 (SELECTED)
+### Combien pèse la barre ? — 65 (PUBLISHED)
 
 - **Requête** : combien pèse la barre développé couché · variantes : combien pèse la barre basic fit, poids barre olympique, poids barre ez
 - **Intention** : informationnelle · **page parente** : /exercices
