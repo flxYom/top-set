@@ -10,7 +10,7 @@
 // depuis un cache reviendrait a afficher des seances perimees en croyant
 // etre a jour. Le hors-ligne des donnees, c'est localStorage, pas ici.
 
-var VERSION = 'topset-v15';
+var VERSION = 'topset-v16';
 var COQUILLE = VERSION + '-coquille';
 var COURANT  = VERSION + '-courant';
 
@@ -23,6 +23,7 @@ var A_PRECHARGER = [
   'icon-192.png',
   'icon-512.png',
   'favicon-32.png',
+  'favicon-48.png',
   'fonts/bricolage-latin.woff2',
   'fonts/bricolage-latin-ext.woff2',
   'chart.umd.js',

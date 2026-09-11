@@ -373,5 +373,26 @@ ok('et leur en-tete, avec la croix, reste en haut quand on defile',
    /\.sheet-head\{[^}]*position:sticky/.test(STYLE));
 ok('l ecran d accueil aussi', /\.accueil\{[^}]*env\(safe-area-inset-top/.test(STYLE));
 
+console.log('\n== 20. Ce que Google voit ==');
+const TITRE = (HTML.match(/<title>([^<]*)<\/title>/) || [])[1] || '';
+ok('le titre dit ce qu est l app, pas seulement son nom', /carnet de musculation/i.test(TITRE), TITRE);
+ok('et il tient dans un resultat de recherche', TITRE.length <= 60, TITRE.length + ' caracteres');
+const DESCR = (HTML.match(/<meta name="description" content="([^"]*)">/) || [])[1] || '';
+ok('la description est une vraie phrase, sans etre tronquee par Google',
+   DESCR.length >= 110 && DESCR.length <= 160, DESCR.length + ' caracteres');
+const LD = (HTML.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/) || [])[1];
+let site = null; try { site = JSON.parse(LD); } catch (e) {}
+ok('le nom du site est declare pour Google', site && site['@type'] === 'WebSite' && site.name === 'Top Set');
+ok('et son adresse est la canonique', site && HTML.indexOf('<link rel="canonical" href="' + site.url + '">') > -1);
+const RACINE = new URL('../', import.meta.url);
+const ico = readFileSync(new URL('favicon.ico', RACINE));
+ok('favicon.ico existe, pour les navigateurs qui le demandent d office',
+   ico.readUInt16LE(2) === 1 && ico.readUInt16LE(4) >= 1);
+ok('un favicon d au moins 48 px est annonce, la taille que Google demande',
+   HTML.indexOf('sizes="48x48" href="favicon-48.png"') > -1);
+const PLAN = readFileSync(new URL('sitemap.xml', RACINE), 'utf8');
+for (const p of ['/', '/guide', '/confidentialite', '/cgu', '/mentions-legales'])
+  ok('le plan du site liste ' + p, PLAN.indexOf('<loc>https://www.top-set.fr' + p + '</loc>') > -1);
+
 console.log(`\n${pass} reussis, ${fail} echoues`);
 process.exit(fail ? 1 : 0);

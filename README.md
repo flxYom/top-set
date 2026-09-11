@@ -51,6 +51,7 @@ repository is for right now.
 - [Project structure](#project-structure)
 - [Running it locally](#running-it-locally)
 - [Deploying](#deploying)
+- [Search engines](#search-engines)
 - [Installing on a phone](#installing-on-a-phone)
 - [What it is not](#what-it-is-not)
 - [Roadmap](#roadmap)
@@ -534,7 +535,9 @@ chart.umd.js             Chart.js 4.4.1, loaded on demand
 fonts/                   Bricolage Grotesque, self-hosted (latin + latin-ext)
 screenshots/             README screenshots (planning, session, recap)
 icon.svg                 primary favicon
-favicon-16/32.png        fallbacks where SVG favicons are not supported
+favicon-16/32/48.png     fallbacks where SVG favicons are not supported; 48 px is
+                         the size Google asks for in its results
+favicon.ico              16 + 32 + 48 px, for browsers that request it on their own
 icon-180/192/512.png     home screen and PWA icons
 og-image.png             social preview, 1200×630
 manifest.webmanifest     PWA manifest
@@ -545,7 +548,7 @@ supabase-config.js       project URL + public anon key (see Accounts)
 supabase/schema.sql      tables, RLS policies and sync functions
 supabase/test/           the schema tested on a real Postgres (PGlite): RLS (233),
                          upgrade from every past version (11)
-test/                    business logic (146), hardening guards (139), links (19)
+test/                    business logic (146), hardening guards (151), links (19)
 LICENSE  SECURITY.md  CONTRIBUTING.md  CHANGELOG.md
 .github/                 issue templates, CI workflow
 .vercelignore            what the site does not publish: docs, schema, tests
@@ -650,6 +653,24 @@ placeholder domain gave way to the real one, and has been removed.
 **On every release that touches the app**, the service worker version
 (`VERSION` in `sw.js`) moves up one notch: that is what tells phones to replace
 the cached shell.
+
+---
+
+## Search engines
+
+What code can do is done: a **title** that says what the app is (« Top Set —
+carnet de musculation gratuit ») rather than just its name, which is also the
+name of a training method; a **description** under 160 characters, where Google
+cuts; the **site name** declared as `WebSite` structured data; a 48 px
+**favicon** and a `favicon.ico`; `robots.txt` and `sitemap.xml`; one canonical
+URL per page, with `top-set.fr` redirecting to `www.top-set.fr`. The guards in
+`test/gabarits.test.mjs` check the title and description length, the
+`WebSite` block, the favicon and the sitemap.
+
+The rest is not code. Until the domain is declared in **Google Search Console**
+(one DNS record at the registrar, then submitting the sitemap), Google only finds
+it by chance. Indexing then takes days to weeks; ranking for generic queries
+takes time, links from other sites, and pages that answer what people search.
 
 ---
 

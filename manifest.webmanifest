@@ -1,7 +1,7 @@
 {
   "name": "Top Set",
   "short_name": "Top Set",
-  "description": "Carnet de musculation — séances, séries et records.",
+  "description": "Carnet de musculation gratuit : séances, séries, records et progression.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
