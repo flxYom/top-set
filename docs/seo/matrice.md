@@ -8,17 +8,17 @@ Pondération : demand ×2, relevance ×1.5, competition ×1.5, opportunity ×1.5
 
 | # | Sujet | Requête principale | Cluster | Type | Rel | Dem | Conc | Opp | Aut | Src | Liens | Prod | **Note** | Statut | URL | Risque |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 1 | Le top set | top set musculation | top-set | définition (pilier) | 5 | 4 | 5 | 5 | 5 | 2 | 5 | 5 | **91** | SELECTED | /documentation/top-set-musculation | faible |
+| 1 | Le top set | top set musculation | top-set | définition (pilier) | 5 | 4 | 5 | 5 | 5 | 2 | 5 | 5 | **91** | PUBLISHED | /documentation/top-set-musculation | faible |
 | 2 | Le 1RM (répétition maximale) | 1rm musculation | charge | définition (pilier) | 5 | 5 | 2 | 3 | 5 | 5 | 5 | 5 | **86** | SELECTED | /documentation/1rm-musculation | faible |
 | 3 | Le back-off set | back off set musculation | top-set | définition | 5 | 3 | 5 | 5 | 4 | 2 | 5 | 5 | **85** | SELECTED | /documentation/back-off-set | faible |
 | 4 | L'échelle RPE en musculation | rpe musculation | intensite | définition (pilier) | 5 | 5 | 2 | 3 | 5 | 4 | 5 | 5 | **85** | SELECTED | /documentation/rpe-musculation | faible |
-| 5 | Carnet d'entraînement de musculation pour l'EPS (bac) | carnet de musculation eps | suivi | guide | 5 | 5 | 3 | 5 | 3 | 2 | 4 | 5 | **84** | SELECTED | /entrainement/carnet-musculation-eps | faible |
+| 5 | Carnet d'entraînement de musculation pour l'EPS (bac) | carnet de musculation eps | suivi | guide | 5 | 5 | 3 | 5 | 3 | 2 | 4 | 5 | **84** | PUBLISHED | /entrainement/carnet-musculation-eps | faible |
 | 6 | Combien de répétitions pour l'hypertrophie | nombre de répétitions hypertrophie | progression | guide | 4 | 5 | 2 | 4 | 5 | 5 | 5 | 4 | **84** | SELECTED | /entrainement/nombre-de-repetitions | faible |
 | 7 | La surcharge progressive | surcharge progressive musculation | progression | guide (pilier) | 5 | 5 | 2 | 3 | 5 | 3 | 5 | 5 | **83** | SELECTED | /entrainement/surcharge-progressive | faible |
-| 8 | Calculateur de 1RM (avec RPE) | calcul 1rm | charge | outil | 5 | 5 | 1 | 3 | 4 | 5 | 5 | 5 | **82** | SELECTED | /outils/calculateur-1rm | faible |
+| 8 | Calculateur de 1RM (avec RPE) | calcul 1rm | charge | outil | 5 | 5 | 1 | 3 | 4 | 5 | 5 | 5 | **82** | PUBLISHED | /outils/calculateur-1rm | faible |
 | 9 | Les répétitions en réserve (RIR) | rir musculation | intensite | définition | 5 | 4 | 2 | 3 | 4 | 4 | 5 | 5 | **79** | SELECTED | /documentation/rir-musculation | faible |
 | 10 | Suivre sa progression en musculation | suivi progression musculation | suivi | guide (pilier) | 5 | 3 | 3 | 4 | 4 | 3 | 5 | 5 | **79** | SELECTED | /entrainement/suivre-sa-progression | faible |
-| 11 | Carnet de musculation gratuit (page produit) | carnet de musculation | suivi | page produit | 5 | 5 | 2 | 4 | 3 | 1 | 5 | 5 | **78** | SELECTED | /carnet-de-musculation | faible |
+| 11 | Carnet de musculation gratuit (page produit) | carnet de musculation | suivi | page produit | 5 | 5 | 2 | 4 | 3 | 1 | 5 | 5 | **78** | PUBLISHED | /carnet-de-musculation | faible |
 | 12 | Combien de séries par muscle et par semaine | combien de séries par muscle par semaine | progression | guide | 4 | 5 | 1 | 3 | 5 | 5 | 5 | 4 | **78** | SELECTED | /entrainement/nombre-de-series-par-muscle | faible |
 | 13 | Temps de repos entre les séries | temps de repos musculation | progression | guide | 5 | 5 | 1 | 3 | 4 | 4 | 4 | 5 | **78** | SELECTED | /entrainement/temps-de-repos | faible |
 | 14 | L'échec musculaire | échec musculaire | intensite | guide | 4 | 5 | 2 | 3 | 5 | 3 | 5 | 4 | **77** | SELECTED | /documentation/echec-musculaire | faible |
@@ -27,7 +27,7 @@ Pondération : demand ×2, relevance ×1.5, competition ×1.5, opportunity ×1.5
 | 17 | Progresser au développé couché | progresser développé couché | exercices | guide | 5 | 4 | 2 | 3 | 3 | 3 | 5 | 5 | **75** | IDEA | /entrainement/progresser-developpe-couche | faible |
 | 18 | Exemple de carnet d'entraînement rempli | exemple carnet d'entraînement musculation | suivi | guide | 5 | 3 | 3 | 4 | 3 | 2 | 4 | 5 | **74** | MERGE | /entrainement/suivre-sa-progression | faible |
 | 19 | Formules d'estimation du 1RM | formule epley | charge | définition | 4 | 3 | 3 | 4 | 4 | 4 | 4 | 4 | **74** | MERGE | /documentation/1rm-musculation | faible |
-| 20 | La planche (gainage) : combien de temps | planche abdos combien de temps | exercices | exercice | 5 | 4 | 2 | 3 | 3 | 3 | 4 | 5 | **74** | SELECTED | /exercices/planche-gainage | faible |
+| 20 | La planche (gainage) : combien de temps | planche abdos combien de temps | exercices | exercice | 5 | 4 | 2 | 3 | 3 | 3 | 4 | 5 | **74** | PUBLISHED | /exercices/planche-gainage | faible |
 | 21 | L'autorégulation | autorégulation musculation | intensite | définition | 5 | 1 | 4 | 4 | 4 | 3 | 4 | 5 | **73** | IDEA | /documentation/autoregulation | faible |
 | 22 | Progresser au soulevé de terre | comment progresser au soulevé de terre | exercices | guide | 5 | 3 | 3 | 3 | 3 | 3 | 4 | 5 | **73** | IDEA | /entrainement/progresser-souleve-de-terre | faible |
 | 23 | Modèle de carnet de musculation (Excel / CSV) | carnet de musculation excel | suivi | outil | 5 | 4 | 3 | 4 | 2 | 1 | 3 | 5 | **72** | SELECTED | /outils/modele-carnet-musculation | faible |
@@ -94,7 +94,7 @@ Pondération : demand ×2, relevance ×1.5, competition ×1.5, opportunity ×1.5
 
 ## Signaux et notes, sujet par sujet
 
-### Le top set — 91 (SELECTED)
+### Le top set — 91 (PUBLISHED)
 
 - **Requête** : top set musculation · variantes : top set musculation définition, c'est quoi un top set, top set back off, top set back off explication
 - **Intention** : informationnelle · **page parente** : /documentation
@@ -126,7 +126,7 @@ Pondération : demand ×2, relevance ×1.5, competition ×1.5, opportunity ×1.5
 - **Concurrence** : DDG FR : 10 guides « complets » de blogs et coachs, plusieurs avec calculateur ; qualité inégale
 - **Notes** : Se différencier par : échelle basée sur les répétitions en réserve (Zourdos 2016, Helms 2016), précision réelle de l'auto-estimation, exemples de salle, lien direct avec la saisie du RPE dans l'app. Couvre aussi RPE vs Borg (section).
 
-### Carnet d'entraînement de musculation pour l'EPS (bac) — 84 (SELECTED)
+### Carnet d'entraînement de musculation pour l'EPS (bac) — 84 (PUBLISHED)
 
 - **Requête** : carnet de musculation eps · variantes : carnet d'entraînement musculation bac, carnet d'entraînement musculation terminale, carnet musculation lycée, fiche musculation bac
 - **Intention** : informationnelle · **page parente** : /carnet-de-musculation
@@ -150,7 +150,7 @@ Pondération : demand ×2, relevance ×1.5, competition ×1.5, opportunity ×1.5
 - **Concurrence** : DDG FR : 10 guides (dont Gymshark, Nutrimuscle, un domaine exact ma-surcharge.fr)
 - **Notes** : Pilier du cluster progression. Angle : sans suivi, pas de surcharge progressive mesurable — lien naturel avec le carnet.
 
-### Calculateur de 1RM (avec RPE) — 82 (SELECTED)
+### Calculateur de 1RM (avec RPE) — 82 (PUBLISHED)
 
 - **Requête** : calcul 1rm · variantes : calculateur 1rm, calcul 1rm développé couché, calcul 1rm squat, calcul 1rm traction, calculateur 1rm rpe, calcul 1rm formule
 - **Intention** : outil · **page parente** : /documentation/1rm-musculation
@@ -174,7 +174,7 @@ Pondération : demand ×2, relevance ×1.5, competition ×1.5, opportunity ×1.5
 - **Concurrence** : non mesurée précisément
 - **Notes** : Pilier « suivi » : quoi noter, pourquoi, comment lire ses données (records, volume, signaux). Ne pas cannibaliser la page produit : ici la méthode, là l'outil.
 
-### Carnet de musculation gratuit (page produit) — 78 (SELECTED)
+### Carnet de musculation gratuit (page produit) — 78 (PUBLISHED)
 
 - **Requête** : carnet de musculation · variantes : carnet de musculation gratuit, carnet de musculation app, carnet de musculation en ligne, application musculation gratuite sans abonnement, application suivi musculation gratuite
 - **Intention** : transactionnelle · **page parente** : /
@@ -246,7 +246,7 @@ Pondération : demand ×2, relevance ×1.5, competition ×1.5, opportunity ×1.5
 - **Concurrence** : non mesurée
 - **Notes** : Section du pilier 1RM.
 
-### La planche (gainage) : combien de temps — 74 (SELECTED)
+### La planche (gainage) : combien de temps — 74 (PUBLISHED)
 
 - **Requête** : planche abdos combien de temps · variantes : gainage planche, planche abdos efficace, gainage débutant, planche abdos 30 jours
 - **Intention** : informationnelle · **page parente** : /exercices

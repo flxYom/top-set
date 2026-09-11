@@ -45,10 +45,17 @@ sync) and `intelligence.js` (pure business logic, tested). Run the tests
 before sending anything:
 
 ```bash
-node test/intelligence.test.mjs && node test/gabarits.test.mjs && node test/liens.test.mjs
+node test/intelligence.test.mjs && node test/gabarits.test.mjs && node test/liens.test.mjs && node scripts/contenu.mjs --verifier
 ```
 
 `guide.html`, `cgu.html`, `confidentialite.html` and
-`mentions-legales.html` are static pages sharing `legal.css`. See the
+`mentions-legales.html` are static pages sharing `legal.css`.
+
+The content pages (`documentation/`, `entrainement/`, `exercices/`,
+`outils/`, `carnet-de-musculation.html`, `methode-editoriale.html`,
+`404.html`) and `sitemap.xml` are **generated**: edit their source in
+`contenu/`, then run `node scripts/contenu.mjs`. Never edit the generated
+files by hand — CI fails when they differ from their source. A page may only
+cite sources listed in `contenu/sources.json`, each one actually opened. See the
 README's [Project structure](README.md#project-structure) section for
 the full list.

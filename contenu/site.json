@@ -1,0 +1,60 @@
+{
+  "_lisezmoi": "Configuration du générateur (scripts/contenu.mjs). « statiques » : les pages écrites à la main, reprises telles quelles dans sitemap.xml (mettre à jour lastmod quand leur contenu change). « hubs » : les rubriques ; leur page liste leurs enfants et n'est indexable qu'à partir de 3 pages. « erreur » : la page 404.",
+  "statiques": [
+    { "url": "/", "lastmod": "2026-09-11" },
+    { "url": "/guide", "lastmod": "2026-09-11" },
+    { "url": "/mentions-legales", "lastmod": "2026-09-11" },
+    { "url": "/confidentialite", "lastmod": "2026-09-11" },
+    { "url": "/cgu", "lastmod": "2026-09-11" }
+  ],
+  "hubs": [
+    {
+      "url": "/documentation",
+      "nav": "Documentation",
+      "resume": "Les notions, une par page : top set, RPE, 1RM, échec…",
+      "title": "Documentation musculation : les notions expliquées",
+      "description": "Top set, back-off, RPE, 1RM : chaque notion de la musculation expliquée sur une page, avec des exemples chiffrés et des sources vérifiables.",
+      "h1": "Documentation",
+      "lede": "Une notion, une page : ce que c'est, ce que dit la recherche, et comment la noter dans ton carnet.",
+      "published": "2026-09-11"
+    },
+    {
+      "url": "/entrainement",
+      "nav": "Entraînement",
+      "resume": "Progresser, doser, suivre : les guides pratiques.",
+      "title": "Entraînement : guides pour progresser en musculation",
+      "description": "Des guides pratiques pour organiser tes séances, suivre ta progression et tenir un carnet de musculation, au lycée comme en salle, sources à l'appui.",
+      "h1": "Entraînement",
+      "lede": "Des guides pour organiser ton entraînement et suivre ta progression, sans programme miracle.",
+      "published": "2026-09-11"
+    },
+    {
+      "url": "/exercices",
+      "nav": "Exercices",
+      "resume": "Les mouvements : bien les faire, puis progresser.",
+      "title": "Exercices de musculation : exécution et progression",
+      "description": "Les exercices de musculation, un par page : la bonne position, les erreurs fréquentes, comment progresser et comment noter tes séries dans ton carnet.",
+      "h1": "Exercices",
+      "lede": "Chaque exercice sous le même angle : bien le faire, puis progresser et le suivre.",
+      "published": "2026-09-11"
+    },
+    {
+      "url": "/outils",
+      "nav": "Outils",
+      "resume": "Calculateurs gratuits, reliés au carnet.",
+      "title": "Outils de musculation : calculateurs gratuits",
+      "description": "Des calculateurs de musculation gratuits et sans inscription, avec leurs formules et leurs limites expliquées : 1RM estimé, charges par répétitions.",
+      "h1": "Outils",
+      "lede": "Des calculateurs qui disent comment ils calculent, et jusqu'où on peut leur faire confiance.",
+      "published": "2026-09-11"
+    }
+  ],
+  "erreur": {
+    "title": "Page introuvable — Top Set",
+    "description": "Cette adresse ne mène à aucune page de Top Set. Retourne au carnet de musculation, à la documentation ou au guide pour retrouver ton chemin.",
+    "h1": "Page introuvable",
+    "lede": "Cette adresse ne mène à aucune page. Le lien est peut-être ancien, ou mal recopié.",
+    "published": "2026-09-11",
+    "corps": "<ul class=\"pages\"><li><a href=\"/\"><strong>Ouvrir le carnet</strong><span>Tes séances sont toujours là, dans ton téléphone.</span></a></li><li><a href=\"/documentation\"><strong>Documentation</strong><span>Les notions de la musculation, une par page.</span></a></li><li><a href=\"/guide\"><strong>Comment ça marche</strong><span>Le guide de l'app.</span></a></li></ul>"
+  }
+}

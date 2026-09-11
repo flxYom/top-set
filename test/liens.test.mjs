@@ -12,7 +12,7 @@
 //   node test/liens.test.mjs
 
 import { readdirSync, statSync, readFileSync } from 'fs';
-import { join, relative, dirname } from 'path';
+import { join, relative, dirname, posix } from 'path';
 import { fileURLToPath } from 'url';
 
 const RACINE = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -27,14 +27,28 @@ function ok(label, cond, detail = ''){
 const reels = new Set();
 (function marcher(d){
   for (const e of readdirSync(d)){
-    if (e === '.git' || e === 'node_modules' || e === '.github') continue;
+    if (e === '.git' || e === 'node_modules' || e === '.github' || e === '.claude') continue;
     const p = join(d, e);
     if (statSync(p).isDirectory()) marcher(p);
     else reels.add(relative(RACINE, p).split('\\').join('/'));
   }
 })(RACINE);
 
-const pages = [...reels].filter(f => /^[^/]+\.html$/.test(f)).sort();
+// Les pages publiees : la racine, et les rubriques generees par
+// scripts/contenu.mjs. contenu/ (leur source, non publiee), les tests, la doc
+// et les dependances n'en sont pas.
+const NON_PUBLIES = /^(contenu|scripts|docs|test|supabase|screenshots|node_modules)\//;
+const pages = [...reels].filter(f => f.endsWith('.html') && !NON_PUBLIES.test(f)).sort();
+
+// Une cible de lien -> le fichier qui la sert. Vercel sert /guide depuis
+// guide.html (cleanUrls) et /documentation depuis documentation/index.html ;
+// un chemin relatif se lit depuis le dossier de la page.
+function candidats(page, v){
+  let p = v.startsWith('/') ? v.slice(1) : posix.normalize(posix.join(posix.dirname(page), v));
+  p = p.replace(/\/$/, '');
+  if (p === '' || p === '.') return ['index.html'];
+  return [p, p + '.html', p + '/index.html'];
+}
 
 const ATTRS = ['href', 'src', 'srcset', 'poster', 'action', 'data'];
 const EXTERNE = /^(https?:|mailto:|tel:|data:|blob:|\/\/)/;
@@ -68,8 +82,9 @@ for (const f of pages){
       if (!cible || vus.has(cible)) continue;
       vus.add(cible);
 
-      if (!reels.has(cible)){
-        const alt = [...reels].find(r => r.toLowerCase() === cible.toLowerCase());
+      const possibles = candidats(f, cible);
+      if (!possibles.some(c => reels.has(c))){
+        const alt = [...reels].find(r => possibles.some(c => r.toLowerCase() === c.toLowerCase()));
         casses.push(attr + '="' + v + '"' + (alt ? ' (casse : le fichier est « ' + alt + ' »)' : ' (absent)'));
       }
     }
@@ -89,6 +104,18 @@ for (const p of LEGALES){
 const accueil = readFileSync(join(RACINE, 'index.html'), 'utf8');
 for (const p of LEGALES){
   ok('index.html renvoie vers ' + p, accueil.includes('href="' + p + '"'));
+}
+
+// Les pages de contenu : l'app y mene par « Apprendre », et chacune reste a
+// deux clics de l'accueil, parce que la page Apprendre les liste toutes.
+console.log('\n== Les pages de contenu sont atteignables ==');
+ok('index.html renvoie vers /documentation (Apprendre)', accueil.includes('href="/documentation"'));
+const hub = reels.has('documentation/index.html') ? readFileSync(join(RACINE, 'documentation/index.html'), 'utf8') : '';
+const contenus = pages.filter(f => f.includes('/') && !f.endsWith('/index.html'));
+ok(contenus.length + ' page(s) de contenu dans les rubriques', contenus.length > 0);
+for (const c of contenus){
+  const u = '/' + c.replace(/\.html$/, '');
+  ok('/documentation mene a ' + u, hub.includes('href="' + u + '"'));
 }
 
 console.log(`\n${pass} reussis, ${fail} echoues`);

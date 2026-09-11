@@ -11,6 +11,23 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ### Added
 
+- **Content pages** (French), next to the app: the top set
+  (`/documentation/top-set-musculation`), a 1RM calculator using the app's own
+  Epley formula and 12-rep limit (`/outils/calculateur-1rm`), a product page
+  (`/carnet-de-musculation`), a training log for school PE at the baccalauréat,
+  written from the February 2026 official texts
+  (`/entrainement/carnet-musculation-eps`), and the plank
+  (`/exercices/planche-gainage`) — plus section hubs, a page on how the pages
+  are made (`/methode-editoriale`) and a branded 404. 14 sources cited, each opened
+  and labelled with what was read. Signed « Yom Industry × Claude
+  (Anthropic) ». The app footer links to them (**Apprendre**); the guide now
+  explains set types and links to the relevant pages.
+- **Content generator** (`scripts/contenu.mjs`, no dependency): builds the
+  pages, hubs, 404 and `sitemap.xml` from `contenu/`, and refuses unknown
+  citations, broken internal links, out-of-bounds or duplicated titles and
+  descriptions, pages over their weight budget, inline scripts, and pages whose
+  topic is not published in the matrix. CI runs it in `--verifier` mode and
+  validates the HTML of every section.
 - **SEO and content strategy** (`docs/seo/`, not published). An audit of the
   real site — the home page shows Googlebot 118 words and a sign-up screen, no
   page answers a search — research from Google autocomplete (155 seed queries,
@@ -359,6 +376,13 @@ while it stays below `1.0.0`, breaking changes (in particular to the
   on every new table; RLS was catching it, but silently and on one layer only.
 
 ### Tests
+
+- Links: the test now reads nested pages and clean URLs (`/guide`,
+  `/documentation` → `documentation/index.html`), and checks that the app
+  leads to the content pages and that each one is two clicks from home (19 → 47).
+- Guards: the content sources are not published, the generated pages and what
+  they load are; the 404 stays out of the sitemap; the app footer links to
+  « Apprendre » (152 → 163).
 
 - 26 more static guards (125 → 151): search engine basics, what the site publishes, the realtime
   permission, the iOS rule staying last, sheets clearing the safe areas. The

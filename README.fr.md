@@ -668,17 +668,28 @@ icon-180/192/512.png     écran d'accueil et PWA
 og-image.png             aperçu de partage, 1200×630
 manifest.webmanifest     manifeste PWA
 vercel.json              en-têtes de sécurité et politique de cache
-robots.txt  sitemap.xml  indexation
+robots.txt               indexation
+sitemap.xml              plan du site, produit par scripts/contenu.mjs
+carnet-de-musculation.html  page produit (générée)
+methode-editoriale.html  qui écrit, sources, IA, relecture (générée)
+documentation/  entrainement/  exercices/  outils/
+                         pages de contenu et leurs rubriques (générées, commitées)
+404.html                 page d'erreur (générée, non indexée)
+contenu.css              styles des pages de contenu
+outils/outils.js         calculateurs (fichier externe : la CSP refuse le script en ligne)
+img/                     captures de l'app pour la page produit (WebP)
 supabase.umd.js          supabase-js 2.115.0, chargé à la demande
 supabase-config.js       URL du projet + clé publique (voir Comptes)
 supabase/schema.sql      tables, politiques RLS et fonctions de synchro
 supabase/test/           le schéma testé sur un vrai Postgres (PGlite) : RLS (233),
                          montée depuis chaque version passée (11)
-test/                    logique métier (146), gardes de sécurité (151), liens (19)
+test/                    logique métier (146), gardes de sécurité (163), liens (47)
 LICENSE  SECURITY.md  CONTRIBUTING.md  CHANGELOG.md
 .github/                 modèles d'issues, workflow de CI
-.vercelignore            ce que le site ne publie pas : docs, schéma, tests
+.vercelignore            ce que le site ne publie pas : docs, schéma, tests, source du contenu
 docs/seo/                stratégie SEO et contenu : matrice des sujets, recherche, inventaire
+contenu/                 source des pages de contenu, bibliographie, rubriques (non publié)
+scripts/                 générateur des pages de contenu et son gabarit (non publié)
 ```
 
 Les icônes et l'image de partage sont générées à partir de leur géométrie par un
@@ -687,7 +698,8 @@ changer une valeur et relancer. Ce script vit hors du dépôt, avec les sources 
 logo.
 
 Tout ce qui est dans le dépôt n'est pas une page du site : `.vercelignore` écarte
-la documentation, le schéma et les tests. Avant, `top-set.fr/supabase/schema.sql`
+la documentation, le schéma, les tests, et la source des pages de contenu
+(`contenu/`, `scripts/`) dont seules les pages produites sont servies. Avant, `top-set.fr/supabase/schema.sql`
 était lisible par n'importe qui — rien de secret, la sécurité tient à RLS et pas
 au secret du schéma, mais rien à servir non plus.
 
@@ -799,7 +811,8 @@ Ce que le code peut faire est fait :
   affiche « Top Set » au-dessus du résultat plutôt que l'adresse ;
 - un **favicon** de 48 px et un `favicon.ico`, générés comme les autres icônes ;
 - `robots.txt`, qui autorise tout et indique le plan du site, et
-  `sitemap.xml`, qui liste les cinq pages avec leur date de mise à jour ;
+  `sitemap.xml`, qui liste les pages indexables avec leur date de mise à jour —
+  il est produit par le générateur des pages de contenu ;
 - un lien canonique par page, et `top-set.fr` qui redirige vers
   `www.top-set.fr` : une seule adresse par page, pas de contenu en double.
 
@@ -808,7 +821,7 @@ bloc `WebSite`, le favicon et le plan du site.
 
 **La stratégie de contenu** vit dans [`docs/seo/content-strategy.md`](docs/seo/content-strategy.md) :
 l'audit, les clusters et leurs pages piliers, la méthode de notation, les 20 sujets retenus, l'architecture
-technique prévue, les risques et la boucle Search Console. La matrice (`docs/seo/sujets.json`, 83 sujets)
+technique, les risques et la boucle Search Console. La matrice (`docs/seo/sujets.json`, 83 sujets)
 est la source de vérité ; `node docs/seo/matrice.mjs` en déduit les notes et régénère la matrice classée
 et l'inventaire, et refuse deux pages qui viseraient la même URL ou la même requête. Les données de
 recherche sont versionnées et datées dans `docs/seo/recherche/` : suggestions de Google, concurrence,
@@ -820,8 +833,73 @@ venu d'ailleurs. La déclaration se fait une fois, par un enregistrement DNS che
 OVH, puis on y soumet `https://www.top-set.fr/sitemap.xml`. L'indexation prend
 ensuite quelques jours à quelques semaines. Se classer sur « carnet de
 musculation » demande autre chose que des balises : du temps, des liens venus
-d'autres sites, et des pages qui répondent à ce que les gens cherchent — le
-guide en est une.
+d'autres sites, et des pages qui répondent à ce que les gens cherchent : c'est
+le rôle des pages de contenu.
+
+### Les pages de contenu
+
+Le site ne se résume plus à l'app. À côté d'elle, des pages statiques
+répondent à de vraies recherches : une notion par page dans `/documentation`,
+des guides dans `/entrainement`, des exercices dans `/exercices`, des
+calculateurs dans `/outils`, plus une page produit (`/carnet-de-musculation`)
+et une page qui dit comment elles sont faites (`/methode-editoriale`). Le pied
+de page de l'app y mène par **Apprendre** ; c'est la seule modification de
+`index.html`, et le service worker n'a pas changé : chaque page visitée reste
+lisible hors ligne, comme le guide.
+
+Premières pages : le top set, le calculateur de 1RM, la page produit, le carnet
+de musculation pour l'EPS, la planche.
+
+**Comment elles sont fabriquées.** Toujours pas de framework ni d'étape de
+construction chez Vercel. Chaque page a sa source dans `contenu/` : un fichier
+HTML dont le premier commentaire porte les métadonnées en JSON (titre,
+description, requête visée, dates, points clés, pages liées, ce que chaque source
+soutient). `node scripts/contenu.mjs` en fait les pages publiées, les rubriques,
+la 404 et `sitemap.xml` ; les pages produites sont commitées, et le diff d'une
+page se relit comme du texte. Deux conventions dans le corps :
+
+- `[[/outils/calculateur-1rm|le calculateur]]` — un lien interne, vérifié ;
+- `[@helms2018stop]` — un appel de source numéroté, relié à
+  `contenu/sources.json`.
+
+Le gabarit (`scripts/gabarit.mjs`) écrit ce qu'une page ne doit pas pouvoir
+oublier : title, description, canonical, Open Graph, fil d'Ariane, signature,
+sommaire, sources numérotées et le JSON-LD — `BreadcrumbList` partout,
+`Article` sur les définitions, guides et exercices, `SoftwareApplication` sur la
+page produit seulement, jamais de `FAQPage`.
+
+**Ce que le générateur refuse** (et la CI avec lui, `--verifier`) : une source
+citée qui n'est pas dans la bibliographie, ou citée sans dire ce qu'elle soutient
+ici ; un lien vers une page qui n'existe pas ; un titre de plus de 60 caractères,
+une description hors de 110 à 160, un titre ou une description en double avec une
+autre page du site ; une page qui dépasse 30 Ko compressés (la feuille de style,
+8 Ko) ; un script ou un style en ligne ; une page dont le sujet n'est pas
+`PUBLISHED` dans la matrice, ou qui ne vise pas la même requête qu'elle ; un
+fichier généré qui n'est plus à jour. Une rubrique n'est indexable qu'à partir de
+trois pages : en dessous, elle existe mais reste hors du plan du site.
+
+**Les sources.** `contenu/sources.json` ne contient que des sources réellement
+ouvertes : DOI vérifié sur Crossref, résumé lu sur PubMed, texte intégral quand il
+est libre, texte officiel pour l'EPS. Le champ `lu` dit ce qui a été lu, et la
+page l'affiche.
+
+**La signature.** « Par Yom Industry × Claude (Anthropic) » : l'aide de l'IA est
+dite en toutes lettres, et `/methode-editoriale` explique ce qu'elle fait et ne
+fait pas. Dans les données structurées, l'auteur est Yom Industry, l'éditeur. La
+mention « relu par Yom Industry le … » n'apparaît que quand le champ `relu` est
+rempli dans la source de la page.
+
+**Ajouter une page** : écrire `contenu/<rubrique>/<page>.html`, ajouter ses
+sources à `contenu/sources.json`, passer son sujet à `PUBLISHED` avec
+`last_review` dans `docs/seo/sujets.json`, puis :
+
+```bash
+node scripts/contenu.mjs
+```
+
+```bash
+node docs/seo/matrice.mjs
+```
 
 ---
 
