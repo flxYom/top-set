@@ -1,7 +1,7 @@
 # Stratégie SEO et contenu — TOP SET
 
 > Mémoire stratégique du référencement. À relire avant toute nouvelle page.
-> **Dernière analyse : 11 septembre 2026.** Étape en cours : **E (infrastructure) et F (pilote) faites — G (validation) en cours.**
+> **Dernière analyse : 11 septembre 2026.** Étape en cours : **E, F et G faites** (reste l'inspection dans Search Console) — **H (production) à venir.**
 
 **Objectif** — faire de top-set.fr une ressource de référence en musculation, organisée autour d'un parcours :
 **comprendre → apprendre → s'entraîner → suivre → progresser**. L'application reste le produit ; le
@@ -328,7 +328,7 @@ produit. Pour chaque image : objectif pédagogique, texte alternatif, dimensions
 | D. Architecture | fait, validé le 11/09 | sections C et F ci-dessus | — |
 | E. Infrastructure | fait le 11/09 : générateur, gabarit, `contenu.css`, hubs, 404, méthode éditoriale, lien « Apprendre », CI | pages hub en ligne | tests + Lighthouse + app intacte (tous les tests existants) |
 | F. Pilote | fait le 11/09 : les 5 pages, 14 sources ouvertes une à une | 5 pages publiées | relecture par toi : en ligne, avant l'indexation (le domaine n'est pas encore indexé) ; chaque page relue reçoit son champ `relu` |
-| G. Validation | rendu Googlebot, mobile, accessibilité, performance, canonical, sitemap, JSON-LD (Test des résultats enrichis), Inspection d'URL | rapport de validation | seuils du budget |
+| G. Validation | fait le 11/09 : mobile et ordinateur, console (CSP comprise), routes et 404, canonical, sitemap, Lighthouse en production — 100/100/100/100 sur les pages de contenu, LCP 1,2 s, CLS ≤ 0,002 (`recherche/lighthouse-2026-09-11-pilote.json`). **Reste, côté Google** : Test des résultats enrichis sur une page (JSON-LD), Inspection d'URL et demande d'indexation dans Search Console | rapport de validation | seuils du budget |
 | H. Production | les 15 autres pages, par cluster (pilier d'abord) | ~3 pages par session | idem + inventaire à jour |
 
 ## H. Risques
