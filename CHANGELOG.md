@@ -18,7 +18,7 @@ while it stays below `1.0.0`, breaking changes (in particular to the
   written from the February 2026 official texts
   (`/entrainement/carnet-musculation-eps`), and the plank
   (`/exercices/planche-gainage`) — plus section hubs, a page on how the pages
-  are made (`/methode-editoriale`) and a branded 404. 14 sources cited, each opened
+  are made (`/methode-editoriale`) and a branded 404. 15 sources cited, each opened
   and labelled with what was read. Signed « Yom Industry × Claude
   (Anthropic) ». Everything sits under one main section, **Apprendre**
   (`/apprendre`, listing every section and page): a fourth app tab next to
@@ -31,6 +31,18 @@ while it stays below `1.0.0`, breaking changes (in particular to the
   descriptions, pages over their weight budget, inline scripts, and pages whose
   topic is not published in the matrix. CI runs it in `--verifier` mode and
   validates the HTML of every section.
+- **Page templates enforced by the generator.** A definition must have its
+  « what it is », « how to use it », « examples » and « common mistakes »
+  sections and at least three related terms, which link to their page on their
+  own once it is published; an exercise must have its fiche (muscles,
+  equipment, level, movement, breathing), shown before the table of contents,
+  its setup, mistakes and variations sections, and a related notion. « À lire
+  ensuite » now labels each linked page with its section. The top set page now
+  covers top set vs straight sets and pyramids, RPE and RIR, choosing the load
+  from a 1RM, advantages, limits, common mistakes and tracking over time (one
+  new source: Helms et al. 2016, full text on PMC); the plank page gets its
+  fiche. `test/contenu.test.mjs` (15 checks, run in CI) strips these parts from
+  a copy of the site and checks the generator refuses.
 - **SEO and content strategy** (`docs/seo/`, not published). An audit of the
   real site — the home page shows Googlebot 118 words and a sign-up screen, no
   page answers a search — research from Google autocomplete (155 seed queries,

@@ -558,7 +558,7 @@ supabase-config.js       project URL + public anon key (see Accounts)
 supabase/schema.sql      tables, RLS policies and sync functions
 supabase/test/           the schema tested on a real Postgres (PGlite): RLS (233),
                          upgrade from every past version (11)
-test/                    business logic (146), hardening guards (167), links (63)
+test/                    business logic (146), hardening guards (167), links (63), content templates (15)
 LICENSE  SECURITY.md  CONTRIBUTING.md  CHANGELOG.md
 .github/                 issue templates, CI workflow
 .vercelignore            what the site does not publish: docs, schema, tests, content sources
@@ -719,6 +719,19 @@ resolved from `contenu/sources.json`, which only lists sources actually opened
 read, and the page shows it). The template writes title, description, canonical,
 Open Graph, breadcrumb, byline, sources and JSON-LD (`BreadcrumbList`,
 `Article`, `SoftwareApplication` on the product page only, never `FAQPage`).
+
+Each page type has a template the generator enforces. A **definition** needs
+its « what it is », « how to use it », « examples » and « common mistakes »
+sections — found by the `id` of their `<h2>`, the heading text stays free — and
+at least three **related terms** (`termes`); a term whose topic is published in
+the matrix links to its page on its own, the day that page ships. An
+**exercise** needs its **fiche** (muscles, equipment, level, movement,
+breathing), shown before the table of contents with its citations numbered
+like the rest, its « setup and execution », « common mistakes » and
+« variations » sections, at least one related notion, and a related exercise as
+soon as another one exists. « À lire ensuite » labels each linked page with its
+section. `test/contenu.test.mjs` strips these from a copy of the site and
+checks that the generator refuses, saying what is missing.
 
 The generator — and CI, with `--verifier` — refuses an unknown or unexplained
 citation, a link to a missing page, titles over 60 characters, descriptions

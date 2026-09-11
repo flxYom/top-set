@@ -248,8 +248,10 @@ sitemap.xml                       ← régénéré avec toutes les pages indexab
 ```
 
 **Format d'un contenu** : un fichier HTML dont le premier commentaire contient les métadonnées en JSON —
-`slug`, `section`, `type`, `title`, `description`, `h1`, `primaryQuery`, `parent`, `related`, `published`,
-`reviewed`, `author`. Le corps est du HTML simple avec deux conventions :
+`type`, `title`, `description`, `h1`, `fil` (fil d'Ariane), `lede` (chapeau), `primaryQuery`, `published`,
+`reviewed`, `relu`, `ordre`, `keyPoints`, `related`, `sources` (ce que chaque source soutient ici), et selon
+le type `termes`, `fiche`, `sommaire`, `scripts`, `captures`. La rubrique et l'adresse viennent du chemin du
+fichier. Le corps est du HTML simple avec deux conventions :
 
 - `[[/documentation/rpe-musculation|l'échelle RPE]]` → lien interne vérifié, par son chemin complet (le
   générateur échoue si la page n'existe pas) ;
@@ -267,12 +269,25 @@ il est pertinent, et le JSON-LD :
   ni note, Google n'en tire pas de résultat enrichi, et on ne le promet pas ;
 - **pas de `FAQPage`**. Des questions/réponses peuvent exister pour le lecteur, sans balisage.
 
+**Le gabarit de chaque type, vérifié** (mise en conformité du 11/09, sections 9, 11, 12 et 19 du brief).
+Les sections obligatoires sont repérées par l'identifiant de leur H2 ; le titre reste libre.
+
+| Type | Sections obligatoires (`id`) | Blocs |
+|---|---|---|
+| Définition | `definition`, `utiliser`, `exemples`, `erreurs` | au moins 3 **termes associés** (`termes`) ; un terme dont le sujet est publié devient un lien, tout seul |
+| Exercice | `execution`, `erreurs`, `variantes` | **fiche** : muscles, matériel, niveau, mouvement (amplitude et trajectoire), respiration, avant le sommaire ; au moins une notion liée, et un exercice lié dès qu'une autre fiche existe |
+| Guide, outil | libres | — |
+
+« À lire ensuite » affiche la rubrique de chaque page liée (notion, exercice, outil, le carnet) : c'est la
+séparation « notions liées / exercices liés » du brief, sans titres vides tant qu'une rubrique n'a qu'une
+page. `test/contenu.test.mjs` retire chacun de ces éléments à une copie du site et vérifie le refus.
+
 **Vérifications automatiques** (échec = pas de publication) : titres (≤ 60) et descriptions (110–160)
 bornés et uniques sur tout le site, pages écrites à la main comprises ; un seul H1 ; liens internes
 résolus ; chaque source citée existe et dit ce qu'elle soutient ici ; aucune source listée sans être
 citée ; pas de script, de style ni de gestionnaire d'événement en ligne ; poids par page ; la page
 correspond à un sujet `PUBLISHED` de la matrice, sur la même requête, avec la même date de revue ;
-fichiers générés à jour. `html-validate` et `test/liens.test.mjs` (liens, casse, ancres, et chaque
+sections, termes et fiche exigés par le type ; fichiers générés à jour. `html-validate` et `test/liens.test.mjs` (liens, casse, ancres, et chaque
 page à deux clics de l'accueil) complètent en CI.
 
 **Rubriques** : une rubrique n'est indexable qu'à partir de **3 pages**. En dessous, sa page existe (fil
@@ -332,6 +347,7 @@ produit. Pour chaque image : objectif pédagogique, texte alternatif, dimensions
 | D. Architecture | fait, validé le 11/09 | sections C et F ci-dessus | — |
 | E. Infrastructure | fait le 11/09 : générateur, gabarit, `contenu.css`, hubs, 404, méthode éditoriale, lien « Apprendre », CI | pages hub en ligne | tests + Lighthouse + app intacte (tous les tests existants) |
 | F. Pilote | fait le 11/09 : les 5 pages, 14 sources ouvertes une à une | 5 pages publiées | relecture par toi : en ligne, avant l'indexation (le domaine n'est pas encore indexé) ; chaque page relue reçoit son champ `relu` |
+| E bis. Gabarits | fait le 11/09 : sections obligatoires par type, termes associés, fiche d'exercice, rubrique des pages liées ; page top set complétée (séries classiques et pyramide, RPE/RIR, charge depuis le 1RM, avantages, limites, erreurs, suivi dans le temps ; 1 source de plus : Helms 2016, texte sur PMC) ; fiche de la planche | pages mises à jour | `test/contenu.test.mjs` (15), tous les tests, mobile 360 px |
 | G. Validation | fait le 11/09 : mobile et ordinateur, console (CSP comprise), routes et 404, canonical, sitemap, Lighthouse en production — 100/100/100/100 sur les pages de contenu, LCP 1,2 s, CLS ≤ 0,002 (`recherche/lighthouse-2026-09-11-pilote.json`). **Reste, côté Google** : Test des résultats enrichis sur une page (JSON-LD), Inspection d'URL et demande d'indexation dans Search Console | rapport de validation | seuils du budget |
 | H. Production | les 15 autres pages, par cluster (pilier d'abord) | ~3 pages par session | idem + inventaire à jour |
 
@@ -392,3 +408,4 @@ pas des certitudes.
 | 11/09/2026 | Apprendre devient une rubrique principale : 4e onglet de l'app, page `/apprendre`, barre des rubriques sur chaque page (au lieu d'un lien de pied de page). |
 | 11/09/2026 | Pilote publié avant la relecture humaine, parce que le domaine n'est pas encore indexé ; la mention « relu » attend la relecture réelle. |
 | 11/09/2026 | Le calculateur de 1RM charge `intelligence.js` : même formule (Epley) et même limite (12 répétitions) que le carnet. |
+| 11/09/2026 | Gabarits vérifiés par le générateur : une définition sans erreurs fréquentes ni termes associés, un exercice sans fiche, ne se génèrent pas. Origine du mot « top set » : non datée, on le dit plutôt que d'inventer ; la recherche l'emploie tel quel (Helms et al. 2018). |

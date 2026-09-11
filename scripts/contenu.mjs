@@ -16,7 +16,7 @@ import { readFileSync, writeFileSync, existsSync, readdirSync, statSync, mkdirSy
 import { gzipSync } from 'zlib';
 import { join, dirname, relative } from 'path';
 import { fileURLToPath } from 'url';
-import { SITE, texteBrut, ligneSource, pageContenu, corpsHub, corpsApprendre } from './gabarit.mjs';
+import { SITE, FICHE, texteBrut, ligneSource, pageContenu, corpsHub, corpsApprendre, ficheHtml, termesHtml } from './gabarit.mjs';
 
 const RACINE = join(dirname(fileURLToPath(import.meta.url)), '..');
 const CONTENU = join(RACINE, 'contenu');
@@ -29,13 +29,23 @@ const SUJETS = JSON.parse(lire('docs/seo/sujets.json')).sujets;
 const POIDS_MAX_PAGE = 30 * 1024;   // HTML compresse
 const POIDS_MAX_CSS = 8 * 1024;     // contenu.css compresse
 
+// Ce que chaque type de page doit contenir (docs/seo/content-strategy.md,
+// gabarits) : des sections, reperees par l'identifiant de leur h2 — le titre
+// reste libre —, des termes associes, une fiche. Une page qui en oublie une ne
+// se genere pas.
 const TYPES = {
-  definition: { article: true, signe: true, sources: true },
+  definition: { article: true, signe: true, sources: true,
+                sections: ['definition', 'utiliser', 'exemples', 'erreurs'], termes: 3 },
   guide:      { article: true, signe: true, sources: true },
-  exercice:   { article: true, signe: true, sources: true },
+  exercice:   { article: true, signe: true, sources: true,
+                sections: ['execution', 'erreurs', 'variantes'], fiche: Object.keys(FICHE) },
   outil:      { article: false, signe: true, sources: true },
   produit:    { article: false, signe: false, sources: false, logiciel: true },
   methode:    { article: false, signe: false, sources: false }
+};
+const SECTIONS = {
+  definition: 'ce que c\'est', utiliser: 'comment s\'en servir', exemples: 'des exemples',
+  erreurs: 'les erreurs fréquentes', execution: 'la position et l\'exécution', variantes: 'les variantes et la progression'
 };
 const LUS = ['résumé', 'résumé et passages cités', 'passages cités', 'texte intégral'];
 const ACTIFS_PUBLIES = ['PUBLISHED', 'NEEDS_UPDATE'];
@@ -104,8 +114,14 @@ function bornes(ou, p){
 const slug = s => texteBrut(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
   .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
+// La fiche (en tete) et les termes associes (en fin) sont assembles avant la
+// transformation : leurs liens et leurs sources sont verifies et numerotes
+// comme le reste du corps. La fiche est ensuite detachee, pour s'afficher
+// avant le sommaire.
+const FIN_FICHE = '\n<!--fin-fiche-->\n';
+
 function transformer(p){
-  let c = p.corpsBrut;
+  let c = (p.ficheBrute ? p.ficheBrute + FIN_FICHE : '') + p.corpsBrut + (p.termesBruts || '');
   for (const [re, quoi] of [[/<script\b/i, 'un script en ligne (la CSP le bloquerait)'], [/<h1\b/i, 'un second h1'],
                             [/\son[a-z]+=/i, 'un gestionnaire d\'événement en ligne'], [/\sstyle=/i, 'un style en ligne']]){
     if (re.test(c)) err(p.source, 'le corps contient ' + quoi);
@@ -137,10 +153,33 @@ function transformer(p){
     ids.add(id);
     return m ? tout : `<h2 id="${id}"${attrs}>${texte}</h2>`;
   });
+  let fiche = '';
+  if (p.ficheBrute){
+    const i = c.indexOf(FIN_FICHE);
+    fiche = c.slice(0, i);
+    c = c.slice(i + FIN_FICHE.length);
+  }
   const toc = [...c.matchAll(/<h2 id="([^"]+)"[^>]*>([\s\S]*?)<\/h2>/g)].map(m => ({ id: m[1], texte: m[2] }));
   for (const m of c.matchAll(/href="#([^"]+)"/g)) if (!ids.has(m[1]) && !m[1].startsWith('src-')) err(p.source, `ancre introuvable #${m[1]}`);
   const sourcesHtml = [...numeros.keys()].map(cle => BIBLIO[cle] ? ligneSource(cle, BIBLIO[cle], appuis[cle]) : '').join('');
-  return { corps: c, toc, sourcesHtml, nbSources: numeros.size };
+  return { corps: c, blocFiche: fiche, toc, ids, sourcesHtml, nbSources: numeros.size };
+}
+
+// Les termes associes d'une page : un terme dont le sujet est publie devient
+// un lien vers sa page, tout seul, le jour ou elle parait.
+function termesDe(p){
+  return (p.termes || []).map(t => {
+    if (!t.terme || !t.def) err(p.source, '« termes » : chaque entrée a un « terme » et une « def »');
+    let url = t.url || null;
+    if (t.sujet){
+      const s = SUJETS.find(x => x.id === t.sujet);
+      if (!s) err(p.source, `« termes » : sujet inconnu « ${t.sujet} » (docs/seo/sujets.json)`);
+      else if (ACTIFS_PUBLIES.includes(s.status)) url = s.target_url;
+    }
+    if (url && !connues.has(url)) err(p.source, `« termes » : ${t.terme} vise une page qui n'existe pas : ${url}`);
+    if (url === p.url) err(p.source, `« termes » : ${t.terme} renvoie à la page elle-même`);
+    return { terme: t.terme, def: t.def, url };
+  });
 }
 
 // ------------------------------------------------------------ la bibliographie elle-meme
@@ -187,15 +226,34 @@ for (const p of pages){
       if (sujet.last_review !== p.reviewed) err(p.source, `last_review du sujet (${sujet.last_review}) ≠ reviewed de la page (${p.reviewed})`);
     }
   }
+  // Le gabarit du type : fiche d'exercice, termes associes, sections.
+  if (p.fiche){
+    for (const k of Object.keys(p.fiche)) if (!FICHE[k]) err(p.source, `« fiche » : rubrique inconnue « ${k} » (connues : ${Object.keys(FICHE).join(', ')})`);
+    p.ficheBrute = ficheHtml(p.fiche);
+  }
+  for (const k of T.fiche || []) if (!(p.fiche || {})[k]) err(p.source, `« fiche » : « ${k} » manquant (${FICHE[k]})`);
+  const termes = termesDe(p);
+  if (T.termes && termes.length < T.termes) err(p.source, `« termes » : au moins ${T.termes} termes associés (${termes.length})`);
+  p.termesBruts = termesHtml(termes);
   const t = transformer(p);
+  for (const id of T.sections || []) if (!t.ids.has(id)) err(p.source, `section obligatoire absente : <h2 id="${id}"> (${SECTIONS[id]})`);
   if (T.sources && !t.nbSources) err(p.source, 'une page de ce type cite au moins une source');
   if (T.article && !(p.keyPoints || []).length) err(p.source, '« keyPoints » (l\'essentiel) manquant');
 
+  // « À lire ensuite » dit de quelle rubrique vient chaque page. Un exercice
+  // renvoie a au moins une notion, et a un autre exercice des qu'il en existe.
+  const rubriqueDe = u => (hubDe(u) || rubriques.find(r => r.url === u) || {}).nav || '';
   const liees = (p.related || []).map(u => {
     const cible = connues.get(u);
     if (!cible || !cible.h1) { err(p.source, `« related » vise une page inconnue : ${u}`); return null; }
-    return { url: u, h1: cible.h1, description: cible.description };
+    return { url: u, h1: cible.h1, description: cible.description, rubrique: rubriqueDe(u) };
   }).filter(Boolean);
+  if (p.type === 'exercice'){
+    const rel = p.related || [];
+    const autres = pages.filter(q => q.type === 'exercice' && q.url !== p.url);
+    if (autres.length && !autres.some(q => rel.includes(q.url))) err(p.source, '« related » : aucun exercice lié, alors que d\'autres fiches existent');
+    if (!rel.some(u => /^\/(documentation|entrainement)\//.test(u))) err(p.source, '« related » : aucune notion liée (documentation ou entraînement)');
+  }
 
   const chemin = [...racineApprendre];
   if (hub) chemin.push({ nom: hub.nav, url: hub.url });

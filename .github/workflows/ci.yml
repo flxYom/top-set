@@ -43,6 +43,11 @@ jobs:
       - name: Content pages
         run: node scripts/contenu.mjs --verifier
 
+      # L'autre moitie : sur une copie du site, une page privee d'une section,
+      # d'une rubrique de fiche ou de ses termes doit etre refusee.
+      - name: Content templates
+        run: node test/contenu.test.mjs
+
       # Remplace lychee-action, qui echouait a chaque execution sans qu'on
       # puisse reproduire l'echec en local ni lire utilement son journal. Ce
       # test-ci tourne a l'identique sur une machine de dev et ici, et il
