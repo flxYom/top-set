@@ -527,10 +527,6 @@
   /* Une seance passee, telle qu'on la relit pour la refaire. Le contenu
      prime sur la date : c'est aux exercices qu'on reconnait sa seance,
      pas au 27 aout. */
-  .seance-item{
-    border:2px solid var(--line);background:var(--panel2);
-    padding:11px 12px;margin-top:10px;
-  }
   .seance-quand{
     font-size:12px;font-weight:800;letter-spacing:.04em;
     color:var(--yellow);text-transform:uppercase;
@@ -539,7 +535,6 @@
     margin:5px 0 3px;font-size:14px;font-weight:700;line-height:1.45;color:var(--ink);
   }
   .seance-chiffres{font-size:11.5px;font-weight:700;color:var(--dim);letter-spacing:.03em;}
-  .seance-item .btn-sheet{margin-top:9px;}
   .seances-vide{
     margin-top:14px;padding:16px;border:2px dashed var(--line);
     font-size:13px;line-height:1.55;color:var(--dim);text-align:center;
@@ -917,23 +912,37 @@
   }
   .brand-btn:active{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--blue);}
 
+  /* Dans l'app installee, l'ecran commence sous l'heure et la batterie. Une
+     feuille haute, centree avec 16 px de marge, y glissait sa croix : on ne
+     pouvait plus la fermer. Les marges tiennent donc compte des zones
+     protegees, et l'en-tete de la feuille reste en haut quand on la fait
+     defiler. Dans Safari, ces zones valent 0. */
   .sheet{
     position:fixed;inset:0;z-index:60;
     background:rgba(13,12,10,.86);
     display:flex;align-items:center;justify-content:center;
-    padding:16px;overflow-y:auto;
+    --sheet-haut:max(16px, calc(env(safe-area-inset-top, 0px) + 10px));
+    --sheet-bas:max(16px, calc(env(safe-area-inset-bottom, 0px) + 10px));
+    padding:var(--sheet-haut) 16px var(--sheet-bas);overflow-y:auto;
   }
   .sheet[hidden]{display:none;}
   .sheet-card{
     width:100%;max-width:520px;
     max-height:calc(100vh - 32px);
+    max-height:calc(100dvh - var(--sheet-haut) - var(--sheet-bas));
     overflow-y:auto;
     background:var(--panel);
     border:2.5px solid var(--ink);
     box-shadow:6px 6px 0 var(--orange);
-    padding:16px 15px calc(16px + env(safe-area-inset-bottom));
+    padding:16px 15px;
   }
-  .sheet-head{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+  .sheet-head{
+    display:flex;align-items:center;gap:10px;
+    /* top negatif : un element colle se cale sous le padding de son
+       conteneur, et le contenu defilait dans ces 16 px au-dessus de lui. */
+    position:sticky;top:-16px;z-index:2;background:var(--panel);
+    margin:-16px -15px 12px;padding:16px 15px 10px;
+  }
   .sheet-head h2{flex:1;margin:0;font-size:17px;font-weight:800;letter-spacing:.02em;}
   .sheet-stat{
     background:var(--yellow);color:#0d0c0a;
@@ -1003,12 +1012,16 @@
   .accueil{
     position:fixed;inset:0;z-index:80;
     background:var(--bg);
-    display:flex;align-items:center;justify-content:center;
-    padding:18px;overflow-y:auto;
+    display:flex;justify-content:center;
+    padding:max(18px, calc(env(safe-area-inset-top, 0px) + 10px)) 18px
+            max(18px, calc(env(safe-area-inset-bottom, 0px) + 10px));
+    overflow-y:auto;
   }
   .accueil[hidden]{display:none;}
+  /* margin:auto plutot que align-items:center : centre quand ca tient, et
+     quand ca deborde, le haut reste atteignable au lieu d'etre coupe. */
   .accueil-carte{
-    width:100%;max-width:420px;
+    width:100%;max-width:420px;margin:auto 0;
     display:flex;flex-direction:column;
   }
   .accueil-marque{
@@ -1396,15 +1409,6 @@
   html{touch-action:manipulation;}
   button,a,input,select,textarea,label{touch-action:manipulation;}
 
-  /* Sur iPhone, Safari zoome sur tout champ ecrit en moins de 16 px des
-     qu'on le touche — et ne dezoome pas en le quittant. Le seul remede fiable
-     est la taille du texte. On ne la change que sous iOS : ailleurs, le
-     probleme n'existe pas et le dessin reste le meme. */
-  @supports (-webkit-touch-callout:none){
-    .sheet-input,.sheet-paste,.ex-name,.ex-groupe,.serie-type,.serie-rpe,
-    .serie-repos,.seance-creer-date,.alias-select,.conv-champ{font-size:16px;}
-    @media (max-width:380px){ .serie-poids,.serie-reps,.serie-duree{font-size:16px;} }
-  }
 
   /* Dans l'app installee sur l'ecran d'accueil, la page passe SOUS la barre
      d'etat de l'iPhone. Collee a top:0, la barre des onglets se cachait
@@ -1544,6 +1548,18 @@
   /* En conversation, le pied de page et le bouton du haut genent la saisie. */
   body.en-conv .legal-footer,body.en-conv .haut-btn{display:none;}
 
+  /* Sur iPhone, Safari zoome sur tout champ ecrit en moins de 16 px des
+     qu'on le touche — et ne dezoome pas en le quittant. Le seul remede fiable
+     est la taille du texte. On ne la change que sous iOS : ailleurs, le
+     probleme n'existe pas et le dessin reste le meme.
+     CE BLOC RESTE LE DERNIER DE LA FEUILLE : a specificite egale, la regle
+     ecrite plus bas gagne. Place plus haut, il perdait contre .conv-champ, et
+     la messagerie zoomait. test/gabarits.test.mjs le verifie. */
+  @supports (-webkit-touch-callout:none){
+    .sheet-input,.sheet-paste,.ex-name,.ex-groupe,.serie-type,.serie-rpe,
+    .serie-repos,.seance-creer-date,.alias-select,.conv-champ{font-size:16px;}
+    @media (max-width:380px){ .serie-poids,.serie-reps,.serie-duree{font-size:16px;} }
+  }
 </style>
 </head>
 
@@ -1942,9 +1958,9 @@
 
 <div class="toast" id="toast"></div>
 
+<script src="intelligence.js"></script>
 <!-- Coordonnees publiques du projet Supabase. Absent ou vide : l'app reste
      en mode 100 % local, sans bouton mort ni erreur. -->
-<script src="intelligence.js"></script>
 <script src="supabase-config.js"></script>
 <script src="app.js"></script>
 </body>

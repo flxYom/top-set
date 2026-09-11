@@ -1406,9 +1406,9 @@ grant  update (lu)   on public.messages_support to authenticated;
 create table if not exists public.notifications_admin (
   id      uuid primary key default gen_random_uuid(),
   type    text not null,
-  -- « set null » : un compte supprimé ne doit pas emporter la trace de ce qui
-  -- s'est passé, mais ne doit plus être identifiable non plus.
-  user_id uuid references auth.users (id) on delete set null,
+  -- « cascade » : voir la section 13. Le contenu porte le pseudo ou le début
+  -- d'un message ; une notification orpheline restait donc identifiable.
+  user_id uuid references auth.users (id) on delete cascade,
   contenu text,
   lu      boolean not null default false,
   cree_le timestamptz not null default now()
@@ -1682,6 +1682,22 @@ grant  update (lu)   on public.messages_coach to authenticated;
 -- 13. SUPPRESSION DE COMPTE (RGPD — droit à l'effacement)
 -- ============================================================================
 -- Tout est en « on delete cascade » depuis auth.users : supprimer le compte
--- efface séances, exercices, séries, exercices mémorisés et consentements.
+-- efface séances, exercices, séries, exercices mémorisés, consentements,
+-- profil, liens de coaching, conversations et notifications. Seuls les
+-- retours restent, sans auteur (voir la table retours).
 -- La suppression du compte lui-même se fait depuis le dashboard Supabase
 -- (Authentication → Users), faute de serveur pour porter la clé service_role.
+--
+-- Les notifications étaient en « set null », pour garder une trace de ce qui
+-- s'était passé sans que la personne soit identifiable. Mais leur contenu
+-- porte le pseudo (inscription) ou les 200 premiers caractères d'un message :
+-- elles l'étaient encore. La base existante est corrigée ici, et les
+-- notifications déjà orphelines — celles de comptes supprimés avant cette
+-- version — sont effacées. Aucune notification n'est créée sans auteur :
+-- user_id nul veut toujours dire « compte supprimé ».
+alter table public.notifications_admin
+  drop constraint if exists notifications_admin_user_id_fkey;
+alter table public.notifications_admin
+  add constraint notifications_admin_user_id_fkey
+  foreign key (user_id) references auth.users (id) on delete cascade;
+delete from public.notifications_admin where user_id is null;

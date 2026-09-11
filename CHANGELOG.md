@@ -88,18 +88,115 @@ while it stays below `1.0.0`, breaking changes (in particular to the
   button flags unread messages either way.
 - `admin_retours()` now returns `user_id` — without it a feedback could be
   read but not answered.
+- **The coach ↔ client link.** A coach generates an 8-character code, the
+  client enters it, the coach accepts — the link exists only once both sides
+  acted. The coach then *reads* the client's logbook: sessions, exercises, sets,
+  RPE. They cannot change or delete anything, and never see the email address,
+  the consent records or the feedback. One active coach per person, enforced by
+  a partial unique index. Revocable from either side, effective immediately
+  because the policy re-reads the status on every query. The client's consent is
+  dated and versioned when they make the request.
+- Three interfaces: `MON COACH` and `ÊTRE COACH` in the profile, and a coach
+  view listing pending requests and clients, with a read-only rendering of a
+  client's logbook — deliberately unlike the editor, so nobody thinks they can
+  change what they are looking at.
+- SÉANCES view split into two tabs: *Mes séances* (not-yet-logged sessions,
+  today's, and upcoming, oldest first, with the *Créer ma séance* box) and
+  *Historique* (logged sessions, newest first, grouped by month).
+- Feedback (`retours`): a footer link opens a sheet with three kinds
+  (`bug`, `idee`, `question`), a 4,000-character body, and the list of what you
+  already sent with its status. Requires an account. The context sent alongside
+  is the current view, screen size, truncated user agent and a PWA flag — never
+  logbook content.
+- Admin space, restricted to the `admin` role: ten counters, the feedback list
+  with read/handled controls, and the member list sorted by last visit. Returns
+  aggregates only — no email address and no logbook row.
+- `profils` table (pseudo, role, sign-up date, last-seen date), written by
+  `toucher_profil()` on every app open. The pseudo stays in the account
+  metadata; this column is a queryable mirror of it, because Supabase's `auth`
+  schema is not readable from a browser.
+- Previous batch, not logged at the time: business logic extracted to
+  `intelligence.js` with 87 unit tests, set types (warm-up / top set / working /
+  back-off), the previous-performance block with one-tap copy, session
+  create/edit, and the per-exercise progression page.
 
 ### Changed
 
+- **Privacy policy 3.0 and terms of use 2.0.** The policy described an account
+  that only copied the logbook; it now says what messages, feedback, the
+  profile and coaching record, who sees what, on which legal basis, for how
+  long, and who the processors are (Vercel, Supabase Pte. Ltd.). It had also
+  called the host's logs « the only processing that exists ». The terms said no
+  personal data is ever asked and had no rule for messages or coaching. The
+  legal notice now lists Supabase. `VERSION_POLITIQUE` → `3.0`; existing
+  accounts are not asked again, as the new text describes processing people
+  trigger themselves.
+- The site no longer publishes what is only there for the repository.
+  Vercel serves every file it is not told to skip, so
+  `top-set.fr/supabase/schema.sql`, the tests and this changelog were
+  readable online — nothing secret, nothing to serve either. `.vercelignore`
+  now keeps the docs, `supabase/`, `test/`, `.github/` and the README
+  screenshots off the site, and a guard checks none of them is something the
+  service worker precaches.
+- Both READMEs, `SECURITY.md`, `CONTRIBUTING.md` and the guide caught up with
+  the app. `README.md` still said there was no service worker, no sync, and
+  that importing replaces the logbook; `CONTRIBUTING.md` described a single
+  file holding all the JavaScript; the guide said « pas de coach ».
+- README screenshots retaken on the current interface — the three header
+  buttons, the suggested load, the recap tiles.
+- This changelog: one heading of each kind under Unreleased, instead of two
+  *Fixed*, two *Security* and two *Changed*, and features that had been filed
+  under *Tests*.
 - The feedback sheet no longer embeds a thread: sending a feedback takes the
   member straight to the team conversation, where the acknowledgement already
   is and the reply will arrive. The coach sheet and the admin-space thread are
   gone too; every entry point opens the shared conversation page.
 - The date box left the header to make room for the three buttons; the day is
   already written out in the hero band below.
+- Service worker cache version `topset-v2` → `topset-v15`.
+- Offline, a clean URL (`/guide`, produced by Vercel's `cleanUrls`) fell back
+  to the app instead of the requested page. The navigation fallback now retries
+  once with `.html` before giving up.
+- `SECURITY.md` described a threat model without accounts or a database, which
+  stopped being true when Supabase sync landed.
+- Guide: the install section no longer claims a connection is required — the
+  service worker has made the app work offline since v2.
+
+### Removed
+
+- `set-domaine.mjs`. It replaced the placeholder domain everywhere; it served
+  once, when `top-set.fr` arrived, and a one-off tool left in the repository
+  is one more thing to keep working for nothing.
+- `interest-cohort=()` from `Permissions-Policy`. It opted out of Google's
+  FLoC, abandoned in 2022; browsers now only log a warning about an unknown
+  feature.
+- Seven methods exposed by `Sync` that nothing outside it called, and CSS rules
+  for a `.seance-item` class no screen uses any more.
 
 ### Fixed
 
+- **iPhone, installed app: the data sheet could not be closed.** Sheets were
+  centred with a 16 px margin in a screen that starts under the status bar; a
+  tall one put its × under the clock. Sheets and the welcome screen now leave
+  room for the safe areas, and the sheet header stays pinned while the sheet
+  scrolls. Verified in a headless browser with the safe areas and the iOS rules
+  forced on: the × sits below the bar and a real tap closes the sheet.
+- **iPhone: the inbox zoomed and stayed zoomed.** The iOS rule setting fields
+  to 16 px came *before* `.conv-champ{font-size:14px}` in the stylesheet, so
+  it lost, and Safari zoomed on focus. The rule is now the last in the sheet;
+  every field of the logbook, sheets, inbox and admin space measures 16 px
+  with it applied.
+- A coaching request recorded its consent under policy version « 1 »: the app
+  never sent the version, and the database fell back to its default.
+- Without Supabase configured, the messages bubble still showed and led to a
+  sign-in form that could not succeed — a dead button in the mode the README
+  promises has none. It is now hidden whenever accounts are unavailable.
+  Verified both ways in a headless browser.
+- The privacy page sent readers to a « Télécharger le fichier » button that has
+  been called « Sauvegarde complète (.json) » for a while.
+- `SECURITY.md` counted six coach functions and « four writes » while listing
+  five, and did not mention `est_admin()` or the two `SECURITY DEFINER`
+  triggers.
 - **The schema could not be applied to the production database.**
   `admin_retours()` gained a return column, Postgres refuses to replace a
   function whose return columns change, and the Supabase SQL editor then rolls
@@ -116,101 +213,6 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 - Four button styles used `font: 800 10px/1 inherit`, an invalid shorthand the
   browser dropped entirely: admin, coach and feedback buttons fell back to the
   system font.
-- The new footer dot used the bare class `.pastille`, which already belonged
-  to the account and coach status lights; it added a stray margin to them.
-  Renamed `.pastille-fil`, with a guard that no bare `.pastille` rule returns.
-
-### Tests
-
-- `test-montee.mjs`: installs each of the 10 past schema versions, adds data,
-  then applies the current one twice and checks the data survived. It failed
-  on 5 of 10 before the fix. Runs in CI with full history.
-- 59 more business tests (87 → 146): durations, the merge, CSV reading.
-- Static guards rewritten for the single inbox and extended (93 → 125).
-- 32 more RLS tests (199 → 231): the feedback copy and its ordering, one
-  notification per action, nobody signing `systeme`, `retour_id` not settable,
-  and the whole coach conversation — both sides, strangers, the admin, forged
-  authors, a self-thread, rewrite, delete, `anon`, and what happens after the
-  link ends.
-- 13 more static guards (80 → 93).
-- **The coach ↔ client link.** A coach generates an 8-character code, the
-  client enters it, the coach accepts — the link exists only once both sides
-  acted. The coach then *reads* the client's logbook: sessions, exercises, sets,
-  RPE. They cannot change or delete anything, and never see the email address,
-  the consent records or the feedback. One active coach per person, enforced by
-  a partial unique index. Revocable from either side, effective immediately
-  because the policy re-reads the status on every query. The client's consent is
-  dated and versioned when they make the request.
-- Three interfaces: `MON COACH` and `ÊTRE COACH` in the ⇅ panel, and a coach
-  view listing pending requests and clients, with a read-only rendering of a
-  client's logbook — deliberately unlike the editor, so nobody thinks they can
-  change what they are looking at.
-- 47 RLS tests for this mechanism alone (121 → 168): before the link, while
-  pending, after acceptance, what the coach cannot do, the third party, the
-  rejected second coach, revocation, ending the coaching, and `anon` throughout.
-- SÉANCES view split into two tabs: *Mes séances* (not-yet-logged sessions,
-  today's, and upcoming, oldest first, with the *Créer ma séance* box) and
-  *Historique* (logged sessions, newest first, grouped by month).
-- Feedback (`retours`): a footer link opens a sheet with three kinds
-  (`bug`, `idee`, `question`), a 4,000-character body, and the list of what you
-  already sent with its status. Requires an account. The context sent alongside
-  is the current view, screen size, truncated user agent and a PWA flag — never
-  logbook content.
-- Admin space, restricted to the `admin` role: eight counters, the feedback list
-  with read/handled controls, and the member list sorted by last visit. Returns
-  aggregates only — no email address and no logbook row.
-- `profils` table (pseudo, role, sign-up date, last-seen date), written by
-  `toucher_profil()` on every app open. The pseudo stays in the account
-  metadata; this column is a queryable mirror of it, because Supabase's `auth`
-  schema is not readable from a browser.
-- 47 new RLS tests (66 → 113), covering profiles, feedback and administration —
-  including the guarantee that an administrator still cannot read anyone's
-  logbook.
-- Previous batch, not logged at the time: business logic extracted to
-  `intelligence.js` with 87 unit tests, set types (warm-up / top set / working /
-  back-off), the previous-performance block with one-tap copy, session
-  create/edit, and the per-exercise progression page.
-
-### Security
-
-- **Signing out left the logbook on the device.** Opening the app with no
-  account showed the last signed-in person's sessions — the same hole as below,
-  from the other end, and the one that shows up first on a shared phone. Signing
-  out now files the logbook under its owner and restores the anonymous one (or
-  none), so a fresh open is blank. Nothing is lost: signing back in brings it
-  back whole, unsent days included.
-- **Two accounts on one device shared a logbook.** The local logbook lives under
-  a single key for the whole device, and `tirer()` merges the cloud into it
-  rather than replacing it — so signing in with a second account showed the
-  first account's sessions, and the app then offered to upload them to the
-  second account, changing their owner for good. The logbook now follows the
-  account: on sign-in with a different id, the one present is filed under
-  `topset_carnet_<user_id>` and the arriving account's own is restored. Nothing
-  is deleted, the outbound queue travels with the logbook, and a filed logbook
-  is only retrievable by its owner. Nine new guards assert the ordering — filing
-  before clearing, clearing before restoring, and the swap happening before the
-  upload prompt.
-- `SECURITY.md` now records the five accepted Supabase linter warnings with the
-  reason each is deliberate, so they are not re-investigated on every report.
-- Supabase's database linter flagged `uuid_ou_neuf()` and `maintenant()` as
-  having a mutable `search_path`. A function without one resolves its names
-  using the caller's path, so anyone able to create an object in a schema ahead
-  of `public` could hijack what it thinks it is calling. Both now pin it, like
-  every other function in the file already did.
-- `est_admin()` is no longer executable by `authenticated`, so it is gone from
-  `/rest/v1/rpc`. The front end never called it — it reads the role returned by
-  `toucher_profil()` — and the four admin functions call it internally, where
-  they run as owner. One less callable surface.
-- The four `admin_*` functions stay callable by `authenticated`, deliberately.
-  They must live in `public` to be reachable from the app, and their first
-  statement refuses anyone who is not an administrator. The check belongs in the
-  function, not in whether it is exposed.
-- New test section asserting that *every* function in `public` pins its
-  `search_path`, that the SECURITY DEFINER list is exactly the six expected, and
-  that the sync functions stay SECURITY INVOKER — in DEFINER they would bypass
-  all of the RLS above them. 113 → 124 RLS tests.
-
-### Fixed
 - Trying to sign up without ticking the consent box said "Coche la case :
   creer un compte envoie tes seances sur un serveur" — which explains *why* an
   account sends data, not what the box actually accepts. Someone reading it
@@ -258,6 +260,51 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ### Security
 
+- **Deleting an account left identifiable admin notifications behind.** They
+  were `on delete set null`, but carry the pseudonym or the start of a
+  message. Now `on delete cascade`; the schema drops the constraint, recreates
+  it and deletes notifications already orphaned. Tested on a fresh database and
+  from every past schema version; both tests fail on the previous schema.
+- `connect-src` no longer allows the project's `wss://` origin. Nothing in the
+  app opens a realtime connection — messages are fetched, not pushed — so the
+  permission was open for nothing. A guard fails if a `.channel(` appears
+  while the CSP still lacks it, or the reverse.
+- **Signing out left the logbook on the device.** Opening the app with no
+  account showed the last signed-in person's sessions — the same hole as below,
+  from the other end, and the one that shows up first on a shared phone. Signing
+  out now files the logbook under its owner and restores the anonymous one (or
+  none), so a fresh open is blank. Nothing is lost: signing back in brings it
+  back whole, unsent days included.
+- **Two accounts on one device shared a logbook.** The local logbook lives under
+  a single key for the whole device, and `tirer()` merges the cloud into it
+  rather than replacing it — so signing in with a second account showed the
+  first account's sessions, and the app then offered to upload them to the
+  second account, changing their owner for good. The logbook now follows the
+  account: on sign-in with a different id, the one present is filed under
+  `topset_carnet_<user_id>` and the arriving account's own is restored. Nothing
+  is deleted, the outbound queue travels with the logbook, and a filed logbook
+  is only retrievable by its owner. Nine new guards assert the ordering — filing
+  before clearing, clearing before restoring, and the swap happening before the
+  upload prompt.
+- `SECURITY.md` now records the five accepted Supabase linter warnings with the
+  reason each is deliberate, so they are not re-investigated on every report.
+- Supabase's database linter flagged `uuid_ou_neuf()` and `maintenant()` as
+  having a mutable `search_path`. A function without one resolves its names
+  using the caller's path, so anyone able to create an object in a schema ahead
+  of `public` could hijack what it thinks it is calling. Both now pin it, like
+  every other function in the file already did.
+- `est_admin()` is no longer executable by `authenticated`, so it is gone from
+  `/rest/v1/rpc`. The front end never called it — it reads the role returned by
+  `toucher_profil()` — and the four admin functions call it internally, where
+  they run as owner. One less callable surface.
+- The four `admin_*` functions stay callable by `authenticated`, deliberately.
+  They must live in `public` to be reachable from the app, and their first
+  statement refuses anyone who is not an administrator. The check belongs in the
+  function, not in whether it is exposed.
+- New test section asserting that *every* function in `public` pins its
+  `search_path`, that the SECURITY DEFINER list is exactly the six expected, and
+  that the sync functions stay SECURITY INVOKER — in DEFINER they would bypass
+  all of the RLS above them. 113 → 124 RLS tests.
 - **Stored XSS via a crafted JSON backup (reproduced, then fixed).** Exercise
   and set identifiers were interpolated into HTML attributes verbatim. An
   imported file whose `id` was `x1" onmouseover="…` installed a live event
@@ -297,16 +344,31 @@ while it stays below `1.0.0`, breaking changes (in particular to the
   `consentements`. Supabase grants all privileges to `authenticated` by default
   on every new table; RLS was catching it, but silently and on one layer only.
 
-### Changed
+### Tests
 
-- Service worker cache version `topset-v2` → `topset-v11`.
-- Offline, a clean URL (`/guide`, produced by Vercel's `cleanUrls`) fell back
-  to the app instead of the requested page. The navigation fallback now retries
-  once with `.html` before giving up.
-- `SECURITY.md` described a threat model without accounts or a database, which
-  stopped being true when Supabase sync landed.
-- Guide: the install section no longer claims a connection is required — the
-  service worker has made the app work offline since v2.
+- 14 more static guards (125 → 139): what the site publishes, the realtime
+  permission, the iOS rule staying last, sheets clearing the safe areas. The
+  iPhone guards fail on the previous `index.html`.
+- 2 more RLS tests (231 → 233): a deleted account's notifications go with it,
+  everyone else's stay. The upgrade test now plants an orphaned notification in
+  every past version and checks the constraint afterwards.
+- `test-montee.mjs`: installs each of the 10 past schema versions, adds data,
+  then applies the current one twice and checks the data survived. It failed
+  on 5 of 10 before the fix. Runs in CI with full history.
+- 59 more business tests (87 → 146): durations, the merge, CSV reading.
+- Static guards rewritten for the single inbox and extended (93 → 125).
+- 32 more RLS tests (199 → 231): the feedback copy and its ordering, one
+  notification per action, nobody signing `systeme`, `retour_id` not settable,
+  and the whole coach conversation — both sides, strangers, the admin, forged
+  authors, a self-thread, rewrite, delete, `anon`, and what happens after the
+  link ends.
+- 13 more static guards (80 → 93).
+- 47 RLS tests for this mechanism alone (121 → 168): before the link, while
+  pending, after acceptance, what the coach cannot do, the third party, the
+  rejected second coach, revocation, ending the coaching, and `anon` throughout.
+- 47 new RLS tests (66 → 113), covering profiles, feedback and administration —
+  including the guarantee that an administrator still cannot read anyone's
+  logbook.
 
 
 ## [0.1.0] - 2026-09-06

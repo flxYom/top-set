@@ -20,9 +20,11 @@ Classes of issue that matter here:
   that have already caused one.
 - Anything that lets one account read, write or delete another's rows,
   or that lets a non-administrator reach the `admin_*` functions.
-- Anything a crafted JSON backup can do on import: the file is treated
-  as hostile, and identifiers, muscle groups and remembered exercises
-  are re-validated on the way in.
+- Anything a crafted JSON backup or CSV file can do on import: the file
+  is treated as hostile, and identifiers, muscle groups and remembered
+  exercises are re-validated on the way in.
+- Anything that lets someone write into a conversation they are not part
+  of, or sign a message as someone else (`admin`, `coach`, `systeme`).
 - Ways to read or exfiltrate another visitor's `localStorage` data.
 - Supply-chain issues in the vendored assets (`chart.umd.js`,
   `supabase.umd.js`, the self-hosted fonts).
@@ -34,7 +36,7 @@ issues — please open a regular [issue](../../issues) for those instead.
 
 ## Accepted linter warnings
 
-Supabase's database linter reports five warnings that are deliberate. They are
+Supabase's database linter reports warnings that are deliberate. They are
 recorded here so they are not re-investigated every time the report is read.
 
 **`toucher_profil` is `SECURITY DEFINER` and callable by signed-in users.** It
@@ -44,22 +46,34 @@ from a parameter. Making it `SECURITY INVOKER` would require an `INSERT` and an
 `UPDATE` policy on `profils` plus column-level grants to stop someone writing
 `role = 'admin'` — trading one narrow, tested door for two open ones.
 
-**The four `admin_*` functions are `SECURITY DEFINER` and callable by signed-in
-users.** They have to cross RLS to read beyond a single logbook, and they have to
+**Four `admin_*` functions are `SECURITY DEFINER` and callable by signed-in
+users** — `admin_apercu`, `admin_membres`, `admin_retours`,
+`admin_marquer_retour`. (`admin_fils` is `INVOKER` and checks nothing, like
+`tirer_jours_de`: RLS decides which threads come back.) They have to cross RLS to read beyond a single logbook, and they have to
 live in `public` to be reachable from a static site with no server. Each one
 refuses non-administrators as its first statement, and
 `supabase/test/test-rls.mjs` asserts that refusal on every run. The check belongs
 in the function, not in whether the function is visible: a hidden function
 without a role check would be strictly worse than a visible one that refuses.
 
-**Six coach-link functions are `SECURITY DEFINER`.** `coach_de` and
+**Seven coach-link functions are `SECURITY DEFINER`.** `coach_de` and
 `mon_coach_id` are called *from the policies*, so they must be executable by
 `authenticated` — a policy is evaluated with the caller's privileges, and
 revoking them makes every logbook read fail, including your own. Neither takes a
-parameter that lets you ask about someone else's relationship. The four writes
+parameter that lets you ask about someone else's relationship. The five writes
 (`devenir_coach`, `cesser_coach`, `demander_coach`, `repondre_demande`,
 `revoquer_lien`) each check which side of the link the caller is on as their
 first statement.
+
+**`est_admin` is `SECURITY DEFINER` and executable by signed-in users**, for
+the same reason as `coach_de`: the messaging policies call it, and a policy is
+evaluated with the caller's privileges. It takes no parameter and only answers
+about the caller.
+
+**`notifier_admin` and `accuser_retour` are `SECURITY DEFINER` triggers.**
+They write where no policy lets anyone write — admin notifications, and the
+acknowledgement signed `systeme`. They return `trigger`, so they cannot be
+called as an RPC, and they read nothing but the row that was just written.
 
 The three coach *reads* — `tirer_jours_de`, `mes_coaches`, `mon_coach` — are
 deliberately `SECURITY INVOKER` and check nothing at all: they ask for the rows

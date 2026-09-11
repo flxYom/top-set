@@ -336,5 +336,42 @@ ok('Echap ferme la feuille ouverte, quelle qu elle soit',
 ok('ouvrir une page depuis une feuille ferme la feuille',
    (SRC.match(/fermerFeuilles\(\);/g) || []).length >= 6);
 
+console.log('\n== 18. Ce que le site publie ==');
+// Vercel publie tout le depot, sauf ce que .vercelignore ecarte. Le schema,
+// les tests et le journal y etaient lisibles : rien de secret, rien a servir.
+const IGN = readFileSync(new URL('../.vercelignore', import.meta.url), 'utf8').split(/\r?\n/).map(l => l.trim());
+for (const x of ['supabase/', 'test/', '.github/', 'screenshots/', 'CHANGELOG.md', 'README.md'])
+  ok('pas publie : ' + x, IGN.includes(x));
+const PRECHARGE = (SW.match(/A_PRECHARGER = \[([\s\S]*?)\]/) || [])[1] || '';
+ok('et rien de ce que le service worker precharge n en fait partie',
+   !IGN.filter(x => x && !x.startsWith('#'))
+       .some(x => PRECHARGE.indexOf("'" + x + (x.endsWith('/') ? '' : "'")) > -1));
+ok('pas de connexion temps reel ouverte, donc pas de wss dans la CSP',
+   SRC.indexOf('.channel(') === -1 && CFG.indexOf('wss:') === -1);
+
+console.log('\n== 19. iPhone : ni croix sous l heure, ni zoom qui reste ==');
+// A specificite egale, la regle ecrite plus bas gagne. Le bloc iOS etait place
+// avant .conv-champ{font-size:14px} : il perdait, et Safari zoomait dans la
+// messagerie sans jamais dezoomer.
+const STYLE = (HTML.match(/<style>([\s\S]*?)<\/style>\s*<\/head>/) || HTML.match(/<style[^>]*>([\s\S]*)<\/style>/))[1];
+const IOS = STYLE.indexOf('@supports (-webkit-touch-callout:none)');
+ok('le bloc iOS existe', IOS > -1);
+const classesIos = ((STYLE.slice(IOS).match(/\{([^{}]*)\{font-size:16px/) || [])[1] || '')
+  .split(',').map(s => s.trim()).filter(Boolean);
+ok('il couvre le champ de la messagerie', classesIos.includes('.conv-champ'), classesIos.join(' '));
+const apres = classesIos.filter(c => {
+  const re = new RegExp('(^|[\\s,}])' + c.replace('.', '\\.') + '\\s*\\{[^}]*font-size', 'g');
+  const finIos = STYLE.indexOf('\n  }', IOS);
+  let m, dernier = -1;
+  while ((m = re.exec(STYLE))) if (m.index < IOS || m.index > finIos) dernier = m.index;
+  return dernier > IOS;
+});
+ok('et aucune regle ecrite apres lui ne lui reprend la taille', !apres.length, apres.join(' '));
+ok('les feuilles laissent la place de l heure et de la batterie',
+   /\.sheet\{[^}]*env\(safe-area-inset-top/.test(STYLE));
+ok('et leur en-tete, avec la croix, reste en haut quand on defile',
+   /\.sheet-head\{[^}]*position:sticky/.test(STYLE));
+ok('l ecran d accueil aussi', /\.accueil\{[^}]*env\(safe-area-inset-top/.test(STYLE));
+
 console.log(`\n${pass} reussis, ${fail} echoues`);
 process.exit(fail ? 1 : 0);

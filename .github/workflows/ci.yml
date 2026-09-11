@@ -58,7 +58,7 @@ jobs:
         with:
           node-version: 22
 
-      # Ces 113 tests sont la seule chose qui prouve qu'un utilisateur ne peut
+      # Ces tests sont la seule chose qui prouve qu'un utilisateur ne peut
       # pas lire le carnet d'un autre. Ils ne tournaient jusqu'ici que sur la
       # machine de la personne qui modifiait le schema, ce qui est exactement
       # l'endroit ou l'on ne veut pas que cette garantie repose.
