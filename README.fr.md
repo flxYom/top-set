@@ -48,6 +48,7 @@ c'est exactement à ça que sert ce repo pour l'instant.
 - [Structure du projet](#structure-du-projet)
 - [Le lancer en local](#le-lancer-en-local)
 - [Déployer](#déployer)
+- [Le référencement](#le-référencement)
 - [L'installer sur un téléphone](#linstaller-sur-un-téléphone)
 - [Ce qu'il n'est pas](#ce-quil-nest-pas)
 - [La suite](#la-suite)
@@ -660,7 +661,9 @@ chart.umd.js             Chart.js 4.4.1, chargé à la demande
 fonts/                   Bricolage Grotesque, auto-hébergée (latin + latin-ext)
 screenshots/             captures utilisées dans ce README (planning, saisie, récap)
 icon.svg                 favicon principal
-favicon-16/32.png        secours là où les favicons SVG ne passent pas
+favicon-16/32/48.png     secours là où les favicons SVG ne passent pas ; 48 px
+                         est la taille que Google demande pour ses résultats
+favicon.ico              16 + 32 + 48 px, pour les navigateurs qui le demandent d'office
 icon-180/192/512.png     écran d'accueil et PWA
 og-image.png             aperçu de partage, 1200×630
 manifest.webmanifest     manifeste PWA
@@ -671,7 +674,7 @@ supabase-config.js       URL du projet + clé publique (voir Comptes)
 supabase/schema.sql      tables, politiques RLS et fonctions de synchro
 supabase/test/           le schéma testé sur un vrai Postgres (PGlite) : RLS (233),
                          montée depuis chaque version passée (11)
-test/                    logique métier (146), gardes de sécurité (139), liens (19)
+test/                    logique métier (146), gardes de sécurité (151), liens (19)
 LICENSE  SECURITY.md  CONTRIBUTING.md  CHANGELOG.md
 .github/                 modèles d'issues, workflow de CI
 .vercelignore            ce que le site ne publie pas : docs, schéma, tests
@@ -779,6 +782,37 @@ du domaine provisoire au vrai, et a été retiré.
 **À chaque mise en ligne qui touche l'app**, la version du service worker
 (`VERSION` dans `sw.js`) avance d'un cran : c'est ce qui dit aux téléphones de
 remplacer la coquille gardée en cache.
+
+---
+
+## Le référencement
+
+Ce que le code peut faire est fait :
+
+- un **titre** qui dit ce qu'est l'app — « Top Set — carnet de musculation
+  gratuit » — et pas seulement son nom. « Top Set » tout court est aussi le nom
+  d'une méthode d'entraînement : les forums qui en parlent passent devant ;
+- une **description** de moins de 160 caractères, la longueur au-delà de
+  laquelle Google coupe ;
+- le **nom du site** déclaré en données structurées (`WebSite`), pour que Google
+  affiche « Top Set » au-dessus du résultat plutôt que l'adresse ;
+- un **favicon** de 48 px et un `favicon.ico`, générés comme les autres icônes ;
+- `robots.txt`, qui autorise tout et indique le plan du site, et
+  `sitemap.xml`, qui liste les cinq pages avec leur date de mise à jour ;
+- un lien canonique par page, et `top-set.fr` qui redirige vers
+  `www.top-set.fr` : une seule adresse par page, pas de contenu en double.
+
+`test/gabarits.test.mjs` vérifie la longueur du titre et de la description, le
+bloc `WebSite`, le favicon et le plan du site.
+
+Le reste ne se fait pas dans le code. Tant que le domaine n'a pas été déclaré
+dans **Google Search Console**, Google ne le découvre que par hasard, par un lien
+venu d'ailleurs. La déclaration se fait une fois, par un enregistrement DNS chez
+OVH, puis on y soumet `https://www.top-set.fr/sitemap.xml`. L'indexation prend
+ensuite quelques jours à quelques semaines. Se classer sur « carnet de
+musculation » demande autre chose que des balises : du temps, des liens venus
+d'autres sites, et des pages qui répondent à ce que les gens cherchent — le
+guide en est une.
 
 ---
 

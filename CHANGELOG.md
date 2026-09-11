@@ -11,6 +11,13 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ### Added
 
+- **Search engine basics.** The page title now says what the app is
+  (« Top Set — carnet de musculation gratuit ») instead of « Top Set » alone —
+  also the name of a training method whose forum threads outrank it. A real
+  description under 160 characters replaces a 51-character stub, the site name
+  is declared as `WebSite` structured data, and a 48 px favicon plus a
+  `favicon.ico` (16/32/48 PNGs, generated like the other icons) join the SVG.
+  Sitemap dates updated. 12 guards check all of it.
 - **One inbox for every conversation.** A speech-bubble button in the header
   opens every conversation the account has: the Top Set team, one's coach,
   one's clients — and, for the admin, every member who wrote. Each row shows
@@ -346,7 +353,7 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ### Tests
 
-- 14 more static guards (125 → 139): what the site publishes, the realtime
+- 26 more static guards (125 → 151): search engine basics, what the site publishes, the realtime
   permission, the iOS rule staying last, sheets clearing the safe areas. The
   iPhone guards fail on the previous `index.html`.
 - 2 more RLS tests (231 → 233): a deleted account's notifications go with it,
