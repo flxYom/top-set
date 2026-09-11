@@ -191,6 +191,127 @@
       "type": "texte officiel",
       "lu": "passages cités",
       "verifie": "2026-09-11"
+    },
+    "halperin2022": {
+      "auteurs": ["Halperin I","Malleron T","Har-Nir I","Androulakis-Korakakis P","Wolf M","Fisher J","Steele J"],
+      "annee": 2022,
+      "titre": "Accuracy in Predicting Repetitions to Task Failure in Resistance Exercise: A Scoping Review and Exploratory Meta-analysis",
+      "revue": "Sports Medicine",
+      "ref": "52(2):377-390",
+      "doi": "10.1007/s40279-021-01559-x",
+      "pmid": "34542869",
+      "type": "revue de portée et méta-analyse exploratoire (12 études, 414 participants)",
+      "lu": "résumé",
+      "verifie": "2026-09-11"
+    },
+    "emanuel2022": {
+      "auteurs": ["Emanuel A","Har-Nir I","Obolski U","Halperin I"],
+      "annee": 2022,
+      "titre": "Seeing Effort: Assessing Coaches' Prediction of the Number of Repetitions in Reserve Before Task-Failure",
+      "revue": "Sports Medicine - Open",
+      "ref": "8(1):132",
+      "doi": "10.1186/s40798-022-00526-8",
+      "pmid": "36273064",
+      "type": "étude expérimentale (259 entraîneurs certifiés)",
+      "lu": "résumé",
+      "verifie": "2026-09-11"
+    },
+    "bastos2024": {
+      "auteurs": ["Bastos V","Machado S","Teixeira DS"],
+      "annee": 2024,
+      "titre": "Feasibility and Usefulness of Repetitions-In-Reserve Scales for Selecting Exercise Intensity: A Scoping Review",
+      "revue": "Perceptual and Motor Skills",
+      "ref": "131(3):940-970",
+      "doi": "10.1177/00315125241241785",
+      "pmid": "38563729",
+      "type": "revue de portée (31 études, 855 participants)",
+      "lu": "résumé",
+      "verifie": "2026-09-11"
+    },
+    "robinson2024": {
+      "auteurs": ["Robinson ZP","Pelland JC","Remmert JF","Refalo MC","Jukic I","Steele J","Zourdos MC"],
+      "annee": 2024,
+      "titre": "Exploring the Dose-Response Relationship Between Estimated Resistance Training Proximity to Failure, Strength Gain, and Muscle Hypertrophy: A Series of Meta-Regressions",
+      "revue": "Sports Medicine",
+      "ref": "54(9):2209-2231",
+      "doi": "10.1007/s40279-024-02069-2",
+      "pmid": "38970765",
+      "type": "méta-régressions exploratoires",
+      "lu": "résumé",
+      "verifie": "2026-09-11"
+    },
+    "refalo2023": {
+      "auteurs": ["Refalo MC","Helms ER","Trexler ET","Hamilton DL","Fyfe JJ"],
+      "annee": 2023,
+      "titre": "Influence of Resistance Training Proximity-to-Failure on Skeletal Muscle Hypertrophy: A Systematic Review with Meta-analysis",
+      "revue": "Sports Medicine",
+      "ref": "53(3):649-665",
+      "doi": "10.1007/s40279-022-01784-y",
+      "pmid": "36334240",
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC9935748/",
+      "type": "revue systématique et méta-analyse (15 études)",
+      "lu": "résumé et passages cités",
+      "verifie": "2026-09-11"
+    },
+    "refalo2022": {
+      "auteurs": ["Refalo MC","Helms ER","Hamilton DL","Fyfe JJ"],
+      "annee": 2022,
+      "titre": "Towards an improved understanding of proximity-to-failure in resistance training and its influence on skeletal muscle hypertrophy, neuromuscular fatigue, muscle damage, and perceived discomfort: A scoping review",
+      "revue": "Journal of Sports Sciences",
+      "ref": "40(12):1369-1391",
+      "doi": "10.1080/02640414.2022.2080165",
+      "pmid": "35658845",
+      "type": "revue de portée",
+      "lu": "résumé",
+      "verifie": "2026-09-11"
+    },
+    "grgic2022": {
+      "auteurs": ["Grgic J","Schoenfeld BJ","Orazem J","Sabol F"],
+      "annee": 2022,
+      "titre": "Effects of resistance training performed to repetition failure or non-failure on muscular strength and hypertrophy: A systematic review and meta-analysis",
+      "revue": "Journal of Sport and Health Science",
+      "ref": "11(2):202-211",
+      "doi": "10.1016/j.jshs.2021.01.007",
+      "pmid": "33497853",
+      "type": "revue systématique et méta-analyse (15 études)",
+      "lu": "résumé",
+      "verifie": "2026-09-11"
+    },
+    "vieira2022": {
+      "auteurs": ["Vieira JG","Sardeli AV","Dias MR","Filho JE","Campos Y","Sant'Ana L","Leitão L","Reis V","Wilk M","Novaes J","Vianna J"],
+      "annee": 2022,
+      "titre": "Effects of Resistance Training to Muscle Failure on Acute Fatigue: A Systematic Review and Meta-Analysis",
+      "revue": "Sports Medicine",
+      "ref": "52(5):1103-1125",
+      "doi": "10.1007/s40279-021-01602-x",
+      "pmid": "34881412",
+      "type": "revue systématique et méta-analyse (20 études, 12 dans la méta-analyse)",
+      "lu": "résumé",
+      "verifie": "2026-09-11"
+    },
+    "moran2017": {
+      "auteurs": ["Morán-Navarro R","Pérez CE","Mora-Rodríguez R","de la Cruz-Sánchez E","González-Badillo JJ","Sánchez-Medina L","Pallarés JG"],
+      "annee": 2017,
+      "titre": "Time course of recovery following resistance training leading or not to failure",
+      "revue": "European Journal of Applied Physiology",
+      "ref": "117(12):2387-2399",
+      "doi": "10.1007/s00421-017-3725-7",
+      "pmid": "28965198",
+      "type": "essai croisé (10 hommes entraînés)",
+      "lu": "résumé",
+      "verifie": "2026-09-11"
+    },
+    "davies2016": {
+      "auteurs": ["Davies T","Orr R","Halaki M","Hackett D"],
+      "annee": 2016,
+      "titre": "Effect of Training Leading to Repetition Failure on Muscular Strength: A Systematic Review and Meta-Analysis",
+      "revue": "Sports Medicine",
+      "ref": "46(4):487-502",
+      "doi": "10.1007/s40279-015-0451-3",
+      "pmid": "26666744",
+      "type": "revue systématique et méta-analyse (8 études)",
+      "lu": "résumé",
+      "verifie": "2026-09-11"
     }
   }
 }

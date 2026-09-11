@@ -1,0 +1,200 @@
+<!--
+{
+  "type": "definition",
+  "title": "RPE musculation : l'échelle de 1 à 10 et comment l'utiliser",
+  "description": "Le RPE note la difficulté d'une série sur 10 : RPE 8, il te restait deux répétitions. L'échelle, des exemples de salle et ce qu'en dit la recherche.",
+  "h1": "Le RPE en musculation : noter la difficulté d'une série",
+  "fil": "RPE",
+  "lede": "Le RPE, c'est une note de difficulté sur 10 que tu donnes à une série. En musculation, on la relie aux répétitions que tu aurais encore pu faire : RPE 8, il t'en restait deux. Voici l'échelle, comment t'en servir pour choisir tes charges, et ce que la recherche en dit.",
+  "primaryQuery": "rpe musculation",
+  "published": "2026-09-11",
+  "reviewed": "2026-09-11",
+  "ordre": 2,
+  "keyPoints": [
+    "RPE veut dire <i lang=\"en\">rating of perceived exertion</i> : l'effort perçu, noté sur 10.",
+    "En musculation, l'échelle la plus utilisée se lit en répétitions en réserve : RPE 10 = aucune, RPE 9 = une, RPE 8 = deux.",
+    "Elle sert à régler la charge du jour : tu vises un nombre de répétitions et un RPE, et tu ajustes le poids à ta forme.",
+    "Régler la charge au RPE donne des gains comparables à un pourcentage fixe du 1RM.",
+    "Estimer son RPE s'apprend : on se trompe en moyenne d'environ une répétition, moins quand on est près de l'échec.",
+    "Dans Top Set, chaque série a son RPE, de 6 à 10 par demi-points, et l'app s'en sert pour te suggérer ta prochaine charge."
+  ],
+  "related": ["/documentation/rir-musculation", "/documentation/top-set-musculation", "/outils/calculateur-1rm"],
+  "termes": [
+    { "terme": "RIR", "sujet": "rir", "def": "Répétitions en réserve : combien tu aurais encore pu en faire. RPE = 10 − RIR." },
+    { "terme": "Échec musculaire", "sujet": "echec-musculaire", "def": "Le moment où une répétition ne monte plus malgré l'effort. RPE 10." },
+    { "terme": "Top set", "url": "/documentation/top-set-musculation", "def": "La série la plus lourde de la séance sur un exercice, souvent réglée à un RPE cible." },
+    { "terme": "1RM", "sujet": "1rm", "def": "La charge maximale soulevable une seule fois ; le [[/outils/calculateur-1rm|calculateur]] l'estime à partir d'une série et de son RPE." },
+    { "terme": "Autorégulation", "def": "Ajuster la charge ou le nombre de séries à ta forme du jour, au lieu de tout fixer d'avance. Le RPE en est l'outil le plus simple." },
+    { "terme": "Échelle de Borg", "def": "La première échelle d'effort perçu, notée de 6 à 20, pensée pour l'endurance." }
+  ],
+  "sources": {
+    "helms2016": "l'échelle de Borg (6 à 20) suit à peu près la fréquence cardiaque et vise l'endurance ; puis CR10 et OMNI (1 à 10) ; le RPE de séance se note 30 minutes après ; avec les échelles classiques, on note souvent moins de 10 même à l'échec ; l'échelle RIR vient d'un manuel de force athlétique de 2008 ; exemples de prescription (« 3 × 10 à RPE 8–9 », « 3 × 3 à 90 % avec 0–1 RIR ») ; le sommeil, l'alimentation et le stress font varier la force d'un jour à l'autre ; échelle peu fiable loin de l'échec ; débutants moins précis (8,96 contre 9,80 à leur 1RM).",
+    "zourdos2016": "l'échelle RPE fondée sur les répétitions en réserve (RPE 10 = aucune, RPE 9 = une, etc.) ; plus la barre ralentit, plus la note monte (r = −0,88 chez les expérimentés, −0,77 chez les débutants) ; jugée pratique pour régler la charge du jour.",
+    "helms2018pct": "sur 8 semaines, régler la charge au RPE ou en pourcentage du 1RM donne des gains comparables, avec un petit avantage probable du RPE pour la force.",
+    "hickmott2022": "sur six études, régler la charge au ressenti ou à la vitesse ne fait pas mieux, ni moins bien, qu'un pourcentage fixe pour le 1RM (différence non significative de 2 kg).",
+    "larsen2021": "toutes les méthodes d'autorégulation étudiées augmentent le 1RM ; le RIR est moins précis chez les débutants et sur les séries longues.",
+    "halperin2022": "sur 12 études et 414 participants, on sous-estime en moyenne de 0,95 répétition ce qui reste avant l'échec, avec de grands écarts ; plus juste près de l'échec et sur les séries de 12 répétitions ou moins.",
+    "helms2018stop": "la méthode « RPE stop » : on enchaîne les séries tant que le RPE cible n'est pas atteint, puis on s'arrête."
+  }
+}
+-->
+<h2 id="definition">Qu'est-ce que le RPE ?</h2>
+<p>
+  <strong>RPE</strong> veut dire <i lang="en">rating of perceived exertion</i> : l'effort
+  perçu. La première échelle, celle de Gunnar Borg, allait de 6 à 20
+  et suivait à peu près la fréquence cardiaque : elle était pensée pour l'endurance. Sont
+  venues ensuite des échelles de 1 à 10, qu'on a aussi utilisées en musculation
+  [@helms2016].
+</p>
+<p>
+  Elles avaient un défaut en salle : même en allant jusqu'à l'échec, beaucoup de
+  pratiquants notaient moins de 10 [@helms2016]. D'où l'échelle qu'on utilise
+  aujourd'hui en musculation, qui se lit en <strong>répétitions en réserve</strong>
+  (le [[/documentation/rir-musculation|RIR]]) : RPE 10, il ne te restait aucune
+  répétition ; RPE 9, une ; RPE 8, deux ; et ainsi de suite [@zourdos2016]. Proposée
+  en 2008 dans un manuel de force athlétique, elle est entrée ensuite dans la
+  littérature scientifique [@helms2016].
+</p>
+
+<h2 id="echelle">L'échelle RPE en un tableau</h2>
+<div class="defile">
+  <table>
+    <caption>L'échelle RPE fondée sur les répétitions en réserve</caption>
+    <thead><tr><th class="n">RPE</th><th class="n">En réserve</th><th>Ce que tu ressens</th></tr></thead>
+    <tbody>
+      <tr><td class="n">10</td><td class="n">0</td><td>Impossible d'en faire une de plus</td></tr>
+      <tr><td class="n">9</td><td class="n">1</td><td>Encore une, pas plus</td></tr>
+      <tr class="fort"><td class="n">8</td><td class="n">2</td><td>Encore deux, proprement</td></tr>
+      <tr><td class="n">7</td><td class="n">3</td><td>Encore trois</td></tr>
+      <tr><td class="n">5–6</td><td class="n">4 à 6</td><td>Effort modéré, jugé en fourchette</td></tr>
+      <tr><td class="n">1–4</td><td class="n">—</td><td>Effort léger, jugé au ressenti</td></tr>
+    </tbody>
+  </table>
+</div>
+<p>
+  Au-delà de trois répétitions en réserve, on juge mal le chiffre exact : l'échelle
+  regroupe 5 et 6 en « 4 à 6 en réserve », et décrit les notes de 1 à 4 comme un
+  effort léger [@helms2016]. Les demi-points (8,5, 9,5) servent quand tu hésites entre
+  deux notes.
+</p>
+
+<h2 id="utiliser">Comment utiliser le RPE</h2>
+<p>Le RPE sert à deux choses.</p>
+<ul>
+  <li><strong>Régler la charge du jour.</strong> Au lieu d'un poids fixé d'avance, on te
+      donne un nombre de répétitions et une difficulté — par exemple « 3 × 10 à
+      RPE 8–9 ». Tu choisis la charge d'après tes séances passées, ta forme du jour et
+      le RPE de tes séries d'échauffement [@helms2016].</li>
+  <li><strong>Suivre et ajuster.</strong> Le RPE noté après chaque série te dit s'il
+      restait de la marge : la prochaine fois, tu montes, tu gardes ou tu baisses la
+      charge.</li>
+</ul>
+<p>
+  Il se combine avec un pourcentage du 1RM : « 3 × 3 à 90 %, avec 0 ou 1 répétition en
+  réserve » dit à la fois la charge prévue et la difficulté attendue. Si tu ne
+  fais pas les 3 répétitions, tu baisses ; s'il t'en reste plus d'une, tu montes
+  [@helms2016]. C'est utile parce que ta force varie d'un jour à l'autre, avec le
+  sommeil, l'alimentation ou le stress [@helms2016] : le même poids ne représente pas
+  toujours le même effort.
+</p>
+<p class="note">
+  L'échelle marche bien pour des séries proches de l'échec, entre RPE 7 et 10. Pour
+  des séries légères et rapides, loin de l'échec, elle perd sa précision
+  [@helms2016].
+</p>
+
+<h2 id="recherche">Ce que dit la recherche</h2>
+<ul>
+  <li><strong>La note suit la vitesse de la barre.</strong> Plus la barre ralentit, plus
+      le RPE noté est haut : la relation est forte chez les pratiquants expérimentés
+      (r = −0,88) et un peu moins chez les débutants (r = −0,77) [@zourdos2016].</li>
+  <li><strong>Régler la charge au RPE fonctionne.</strong> Sur 8 semaines, régler la
+      charge au RPE ou en pourcentage du 1RM donne des gains comparables, avec un petit
+      avantage probable du RPE pour la force [@helms2018pct]. Une méta-analyse de six
+      études ne trouve pas de différence significative entre les deux approches
+      [@hickmott2022], et une revue systématique conclut que toutes les formes
+      d'autorégulation étudiées font progresser le 1RM [@larsen2021].</li>
+  <li><strong>L'estimation n'est pas parfaite.</strong> Sur 12 études et 414
+      participants, on sous-estime en moyenne d'environ une répétition ce qui reste
+      avant l'échec, avec de grands écarts. L'estimation est plus juste près de
+      l'échec et sur les séries de 12 répétitions ou moins [@halperin2022]. Comment
+      s'améliorer : [[/documentation/rir-musculation|estimer ses répétitions en réserve]].</li>
+</ul>
+
+<h2 id="exemples">Exemples en salle</h2>
+<div class="defile">
+  <table>
+    <caption>Squat, objectif : séries de 5 répétitions à RPE 8 (charges en kg). Un exemple.</caption>
+    <thead><tr><th>Série</th><th>Réalisé</th><th class="n">RPE</th><th>Décision</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>100 × 5</td><td class="n">7</td><td>Il en restait 3 : +5 kg</td></tr>
+      <tr class="fort"><td>2</td><td>105 × 5</td><td class="n">8</td><td>Dans la cible : on garde</td></tr>
+      <tr><td>3</td><td>105 × 5</td><td class="n">9</td><td>Au-dessus : on s'arrête là</td></tr>
+    </tbody>
+  </table>
+</div>
+<p>
+  À charge égale, le RPE monte d'une série à l'autre : c'est la fatigue, et c'est
+  attendu. S'arrêter quand la cible est dépassée, c'est la méthode dite
+  « RPE stop » [@helms2018stop] ; on peut aussi baisser la charge et continuer, ce
+  que font les [[/documentation/top-set-musculation|back-off sets]].
+</p>
+<p>
+  <strong>Un jour sans.</strong> La charge de la semaine dernière paraît soudain à
+  RPE 9 au lieu de 8 ? Baisse de 2,5 à 5 kg pour rester dans la cible. Tu fais le
+  travail prévu, à la difficulté prévue, sans t'épuiser un mauvais jour.
+</p>
+
+<h2 id="borg">RPE ou échelle de Borg ?</h2>
+<p>On parle de « RPE » pour plusieurs échelles. Elles ne mesurent pas tout à fait la même chose :</p>
+<div class="defile">
+  <table>
+    <caption>Les échelles d'effort perçu que tu croiseras</caption>
+    <thead><tr><th>Échelle</th><th>Notes</th><th>Pour quoi</th></tr></thead>
+    <tbody>
+      <tr><td>Borg</td><td>6 à 20</td><td>L'endurance ; suit à peu près la fréquence cardiaque</td></tr>
+      <tr><td>Borg CR10, OMNI</td><td>1 à 10</td><td>L'effort en général, musculation comprise</td></tr>
+      <tr><td>RPE de séance</td><td>1 à 10</td><td>Toute une séance, notée 30 minutes après</td></tr>
+      <tr class="fort"><td>RPE en répétitions en réserve</td><td>1 à 10</td><td>Une série de musculation</td></tr>
+    </tbody>
+  </table>
+</div>
+<p>
+  Toutes ont été jugées valides pour mesurer l'effort perçu [@helms2016]. En
+  musculation, c'est la dernière qu'on utilise pour régler une série : c'est elle que
+  décrit cette page, et elle que Top Set enregistre.
+</p>
+
+<h2 id="erreurs">Les erreurs fréquentes</h2>
+<ul>
+  <li><strong>Tout régler au RPE dès le début.</strong> À leur vrai maximum, des
+      débutants notaient en moyenne 8,96, contre 9,80 pour des pratiquants expérimentés
+      [@helms2016]. Quand tu débutes, note ton RPE pour apprendre, mais ne te fie pas
+      qu'à lui pour choisir tes charges.</li>
+  <li><strong>Donner une note précise loin de l'échec.</strong> Sur une série longue
+      ou légère, dire « RPE 6 » plutôt que « 5–6 » est une fausse précision
+      [@halperin2022].</li>
+  <li><strong>Viser RPE 10 à chaque série.</strong> Aller à l'échec a un coût en
+      fatigue : voir [[/documentation/echec-musculaire|l'échec musculaire]].</li>
+  <li><strong>Noter la séance au lieu de la série.</strong> Le RPE de séance, noté
+      après coup, est une autre échelle ; pour régler une série, note juste après
+      l'avoir finie.</li>
+  <li><strong>Garder la charge quand le RPE dit autre chose.</strong> Si ta série
+      prévue à RPE 8 sort à RPE 9,5, la charge était trop lourde aujourd'hui : c'est
+      l'information à utiliser, pas une série ratée.</li>
+</ul>
+
+<h2>Le noter dans Top Set</h2>
+<p>
+  Sous chaque série, un menu te laisse choisir le RPE, de 6 à 10 par demi-points, et
+  l'app écrit ce que ça veut dire : « RPE 8 — 2 reps en réserve ». Pour un exercice
+  au temps, comme la planche, le même champ note la difficulté ressentie de 1 à 10.
+</p>
+<p>
+  L'app se sert du RPE de ton dernier top set pour te <strong>suggérer</strong> une
+  charge, avec sa raison : RPE 8 ou moins, elle propose 2,5 kg de plus ; RPE 8,5
+  ou 9, la même charge ; RPE 9,5 ou 10, la même charge, pour une répétition de moins ou autant.
+  Sans RPE noté, elle ne propose une hausse que si ton top set progresse. Et le
+  [[/outils/calculateur-1rm|calculateur de 1RM]] tient compte du RPE pour estimer ton
+  maximum.
+</p>

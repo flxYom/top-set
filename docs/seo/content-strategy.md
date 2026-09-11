@@ -349,7 +349,7 @@ produit. Pour chaque image : objectif pédagogique, texte alternatif, dimensions
 | F. Pilote | fait le 11/09 : les 5 pages, 14 sources ouvertes une à une | 5 pages publiées | relecture par toi : en ligne, avant l'indexation (le domaine n'est pas encore indexé) ; chaque page relue reçoit son champ `relu` |
 | E bis. Gabarits | fait le 11/09 : sections obligatoires par type, termes associés, fiche d'exercice, rubrique des pages liées ; page top set complétée (séries classiques et pyramide, RPE/RIR, charge depuis le 1RM, avantages, limites, erreurs, suivi dans le temps ; 1 source de plus : Helms 2016, texte sur PMC) ; fiche de la planche | pages mises à jour | `test/contenu.test.mjs` (15), tous les tests, mobile 360 px, Lighthouse en production : top set 100/100/100/100, LCP 1,3 s (une première mesure à 98) ; planche 100, LCP 1,2 s (`recherche/lighthouse-2026-09-11-gabarits.json`) |
 | G. Validation | fait le 11/09 : mobile et ordinateur, console (CSP comprise), routes et 404, canonical, sitemap, Lighthouse en production — 100/100/100/100 sur les pages de contenu, LCP 1,2 s, CLS ≤ 0,002 (`recherche/lighthouse-2026-09-11-pilote.json`). **Reste, côté Google** : Test des résultats enrichis sur une page (JSON-LD), Inspection d'URL et demande d'indexation dans Search Console | rapport de validation | seuils du budget |
-| H. Production | les 15 autres pages, par cluster (pilier d'abord) | ~3 pages par session | idem + inventaire à jour |
+| H. Production | les 15 autres pages, par cluster (pilier d'abord), par lots de 3 publiés un par un. **Lot 1 (intensité) fait le 11/09** : RPE (pilier), RIR, échec musculaire — 10 sources de plus, résumés lus, DOI vérifiés | ~3 pages par lot | idem + inventaire à jour |
 
 ## H. Risques
 
@@ -408,4 +408,5 @@ pas des certitudes.
 | 11/09/2026 | Apprendre devient une rubrique principale : 4e onglet de l'app, page `/apprendre`, barre des rubriques sur chaque page (au lieu d'un lien de pied de page). |
 | 11/09/2026 | Pilote publié avant la relecture humaine, parce que le domaine n'est pas encore indexé ; la mention « relu » attend la relecture réelle. |
 | 11/09/2026 | Le calculateur de 1RM charge `intelligence.js` : même formule (Epley) et même limite (12 répétitions) que le carnet. |
+| 11/09/2026 | Production par lots à la demande du propriétaire (« fais les autres aussi ») : chaque lot de 3 pages a ses sources ouvertes une à une et passe toute la validation avant d'être publié ; pas de publication en masse. RPE et RIR sans cannibalisation : la page RPE présente l'échelle et son usage, la page RIR la façon d'estimer juste. |
 | 11/09/2026 | Gabarits vérifiés par le générateur : une définition sans erreurs fréquentes ni termes associés, un exercice sans fiche, ne se génèrent pas. Origine du mot « top set » : non datée, on le dit plutôt que d'inventer ; la recherche l'emploie tel quel (Helms et al. 2018). |
