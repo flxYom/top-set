@@ -1022,8 +1022,9 @@ c'est pour elle qu'elle a été écrite en premier.
 
 **Encore ouvert :** le retour du lien de réinitialisation du mot de passe n'a
 jamais été exercé avec un vrai email. Les enregistrements DNS de Resend sont
-publiés sur `top-set.fr` ; il reste à brancher la clé API dans les réglages SMTP
-de Supabase et à faire le tour complet.
+publiés sur `top-set.fr` et la clé API est branchée dans les réglages SMTP de
+Supabase (d'après le propriétaire, 11 septembre 2026 — pas vérifié depuis le
+dépôt) ; il reste à faire le tour complet.
 
 ---
 

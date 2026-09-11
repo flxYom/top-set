@@ -237,6 +237,8 @@ while it stays below `1.0.0`, breaking changes (in particular to the
   page will describe any new processing before it starts. Comments added to
   what an account records. The « What changed » section is gone: each change
   now sits in the section it concerns. `VERSION_POLITIQUE` → `3.1`.
+- **READMEs.** The Resend API key is now wired into Supabase's SMTP settings,
+  per the owner; only a full password-reset round trip remains open.
 - **Guide.** Removes the timed-exercise section and the « two accounts on one
   phone » section; « Back up your data » becomes a short « Export your
   sessions » (JSON or CSV), placed after the account section; the coaching
