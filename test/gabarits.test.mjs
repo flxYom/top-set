@@ -16,10 +16,14 @@ import { readFileSync } from 'fs';
 // Le JS de l'app vit dans app.js depuis qu'on a retire 'unsafe-inline' de la
 // CSP : sans etape de build, un script externe est le seul moyen de se passer
 // de cette permission sur un hebergement statique.
-const SRC  = readFileSync(new URL('../app.js', import.meta.url), 'utf8');
-const HTML = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
-const SW   = readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
-const CFG  = readFileSync(new URL('../vercel.json', import.meta.url), 'utf8');
+// Fins de ligne ramenees a « \n » : sous Windows, Git rend les fichiers en
+// CRLF, et la CI (Linux) les lit en LF. Un garde-fou qui cherchait « \r\n »
+// passait ici et echouait en CI.
+const lireLF = f => readFileSync(new URL(f, import.meta.url), 'utf8').replace(/\r\n/g, '\n');
+const SRC  = lireLF('../app.js');
+const HTML = lireLF('../index.html');
+const SW   = lireLF('../sw.js');
+const CFG  = lireLF('../vercel.json');
 
 let pass = 0, fail = 0;
 function ok(label, cond, detail = ''){
@@ -192,7 +196,7 @@ console.log('\n== 11. Une seule messagerie, et elle se comporte comme une messag
 // pas un formulaire — et les pieges dans lesquels les versions precedentes
 // sont tombees.
 
-const MSG = corps('// MESSAGES\r\n', '// COACH\r\n');
+const MSG = corps('// MESSAGES\n', '// COACH\n');
 ok('la section MESSAGES est bien delimitee', MSG.length > 3000, MSG.length + ' caracteres');
 
 ok('quatre points de vue, un seul rendu',

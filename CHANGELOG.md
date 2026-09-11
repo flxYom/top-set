@@ -206,6 +206,12 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ### Fixed
 
+- **CI was red on Linux.** A guard located the messaging section of `app.js`
+  by searching for Windows line endings (`
+`); Git writes CRLF on Windows
+  and LF on the CI runner, so the guard passed locally and failed in CI, which
+  also skipped every step after it. The guards now normalise line endings
+  when they read a file.
 - **iPhone, installed app: the data sheet could not be closed.** Sheets were
   centred with a 16 px margin in a screen that starts under the status bar; a
   tall one put its × under the clock. Sheets and the welcome screen now leave
