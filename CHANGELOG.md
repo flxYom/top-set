@@ -207,8 +207,7 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 ### Fixed
 
 - **CI was red on Linux.** A guard located the messaging section of `app.js`
-  by searching for Windows line endings (`
-`); Git writes CRLF on Windows
+  by searching for Windows line endings (CRLF); Git writes CRLF on Windows
   and LF on the CI runner, so the guard passed locally and failed in CI, which
   also skipped every step after it. The guards now normalise line endings
   when they read a file.
