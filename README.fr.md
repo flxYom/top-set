@@ -684,7 +684,7 @@ supabase-config.js       URL du projet + clé publique (voir Comptes)
 supabase/schema.sql      tables, politiques RLS et fonctions de synchro
 supabase/test/           le schéma testé sur un vrai Postgres (PGlite) : RLS (233),
                          montée depuis chaque version passée (11)
-test/                    logique métier (146), gardes de sécurité (167), liens (63)
+test/                    logique métier (146), gardes de sécurité (167), liens (63), gabarits de contenu (15)
 LICENSE  SECURITY.md  CONTRIBUTING.md  CHANGELOG.md
 .github/                 modèles d'issues, workflow de CI
 .vercelignore            ce que le site ne publie pas : docs, schéma, tests, source du contenu
@@ -876,6 +876,25 @@ oublier : title, description, canonical, Open Graph, fil d'Ariane, signature,
 sommaire, sources numérotées et le JSON-LD — `BreadcrumbList` partout,
 `Article` sur les définitions, guides et exercices, `SoftwareApplication` sur la
 page produit seulement, jamais de `FAQPage`.
+
+**Ce que chaque type de page contient.** Le générateur connaît le gabarit de
+chaque type, et refuse une page qui en oublie une partie :
+
+- une **définition** a ses sections « ce que c'est », « comment s'en servir »,
+  « exemples » et « erreurs fréquentes », repérées par l'identifiant de leur
+  titre (`<h2 id="erreurs">` ; le titre lui-même reste libre), et au moins trois
+  **termes associés** dans son champ `termes`. Un terme dont le sujet est publié
+  dans la matrice devient un lien vers sa page, tout seul, le jour où elle
+  paraît ;
+- un **exercice** a sa **fiche** (muscles, matériel, niveau, mouvement,
+  respiration), affichée avant le sommaire et dont les sources sont numérotées
+  comme le reste ; ses sections « position et exécution », « erreurs
+  fréquentes » et « variantes » ; au moins une notion liée, et un autre exercice
+  lié dès qu'il en existe un.
+
+« À lire ensuite » affiche la rubrique de chaque page liée. `test/contenu.test.mjs`
+retire ces éléments à une copie du site et vérifie que le générateur refuse bien,
+en disant ce qui manque.
 
 **Ce que le générateur refuse** (et la CI avec lui, `--verifier`) : une source
 citée qui n'est pas dans la bibliographie, ou citée sans dire ce qu'elle soutient

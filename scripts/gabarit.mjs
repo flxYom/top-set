@@ -30,6 +30,27 @@ function auteursCourts(liste){
   return liste.length > 3 ? liste.slice(0, 3).join(', ') + ' et al.' : liste.join(', ');
 }
 
+// La fiche d'un exercice, dans l'ordre ou on se pose les questions. Les
+// libelles restent courts : sur telephone, la valeur garde la place.
+export const FICHE = {
+  muscles: 'Muscles', materiel: 'Matériel', niveau: 'Niveau',
+  mouvement: 'Mouvement', respiration: 'Respiration'
+};
+export function ficheHtml(f){
+  return `<section class="fiche reperes" aria-labelledby="reperes-titre"><h2 id="reperes-titre">La fiche</h2><dl>`
+    + Object.keys(FICHE).filter(k => f[k]).map(k => `<dt>${FICHE[k]}</dt><dd>${f[k]}</dd>`).join('')
+    + `</dl></section>`;
+}
+
+// Les termes associes d'une definition : un lien quand la page existe, sinon
+// la definition courte suffit.
+export function termesHtml(termes){
+  if (!termes.length) return '';
+  return `\n<h2 id="termes-associes">Termes associés</h2>\n<dl class="termes">`
+    + termes.map(t => `<dt>${t.url ? `<a href="${t.url}">${esc(t.terme)}</a>` : esc(t.terme)}</dt><dd>${t.def}</dd>`).join('')
+    + `</dl>\n`;
+}
+
 export function ligneSource(cle, s, appui){
   const liens = [];
   if (s.doi) liens.push(`<a href="https://doi.org/${esc(s.doi)}">doi:${esc(s.doi)}</a>`);
@@ -131,6 +152,7 @@ export function pageContenu(p, ctx){
     haut.push(`<aside class="essentiel" aria-labelledby="essentiel-titre"><h2 id="essentiel-titre">L'essentiel</h2><ul>`
       + p.keyPoints.map(k => `<li>${k}</li>`).join('') + `</ul></aside>`);
   }
+  if (p.blocFiche) haut.push(p.blocFiche);
   // Un outil s'ouvre sur l'outil, pas sur un sommaire (« sommaire »: false).
   if (p.sommaire !== false && p.toc.length >= 3){
     haut.push(`<nav class="sommaire" aria-labelledby="sommaire-titre"><h2 id="sommaire-titre">Sommaire</h2><ol>`
@@ -139,7 +161,7 @@ export function pageContenu(p, ctx){
   const bas = [];
   if (p.liees.length){
     bas.push(`<section class="liees" aria-labelledby="liees-titre"><h2 id="liees-titre">À lire ensuite</h2><ul>`
-      + p.liees.map(l => `<li><a href="${l.url}">${esc(texteBrut(l.h1))}<span>${esc(texteBrut(l.description))}</span></a></li>`).join('')
+      + p.liees.map(l => `<li><a href="${l.url}">${l.rubrique ? `<small>${esc(l.rubrique)}</small>` : ''}${esc(texteBrut(l.h1))}<span>${esc(texteBrut(l.description))}</span></a></li>`).join('')
       + `</ul></section>`);
   }
   if (p.cta){

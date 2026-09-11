@@ -114,6 +114,12 @@ tr.fort td{color:var(--ink);font-weight:800;}
 .fiche dl{display:grid;grid-template-columns:auto 1fr;gap:5px 14px;margin:0;font-size:15px;line-height:1.5;}
 .fiche dt{color:var(--dim);font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;padding-top:2px;}
 .fiche dd{margin:0;}
+/* La fiche d'un exercice : la meme boite, en tete de page. */
+.reperes{padding:14px 18px;margin:0 0 26px;}
+.reperes h2{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--orange);margin:0 0 8px;padding:0;border:0;}
+.termes{margin:0 0 14px;}
+.termes dt{font-weight:800;margin-top:12px;}
+.termes dd{margin:2px 0 0;color:var(--dim);}
 figure{margin:22px 0;}
 figure svg,figure img{display:block;width:100%;height:auto;background:var(--panel);border:2px solid var(--line);}
 figcaption{font-size:13px;color:var(--dim);margin-top:8px;line-height:1.5;}
@@ -137,6 +143,7 @@ figcaption{font-size:13px;color:var(--dim);margin-top:8px;line-height:1.5;}
 .liees a{display:block;border:2px solid var(--line);padding:10px 14px;text-decoration:none;color:var(--ink);}
 .liees a:hover{border-color:var(--orange);}
 .liees span{display:block;font-size:14px;color:var(--dim);line-height:1.45;}
+.liees small{display:block;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--orange);}
 .appel{border:2.5px solid var(--orange);padding:18px;margin:34px 0 0;}
 .appel h2{margin-top:0;padding-top:0;border:0;font-size:21px;}
 .sources{font-size:14px;line-height:1.55;}

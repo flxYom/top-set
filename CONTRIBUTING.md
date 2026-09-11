@@ -45,7 +45,7 @@ sync) and `intelligence.js` (pure business logic, tested). Run the tests
 before sending anything:
 
 ```bash
-node test/intelligence.test.mjs && node test/gabarits.test.mjs && node test/liens.test.mjs && node scripts/contenu.mjs --verifier
+node test/intelligence.test.mjs && node test/gabarits.test.mjs && node test/liens.test.mjs && node scripts/contenu.mjs --verifier && node test/contenu.test.mjs
 ```
 
 `guide.html`, `cgu.html`, `confidentialite.html` and
@@ -56,6 +56,11 @@ The content pages (`documentation/`, `entrainement/`, `exercices/`,
 `404.html`) and `sitemap.xml` are **generated**: edit their source in
 `contenu/`, then run `node scripts/contenu.mjs`. Never edit the generated
 files by hand — CI fails when they differ from their source. A page may only
-cite sources listed in `contenu/sources.json`, each one actually opened. See the
+cite sources listed in `contenu/sources.json`, each one actually opened. Each
+page type has a template the generator enforces: a definition needs its
+`definition`, `utiliser`, `exemples` and `erreurs` sections (the `id` of their
+`<h2>`) and at least three `termes`; an exercise needs its `fiche` (`muscles`,
+`materiel`, `niveau`, `mouvement`, `respiration`) and its `execution`,
+`erreurs` and `variantes` sections. The error message says what is missing. See the
 README's [Project structure](README.md#project-structure) section for
 the full list.
