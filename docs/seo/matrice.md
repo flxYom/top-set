@@ -17,10 +17,10 @@ Pondération : demand ×2, relevance ×1.5, competition ×1.5, opportunity ×1.5
 | 7 | La surcharge progressive | surcharge progressive musculation | progression | guide (pilier) | 5 | 5 | 2 | 3 | 5 | 3 | 5 | 5 | **83** | PUBLISHED | /entrainement/surcharge-progressive | faible |
 | 8 | Calculateur de 1RM (avec RPE) | calcul 1rm | charge | outil | 5 | 5 | 1 | 3 | 4 | 5 | 5 | 5 | **82** | PUBLISHED | /outils/calculateur-1rm | faible |
 | 9 | Les répétitions en réserve (RIR) | rir musculation | intensite | définition | 5 | 4 | 2 | 3 | 4 | 4 | 5 | 5 | **79** | PUBLISHED | /documentation/rir-musculation | faible |
-| 10 | Suivre sa progression en musculation | suivi progression musculation | suivi | guide (pilier) | 5 | 3 | 3 | 4 | 4 | 3 | 5 | 5 | **79** | SELECTED | /entrainement/suivre-sa-progression | faible |
+| 10 | Suivre sa progression en musculation | suivi progression musculation | suivi | guide (pilier) | 5 | 3 | 3 | 4 | 4 | 3 | 5 | 5 | **79** | PUBLISHED | /entrainement/suivre-sa-progression | faible |
 | 11 | Carnet de musculation gratuit (page produit) | carnet de musculation | suivi | page produit | 5 | 5 | 2 | 4 | 3 | 1 | 5 | 5 | **78** | PUBLISHED | /carnet-de-musculation | faible |
 | 12 | Combien de séries par muscle et par semaine | combien de séries par muscle par semaine | progression | guide | 4 | 5 | 1 | 3 | 5 | 5 | 5 | 4 | **78** | PUBLISHED | /entrainement/nombre-de-series-par-muscle | faible |
-| 13 | Temps de repos entre les séries | temps de repos musculation | progression | guide | 5 | 5 | 1 | 3 | 4 | 4 | 4 | 5 | **78** | SELECTED | /entrainement/temps-de-repos | faible |
+| 13 | Temps de repos entre les séries | temps de repos musculation | progression | guide | 5 | 5 | 1 | 3 | 4 | 4 | 4 | 5 | **78** | PUBLISHED | /entrainement/temps-de-repos | faible |
 | 14 | L'échec musculaire | échec musculaire | intensite | guide | 4 | 5 | 2 | 3 | 5 | 3 | 5 | 4 | **77** | PUBLISHED | /documentation/echec-musculaire | faible |
 | 15 | Tableau RPE → % du 1RM | tableau rpe pourcentage | intensite | outil | 5 | 4 | 2 | 3 | 4 | 3 | 5 | 5 | **77** | PUBLISHED | /outils/tableau-rpe | faible |
 | 16 | Tableau des pourcentages du 1RM | pourcentage 1rm | charge | outil | 5 | 4 | 2 | 3 | 4 | 4 | 5 | 4 | **76** | IDEA | /outils/pourcentages-1rm | faible |
@@ -32,7 +32,7 @@ Pondération : demand ×2, relevance ×1.5, competition ×1.5, opportunity ×1.5
 | 22 | Progresser au soulevé de terre | comment progresser au soulevé de terre | exercices | guide | 5 | 3 | 3 | 3 | 3 | 3 | 4 | 5 | **73** | IDEA | /entrainement/progresser-souleve-de-terre | faible |
 | 23 | Modèle de carnet de musculation (Excel / CSV) | carnet de musculation excel | suivi | outil | 5 | 4 | 3 | 4 | 2 | 1 | 3 | 5 | **72** | SELECTED | /outils/modele-carnet-musculation | faible |
 | 24 | Combien de fois s'entraîner par semaine | fréquence entraînement musculation | progression | guide | 3 | 5 | 2 | 3 | 4 | 5 | 4 | 3 | **72** | IDEA | /entrainement/frequence | faible |
-| 25 | Sortir d'une stagnation | stagnation musculation | progression | guide | 5 | 3 | 2 | 3 | 4 | 2 | 5 | 5 | **72** | SELECTED | /entrainement/stagnation | faible |
+| 25 | Sortir d'une stagnation | stagnation musculation | progression | guide | 5 | 3 | 2 | 3 | 4 | 2 | 5 | 5 | **72** | PUBLISHED | /entrainement/stagnation | faible |
 | 26 | Le record personnel (PR) | pr musculation | charge | définition | 5 | 2 | 4 | 4 | 3 | 1 | 4 | 5 | **71** | IDEA | /documentation/record-personnel | faible |
 | 27 | Tester son 1RM sans se blesser | comment tester son 1rm | charge | guide | 4 | 3 | 3 | 3 | 4 | 4 | 4 | 4 | **71** | IDEA | /entrainement/tester-son-1rm | moyen |
 | 28 | Programmer top set + back-off | top set back off programme | top-set | guide | 5 | 2 | 4 | 4 | 3 | 2 | 3 | 5 | **71** | MERGE | /documentation/top-set-musculation | faible |
@@ -166,7 +166,7 @@ Pondération : demand ×2, relevance ×1.5, competition ×1.5, opportunity ×1.5
 - **Concurrence** : DDG FR : les mêmes guides RPE+RIR ; plusieurs pages combinent les deux
 - **Notes** : RISQUE DE CANNIBALISATION avec rpe. Différenciation : cette page = savoir estimer ses reps en réserve (précision, apprentissage, erreurs) ; le pilier RPE = l'échelle et son usage. Liens croisés explicites.
 
-### Suivre sa progression en musculation — 79 (SELECTED)
+### Suivre sa progression en musculation — 79 (PUBLISHED)
 
 - **Requête** : suivi progression musculation · variantes : suivi musculation, comment suivre sa progression, noter ses séances de musculation
 - **Intention** : informationnelle · **page parente** : /carnet-de-musculation
@@ -190,7 +190,7 @@ Pondération : demand ×2, relevance ×1.5, competition ×1.5, opportunity ×1.5
 - **Concurrence** : DDG FR : 10 guides quasi identiques « 2026 » (MEV/MAV/MRV)
 - **Notes** : Très concurrentiel, mais 25 revues PubMed et beaucoup de pages sans source. L'app compte déjà les séries par groupe dans le récap. Absorbe l'intention « volume musculation définition ».
 
-### Temps de repos entre les séries — 78 (SELECTED)
+### Temps de repos entre les séries — 78 (PUBLISHED)
 
 - **Requête** : temps de repos musculation · variantes : temps de repos musculation hypertrophie, temps de repos entre chaque série, temps de récupération musculation, combien de temps de repos muscu
 - **Intention** : informationnelle · **page parente** : /entrainement/surcharge-progressive
@@ -284,7 +284,7 @@ Pondération : demand ×2, relevance ×1.5, competition ×1.5, opportunity ×1.5
 - **Demande** : autocomplétion : 9 variantes « combien de fois par semaine »
 - **Concurrence** : DDG FR : 10 blogs
 
-### Sortir d'une stagnation — 72 (SELECTED)
+### Sortir d'une stagnation — 72 (PUBLISHED)
 
 - **Requête** : stagnation musculation · variantes : stagnation musculation débutant, pourquoi je stagne en musculation, plateau musculation
 - **Intention** : informationnelle · **page parente** : /entrainement/surcharge-progressive

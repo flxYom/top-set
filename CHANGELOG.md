@@ -18,7 +18,7 @@ while it stays below `1.0.0`, breaking changes (in particular to the
   written from the February 2026 official texts
   (`/entrainement/carnet-musculation-eps`), and the plank
   (`/exercices/planche-gainage`) — plus section hubs, a page on how the pages
-  are made (`/methode-editoriale`) and a branded 404. 38 sources cited, each opened
+  are made (`/methode-editoriale`) and a branded 404. 45 sources cited, each opened
   and labelled with what was read. Signed « Yom Industry × Claude
   (Anthropic) ». Everything sits under one main section, **Apprendre**
   (`/apprendre`, listing every section and page): a fourth app tab next to
@@ -74,6 +74,14 @@ while it stays below `1.0.0`, breaking changes (in particular to the
   pages, becomes indexable. The guide's recap section now says the muscle-group
   count includes warm-ups, and that the exercise chart plots the top set's
   estimated 1RM (it said « your loads »).
+- **Content, batch 4 — tracking** (French), in `/entrainement`: rest between
+  sets, getting past a plateau (a diagnosis read from one's own log), and
+  tracking one's progress (the pillar of the tracking cluster: why log —
+  a 138-trial meta-analysis on progress monitoring —, what to note, which
+  numbers to follow, how to read them). 7 new sources (Singer 2024, Grgic 2017
+  and 2018, Harkin 2016, Michie 2009, Coleman 2024, Craven 2022). The plateau
+  page says plainly that nutrition is not covered yet rather than advise
+  without sources.
 - **SEO and content strategy** (`docs/seo/`, not published). An audit of the
   real site — the home page shows Googlebot 118 words and a sign-up screen, no
   page answers a search — research from Google autocomplete (155 seed queries,
