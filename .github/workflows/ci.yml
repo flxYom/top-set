@@ -31,6 +31,11 @@ jobs:
       - name: Template and hardening guards
         run: node test/gabarits.test.mjs
 
+      # La matrice SEO : notes recalculees, pas de cannibalisation (deux pages
+      # actives sur la meme URL ou la meme requete), fichiers generes a jour.
+      - name: SEO topic matrix
+        run: node docs/seo/matrice.mjs --verifier
+
       # Remplace lychee-action, qui echouait a chaque execution sans qu'on
       # puisse reproduire l'echec en local ni lire utilement son journal. Ce
       # test-ci tourne a l'identique sur une machine de dev et ici, et il

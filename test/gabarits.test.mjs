@@ -340,7 +340,7 @@ console.log('\n== 18. Ce que le site publie ==');
 // Vercel publie tout le depot, sauf ce que .vercelignore ecarte. Le schema,
 // les tests et le journal y etaient lisibles : rien de secret, rien a servir.
 const IGN = readFileSync(new URL('../.vercelignore', import.meta.url), 'utf8').split(/\r?\n/).map(l => l.trim());
-for (const x of ['supabase/', 'test/', '.github/', 'screenshots/', 'CHANGELOG.md', 'README.md'])
+for (const x of ['supabase/', 'test/', 'docs/', '.github/', 'screenshots/', 'CHANGELOG.md', 'README.md'])
   ok('pas publie : ' + x, IGN.includes(x));
 const PRECHARGE = (SW.match(/A_PRECHARGER = \[([\s\S]*?)\]/) || [])[1] || '';
 ok('et rien de ce que le service worker precharge n en fait partie',

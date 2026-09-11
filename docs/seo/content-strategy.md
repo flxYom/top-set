@@ -1,0 +1,361 @@
+# Stratégie SEO et contenu — TOP SET
+
+> Mémoire stratégique du référencement. À relire avant toute nouvelle page.
+> **Dernière analyse : 11 septembre 2026.** Étape en cours : **B–D terminées, E à valider.**
+
+**Objectif** — faire de top-set.fr une ressource de référence en musculation, organisée autour d'un parcours :
+**comprendre → apprendre → s'entraîner → suivre → progresser**. L'application reste le produit ; le
+contenu répond à de vraies recherches, construit l'autorité du domaine et mène naturellement à l'app.
+
+**Critère de réussite** — pas « 50 pages », mais : chaque page répond à une intention réelle, chaque cluster a
+une page pilier, les sources sont vérifiables, les pages sont indexables et rapides, et Search Console dit
+quelle page écrire ensuite.
+
+Fichiers liés :
+
+| Fichier | Rôle |
+|---|---|
+| `sujets.json` | la matrice (source de vérité) : 83 sujets, 8 notes chacun, signaux, statut |
+| `matrice.mjs` | calcule les notes, vérifie la cohérence (cannibalisation, champs), génère les deux fichiers ci-dessous |
+| `matrice.md` | la matrice classée, avec les signaux sujet par sujet (généré) |
+| `inventaire.md` | une ligne par URL : statut, requête, sujets absorbés (généré) |
+| `recherche/` | les données brutes, datées : autocomplétion Google, concurrence, PubMed, Lighthouse |
+
+---
+
+## A. Architecture actuelle (inspectée le 11/09/2026)
+
+| Point | Constat |
+|---|---|
+| Framework | aucun. HTML statique, CSS en ligne dans `index.html`, JS dans `app.js` + `intelligence.js` |
+| Build | aucun. Vercel sert les fichiers tels quels (`cleanUrls: true`, `trailingSlash: false`) |
+| Routage | les « vues » de l'app (planning, séances, récap…) ne sont **pas** des URL : un seul `/` |
+| Pages | 5 : `/` (l'app), `/guide`, `/confidentialite`, `/cgu`, `/mentions-legales` |
+| Métadonnées | écrites à la main dans chaque `<head>` : title, description, canonical, Open Graph, Twitter |
+| Données structurées | `WebSite` sur l'accueil uniquement |
+| Assets | police auto-hébergée, icônes générées par script, `legal.css` partagé par les 4 pages annexes |
+| PWA | `sw.js` : réseau d'abord pour les pages, chaque page visitée est mise en cache (hors ligne ensuite) |
+| CSP | `script-src 'self'` : aucun script en ligne possible, seulement des fichiers servis par le site |
+| Publication | `.vercelignore` exclut docs, schéma, tests |
+
+## B. Problèmes SEO, par priorité
+
+**P1 — bloquants**
+
+1. **Aucune page ne répond à une recherche.** Rendu comme Googlebot, l'accueil montre **118 mots** : un
+   planning vide daté du jour, et l'écran de création de compte par-dessus. Rien ne dit ce qu'est TOP SET.
+   Les 4 autres pages sont le guide et des pages légales.
+2. **Le nom est un mot courant.** « top set » est une méthode d'entraînement (forums, coachs) et une barre
+   chocolatée (« top set chocolat » dans l'autocomplétion). On ne gagnera pas « top set » contre ces sens :
+   il faut devenir la meilleure ressource sur la **méthode**, et que cette ressource montre l'app.
+3. **Le domaine n'est pas encore indexé.** Search Console vient d'être configuré ; sitemap soumis le 11/09,
+   statut « impossible de récupérer » (courant juste après soumission ; le fichier est valide et servi).
+
+**P2 — importants**
+
+4. **Autorité nulle** : domaine neuf, aucun lien entrant connu (Search Console → Liens le dira).
+5. **Deux hôtes à vérifier** : `top-set.vercel.app` redirige vers une page `/login` titrée « Top Set »
+   (ancienne version Next.js ?) et `topset-web.vercel.app` répond « Topset ». S'ils sont à nous, ils
+   concurrencent la marque ; s'ils ne le sont pas, rien à faire.
+6. **Accueil : CLS 0,20** (seuil « bon » : 0,1) — la vue planning bouge au chargement ; performance
+   Lighthouse 85. Le guide est à 99. C'est un correctif de l'app, à faire à part, avec précaution.
+
+**P3 — mineurs**
+
+7. Deux `<h1>` sur l'accueil (le logo « TOPSETapp » et « Ton carnet de musculation » dans l'écran d'accueil).
+8. Pas de page 404 à nous : Vercel affiche « NOT_FOUND » brut, sans lien pour repartir.
+9. Contraste du logo signalé par Lighthouse (un logotype est exempté par les WCAG ; faible priorité).
+
+**Ce qui va bien** (vérifié) : canonical correct sur chaque page ; `top-set.fr` → `www` en 308 ;
+`/guide.html` et `/guide/` → `/guide` en 308 ; `http` → `https` ; aucun `noindex` ; `robots.txt` et
+`sitemap.xml` valides ; paramètres d'URL couverts par le canonical ; Lighthouse SEO 100/100 sur les deux
+pages mesurées ; guide : performance 99, LCP 1,4 s.
+
+## C. Architecture éditoriale recommandée
+
+Le produit reste à `/` (ne rien casser : les téléphones qui ont installé l'app ouvrent `/`). Le contenu
+vit à côté, en pages statiques :
+
+| Section | Rôle | Hub |
+|---|---|---|
+| `/documentation/` | le lexique : une notion, une page (top set, RPE, 1RM, échec…) | `/documentation` |
+| `/entrainement/` | principes et méthodes : comment progresser, doser, suivre | `/entrainement` |
+| `/exercices/` | les mouvements, sous l'angle « bien faire, puis progresser et suivre » | `/exercices` |
+| `/outils/` | calculateurs utiles, reliés au carnet | `/outils` |
+| `/carnet-de-musculation` | la page produit : ce que fait TOP SET, pour qui | — |
+| `/nutrition/` | **reportée** : sujets de santé, forte concurrence, faible lien produit | — |
+
+`/guide` reste l'aide de l'app (« comment ça marche ») : ce n'est pas du contenu SEO. Quand une notion y
+est expliquée (RPE, sauvegarde), le guide renvoie vers la page de documentation au lieu de la dupliquer.
+
+### Clusters et pages piliers
+
+| Cluster | Pilier | Pages secondaires (première vague en gras) |
+|---|---|---|
+| **Top set & structure des séries** | `/documentation/top-set-musculation` | **back-off set**, séries d'échauffement, drop set, pyramide, rest-pause, superset |
+| **Intensité & autorégulation** | `/documentation/rpe-musculation` | **RIR**, **échec musculaire**, **tableau RPE** (outil), intensité vs effort, autorégulation |
+| **Charge & force maximale** | `/documentation/1rm-musculation` | **calculateur 1RM** (outil), pourcentages du 1RM, tester son 1RM, record personnel, tonnage |
+| **Progression & programmation** | `/entrainement/surcharge-progressive` | **répétitions**, **séries par muscle**, **temps de repos**, **stagnation**, deload, fréquence, périodisation, tempo, amplitude |
+| **Suivi & carnet** | `/entrainement/suivre-sa-progression` (méthode) + `/carnet-de-musculation` (produit) | **carnet EPS**, **modèle Excel/CSV** (outil) |
+| **Exercices** | `/exercices` (hub) | **planche/gainage**, **développé couché**, **poids de la barre**, squat, soulevé de terre, tractions… |
+| Programmes | plus tard | PPL, full body, 5/3/1 — quand l'app aura des modèles de séance |
+
+Maillage : le parcours se lit dans les liens. Exemple : RPE → RIR → échec musculaire → top set → back-off →
+1RM → calculateur → carnet. Chaque page a un parent, ses enfants, 3 à 6 notions liées **dans le texte**, et
+un lien vers son pilier. Pas de bloc « articles similaires » générique.
+
+## D. Recherche : méthode et limites
+
+Toutes les données sont dans `recherche/`, datées :
+
+| Source | Ce qui a été fait | Fichier |
+|---|---|---|
+| Autocomplétion Google (FR) | 155 requêtes de départ (sujets × « comment / pourquoi / combien / c'est quoi »), 1 036 suggestions | `suggestions-google-2026-09-11.json` |
+| Concurrence | top 10 organique de 32 requêtes clés, annonces exclues | `concurrence-ddg-2026-09-11.json` |
+| Pages concurrentes | lecture détaillée des deux pages en tête sur « top set » et d'un outil EPS | notes dans `matrice.md` |
+| PubMed | nombre de méta-analyses et revues systématiques par thème (18 thèmes) | `pubmed-revues-2026-09-11.json` |
+| Lighthouse | mesure « avant » de `/` et `/guide` (mobile) | `lighthouse-2026-09-11.json` |
+
+**Limites, à dire franchement :**
+
+- **Pas de volumes de recherche.** Aucune source gratuite fiable n'en donne ; la matrice utilise des
+  *signaux* (présence et précision des suggestions), jamais de chiffres inventés.
+- **La concurrence vient de DuckDuckGo France, donc de Bing — pas du classement Google.** Google a bloqué
+  les requêtes automatiques (page « trafic inhabituel ») : on ne contourne pas ce contrôle. Les SERP Google,
+  les « Autres questions posées » et Google Trends restent à consulter à la main (voir ci-dessous).
+- **Google Trends** a refusé l'accès automatique (erreur 429). Cinq comparaisons à ouvrir à la main,
+  2 minutes, pour compléter les signaux :
+  - [RPE vs RIR vs échec](https://trends.google.com/trends/explore?date=today%205-y&geo=FR&q=rpe%20musculation,rir%20musculation,%C3%A9chec%20musculaire)
+  - [carnet vs application vs suivi](https://trends.google.com/trends/explore?date=today%205-y&geo=FR&q=carnet%20de%20musculation,application%20musculation,suivi%20musculation)
+  - [1RM : les formulations](https://trends.google.com/trends/explore?date=today%205-y&geo=FR&q=1rm,calcul%201rm,charge%20maximale%20musculation)
+  - [top set vs back off vs drop set](https://trends.google.com/trends/explore?date=today%205-y&geo=FR&q=top%20set,back%20off%20set,drop%20set)
+  - [saisonnalité du carnet EPS](https://trends.google.com/trends/explore?date=today%205-y&geo=FR&q=carnet%20de%20musculation%20eps)
+
+**Ce que la recherche a appris** (et qui a changé le plan) :
+
+1. **La niche EPS.** « eps », « bac », « terminale », « lycée » apparaissent sous « carnet de musculation »
+   *et* « carnet d'entraînement musculation » : des lycéens doivent tenir un carnet pour l'EPS. En face :
+   des PDF d'établissements, Scribd, deux outils EPS (l'un sans bilan ni graphique). TOP SET — gratuit, sans
+   compte, exportable — y répond exactement.
+2. **Le top set est peu couvert en français.** Un fil de forum, un blog de coach (~850 mots, 0 source), une
+   page d'éditeur d'app mi-française mi-anglaise (0 source), puis des vidéos. Aucune méta-analyse n'étudie
+   la méthode nommée : la page s'appuiera sur la littérature RPE/RIR, proximité de l'échec et charge, et le
+   dira.
+3. **Les sujets d'entraînement génériques sont saturés** de « guides complets 2026 » presque identiques et
+   rarement sourcés (séries par muscle, temps de repos, surcharge progressive). On n'y gagne qu'avec des
+   sources lues, des exemples de salle, et un lien avec ses propres données.
+4. **Les pages exercices sont les moins accessibles** (sites établis, Décathlon, Wikipédia). Une seule dans
+   la première vague pour valider le gabarit, plus une page au temps (planche) liée à une fonction de l'app.
+5. **Un format Excel qui se réimporte.** « carnet de musculation excel » + le CSV de l'app qui se réimporte
+   déjà : un modèle au format exact de l'export est un pont direct vers le produit.
+6. **Questions pratiques de quiconque note ses charges** : « combien pèse la barre » (développé couché,
+   Basic-Fit). Petite page, peu concurrencée, utile au moment de la saisie.
+
+## Méthode de notation
+
+Huit critères notés de 0 à 5 dans `sujets.json` (définitions dans le fichier). Pondération, écrite une
+seule fois dans `matrice.mjs` :
+
+| Critère | Poids | Pourquoi |
+|---|---|---|
+| Demande | ×2 | une page que personne ne cherche ne sert qu'au maillage |
+| Pertinence TOP SET | ×1,5 | proximité avec noter / doser / suivre / progresser |
+| Accessibilité (concurrence) | ×1,5 | 5 = seulement des forums, 0 = des géants |
+| Opportunité de contenu | ×1,5 | peut-on faire nettement mieux que l'existant ? |
+| Lien produit | ×1,5 | la page mène-t-elle à une fonction existante ? |
+| Autorité thématique | ×1 | |
+| Qualité des sources | ×1 | d'après PubMed : ≥ 20 revues = 5 |
+| Maillage | ×1 | |
+
+Note = somme pondérée / 55 × 100. Règles de sélection : les sujets `MERGE` (absorbés par une autre page) et
+`RETIRED` (risque élevé : questions médicales) ne sont pas classés ; le script refuse deux pages actives sur
+la même URL ou la même requête.
+
+## E. Les 20 sujets retenus
+
+Classés par note, puis ajustés (ajustements justifiés sous le tableau). Tout est dans `matrice.md`.
+
+| # | Page | Requête principale | Type | Note |
+|---|---|---|---|---|
+| 1 | `/documentation/top-set-musculation` | top set musculation | définition, pilier | 91 |
+| 2 | `/documentation/1rm-musculation` | 1rm musculation | définition, pilier | 86 |
+| 3 | `/documentation/back-off-set` | back off set musculation | définition | 85 |
+| 4 | `/documentation/rpe-musculation` | rpe musculation | définition, pilier | 85 |
+| 5 | `/entrainement/carnet-musculation-eps` | carnet de musculation eps | guide | 84 |
+| 6 | `/entrainement/nombre-de-repetitions` | nombre de répétitions hypertrophie | guide | 84 |
+| 7 | `/entrainement/surcharge-progressive` | surcharge progressive musculation | guide, pilier | 83 |
+| 8 | `/outils/calculateur-1rm` | calcul 1rm | outil | 82 |
+| 9 | `/documentation/rir-musculation` | rir musculation | définition | 79 |
+| 10 | `/entrainement/suivre-sa-progression` | suivi progression musculation | guide, pilier | 79 |
+| 11 | `/carnet-de-musculation` | carnet de musculation | page produit | 78 |
+| 12 | `/entrainement/nombre-de-series-par-muscle` | combien de séries par muscle par semaine | guide | 78 |
+| 13 | `/entrainement/temps-de-repos` | temps de repos musculation | guide | 78 |
+| 14 | `/documentation/echec-musculaire` | échec musculaire | guide | 77 |
+| 15 | `/outils/tableau-rpe` | tableau rpe pourcentage | outil | 77 |
+| 16 | `/exercices/planche-gainage` | planche abdos combien de temps | exercice | 74 |
+| 17 | `/outils/modele-carnet-musculation` | carnet de musculation excel | outil | 72 |
+| 18 | `/entrainement/stagnation` | stagnation musculation | guide | 72 |
+| 19 | `/exercices/developpe-couche` | développé couché | exercice | 70 |
+| 20 | `/documentation/poids-de-la-barre` | combien pèse la barre développé couché | définition | 65 |
+
+Répartition : 6 fondations (définitions), 7 guides, 3 outils, 2 exercices + 1 référence pratique, 1 page
+produit. La recherche a imposé moins d'exercices que l'exemple initial (5–7) : ce sont les pages les moins
+accessibles.
+
+**Ajustements par rapport au classement brut :**
+
+- *Pourcentages du 1RM* (76) attend : il fera sans doute un onglet du calculateur 1RM plutôt qu'une page
+  (risque de cannibalisation entre trois outils voisins) — décision au pilote.
+- *Progresser au développé couché* (75) attend la page exercice, pour ne pas lui faire concurrence.
+- *Autorégulation* (73) : aucune demande prouvée ; on attend Search Console.
+- *Développé couché* (70) entre pour valider le gabarit « exercice » et nourrir le maillage 1RM / top set.
+- *Poids de la barre* (65) entre parce qu'elle est courte, accessible, et sert au moment précis de la saisie.
+
+### Pilote (étape F) : 5 pages très différentes
+
+1. `/documentation/top-set-musculation` — définition pilier, liée au produit, meilleure note.
+2. `/outils/calculateur-1rm` — outil ; réutilise les formules déjà testées de `intelligence.js`.
+3. `/carnet-de-musculation` — page produit : le texte que l'accueil ne peut pas porter.
+4. `/entrainement/carnet-musculation-eps` — guide, niche la plus proche du produit.
+5. `/exercices/planche-gainage` — gabarit exercice, sur une fonction de l'app (séries au temps).
+
+Plus l'ossature : les hubs (`/documentation`, `/entrainement`, `/exercices`, `/outils`), une page
+« méthode éditoriale », une page 404.
+
+## F. Architecture technique
+
+Principe : **rester un site statique sans framework et sans étape de build côté Vercel.** Un générateur
+Node, sans dépendance, transforme des fichiers de contenu en pages HTML qui sont **commitées** ; la CI
+vérifie qu'elles sont à jour. Les diffs restent lisibles, le déploiement ne change pas, le site marche
+toujours en ouvrant les fichiers.
+
+```
+contenu/                          ← source (non publiée)
+  sources.json                    ← bibliographie : auteurs, année, titre, revue, DOI, PMID, type, niveau lu
+  documentation/top-set-musculation.html
+  entrainement/…  exercices/…  outils/…  carnet-de-musculation.html
+scripts/contenu.mjs               ← générateur + vérifications (non publié)
+scripts/gabarits/*.mjs            ← ContentPage et variantes : définition, guide, exercice, outil, produit, hub
+documentation/top-set-musculation.html   ← généré, commité, servi à /documentation/top-set-musculation
+contenu.css                       ← styles des pages de contenu, sur les jetons de legal.css
+outils/outils.js                  ← JS des calculateurs (fichier externe : CSP)
+sitemap.xml                       ← régénéré avec toutes les pages indexables
+```
+
+**Format d'un contenu** : un fichier HTML dont le premier commentaire contient les métadonnées en JSON —
+`slug`, `section`, `type`, `title`, `description`, `h1`, `primaryQuery`, `parent`, `related`, `published`,
+`reviewed`, `author`. Le corps est du HTML simple avec deux conventions :
+
+- `[[rpe-musculation|l'échelle RPE]]` → lien interne vérifié (le générateur échoue si la page n'existe pas) ;
+- `[@zourdos2016]` → appel de note numéroté, relié à l'entrée de `sources.json` (le générateur échoue si la
+  source n'existe pas, ou si une source est listée sans être citée).
+
+**Ce que le gabarit produit, pour chaque page** : `<title>`, description, canonical, Open Graph, Twitter,
+un seul H1, fil d'Ariane visible, sommaire (depuis les H2), sections, points clés, notions liées, sources
+numérotées et lisibles (« ce qu'elles soutiennent »), date de vérification, auteur, appel vers l'app quand
+il est pertinent, et le JSON-LD :
+
+- `BreadcrumbList` sur toutes les pages de contenu ;
+- `Article` sur les définitions et guides (titre, dates, auteur, éditeur) ;
+- `SoftwareApplication` sur `/carnet-de-musculation` seulement — il décrit fidèlement la page ; sans avis
+  ni note, Google n'en tire pas de résultat enrichi, et on ne le promet pas ;
+- **pas de `FAQPage`**. Des questions/réponses peuvent exister pour le lecteur, sans balisage.
+
+**Vérifications automatiques** (échec = pas de publication) : titres et descriptions uniques et bornés,
+un H1, canonical = URL, page dans le sitemap, parent existant, aucune page orpheline, liens internes
+résolus, sources citées et existantes, JSON-LD valide, pas de script en ligne, `html-validate`, et un
+contrôle de poids par page.
+
+**Intégration à l'existant, sans toucher à l'app :**
+
+- un lien « Apprendre » dans le pied de page de l'app vers `/documentation` (seule modification de
+  `index.html`) : toutes les pages à 2 clics de l'accueil au plus ;
+- `sw.js` : aucune logique à changer (réseau d'abord, chaque page visitée consultable hors ligne) ; à
+  surveiller : le cache des pages visitées n'a pas de limite — à borner si le site grossit ;
+- `.vercelignore` : ajouter `contenu/`, `scripts/` (`docs/` l'est déjà) ;
+- CI : générateur en mode vérification, `html-validate` sur les sous-dossiers, `test/liens.test.mjs`
+  étendu aux pages imbriquées (il ne lit aujourd'hui que la racine).
+
+**Budget de performance par page de contenu** : HTML ≤ 30 Ko compressé, CSS partagée ≤ 8 Ko, aucun JS
+hors outils, images en `loading="lazy"` avec dimensions, LCP < 2 s et CLS < 0,05 au Lighthouse mobile.
+Mesure avant/après à chaque étape.
+
+**Illustrations** : schémas SVG générés, dans la charte (profil de charge top set / back-off, échelle
+RPE/RIR, comparaison des formules du 1RM) — originaux, légers, nets. Pour les exercices, des photos
+**faites par nous**, cohérentes entre elles (même salle, même cadrage) : c'est aussi une preuve
+d'expérience. Pour chaque image : objectif pédagogique, ratio, emplacement, texte alternatif, nom de
+fichier, poids cible (≤ 60 Ko, WebP/AVIF).
+
+## Crédibilité (E-E-A-T) et IA
+
+- Chaque page : auteur, date de publication, date de dernière vérification, sources.
+- Une page `/methode-editoriale` : comment un sujet est choisi, recherché, sourcé, relu ; ce que l'IA fait
+  (recherche, structure, brouillon) et ce qu'elle ne fait pas (être une source) ; comment signaler une
+  erreur.
+- Aucun titre revendiqué qu'on n'a pas (médecin, chercheur, diététicien). Sujets de santé : prudence,
+  renvoi vers un professionnel.
+- **Chaque source indique ce qui a été lu** : résumé seul, ou texte intégral. On ne cite pas un article
+  qu'on n'a pas ouvert.
+- Chaîne obligatoire pour un contenu scientifique : **recherche → vérification → source → rédaction →
+  contrôle**. Pas de publication en masse : 15 pages vérifiées valent mieux que 150 superficielles.
+
+## G. Plan d'implémentation
+
+| Étape | Contenu | Livrable | Contrôle |
+|---|---|---|---|
+| A. Audit | fait | ce document | — |
+| B. Recherche | fait | `recherche/` | — |
+| C. Notation | fait | `sujets.json`, `matrice.md` | `matrice.mjs --verifier` |
+| D. Architecture | fait, **à valider** | sections C et F ci-dessus | — |
+| E. Infrastructure | générateur, gabarits, `contenu.css`, hubs, 404, méthode éditoriale, lien « Apprendre », CI | pages hub en ligne | tests + Lighthouse + app intacte (tous les tests existants) |
+| F. Pilote | les 5 pages ci-dessus, sources lues une à une | 5 pages publiées | relecture par toi avant publication |
+| G. Validation | rendu Googlebot, mobile, accessibilité, performance, canonical, sitemap, JSON-LD (Test des résultats enrichis), Inspection d'URL | rapport de validation | seuils du budget |
+| H. Production | les 15 autres pages, par cluster (pilier d'abord) | ~3 pages par session | idem + inventaire à jour |
+
+## H. Risques
+
+| Risque | Parade |
+|---|---|
+| Régression de l'app / PWA | l'app n'est pas touchée (un lien dans le pied de page) ; tous les tests existants tournent ; `sw.js` inchangé |
+| Cache hors ligne qui grossit | chaque page visitée est gardée ; borner le cache `COURANT` quand le site dépasse quelques dizaines de pages |
+| Performance | pages statiques sans JS, budget chiffré, Lighthouse avant/après |
+| Duplication avec le guide | le guide garde l'aide de l'app et renvoie vers la documentation |
+| Cannibalisation | une requête = une page, contrôlé par `matrice.mjs` ; paires surveillées : RPE/RIR, répétitions/force-ou-hypertrophie, 1RM/calculateur/pourcentages, échauffement/séries d'échauffement, développé couché/progresser au développé couché, carnet/suivre sa progression |
+| Contenu faible | pas de page sans sources lues et sans exemple concret ; relecture avant publication |
+| Sujets santé | exclus de la première vague (douleurs : retirés) ; nutrition reportée |
+| Dépendances | aucune : générateur en Node pur |
+| Maintenance | date de vérification sur chaque page ; revue des pages de plus de 12 mois ; inventaire généré |
+| Droits | aucune reprise de texte ni d'image d'autrui ; les méthodes d'auteurs (5/3/1) sont citées, pas reproduites |
+
+## Boucle Search Console (dès que des données existent, puis chaque mois)
+
+1. Exporter Performances → Requêtes et Pages (28 derniers jours) dans `docs/seo/search-console/AAAA-MM-*.csv`.
+2. Classer :
+   - **Opportunité 1** — position 4 à 15 avec des impressions régulières → enrichir la page, le titre, le maillage ;
+   - **Opportunité 2** — beaucoup d'impressions, CTR faible → retravailler titre, description, adéquation à l'intention ;
+   - **Opportunité 3** — requête pertinente sans page → nouveau sujet dans `sujets.json` ;
+   - **Opportunité 4** — page visitée mais quittée vite → contenu ou UX ;
+   - **Opportunité 5** — deux pages sur la même requête → fusionner ou différencier.
+3. Mettre à jour `sujets.json` (statuts, notes de demande réelles), régénérer, noter la décision ci-dessous.
+
+Tant que le site est neuf, les seuils sont bas (quelques dizaines d'impressions) : on cherche des tendances,
+pas des certitudes.
+
+## Décisions à prendre (toi)
+
+1. **Auteur affiché** : ton nom (déjà public dans les mentions légales) ou un pseudo ? Et ce qu'on peut
+   dire de vrai sur ton expérience (années de pratique, coaching…).
+2. **Mention de l'IA** sur la page méthode éditoriale : d'accord sur le principe décrit plus haut ?
+3. **Photos d'exercices** : peux-tu en faire (même salle, même cadrage) ? Sinon, schémas uniquement.
+4. **Le pilote** : ces 5 pages, dans cet ordre ?
+5. **Les deux hôtes vercel.app** : sont-ils à toi ?
+
+## Journal des décisions
+
+| Date | Décision |
+|---|---|
+| 11/09/2026 | Le produit reste à `/` ; le contenu en pages statiques générées et commitées, sans framework ni build Vercel. |
+| 11/09/2026 | Pas de volumes inventés : notes sur signaux, sources de données versionnées dans `recherche/`. |
+| 11/09/2026 | Nutrition reportée ; questions de douleur exclues. |
+| 11/09/2026 | Pas de `FAQPage` ; `SoftwareApplication` seulement sur la page produit. |
+| 11/09/2026 | Pilote de 5 pages avant toute production. |
