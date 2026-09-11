@@ -193,7 +193,7 @@
     return (typeof s.poids === 'number' && !isNaN(s.poids)) || (s.reps!=null && String(s.reps).trim()!=='');
   }
 
-  // Le commentaire d'un exercice. 500 caracteres : de quoi dire comment ca
+  // Le commentaire d'une serie. 500 caracteres : de quoi dire comment ca
   // s'est passe, pas de quoi faire d'un fichier importe un mega-octet de
   // texte. La base a la meme borne.
   var NOTE_MAX = 500;
@@ -205,7 +205,7 @@
   // Migration silencieuse : d'anciennes entrées ({poids,reps} directement sur
   // l'exercice) deviennent une série unique. Ne perd aucune donnée existante.
   function normalizeSerie(s, reposHerite){
-    return {
+    var sortie = {
       id: idSur(s && s.id, genSerieId),
       poids: (s && typeof s.poids==='number' && !isNaN(s.poids)) ? s.poids : null,
       reps: (s && s.reps) || '',
@@ -221,6 +221,12 @@
       type: (s && TS.TYPES_VALIDES.indexOf(s.type) > -1 && s.type !== TS.TYPES.TRAVAIL) ? s.type : undefined,
       fait: !!(s && s.fait)
     };
+    // « Assistée », « avec bandes » : ce que les chiffres de CETTE serie ne
+    // disent pas. Absent quand il est vide, comme le type : les carnets
+    // d'avant n'ont rien a porter.
+    var note = noteSure(s && s.note);
+    if (note) sortie.note = note;
+    return sortie;
   }
 
   function normalizeExercise(ex){
@@ -230,20 +236,36 @@
     // Au temps ou en repetitions, quand l'utilisateur l'a dit lui-meme.
     // Absent sinon : le nom et les valeurs saisies suffisent a le deduire.
     var mesure = (ex && (ex.mesure === 'temps' || ex.mesure === 'reps')) ? ex.mesure : undefined;
-    // Le commentaire du jour — « assisté sur la dernière », « avec bandes ».
-    // Absent quand il est vide, comme bloc et mesure : les carnets d'avant
-    // n'en ont pas, et n'ont rien a gagner a porter un champ vide.
-    var note = noteSure(ex && ex.note);
-    if (ex && Array.isArray(ex.series)){
-      return { id:idSur(ex.id, genId), nom:ex.nom||'', groupe:groupeSur(ex.groupe), repos:ex.repos||'', bloc:bloc, mesure:mesure, note:note, series:ex.series.map(function(s){
-        return normalizeSerie(s, ex.repos);
-      }) };
-    }
     var series = [];
-    if (ex && (ex.poids!=null || (ex.reps!=null && String(ex.reps).trim()!==''))){
+    if (ex && Array.isArray(ex.series)){
+      series = ex.series.map(function(s){ return normalizeSerie(s, ex.repos); });
+    } else if (ex && (ex.poids!=null || (ex.reps!=null && String(ex.reps).trim()!==''))){
       series.push(normalizeSerie({ poids:ex.poids, reps:ex.reps }, ex.repos));
     }
+    // Le commentaire etait porte par l'exercice ; il descend sur sa derniere
+    // serie, la ou « assisté sur la dernière » voulait dire quelque chose.
+    // Rien ne se perd : s'il y en avait deja un, les deux se suivent. Un
+    // exercice sans serie garde le sien, faute d'endroit ou le poser.
+    var note = noteSure(ex && ex.note);
+    if (note && series.length){
+      var derniere = series[series.length - 1];
+      derniere.note = noteSure(derniere.note ? note + ' · ' + derniere.note : note);
+      note = undefined;
+    }
     return { id:idSur(ex&&ex.id, genId), nom:(ex&&ex.nom)||'', groupe:groupeSur(ex&&ex.groupe), repos:(ex&&ex.repos)||'', bloc:bloc, mesure:mesure, note:note, series:series };
+  }
+
+  // Les commentaires d'un exercice, pour les ecrans qui les relisent : la
+  // fiche d'une seance, l'historique, « derniere fois », le carnet lu par un
+  // coach. Chacun dit de quelle serie il parle. Lit aussi les donnees brutes
+  // d'un coache, qui n'ont pas ete normalisees ici.
+  function notesExo(ex){
+    var out = [];
+    if (ex && typeof ex.note === 'string' && ex.note.trim()) out.push(ex.note.trim());
+    ((ex && ex.series) || []).forEach(function(s, i){
+      if (s && typeof s.note === 'string' && s.note.trim()) out.push('S' + (i + 1) + ' : ' + s.note.trim());
+    });
+    return out;
   }
 
   // ---------- state ----------
@@ -429,7 +451,7 @@
       state.sessions[ds].exercises.forEach(function(e){
         if (!e.nom || cleCanonique(e.nom) !== norm) return;
         (e.series||[]).forEach(function(s){ if (hasData(s)) series.push(s); });
-        if (e.note && e.note.trim()) notes.push(e.note.trim());
+        notes = notes.concat(notesExo(e));
       });
       // La note voyage avec la seance, pour « derniere fois » et
       // l'historique. Les calculs ne la lisent pas.
@@ -935,66 +957,31 @@
 
   var ETOILE_PR = '<span class="serie-pr" title="Nouveau record" aria-label="Nouveau record"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ffd23f" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.6 5.6 6.1.8-4.5 4.2 1.2 6-5.4-3-5.4 3 1.2-6L3.3 9.4l6.1-.8z"></path></svg></span>';
 
-  // Au temps, la ligne garde sa forme — coche, pas de moins, valeur, pas de
-  // plus — et seule la valeur change d'unite : la main retrouve ses reperes.
-  // Le poids d'une serie deja lestee n'est pas efface, il reste dans les
-  // donnees et dans le texte des performances.
-  function serieRowHTML(s, idx, exNom, auTemps){
-    var pr = isNewRecord(s, exNom);
-    var num = idx + 1;
-    var rpeOptions = '<option value="">' + (auTemps ? 'DIFF.' : 'RPE') + '</option>'
-      + (auTemps ? DIFF_VALUES : RPE_VALUES).map(function(v){
-      return '<option value="'+v+'"'+(s.rpe===v?' selected':'')+'>'+v+'</option>';
-    }).join('');
-    var typeCourant = s.type || '';
-    var typeOptions = TYPE_LABELS.map(function(p){
-      return '<option value="'+p[0]+'"'+(typeCourant===p[0]?' selected':'')+'>'+p[1]+'</option>';
-    }).join('');
-    var valeur = auTemps
-      ? '<button type="button" class="step-btn" data-action="step-temps" data-delta="-5" data-serie-id="'+ esc(s.id) +'" aria-label="Retirer 5 secondes à la série '+num+'">−</button>'
-      +   '<input type="text" inputmode="numeric" enterkeyhint="done" class="serie-duree" placeholder="sec" aria-label="Durée en secondes, série '+num+'" data-field="duree" data-serie-id="'+ esc(s.id) +'" value="'+esc(secondesAffichees(s))+'">'
-      +   '<span class="serie-unite" aria-hidden="true">s</span>'
-      +   '<button type="button" class="step-btn" data-action="step-temps" data-delta="5" data-serie-id="'+ esc(s.id) +'" aria-label="Ajouter 5 secondes à la série '+num+'">+</button>'
-      : '<button type="button" class="step-btn" data-action="step" data-delta="-2.5" data-serie-id="'+ esc(s.id) +'" aria-label="Retirer 2,5 kg à la série '+num+'">−</button>'
-      +   '<input type="text" inputmode="decimal" enterkeyhint="next" class="serie-poids" placeholder="kg" aria-label="Poids série '+num+'" data-field="poids" data-serie-id="'+ esc(s.id) +'" value="'+esc(poidsAffiche(s.poids))+'">'
-      +   '<button type="button" class="step-btn" data-action="step" data-delta="2.5" data-serie-id="'+ esc(s.id) +'" aria-label="Ajouter 2,5 kg à la série '+num+'">+</button>'
-      +   '<span class="serie-x" aria-hidden="true">×</span>'
-      +   '<input type="text" inputmode="numeric" enterkeyhint="done" class="serie-reps" placeholder="reps" aria-label="Répétitions série '+num+'" data-field="reps" data-serie-id="'+ esc(s.id) +'" value="'+esc(s.reps==null?'':s.reps)+'">';
-    var titreEffort = auTemps
-      ? (s.rpe==null ? 'Difficulté ressentie, de 1 à 10' : esc(diffLabel(s.rpe)))
-      : (s.rpe==null ? 'Reps en réserve : 10 = à l\'échec, 9 = 1 rep en réserve' : esc(rpeLabel(s.rpe)));
-    return '<div class="serie-card'+(s.fait?' fait':'')+'" data-serie-id="'+ esc(s.id) +'"'
-      + (typeCourant ? ' data-type="'+typeCourant+'"' : '') + '>'
-      + '<div class="serie-main">'
-      +   '<button type="button" class="serie-check'+(s.fait?' checked':'')+'" data-action="toggle-fait" data-serie-id="'+ esc(s.id) +'" aria-pressed="'+(s.fait?'true':'false')+'" aria-label="Série '+num+' — '+(s.fait?'marquer comme non faite':'marquer comme faite')+'">'+(s.fait?'✓':'')+'</button>'
-      +   '<span class="serie-num" aria-hidden="true">'+num+'</span>'
-      +   valeur
-      +   (pr ? ETOILE_PR : '')
-      + '</div>'
-      + '<div class="serie-meta">'
-      +   '<select class="serie-type" data-field="type" data-serie-id="'+ esc(s.id) +'" aria-label="Type de la série '+num+'">'+typeOptions+'</select>'
-      +   '<label class="meta-field"><span>' + (auTemps ? 'DIFF.' : 'RPE') + '</span>'
-      +     '<select class="serie-rpe'+(s.rpe==null?' vide':'')+'" data-field="rpe"' + (auTemps ? ' data-mode="temps"' : '') + ' data-serie-id="'+ esc(s.id) +'" title="'+titreEffort+'" aria-label="'+(auTemps ? 'Difficulté' : 'RPE')+' série '+num+'">'+rpeOptions+'</select>'
-      +   '</label>'
-      +   '<label class="meta-field"><span>REPOS</span>'
-      +     '<input type="text" inputmode="numeric" enterkeyhint="done" class="serie-repos" placeholder="90s" data-field="repos" data-serie-id="'+ esc(s.id) +'" aria-label="Repos après la série '+num+'" value="'+esc(s.repos||'')+'">'
-      +   '</label>'
-      +   '<button type="button" class="serie-del" data-action="del-serie" data-serie-id="'+ esc(s.id) +'" aria-label="Supprimer la série '+num+'">×</button>'
-      + '</div>'
-      + '</div>';
-  }
-
-  // Le bloc « derniere fois » : toutes les series de la derniere seance sur
-  // cet exercice, chacune recopiable d'un tap, plus la cible suggeree quand
-  // les donnees la justifient.
-  //
-  // Deux registres visuels distincts, et c'est volontaire : l'historique est
-  // sobre et gris, la suggestion est orange et etiquetee SUGGERE. On ne doit
-  // jamais pouvoir lire une recommandation comme une performance passee.
+  // ---------- la carte d'un exercice ----------
+  // Une serie tient sur UNE ligne, comme dans les carnets qu'on connait
+  // (Strong, Hevy) : SÉRIE · PRÉC. · KG · REPS · RPE · ✓. Le numero porte le
+  // type — on le touche pour en changer —, la colonne PRÉC. montre la meme
+  // serie la derniere fois et la recopie d'un appui. Ce qui sert moins (les
+  // pas de 2,5 kg, le repos, le commentaire, la suppression) vit dans une
+  // barre d'outils, sous la seule serie « ouverte » : celle qu'on va faire.
+  // Une serie faite perd ses cadres et se lit comme une ligne de texte ; on
+  // la touche pour la corriger. Avant, chaque serie prenait trois lignes, et
+  // un exercice de cinq series remplissait deux ecrans.
   var TYPE_COURT = {};
   TYPE_COURT[TS.TYPES.ECHAUFFEMENT] = 'ÉCH.';
   TYPE_COURT[TS.TYPES.TOP] = 'TOP';
   TYPE_COURT[TS.TYPES.BACKOFF] = 'B.O.';
+
+  // La serie ouverte de chaque exercice, en memoire seulement : c'est un
+  // etat d'ecran, pas une donnee. Par defaut, la premiere pas encore faite.
+  var serieOuverte = {};
+  function serieOuverteDe(ex){
+    var series = ex.series || [];
+    var id = serieOuverte[ex.id];
+    if (id && series.some(function(s){ return s.id === id; })) return id;
+    for (var i = 0; i < series.length; i++) if (!series[i].fait) return series[i].id;
+    return null;
+  }
 
   function perfTexte(s){
     var d = TS.dureeSecondes(s && s.reps);
@@ -1007,47 +994,123 @@
     if (p && r) return p + ' × ' + r;
     return p || r || '—';
   }
+  // La meme chose en quelques caracteres, pour la colonne PRÉC.
+  function perfCourt(s){
+    var d = TS.dureeSecondes(s && s.reps);
+    if (d !== null) return TS.formatDuree(d);
+    var p = (typeof s.poids === 'number') ? formatWeight(s.poids) : '';
+    var r = s.reps ? String(s.reps) : '';
+    if (p && r) return p + '×' + r;
+    return p ? p + ' kg' : (r ? '×' + r : '—');
+  }
 
-  function blocPrecedentHTML(ex){
+  var ICONE_NOTE = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"></path></svg>';
+  var ICONE_SUPPR = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"></path></svg>';
+
+  function noteSerieHTML(s, num){
+    return '<div class="serie-note-ligne">'
+      + '<span class="serie-note-fleche" aria-hidden="true">↳</span>'
+      + '<input type="text" class="serie-note" maxlength="'+NOTE_MAX+'" enterkeyhint="done" autocomplete="off"'
+      +   ' placeholder="assistée, bandes, fatigué…" aria-label="Commentaire sur la série '+num+'"'
+      +   ' data-field="note" data-serie-id="'+ esc(s.id) +'" value="'+esc(s.note||'')+'">'
+      + '</div>';
+  }
+
+  function serieRowHTML(s, idx, ex, auTemps, prec, ouverte){
+    var pr = isNewRecord(s, ex.nom);
+    var num = idx + 1;
+    var sid = esc(s.id);
+    var typeCourant = s.type || '';
+    var typeOptions = TYPE_LABELS.map(function(p){
+      return '<option value="'+p[0]+'"'+(typeCourant===p[0]?' selected':'')+'>'+p[1]+'</option>';
+    }).join('');
+    var rpeOptions = '<option value="">' + (auTemps ? 'DIFF.' : 'RPE') + '</option>'
+      + (auTemps ? DIFF_VALUES : RPE_VALUES).map(function(v){
+      return '<option value="'+v+'"'+(s.rpe===v?' selected':'')+'>'+v+'</option>';
+    }).join('');
+    var titreEffort = auTemps
+      ? (s.rpe==null ? 'Difficulté ressentie, de 1 à 10' : esc(diffLabel(s.rpe)))
+      : (s.rpe==null ? 'Reps en réserve : 10 = à l\'échec, 9 = 1 rep en réserve' : esc(rpeLabel(s.rpe)));
+
+    // La meme serie, la derniere fois : la 3e d'aujourd'hui en face de la 3e.
+    var ps = prec && prec.series[idx];
+    var precHTML = ps
+      ? '<button type="button" class="serie-prec' + (prec.topSet && ps === prec.topSet ? ' top' : '') + '"'
+        + ' data-copier="' + esc(ex.id) + '" data-cible="' + sid + '"'
+        + ' data-poids="' + (typeof ps.poids === 'number' ? ps.poids : '') + '"'
+        + ' data-reps="' + esc(ps.reps || '') + '" data-type="' + esc(ps.type || '') + '"'
+        + ' aria-label="Recopier la dernière fois, ' + esc(perfTexte(ps)) + ', dans la série ' + num + '">'
+        + esc(perfCourt(ps)) + '</button>'
+      : '<span class="serie-prec vide" aria-hidden="true">—</span>';
+
+    var valeur = auTemps
+      ? '<label class="serie-duree-champ"><input type="text" inputmode="numeric" enterkeyhint="done" class="serie-duree" placeholder="sec" aria-label="Durée en secondes, série '+num+'" data-field="duree" data-serie-id="'+ sid +'" value="'+esc(secondesAffichees(s))+'"><span class="serie-unite" aria-hidden="true">s</span></label>'
+      : '<input type="text" inputmode="decimal" enterkeyhint="next" class="serie-poids" placeholder="kg" aria-label="Poids série '+num+'" data-field="poids" data-serie-id="'+ sid +'" value="'+esc(poidsAffiche(s.poids))+'">'
+      + '<input type="text" inputmode="numeric" enterkeyhint="done" class="serie-reps" placeholder="reps" aria-label="Répétitions série '+num+'" data-field="reps" data-serie-id="'+ sid +'" value="'+esc(s.reps==null?'':s.reps)+'">';
+
+    var pas = auTemps
+      ? '<button type="button" class="step-btn" data-action="step-temps" data-delta="-5" data-serie-id="'+ sid +'" aria-label="Retirer 5 secondes à la série '+num+'">−5</button>'
+      + '<button type="button" class="step-btn" data-action="step-temps" data-delta="5" data-serie-id="'+ sid +'" aria-label="Ajouter 5 secondes à la série '+num+'">+5</button>'
+      : '<button type="button" class="step-btn" data-action="step" data-delta="-2.5" data-serie-id="'+ sid +'" aria-label="Retirer 2,5 kg à la série '+num+'">−</button>'
+      + '<button type="button" class="step-btn" data-action="step" data-delta="2.5" data-serie-id="'+ sid +'" aria-label="Ajouter 2,5 kg à la série '+num+'">+</button>';
+
+    return '<div class="serie-card'+(s.fait?' fait':'')+(ouverte?' ouverte':'')+'" data-serie-id="'+ sid +'"'
+      + (typeCourant ? ' data-type="'+typeCourant+'"' : '') + '>'
+      + '<div class="serie-main">'
+      // Le numero est le menu du type : c'est la qu'on le cherche dans les
+      // autres carnets, et ca evite une ligne entiere pour un menu.
+      +   '<label class="serie-num"><span class="serie-num-txt">' + (TYPE_COURT[typeCourant] || num) + '</span>'
+      +     '<select class="serie-type" data-field="type" data-serie-id="'+ sid +'" aria-label="Série '+num+', type">'+typeOptions+'</select></label>'
+      +   precHTML
+      +   valeur
+      +   '<select class="serie-rpe'+(s.rpe==null?' vide':'')+'" data-field="rpe"' + (auTemps ? ' data-mode="temps"' : '') + ' data-serie-id="'+ sid +'" title="'+titreEffort+'" aria-label="'+(auTemps ? 'Difficulté' : 'RPE')+' série '+num+'">'+rpeOptions+'</select>'
+      +   '<button type="button" class="serie-check'+(s.fait?' checked':'')+'" data-action="toggle-fait" data-serie-id="'+ sid +'" aria-pressed="'+(s.fait?'true':'false')+'" aria-label="Série '+num+' — '+(s.fait?'marquer comme non faite':'marquer comme faite')+'">'+(s.fait?'✓':'')+'</button>'
+      +   (pr ? ETOILE_PR : '')
+      + '</div>'
+      + '<div class="serie-outils">'
+      +   pas
+      +   '<label class="serie-repos-champ"><span>REPOS</span>'
+      +     '<input type="text" inputmode="numeric" enterkeyhint="done" class="serie-repos" placeholder="90" data-field="repos" data-serie-id="'+ sid +'" aria-label="Repos après la série '+num+', en secondes" value="'+esc(s.repos||'')+'"></label>'
+      +   '<button type="button" class="serie-outil'+(s.note?' actif':'')+'" data-action="note-serie" data-serie-id="'+ sid +'" aria-label="Commentaire sur la série '+num+'">'+ICONE_NOTE+'</button>'
+      +   '<button type="button" class="serie-outil serie-del" data-action="del-serie" data-serie-id="'+ sid +'" aria-label="Supprimer la série '+num+'">'+ICONE_SUPPR+'</button>'
+      + '</div>'
+      + (s.note ? noteSerieHTML(s, num) : '')
+      + '</div>';
+  }
+
+  // La derniere seance sur cet exercice, et tout son historique : la
+  // colonne PRÉC., la ligne « derniere fois » et la suggestion en viennent.
+  function precedentDe(ex){
     var nom = ex && ex.nom;
-    if (!nom || !nom.trim()) return '';
+    if (!nom || !nom.trim()) return null;
     var seances = seancesDeLExo(nom).filter(function(j){ return j.date !== state.selectedDay; });
     var prec = TS.performancePrecedente(seances, state.selectedDay);
-    if (!prec) return '';
+    return prec ? { prec:prec, seances:seances } : null;
+  }
 
+  // Deux registres visuels distincts, et c'est volontaire : l'historique est
+  // sobre et gris, la suggestion est orange et etiquetee SUGGERE. On ne doit
+  // jamais pouvoir lire une recommandation comme une performance passee.
+  function blocPrecedentHTML(ex, p){
+    if (p === undefined) p = precedentDe(ex);
+    if (!p) return '';
+    var prec = p.prec;
     var d = fromDateStr(prec.date);
     var quand = d.getDate() + ' ' + MONTH_ABBR[d.getMonth()];
-    var top = prec.topSet;
-
-    var puces = prec.series.map(function(s){
-      var estTop = top && s === top;
-      var tag = TYPE_COURT[TS.typeSerie(s)] || '';
-      var txt = perfTexte(s);
-      return '<button type="button" class="perf' + (estTop ? ' top' : '') + '"'
-        + ' data-copier="' + esc(ex.id) + '"'
-        + ' data-poids="' + (typeof s.poids === 'number' ? s.poids : '') + '"'
-        + ' data-reps="' + esc(s.reps || '') + '"'
-        + ' data-type="' + esc(s.type || '') + '"'
-        + ' aria-label="Recopier ' + esc(txt) + '">'
-        + '<span class="perf-copie" aria-hidden="true">↺</span>'
-        + '<span class="perf-val">' + esc(txt) + '</span>'
-        + (tag ? '<span class="perf-tag">' + tag + '</span>' : '')
-        + '</button>';
-    }).join('');
-
-    // « Assisté sur la dernière » change la lecture de ces chiffres : le
-    // commentaire de ce jour-la s'affiche avec eux.
-    var jourPrec = seances.filter(function(j){ return j.date === prec.date; })[0];
+    // « Assistée sur la 3e » change la lecture de ces chiffres : les
+    // commentaires de ce jour-la s'affichent avec eux.
+    var jourPrec = p.seances.filter(function(j){ return j.date === prec.date; })[0];
     var notePrec = jourPrec && jourPrec.note;
     var html = '<div class="ex-prev">'
-      + '<div class="ex-prev-tete">DERNIÈRE FOIS · ' + esc(quand.toUpperCase()) + '</div>'
-      + '<div class="ex-prev-series">' + puces + '</div>'
+      + '<div class="ex-prev-tete">DERNIÈRE FOIS · ' + esc(quand.toUpperCase())
+      // La liste ne sert que la ou la colonne PRÉC. n'a pas la place.
+      +   '<span class="ex-prev-liste"> · ' + esc(prec.series.map(perfCourt).join(' · ')) + '</span></div>'
       + (notePrec ? '<div class="ex-prev-note">« ' + esc(notePrec) + ' »</div>' : '')
       + '</div>';
 
     // La cible s'appuie sur tout l'historique et pas seulement sur la
     // derniere seance : sans RPE note, c'est la tendance qui decide.
-    var cible = TS.suggererCible(seances);
+    var cible = TS.suggererCible(p.seances);
     if (cible){
       var reps = (cible.repsHaut && cible.repsHaut !== cible.reps)
         ? cible.reps + '–' + cible.repsHaut
@@ -1067,15 +1130,24 @@
     return html;
   }
 
-  // Recopier une performance ne valide rien : ca remplit la premiere serie
-  // encore vide, et n'en ajoute une que s'il n'en reste aucune. Aucune valeur
-  // deja saisie n'est ecrasee.
-  function copierPerf(exId, poids, reps, type){
+  // Recopier la cible ne valide rien : ca remplit la premiere serie encore
+  // vide, et n'en ajoute une que s'il n'en reste aucune. Aucune valeur deja
+  // saisie n'est ecrasee. Recopier la colonne PRÉC. vise, elle, SA serie :
+  // on a touche cette ligne-la, c'est elle qu'on veut remplir.
+  function copierPerf(exId, poids, reps, type, cibleId){
     var day = getOrCreateDay(state.selectedDay);
     var ex = findExercise(day, exId);
     if (!ex) return null;
     if (!ex.series) ex.series = [];
     var cible = null;
+    if (cibleId){
+      cible = ex.series.filter(function(s){ return s.id === cibleId; })[0] || null;
+      if (!cible) return null;
+      cible.poids = poids;
+      cible.reps = reps;
+      if (type) cible.type = type; else delete cible.type;
+      return cible;
+    }
     for (var i = 0; i < ex.series.length; i++){
       if (!hasData(ex.series[i])){ cible = ex.series[i]; break; }
     }
@@ -1094,8 +1166,8 @@
     return cible;
   }
 
-  // Le HTML du bloc est produit a un seul endroit : le rendu initial et la
-  // mise a jour en direct ne peuvent pas diverger.
+  // Le HTML du bloc et des series est produit a un seul endroit : le rendu
+  // initial et la mise a jour en direct ne peuvent pas diverger.
   function majBlocPrecedent(card, ex){
     if (!card) return;
     var zone = card.querySelector('.ex-prev-zone');
@@ -1110,66 +1182,94 @@
     }).join('');
     var series = ex.series || [];
     var auTemps = estAuTemps(ex);
-    var seriesHTML = seriesListeHTML(ex, auTemps);
-    var hintHTML = blocPrecedentHTML(ex);
-    return '<div class="ex-card" style="--card-color:'+color+'" data-id="'+ esc(ex.id) +'" data-mode="'+(auTemps ? 'temps' : 'reps')+'">'
+    var p = precedentDe(ex);
+    var eid = esc(ex.id);
+    // Un menu plutot que trois gros boutons en bas de chaque carte : ils
+    // servent rarement, et prenaient autant de place qu'une serie.
+    var menu = '<div class="ex-menu" role="group" aria-label="Actions sur l\'exercice">'
+      + (auTemps || nomAuTemps(ex.nom) || !series.some(serieRemplie)
+          ? '<button type="button" class="ex-menu-item" data-action="mesure" data-id="'+ eid +'">'+libelleMesure(auTemps)+'</button>'
+          : '')
+      + (ex.bloc
+          ? '<button type="button" class="ex-menu-item" data-action="detacher" data-id="'+ eid +'">⇄ SORTIR DU SUPERSET</button>'
+          : '<button type="button" class="ex-menu-item" data-action="superset" data-id="'+ eid +'">⇄ AJOUTER UN EXERCICE EN SUPERSET</button>')
+      + '<button type="button" class="ex-menu-item danger ex-del" data-id="'+ eid +'">✕ SUPPRIMER L\'EXERCICE</button>'
+      + '</div>';
+    return '<div class="ex-card" style="--card-color:'+color+'" data-id="'+ eid +'" data-mode="'+(auTemps ? 'temps' : 'reps')+'">'
       + '<div class="ex-head">'
-      +   '<input class="ex-name" type="text" list="exerciseList" placeholder="Nom de l\'exercice" value="'+esc(ex.nom||'')+'" data-field="nom" data-id="'+ esc(ex.id) +'">'
-      +   '<button type="button" class="ex-del" data-id="'+ esc(ex.id) +'" aria-label="Supprimer l\'exercice">×</button>'
+      +   '<input class="ex-name" type="text" list="exerciseList" placeholder="Nom de l\'exercice" value="'+esc(ex.nom||'')+'" data-field="nom" data-id="'+ eid +'">'
+      // Le groupe se remplit tout seul d'apres le nom : une pastille suffit,
+      // qu'on touche pour le corriger.
+      +   '<label class="ex-groupe-chip"><span class="ex-groupe-txt">'+esc(groupeCourt(ex.groupe))+'</span>'
+      +     '<select class="ex-groupe" data-field="groupe" data-id="'+ eid +'" aria-label="Groupe musculaire">'+groupOptions+'</select></label>'
+      +   '<button type="button" class="ex-menu-btn" data-action="menu-exo" data-id="'+ eid +'" aria-expanded="false" aria-label="Plus d\'actions sur l\'exercice">⋯</button>'
       + '</div>'
+      + menu
       + '<div class="ex-body">'
-      +   '<select class="ex-groupe" data-field="groupe" data-id="'+ esc(ex.id) +'">'+groupOptions+'</select>'
-      +   '<div class="ex-prev-zone">' + hintHTML + '</div>'
-      +   '<div class="series-list">'+seriesHTML+'</div>'
-      // Facultatif, et pour l'exercice entier : ce que les chiffres ne disent
-      // pas. 16 px, sinon Safari zoome sur le champ.
-      +   '<input type="text" class="ex-note" maxlength="'+NOTE_MAX+'" enterkeyhint="done" autocomplete="off"'
-      +     ' placeholder="Commentaire (facultatif) : assisté, bandes, fatigué…"'
-      +     ' aria-label="Commentaire sur l\'exercice"'
-      +     ' data-field="note" data-id="'+ esc(ex.id) +'" value="'+esc(ex.note||'')+'">'
+      +   (ex.note ? '<div class="ex-prev-note">« ' + esc(ex.note) + ' »</div>' : '')
+      +   '<div class="ex-prev-zone">' + blocPrecedentHTML(ex, p) + '</div>'
+      +   '<div class="series-list">'+seriesListeHTML(ex, auTemps, p)+'</div>'
       +   '<div class="ex-actions">'
-      +     '<button type="button" class="btn-add-serie" data-action="add-serie" data-id="'+ esc(ex.id) +'">+ SÉRIE'+(series.length?' (reprend la précédente)':'')+'</button>'
-      // La bascule ne sert qu'avant de noter, ou pour un exercice deja au
-      // temps : sur un developpe couche rempli en kilos, elle encombrerait
-      // chaque carte pour rien.
-      +     (auTemps || nomAuTemps(ex.nom) || !series.some(serieRemplie)
-              ? '<button type="button" class="btn-lien" data-action="mesure" data-id="'+ esc(ex.id) +'">'+libelleMesure(auTemps)+'</button>'
-              : '')
-      +     (ex.bloc
-              ? '<button type="button" class="btn-lien" data-action="detacher" data-id="'+ esc(ex.id) +'">⇄ SORTIR DU SUPERSET</button>'
-              : '<button type="button" class="btn-lien" data-action="superset" data-id="'+ esc(ex.id) +'">⇄ AJOUTER UN EXERCICE EN SUPERSET</button>')
+      +     '<button type="button" class="btn-add-serie" data-action="add-serie" data-id="'+ eid +'" aria-label="Ajouter une série'+(series.length?', qui reprend la précédente':'')+'">+ SÉRIE</button>'
+      // A cote de « + SERIE », parce que c'est au meme moment qu'on y pense :
+      // juste apres la serie. Il va sur la derniere serie faite.
+      +     (series.length ? '<button type="button" class="btn-add-note" data-action="ajout-note" data-id="'+ eid +'">+ COMMENTAIRE</button>' : '')
       +   '</div>'
       + '</div>'
       + '</div>';
   }
 
-  function seriesListeHTML(ex, auTemps){
+  function seriesListeHTML(ex, auTemps, p){
     var series = ex.series || [];
-    return series.length
-      ? series.map(function(s,idx){ return serieRowHTML(s, idx, ex.nom, auTemps); }).join('')
-      : '<div class="empty-state" style="padding:14px;font-size:12px;">Aucune série — ajoute la première ci-dessous.</div>';
+    if (!series.length) return '<div class="empty-state" style="padding:14px;font-size:12px;">Aucune série — ajoute la première ci-dessous.</div>';
+    if (p === undefined) p = precedentDe(ex);
+    var ouverte = serieOuverteDe(ex);
+    return '<div class="series-tete" aria-hidden="true"><span>SÉRIE</span><span class="col-prec">PRÉC.</span>'
+      + (auTemps ? '<span class="col-duree">DURÉE</span><span>DIFF.</span>' : '<span>KG</span><span>REPS</span><span>RPE</span>')
+      + '<span>✓</span></div>'
+      + series.map(function(s,idx){ return serieRowHTML(s, idx, ex, auTemps, p && p.prec, s.id === ouverte); }).join('');
   }
   function libelleMesure(auTemps){
     return auTemps ? '⇄ PASSER EN RÉPÉTITIONS' : '◷ PASSER AU TEMPS (GAINAGE, PLANCHE…)';
   }
-  // Taper « Planche » dans le nom bascule la saisie en secondes pendant la
-  // frappe. On repeint les series, pas la carte : le champ du nom garde le
-  // focus, et le clavier reste ouvert.
+  // Taper un nom change tout ce qui en depend : la colonne PRÉC., et le
+  // passage en secondes pour « Planche ». On repeint les series, pas la
+  // carte : le champ du nom garde le focus, et le clavier reste ouvert.
   function repeindreSeries(card, ex){
     if (!card) return;
     var auTemps = estAuTemps(ex);
-    var mode = auTemps ? 'temps' : 'reps';
-    if (card.dataset.mode === mode) return;
-    card.dataset.mode = mode;
+    card.dataset.mode = auTemps ? 'temps' : 'reps';
     var liste = card.querySelector('.series-list');
     if (liste) liste.innerHTML = seriesListeHTML(ex, auTemps);
     var bascule = card.querySelector('[data-action="mesure"]');
     if (bascule) bascule.textContent = libelleMesure(auTemps);
   }
+  // Une carte refaite sur place, sans toucher aux autres : cocher une serie
+  // replie la ligne et ouvre la suivante.
+  function repeindreCarte(card, ex){
+    if (!card) return;
+    var tmp = document.createElement('div');
+    tmp.innerHTML = exerciseCardHTML(ex);
+    card.replaceWith(tmp.firstChild);
+  }
+  // La pastille laisse la place au nom : « PECS » plutot que « PECTORAUX ».
+  // Le menu, lui, garde les noms entiers.
+  var GROUPE_COURT = { 'Pectoraux':'PECS' };
+  function groupeCourt(g){ g = g || 'Autre'; return GROUPE_COURT[g] || g.toUpperCase(); }
+  function majPastilleGroupe(card, groupe){
+    if (!card) return;
+    card.style.setProperty('--card-color', GROUP_COLORS[groupe] || GROUP_COLORS['Autre']);
+    var txt = card.querySelector('.ex-groupe-txt');
+    if (txt) txt.textContent = groupeCourt(groupe);
+  }
+  function ouvrirSerie(card, serieId){
+    if (!card || !serieId) return;
+    serieOuverte[card.dataset.id] = serieId;
+    card.querySelectorAll('.serie-card').forEach(function(c){
+      c.classList.toggle('ouverte', c.dataset.serieId === serieId);
+    });
+  }
 
-  // Les exercices d'un meme bloc sont contigus dans la liste : il suffit de
-  // regrouper les suites. Rien a trier, donc rien qui puisse se desynchroniser
-  // entre l'ordre affiche et l'ordre enregistre.
   function exercisesHTML(exercises){
     var out = '', i = 0;
     while (i < exercises.length){
@@ -1513,7 +1613,7 @@
             return '<span class="fiche-serie' + (s.fait ? ' fait' : '') + '">' + esc(perfTexte(s)) + '</span>';
           }).join('')
         + '</div>'
-        + (e.note ? '<div class="fiche-exo-note">« ' + esc(e.note.trim()) + ' »</div>' : '')
+        + notesExo(e).map(function(n){ return '<div class="fiche-exo-note">« ' + esc(n) + ' »</div>'; }).join('')
         + (tenues.length
             ? ligneProgressionDuree(e.nom, ds, Math.max.apply(null, tenues))
             : ligneProgression(e.nom, ds, meilleure))
@@ -2072,8 +2172,17 @@
           : (found.serie.rpe==null
               ? "Reps en réserve : 10 = à l'échec, 9 = 1 rep en réserve"
               : rpeLabel(found.serie.rpe));
+        // La cellule n'a la place que du chiffre, et une infobulle ne
+        // s'affiche pas sur un telephone : la phrase passe un instant.
+        if (found.serie.rpe != null) showToast(t.dataset.mode === 'temps' ? diffLabel(found.serie.rpe) : rpeLabel(found.serie.rpe));
       }
       else found.serie[field] = t.value;
+      // Un commentaire efface ne laisse pas de champ vide derriere lui.
+      if (field === 'note'){
+        if (!t.value.trim()) delete found.serie.note;
+        var outil = t.closest('.serie-card') && t.closest('.serie-card').querySelector('[data-action="note-serie"]');
+        if (outil) outil.classList.toggle('actif', !!found.serie.note);
+      }
 
       // L'étoile de record suit la saisie sans reconstruire le panneau, qui
       // ferait perdre le focus. Ce bloc visait « .serie-row », un sélecteur
@@ -2096,8 +2205,6 @@
     if (!ex) return;
 
     ex[field] = t.value;
-    // Un commentaire efface ne laisse pas de champ vide derriere lui.
-    if (field === 'note' && !t.value.trim()) delete ex.note;
 
     if (field==='nom'){
       var match = findExerciseMatch(t.value);
@@ -2106,7 +2213,7 @@
         ex.groupe = match;
         var sel = exListEl.querySelector('select.ex-groupe[data-id="'+id+'"]');
         if (sel) sel.value = match;
-        if (card) card.style.setProperty('--card-color', GROUP_COLORS[match]);
+        majPastilleGroupe(card, match);
       }
       // Le bloc « dernière fois » ne se recalculait qu'au rendu complet —
       // jamais pendant la saisie du nom, qui est justement le moment où il
@@ -2139,6 +2246,9 @@
       var carte = t.closest('.serie-card');
       if (carte){
         if (t.value) carte.dataset.type = t.value; else delete carte.dataset.type;
+        var etiquette = carte.querySelector('.serie-num-txt');
+        var lignes = Array.prototype.slice.call(carte.parentNode.querySelectorAll('.serie-card'));
+        if (etiquette) etiquette.textContent = TYPE_COURT[t.value] || String(lignes.indexOf(carte) + 1);
       }
       scheduleSave(state.selectedDay, true);
       majEtoilesRecord(t.closest('.ex-card'));
@@ -2152,8 +2262,7 @@
     if (!ex) return;
     ex.groupe = t.value;
     if (ex.nom && rememberExercise(ex.nom, ex.groupe)) populateDatalist();
-    var card = t.closest('.ex-card');
-    if (card) card.style.setProperty('--card-color', GROUP_COLORS[ex.groupe]);
+    majPastilleGroupe(t.closest('.ex-card'), ex.groupe);
     scheduleSave(state.selectedDay,true);
     renderDayPills();
     renderWeekStats();
@@ -2167,14 +2276,19 @@
     var brut = btn.dataset.poids;
     var poids = brut === '' ? null : Number(brut);
     if (poids !== null && isNaN(poids)) poids = null;
-    var serie = copierPerf(btn.dataset.copier, poids, btn.dataset.reps || '', btn.dataset.type || '');
+    var ciblee = btn.dataset.cible || '';
+    var serie = copierPerf(btn.dataset.copier, poids, btn.dataset.reps || '', btn.dataset.type || '', ciblee);
     if (!serie) return;
+    // La serie remplie s'ouvre : c'est elle qu'on va faire, ou corriger.
+    if (ciblee) serieOuverte[btn.dataset.copier] = serie.id;
     scheduleSave(state.selectedDay, true);
     renderDayPanel(true);
     renderDayPills();
     renderWeekStats();
     showToast('Série remplie — à toi de valider');
-    requestAnimationFrame(function(){
+    // Depuis la colonne PRÉC., la ligne est deja sous le doigt : ouvrir le
+    // clavier cacherait ce qu'on vient de remplir.
+    if (!ciblee) requestAnimationFrame(function(){
       var el = exListEl.querySelector('.serie-poids[data-serie-id="' + serie.id + '"]');
       if (el) el.focus();
     });
@@ -2301,6 +2415,7 @@
         ? { id:genSerieId(), poids:last.poids, reps:last.reps, rpe:last.rpe, repos:last.repos, type:typeSuivant, fait:false }
         : { id:genSerieId(), poids:null, reps:'', rpe:null, repos:'', fait:false };
       ex2.series.push(newSerie);
+      serieOuverte[ex2.id] = newSerie.id;
       scheduleSave(state.selectedDay,true);
       renderDayPanel(true);
       renderDayPills();
@@ -2334,13 +2449,73 @@
       if (!found4) return;
       found4.serie.fait = !found4.serie.fait;
       scheduleSave(state.selectedDay,true);
-      faitBtn.classList.toggle('checked', found4.serie.fait);
-      faitBtn.textContent = found4.serie.fait ? '✓' : '';
-      faitBtn.setAttribute('aria-pressed', found4.serie.fait ? 'true':'false');
-      var faitRow = faitBtn.closest('.serie-row');
-      if (faitRow) faitRow.classList.toggle('fait', found4.serie.fait);
+      // Faite, la serie se replie et la suivante s'ouvre ; decochee, elle
+      // se rouvre pour qu'on la corrige.
+      if (found4.serie.fait){
+        if (serieOuverte[found4.exercise.id] === serieId2) delete serieOuverte[found4.exercise.id];
+      } else serieOuverte[found4.exercise.id] = serieId2;
+      repeindreCarte(faitBtn.closest('.ex-card'), found4.exercise);
       return;
     }
+
+    var menuBtn = e.target.closest('[data-action="menu-exo"]');
+    if (menuBtn){
+      var carteM = menuBtn.closest('.ex-card');
+      var ouvert = carteM.classList.toggle('menu-ouvert');
+      menuBtn.setAttribute('aria-expanded', ouvert ? 'true' : 'false');
+      return;
+    }
+
+    // Le commentaire d'une serie : depuis sa barre d'outils, ou depuis
+    // « + COMMENTAIRE », qui vise la derniere serie faite — celle dont on
+    // sort, au moment ou on y pense.
+    var noteBtn = e.target.closest('[data-action="note-serie"], [data-action="ajout-note"]');
+    if (noteBtn){
+      var dayN = getOrCreateDay(state.selectedDay);
+      var cibleN = null;
+      if (noteBtn.dataset.serieId) cibleN = findSerie(dayN, noteBtn.dataset.serieId);
+      else {
+        var exN = findExercise(dayN, noteBtn.dataset.id);
+        var liste = (exN && exN.series) || [];
+        var faites = liste.filter(function(s){ return s.fait; });
+        var remplies = liste.filter(hasData);
+        var s = faites[faites.length - 1] || remplies[remplies.length - 1] || liste[liste.length - 1];
+        if (s) cibleN = { exercise: exN, serie: s };
+      }
+      if (!cibleN) return;
+      var ligneN = exListEl.querySelector('.serie-card[data-serie-id="' + cibleN.serie.id + '"]');
+      if (!ligneN) return;
+      var champ = ligneN.querySelector('.serie-note');
+      if (!champ){
+        var num = Array.prototype.slice.call(ligneN.parentNode.querySelectorAll('.serie-card')).indexOf(ligneN) + 1;
+        ligneN.insertAdjacentHTML('beforeend', noteSerieHTML(cibleN.serie, num));
+        champ = ligneN.querySelector('.serie-note');
+      }
+      champ.focus();
+      return;
+    }
+  });
+
+  // Toucher une serie l'ouvre : sa barre d'outils (pas de 2,5 kg, repos,
+  // commentaire, suppression) vient avec elle. Sans rendu : le champ garde
+  // le focus et le clavier reste ouvert.
+  // Seuls un champ ou un menu ouvrent : un bouton qui prend le focus (Chrome
+  // le lui donne a l'appui) deplacerait la barre entre l'appui et le
+  // relachement, et l'appui tomberait a cote — la coche ou PRÉC. ne
+  // repondraient pas.
+  exListEl.addEventListener('focusin', function(e){
+    if (!/^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName)) return;
+    var ligne = e.target.closest && e.target.closest('.serie-card');
+    if (!ligne || ligne.classList.contains('ouverte')) return;
+    ouvrirSerie(ligne.closest('.ex-card'), ligne.dataset.serieId);
+  });
+
+  // Un commentaire ouvert puis laisse vide disparait : pas de ligne morte.
+  exListEl.addEventListener('focusout', function(e){
+    var t = e.target;
+    if (!t.classList || !t.classList.contains('serie-note') || t.value.trim()) return;
+    var ligne = t.closest('.serie-note-ligne');
+    if (ligne) ligne.remove();
   });
 
   // Un nom tape a la main ("bench leger") rejoint la liste de suggestions
@@ -2570,9 +2745,9 @@
   // separateur et virgule decimale, parce que c'est ce qu'attend un Excel
   // configure en francais.
   // Le commentaire vient en dernier : un tableur fait avec l'ancien export
-  // reste lisible, et une colonne ajoutee a droite ne decale rien. Il est
-  // repete sur chaque serie de l'exercice : trier le tableur ne le separe
-  // pas de ses chiffres.
+  // reste lisible, et une colonne ajoutee a droite ne decale rien. C'est
+  // celui de la serie de la ligne : une ligne par serie, un commentaire par
+  // serie.
   var CSV_COLONNES = ['Date','Jour','Exercice','Groupe','Serie','Poids (kg)',
                       'Repetitions','RPE','Repos (s)','Volume (kg)','Fait','Commentaire'];
   function csvChamp(v){
@@ -2619,7 +2794,7 @@
             csvChamp(csvNombre(s.rpe)),
             csvTexte(s.repos || ''), csvChamp(csvNombre(serieVolume(s))),
             csvChamp(s.fait ? 'oui' : 'non'),
-            csvTexte((ex.note || '').trim())
+            csvTexte((s.note || '').trim())
           ].join(';'));
         });
       });
@@ -3606,13 +3781,12 @@
               if (s.rpe != null) txt += (TS.serieAuTemps(s) ? ' · difficulté ' : ' · RPE ') + s.rpe;
               return '<span class="lect-serie ' + classe + '">' + esc(txt) + '</span>';
             }).join('');
-            // Le commentaire est souvent ce qu'un coach veut lire en premier :
-            // « assisté », « douleur au coude ».
-            var note = (typeof ex.note === 'string' && ex.note.trim()) ? ex.note.trim() : '';
+            // Les commentaires sont souvent ce qu'un coach veut lire en
+            // premier : « assistée », « douleur au coude ».
             return '<div class="lect-exo">'
               + '<div class="lect-nom">' + esc(ex.nom || 'Sans nom') + '</div>'
               + '<div class="lect-series">' + (series || '<span class="lect-serie">aucune série</span>') + '</div>'
-              + (note ? '<div class="lect-note">« ' + esc(note) + ' »</div>' : '')
+              + notesExo(ex).map(function(n){ return '<div class="lect-note">« ' + esc(n) + ' »</div>'; }).join('')
               + '</div>';
           }).join('');
           return '<div class="lect-jour">'
@@ -4089,14 +4263,31 @@
       // premier tirage. Une base a jour renvoie note:null, et la, on suit.
       // Les identifiants locaux (« x… ») ne sont pas ceux de la base, qui en
       // fabrique des neufs : on retrouve l'exercice par sa place et son nom.
+      // Meme regle pour le commentaire d'une serie : une base sans la
+      // colonne series.note rend des series sans la cle, et celui d'ici
+      // reste — retrouve par identifiant, sinon par sa place.
       var locaux = (state.sessions[ds] || {}).exercises || [];
+      function copie(o){ var c = {}; Object.keys(o).forEach(function(k){ c[k] = o[k]; }); return c; }
       var distants = (d && d.exercises || []).map(function(e, i){
-        if (!e || ('note' in e)) return e;
+        if (!e) return e;
         var l = locaux.filter(function(x){ return x.id === e.id; })[0];
         if (!l && locaux[i] && (locaux[i].nom || '') === (e.nom || '')) l = locaux[i];
-        if (!l || !l.note) return e;
-        var c = {}; Object.keys(e).forEach(function(k){ c[k] = e[k]; });
-        c.note = l.note;
+        if (!l) return e;
+        var c = e;
+        if (!('note' in e) && l.note){ c = copie(e); c.note = l.note; }
+        var ls = l.series || [];
+        if (Array.isArray(e.series) && e.series.some(function(s, k){
+              return s && !('note' in s) && (ls.filter(function(x){ return x.id === s.id; })[0] || ls[k] || {}).note;
+            })){
+          if (c === e) c = copie(e);
+          c.series = e.series.map(function(s, k){
+            if (!s || ('note' in s)) return s;
+            var lse = ls.filter(function(x){ return x.id === s.id; })[0] || ls[k];
+            if (!lse || !lse.note) return s;
+            var cs = copie(s); cs.note = lse.note;
+            return cs;
+          });
+        }
         return c;
       });
       var j = { date:ds, exercises:distants.map(normalizeExercise) };

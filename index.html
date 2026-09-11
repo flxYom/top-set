@@ -275,18 +275,44 @@
   }
   .ex-name::placeholder{color:rgba(13,12,10,.55);font-weight:700;}
   .ex-name:focus{outline:2px solid #0d0c0a;outline-offset:2px;}
-  .ex-del{
-    flex:none;width:44px;height:44px;
+  /* Le groupe : une pastille dans l'en-tete. Le menu natif est pose dessus,
+     invisible — le telephone ouvre sa roue de choix habituelle. */
+  .ex-groupe-chip{
+    position:relative;flex:none;
+    display:flex;align-items:center;
+    height:30px;padding:0 8px;
     border:2px solid #0d0c0a;
-    background:transparent;
-    color:#0d0c0a;
-    font-size:16px;font-weight:800;
-    cursor:pointer;
-    display:flex;align-items:center;justify-content:center;
+    font-size:10px;font-weight:800;letter-spacing:.08em;color:#0d0c0a;
+    max-width:40%;
   }
-  .ex-del:active{background:#0d0c0a;color:var(--ink);}
+  .ex-groupe-txt{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .ex-groupe{
+    position:absolute;inset:0;width:100%;height:100%;
+    opacity:0;cursor:pointer;font-size:16px;
+    appearance:none;-webkit-appearance:none;
+  }
+  .ex-groupe-chip:focus-within{outline:2px solid #0d0c0a;outline-offset:2px;}
+  .ex-menu-btn{
+    flex:none;width:40px;height:40px;
+    border:2px solid #0d0c0a;background:transparent;color:#0d0c0a;
+    font-size:20px;font-weight:800;line-height:1;padding:0 0 4px;
+    cursor:pointer;display:flex;align-items:center;justify-content:center;
+  }
+  .ex-menu-btn:active,.ex-card.menu-ouvert .ex-menu-btn{background:#0d0c0a;color:var(--ink);}
+  /* Ce qui sert rarement : au temps, superset, suppression. */
+  .ex-menu{display:none;flex-direction:column;border-bottom:2px solid var(--line);}
+  .ex-card.menu-ouvert .ex-menu{display:flex;}
+  .ex-menu-item{
+    min-height:44px;padding:0 12px;text-align:left;
+    background:var(--panel2);border:none;border-top:1px solid var(--line);
+    color:var(--ink);font-family:inherit;font-size:11.5px;font-weight:800;letter-spacing:.05em;
+    cursor:pointer;
+  }
+  .ex-menu-item:first-child{border-top:none;}
+  .ex-menu-item:active{background:var(--line);}
+  .ex-menu-item.danger{color:var(--orange);}
 
-  .ex-body{padding:8px 12px 12px;display:flex;flex-direction:column;gap:8px;}
+  .ex-body{padding:8px 10px 10px;display:flex;flex-direction:column;gap:8px;}
 
   /* Superset : deux exercices ou plus qu'on enchaine sans repos entre eux.
      Le cadre doit se lire d'un coup d'oeil au milieu d'exercices simples,
@@ -592,21 +618,10 @@
     text-decoration:underline;text-underline-offset:3px;cursor:pointer;
   }
 
-  /* Le commentaire : une ligne, discrete tant qu'elle est vide. C'est ce
-     que les chiffres ne disent pas — assiste, bandes, fatigue. */
-  .ex-note{
-    width:100%;box-sizing:border-box;min-height:40px;
-    background:var(--panel2);border:2px dashed var(--line);
-    color:var(--ink);font-family:inherit;font-size:13px;font-weight:700;
-    padding:8px 10px;
-  }
-  .ex-note::placeholder{color:var(--dim);font-weight:600;}
-  .ex-note:not(:placeholder-shown){border-style:solid;}
-  .ex-note:focus{outline:none;border-color:var(--blue);border-style:solid;}
-  /* Le commentaire relu ailleurs : sous « derniere fois », dans la fiche
+  /* Les commentaires relus ailleurs : sous « derniere fois », dans la fiche
      d'une seance, l'historique d'un exercice, le carnet lu par le coach. */
   .ex-prev-note,.fiche-exo-note,.lect-note{
-    margin-top:6px;font-size:12px;line-height:1.4;font-style:italic;
+    margin-top:4px;font-size:12px;line-height:1.4;font-style:italic;
     color:var(--ink);overflow-wrap:anywhere;
   }
   .exo-jour-note{
@@ -614,67 +629,24 @@
     color:var(--dim);overflow-wrap:anywhere;
   }
 
-  .ex-actions{display:flex;flex-direction:column;gap:6px;}
-  .btn-lien{
-    width:100%;min-height:40px;padding:0 10px;
-    background:none;border:2px dashed var(--line);
-    color:var(--dim);
-    font-family:inherit;font-size:11px;font-weight:800;letter-spacing:.05em;
-    cursor:pointer;
-  }
-  .btn-lien:active{border-color:var(--yellow);color:var(--yellow);}
-  .ex-groupe{
-    width:100%;
-    background:var(--panel2);
-    border:2px solid var(--line);
-    color:var(--ink);
-    font-size:12.5px;font-weight:700;
-    padding:9px 30px 9px 10px;
-    appearance:none;-webkit-appearance:none;-moz-appearance:none;
-    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%239a9184'/%3E%3C/svg%3E");
-    background-repeat:no-repeat;
-    background-position:right 11px center;
-  }
+  .ex-actions{display:flex;gap:6px;}
 
-  .series-list{display:flex;flex-direction:column;gap:8px;}
-
-  /* Une serie = une carte a deux lignes. Six controles sur une seule ligne,
-     sur un ecran de 375px, donnent des cibles de 40px que personne n'arrive a
-     viser en salle. L'essentiel (fait / poids / reps) tient la ligne du haut
-     en 48px ; le detail (RPE / repos / suppression) passe en dessous. */
-  /* Historique : sobre, gris, en retrait. La saisie du jour reste l'élément
-     principal de la carte. */
-  .ex-prev{margin:2px 0 6px;}
+  /* « Derniere fois » : une ligne grise. Les chiffres sont dans la colonne
+     PRÉC. de chaque serie ; la liste ne s'affiche que la ou elle manque. */
+  .ex-prev{margin:0;}
   .ex-prev-tete{
     font-size:9.5px;font-weight:800;letter-spacing:.11em;
-    color:var(--dim);margin-bottom:5px;
+    color:var(--dim);line-height:1.5;
   }
-  .ex-prev-series{display:flex;flex-wrap:wrap;gap:5px;}
-  .perf{
-    display:flex;align-items:center;gap:5px;
-    min-height:36px;padding:0 8px;
-    background:var(--panel2);
-    border:1.5px dashed var(--line);
-    color:var(--ink);
-    font-family:inherit;font-size:12.5px;font-weight:800;
-    cursor:pointer;
-  }
-  .perf:active{background:var(--line);}
-  .perf.top{border-color:var(--yellow);border-style:solid;}
-  .perf-copie{font-size:12px;color:var(--dim);line-height:1;}
-  .perf.top .perf-copie{color:var(--yellow);}
-  .perf-tag{
-    font-size:8.5px;letter-spacing:.08em;color:var(--dim);
-    border-left:1px solid var(--line);padding-left:5px;
-  }
+  .ex-prev-liste{display:none;letter-spacing:.04em;}
 
   /* Suggestion : un autre registre, orange et étiqueté comme tel. On ne doit
      jamais confondre ce qu'on a fait avec ce qu'on pourrait tenter. */
   .ex-cible{
     border:2px solid var(--orange);
     background:rgba(255,92,56,.09);
-    padding:7px 9px;
-    margin:0 0 6px;
+    padding:5px 5px 6px 9px;
+    margin:6px 0 0;
   }
   .ex-cible-ligne{display:flex;align-items:center;gap:8px;}
   .ex-cible-tag{
@@ -685,23 +657,104 @@
   }
   .ex-cible-val{flex:1;min-width:0;font-size:14px;font-weight:800;letter-spacing:-.01em;}
   .ex-cible-copie{
-    flex:none;width:36px;height:36px;
+    flex:none;width:40px;height:36px;
     background:transparent;border:1.5px solid var(--orange);
     color:var(--orange);font-size:15px;font-weight:800;
     padding:0;cursor:pointer;line-height:1;
   }
   .ex-cible-copie:active{background:var(--orange);color:#0d0c0a;}
-  .ex-cible-raison{margin-top:5px;font-size:11px;line-height:1.35;color:var(--dim);}
+  .ex-cible-raison{margin-top:2px;font-size:11px;line-height:1.35;color:var(--dim);}
+
+  /* ==== Les series : une ligne chacune ================================== */
+  /* SÉRIE · PRÉC. · KG · REPS · RPE · ✓, la grille des carnets qu'on connait.
+     Les cibles restent a 44 px de haut : c'est la largeur qu'on partage. La
+     carte est un conteneur : sous 300 px utiles (petit telephone, superset
+     sur un 360 px), la colonne PRÉC. cede sa place aux chiffres du jour. */
+  .ex-card{container-type:inline-size;}
+  .series-list{display:flex;flex-direction:column;gap:4px;}
+  .series-tete,.serie-main{
+    display:grid;
+    grid-template-columns:40px minmax(46px,1fr) minmax(54px,1.25fr) minmax(40px,.85fr) 46px 44px;
+    gap:4px;align-items:center;
+  }
+  .ex-card[data-mode="temps"] .series-tete,
+  .ex-card[data-mode="temps"] .serie-main{
+    grid-template-columns:40px minmax(46px,1fr) minmax(94px,2.1fr) 46px 44px;
+  }
+  .series-tete{
+    padding:0 5px;
+    font-size:9px;font-weight:800;letter-spacing:.1em;color:var(--dim);
+  }
+  .series-tete > span{text-align:center;}
+  .series-tete > span:first-child{text-align:left;}
 
   .serie-card{
-    border:2px solid var(--line);
-    background:var(--panel);
-    padding:8px;
+    border:2px solid transparent;
+    padding:3px;
+    position:relative;
   }
-  .serie-card.fait{border-color:var(--green);}
-  .serie-main{display:flex;align-items:center;gap:6px;}
+  .serie-card.ouverte{border-color:var(--orange);background:rgba(255,92,56,.05);}
+  .serie-main{position:relative;}
+
+  /* Le numero, ou le type : on le touche pour changer le type. */
+  .serie-num{
+    position:relative;height:44px;
+    display:flex;align-items:center;justify-content:center;
+    border:2px solid var(--line);background:var(--bg);
+    font-size:13px;font-weight:800;color:var(--dim);letter-spacing:.02em;
+  }
+  .serie-type{
+    position:absolute;inset:0;width:100%;height:100%;
+    opacity:0;cursor:pointer;font-size:16px;
+    appearance:none;-webkit-appearance:none;
+  }
+  .serie-num:focus-within{outline:2px solid var(--yellow);outline-offset:1px;}
+  .serie-card[data-type] .serie-num{font-size:10px;letter-spacing:.06em;}
+  .serie-card[data-type="echauffement"] .serie-num{color:var(--dim);border-style:dashed;}
+  .serie-card[data-type="top"] .serie-num{color:var(--yellow);border-color:var(--yellow);}
+  .serie-card[data-type="backoff"] .serie-num{color:var(--blue);border-color:var(--blue);}
+
+  /* La derniere fois, en gris : on la touche pour la recopier. */
+  .serie-prec{
+    min-width:0;height:44px;padding:0 2px;
+    background:none;border:1.5px dashed var(--line);
+    color:var(--dim);font-family:inherit;font-size:12px;font-weight:800;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .serie-prec.top{color:var(--yellow);border-color:rgba(255,210,63,.45);}
+  .serie-prec:active{background:var(--line);color:var(--ink);}
+  .serie-prec.vide{border-color:transparent;cursor:default;}
+
+  .serie-poids,.serie-reps,.serie-duree{
+    width:100%;min-width:0;height:44px;
+    background:var(--panel2);
+    border:2px solid var(--line);
+    color:var(--ink);
+    font-family:inherit;
+    font-size:17px;font-weight:800;letter-spacing:-.02em;
+    padding:0 2px;
+    text-align:center;
+  }
+  .serie-duree-champ{position:relative;display:block;min-width:0;}
+  .serie-duree{padding-right:16px;}
+  .serie-unite{position:absolute;right:7px;top:50%;transform:translateY(-50%);font-size:12px;font-weight:800;color:var(--dim);pointer-events:none;}
+
+  .serie-rpe{
+    width:100%;min-width:0;height:44px;
+    background:var(--bg);
+    border:2px solid var(--line);
+    color:var(--ink);
+    font-family:inherit;font-size:14px;font-weight:800;
+    padding:0 2px;text-align:center;text-align-last:center;
+    appearance:none;-webkit-appearance:none;-moz-appearance:none;
+    cursor:pointer;
+  }
+  .serie-rpe.vide{color:var(--dim);font-size:11px;letter-spacing:.04em;}
+
   .serie-check{
-    flex:none;width:48px;height:48px;
+    width:44px;height:44px;
     border:2px solid var(--ink);
     background:transparent;
     color:transparent;
@@ -709,108 +762,100 @@
     padding:0;cursor:pointer;
     display:flex;align-items:center;justify-content:center;
   }
-  .serie-check.checked{background:var(--green);border-color:var(--ink);color:#0d0c0a;}
-  .serie-num{flex:none;width:15px;text-align:center;font-size:11px;font-weight:800;color:var(--dim);}
+  .serie-check.checked{background:var(--green);border-color:var(--green);color:#0d0c0a;}
+  .serie-pr{position:absolute;top:-6px;right:-5px;display:flex;pointer-events:none;}
 
-  /* Les increments evitent d'ouvrir le clavier pour passer de 60 a 62,5 kg. */
+  /* Faite, la serie se lit comme une ligne de texte : plus de cadres, plus
+     de fond. Elle reste modifiable d'un appui. */
+  .serie-card.fait:not(.ouverte) .serie-poids,
+  .serie-card.fait:not(.ouverte) .serie-reps,
+  .serie-card.fait:not(.ouverte) .serie-duree,
+  .serie-card.fait:not(.ouverte) .serie-rpe{background:transparent;border-color:transparent;}
+  .serie-card.fait:not(.ouverte) .serie-rpe.vide{color:transparent;}
+  .serie-card.fait:not(.ouverte) .serie-num{border-color:transparent;background:transparent;}
+  .serie-card.fait[data-type="top"]:not(.ouverte) .serie-num,
+  .serie-card.fait[data-type="backoff"]:not(.ouverte) .serie-num{border-color:currentColor;}
+
+  /* La barre d'outils de la serie ouverte : les pas, le repos, le
+     commentaire, la suppression. Une seule a l'ecran par exercice. */
+  .serie-outils{display:none;gap:4px;margin-top:4px;align-items:center;}
+  .serie-card.ouverte .serie-outils{display:flex;}
   .step-btn{
-    flex:none;width:38px;height:48px;
+    flex:none;width:44px;height:40px;
     border:2px solid var(--line);
     background:var(--panel2);
     color:var(--ink);
-    font-size:19px;font-weight:800;line-height:1;
+    font-family:inherit;font-size:18px;font-weight:800;line-height:1;
     padding:0;cursor:pointer;
     display:flex;align-items:center;justify-content:center;
     -webkit-user-select:none;user-select:none;
   }
+  .ex-card[data-mode="temps"] .step-btn{font-size:14px;}
   .step-btn:active{background:var(--orange);color:#0d0c0a;border-color:var(--ink);}
-
-  .serie-poids,.serie-reps{
-    flex:1;min-width:0;height:48px;
-    background:var(--panel2);
-    border:2px solid var(--line);
-    color:var(--ink);
-    font-family:inherit;
-    font-size:17px;font-weight:800;letter-spacing:-.02em;
-    padding:0 3px;
-    text-align:center;
+  .serie-repos-champ{
+    flex:1;min-width:0;display:flex;align-items:center;gap:5px;
+    height:40px;padding:0 0 0 7px;
+    border:2px solid var(--line);background:var(--bg);
   }
-  .serie-x{flex:none;font-size:12px;color:var(--dim);font-weight:800;}
-  .serie-pr{flex:none;display:flex;align-items:center;}
-
-  /* Le type se lit d'abord au liseré de la carte : on doit voir « ça c'est
-     mon top set » sans lire le menu déroulant. */
-  .serie-card[data-type="echauffement"]{border-color:var(--line);opacity:.72;}
-  .serie-card[data-type="top"]{border-color:var(--yellow);}
-  .serie-card[data-type="backoff"]{border-color:var(--blue);}
-  .serie-card.fait[data-type]{border-color:var(--green);}
-
-  .serie-meta{display:flex;align-items:center;gap:6px;margin-top:6px;flex-wrap:wrap;}
-  /* Ligne entiere : a 375 px, partager la rangee avec RPE et REPOS reduisait
-     les deux a des lucarnes inutilisables. Le type sert de bandeau de tete
-     de la serie, ce qui se lit mieux de toute facon. */
-  .serie-type{
-    flex:1 1 100%;min-width:0;height:34px;
-    background:var(--bg);
-    border:2px solid var(--line);
-    color:var(--dim);
-    font-family:inherit;
-    font-size:11px;font-weight:800;letter-spacing:.06em;
-    padding:0 20px 0 7px;
-    appearance:none;-webkit-appearance:none;-moz-appearance:none;
-    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%239a9184'/%3E%3C/svg%3E");
-    background-repeat:no-repeat;
-    background-position:right 6px center;
-    cursor:pointer;
+  .serie-repos-champ > span{flex:none;font-size:9px;font-weight:800;letter-spacing:.06em;color:var(--dim);}
+  .serie-repos{
+    flex:1;min-width:0;height:100%;
+    background:transparent;border:none;
+    color:var(--ink);font-family:inherit;font-size:14px;font-weight:800;
+    padding:0 4px;text-align:center;
   }
-  .serie-card[data-type="top"] .serie-type{color:var(--yellow);border-color:var(--yellow);}
-  .serie-card[data-type="backoff"] .serie-type{color:var(--blue);border-color:var(--blue);}
-  .meta-field{display:flex;align-items:center;gap:5px;flex:1;min-width:0;}
-  .meta-field > span{
-    flex:none;
-    font-size:10px;font-weight:800;letter-spacing:.1em;color:var(--dim);
-  }
-  .serie-rpe,.serie-repos{
-    flex:1;min-width:0;height:42px;
-    background:var(--bg);
-    border:2px solid var(--line);
-    color:var(--ink);
-    font-family:inherit;
-    font-size:13.5px;font-weight:800;
-    padding:0 6px;
-    text-align:center;
-  }
-  .serie-rpe{
-    padding:0 22px 0 6px;
-    appearance:none;-webkit-appearance:none;-moz-appearance:none;
-    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%239a9184'/%3E%3C/svg%3E");
-    background-repeat:no-repeat;
-    background-position:right 7px center;
-    cursor:pointer;
-  }
-  .serie-rpe.vide{color:var(--dim);}
-  .serie-del{
-    flex:none;width:44px;height:42px;
-    border:2px solid var(--line);
-    background:transparent;
-    color:var(--dim);
-    font-size:16px;
-    padding:0;cursor:pointer;
+  .serie-repos:focus{outline:none;}
+  .serie-repos-champ:focus-within{border-color:var(--orange);}
+  .serie-outil{
+    flex:none;width:44px;height:40px;
+    border:2px solid var(--line);background:transparent;
+    color:var(--dim);padding:0;cursor:pointer;
     display:flex;align-items:center;justify-content:center;
   }
-  .serie-del:active{background:var(--panel2);color:var(--ink);}
+  .serie-outil.actif{color:var(--blue);border-color:var(--blue);}
+  .serie-outil:active{background:var(--panel2);color:var(--ink);}
 
-  .btn-add-serie{
-    align-self:stretch;
+  /* Le commentaire d'une serie, sous elle : du texte, pas un formulaire. */
+  .serie-note-ligne{display:flex;align-items:center;gap:6px;padding:2px 0 0 12px;}
+  .serie-note-fleche{flex:none;color:var(--dim);font-size:13px;font-weight:800;}
+  .serie-note{
+    flex:1;min-width:0;height:34px;
+    background:transparent;border:none;border-bottom:1.5px dashed var(--line);
+    color:var(--ink);font-family:inherit;font-size:13px;font-weight:600;font-style:italic;
+    padding:0 2px;
+  }
+  .serie-note::placeholder{color:var(--dim);}
+  .serie-note:focus{outline:none;border-bottom:1.5px solid var(--blue);}
+
+  .btn-add-serie,.btn-add-note{
     background:transparent;
-    border:2px dashed var(--orange);
-    color:var(--orange);
     font-family:inherit;
     font-weight:800;font-size:12px;letter-spacing:.04em;
-    min-height:48px;
+    min-height:46px;
     cursor:pointer;
   }
+  .btn-add-serie{flex:1 1 0;min-width:0;border:2px dashed var(--orange);color:var(--orange);}
   .btn-add-serie:active{background:var(--orange);color:#0d0c0a;}
+  .btn-add-note{flex:0 0 auto;padding:0 12px;white-space:nowrap;border:2px dashed var(--line);color:var(--dim);}
+  .btn-add-note:active{border-color:var(--blue);color:var(--blue);}
+
+  @container (max-width:310px){
+    .series-tete,.serie-main{grid-template-columns:36px minmax(56px,1.3fr) minmax(40px,1fr) 46px 44px;}
+    .ex-card[data-mode="temps"] .series-tete,
+    .ex-card[data-mode="temps"] .serie-main{grid-template-columns:36px minmax(80px,1fr) 46px 44px;}
+    .serie-prec,.series-tete .col-prec{display:none;}
+    .ex-prev-liste{display:inline;}
+    .step-btn,.serie-outil{width:38px;}
+    .serie-repos-champ{padding-left:5px;gap:2px;}
+    .serie-repos-champ > span{font-size:8px;letter-spacing:.04em;}
+    .btn-add-serie,.btn-add-note{font-size:11px;letter-spacing:.02em;}
+    .btn-add-note{padding:0 8px;}
+    .ex-groupe-chip{padding:0 6px;letter-spacing:.04em;}
+  }
+  /* Superset sur un petit telephone : le mot REPOS laisse la place au chiffre. */
+  @container (max-width:280px){
+    .serie-repos-champ > span{display:none;}
+  }
 
   input:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid var(--yellow);outline-offset:2px;}
   input:focus,select:focus{border-color:var(--orange);}
@@ -1423,40 +1468,6 @@
   .sheet-msg.warn{border-color:var(--yellow);color:var(--yellow);}
   .sheet-msg.err{border-color:var(--orange);color:var(--orange);}
 
-  /* Sous 380 px — iPhone SE, petits Android — la ligne de serie compte
-     169 px de boutons fixes avant les deux champs. Dans un superset, qui
-     mange 23 px de plus, le poids et les reps se retrouvaient rognes a une
-     poignee de pixels : le chiffre saisi devenait illisible. On reprend sur
-     les boutons, pas sur les champs, parce que c'est la valeur qui compte. */
-  @media (max-width:380px){
-    .superset{padding:6px;}
-    .serie-check{width:44px;height:44px;}
-    .step-btn{width:30px;height:44px;font-size:17px;}
-    .serie-poids,.serie-reps{height:44px;font-size:15px;padding:0 1px;}
-    .serie-main{gap:4px;}
-    /* L'etoile de record passe en bord de carte : dans la ligne, elle coutait
-       vingt pixels aux deux seuls champs qui portent une valeur. */
-    .serie-pr{position:absolute;top:3px;right:3px;}
-    .serie-card{position:relative;}
-    /* Le numero de serie est deja porte par l'ordre des lignes : c'est ce
-       qu'on sacrifie en premier pour qu'un poids a trois chiffres reste
-       lisible. Il reste dans l'etiquette lue par les lecteurs d'ecran. */
-    .serie-num{display:none;}
-  }
-
-  /* ==== Au temps : gainage, planche, chaise ============================ */
-  /* Meme gabarit que le poids — meme hauteur, memes boutons de pas — pour
-     que la main retrouve ses reperes : seule l'unite change. */
-  .serie-duree{
-    flex:1;min-width:0;height:48px;
-    background:var(--panel2);border:2px solid var(--line);
-    color:var(--ink);font-family:inherit;
-    font-size:17px;font-weight:800;letter-spacing:-.02em;
-    padding:0 3px;text-align:center;
-  }
-  .serie-unite{flex:none;font-size:12px;font-weight:800;color:var(--dim);}
-  @media (max-width:380px){ .serie-duree{height:44px;font-size:15px;} }
-
   /* ==== Telephone : zoom, barre du haut, retour en haut ================ */
   /* Deux appuis rapides sur « + » ajoutent 5 kg : ce n'est pas une demande
      de zoom. « manipulation » garde le pincement et le defilement, et retire
@@ -1613,7 +1624,7 @@
      la messagerie zoomait. test/gabarits.test.mjs le verifie. */
   @supports (-webkit-touch-callout:none){
     .sheet-input,.sheet-paste,.ex-name,.ex-groupe,.serie-type,.serie-rpe,
-    .serie-repos,.seance-creer-date,.alias-select,.conv-champ,.ex-note{font-size:16px;}
+    .serie-repos,.seance-creer-date,.alias-select,.conv-champ,.serie-note{font-size:16px;}
     @media (max-width:380px){ .serie-poids,.serie-reps,.serie-duree{font-size:16px;} }
   }
 </style>

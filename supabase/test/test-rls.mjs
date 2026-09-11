@@ -254,6 +254,28 @@ ok('un commentaire blanc devient null', notes[2].note === null, JSON.stringify(n
 ok('la cle note est toujours rendue', notes.every(e => 'note' in e), JSON.stringify(notes.map(e => Object.keys(e))));
 await refuse('la base refuse un commentaire de plus de 500 caracteres', () =>
   db.query(`update public.exercices set note = repeat('x', 501) where user_id = $1`, [A]));
+
+console.log('\n== 13 ter. Le commentaire d une serie fait l aller-retour ==');
+await as(A, `select public.pousser_jour('2026-09-08'::date, $1::jsonb)`, [JSON.stringify([
+  { id: 'b1', nom: 'Bench', groupe: 'Pectoraux', series: [
+    { poids: 80, reps: '5', note: '  Assistée  ' },
+    { poids: 80, reps: '5', note: 'y'.repeat(600) },
+    { poids: 80, reps: '5', note: '   ' },
+    { poids: 80, reps: '5' }
+  ] }
+])]);
+r = await as(A, `select public.tirer_jours(null) as j`);
+const sn = r.rows[0].j['2026-09-08'].exercises[0].series;
+ok('le commentaire de serie revient, sans ses espaces', sn[0].note === 'Assistée', JSON.stringify(sn[0].note));
+ok('un commentaire de serie trop long est tronque a 500', sn[1].note.length === 500, 'longueur=' + sn[1].note.length);
+ok('un commentaire de serie blanc ou absent devient null', sn[2].note === null && sn[3].note === null,
+   JSON.stringify([sn[2].note, sn[3].note]));
+ok('la cle note est rendue sur chaque serie', sn.every(s => 'note' in s), JSON.stringify(sn.map(s => Object.keys(s))));
+ok('l ordre des series est garde avec leurs commentaires', sn.map(s => s.note && s.note[0]).join() === 'A,y,,',
+   JSON.stringify(sn.map(s => s.note && s.note[0])));
+await refuse('la base refuse un commentaire de serie de plus de 500 caracteres', () =>
+  db.query(`update public.series set note = repeat('x', 501) where user_id = $1`, [A]));
+
 // On remet la journee telle que les sections suivantes l'attendent.
 await as(A, `select public.pousser_jour('2026-09-08'::date, $1::jsonb)`, [JSON.stringify([
   { id: 'b1', nom: 'Bench', groupe: 'Pectoraux', series: [{ poids: 80, reps: '5' }] }
@@ -583,7 +605,7 @@ await as(C, `select public.toucher_profil($1)`, ['Carole']);
 
 // B a un carnet : c'est lui qu'on protege.
 await as(B, `select public.pousser_jour('2026-10-01'::date, $1::jsonb)`, [JSON.stringify([
-  { id: 'bx1', nom: 'Squat', groupe: 'Jambes', note: 'Dernière rep assistée', series: [{ poids: 140, reps: '3', rpe: 9 }] }
+  { id: 'bx1', nom: 'Squat', groupe: 'Jambes', note: 'Dernière rep assistée', series: [{ poids: 140, reps: '3', rpe: 9, note: 'Sangles' }] }
 ])]);
 
 console.log('  -- avant tout lien');
@@ -641,6 +663,9 @@ ok('et il voit bien les series',
 ok('et le commentaire de l exercice',
    rr.rows[0].j['2026-10-01'].exercises[0].note === 'Dernière rep assistée',
    JSON.stringify(rr.rows[0].j['2026-10-01'].exercises[0].note));
+ok('et le commentaire de chaque serie',
+   rr.rows[0].j['2026-10-01'].exercises[0].series[0].note === 'Sangles',
+   JSON.stringify(rr.rows[0].j['2026-10-01'].exercises[0].series[0].note));
 
 rr = await as(A, `select pseudo from public.profils where user_id = $1`, [B]);
 ok('le coach voit le pseudo de son coache', rr.rows.length === 1, JSON.stringify(rr.rows));
