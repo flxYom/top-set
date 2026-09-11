@@ -552,6 +552,7 @@ test/                    business logic (146), hardening guards (151), links (19
 LICENSE  SECURITY.md  CONTRIBUTING.md  CHANGELOG.md
 .github/                 issue templates, CI workflow
 .vercelignore            what the site does not publish: docs, schema, tests
+docs/seo/                SEO and content strategy: topic matrix, research, inventory
 ```
 
 Icons and the social image are generated from geometry by a script rather than
@@ -666,6 +667,14 @@ cuts; the **site name** declared as `WebSite` structured data; a 48 px
 URL per page, with `top-set.fr` redirecting to `www.top-set.fr`. The guards in
 `test/gabarits.test.mjs` check the title and description length, the
 `WebSite` block, the favicon and the sitemap.
+
+The content strategy lives in [`docs/seo/content-strategy.md`](docs/seo/content-strategy.md)
+(French): audit, topic clusters and pillar pages, scoring method, the 20 topics
+selected out of 83, the planned architecture, risks and the Search Console loop.
+`docs/seo/sujets.json` is the source of truth; `node docs/seo/matrice.mjs`
+derives the scores, regenerates the ranked matrix and the inventory, and refuses
+two pages targeting the same URL or query. Research data is versioned and dated
+in `docs/seo/recherche/`; no search volume is made up.
 
 The rest is not code. Until the domain is declared in **Google Search Console**
 (one DNS record at the registrar, then submitting the sitemap), Google only finds

@@ -1,0 +1,78 @@
+{
+ "source": "PubMed E-utilities (esearch), filtre meta-analyses + revues systematiques",
+ "date": "2026-09-11T09:58:59.094Z",
+ "themes": {
+  "rpe-rir": {
+   "requete": "((\"repetitions in reserve\" OR \"rating of perceived exertion\") AND \"resistance training\") AND (meta-analysis[pt] OR systematic review[pt])",
+   "revues": 17
+  },
+  "echec-proximite": {
+   "requete": "((\"training to failure\" OR \"proximity to failure\" OR \"momentary failure\") AND (resistance OR strength)) AND (meta-analysis[pt] OR systematic review[pt])",
+   "revues": 9
+  },
+  "volume": {
+   "requete": "((\"training volume\" OR \"number of sets\") AND (hypertrophy OR \"muscle growth\") AND resistance) AND (meta-analysis[pt] OR systematic review[pt])",
+   "revues": 25
+  },
+  "frequence": {
+   "requete": "(\"training frequency\" AND (hypertrophy OR strength) AND resistance) AND (meta-analysis[pt] OR systematic review[pt])",
+   "revues": 43
+  },
+  "repos-series": {
+   "requete": "((\"rest interval\" OR \"inter-set rest\") AND resistance) AND (meta-analysis[pt] OR systematic review[pt])",
+   "revues": 14
+  },
+  "charge-repetitions": {
+   "requete": "((load OR \"repetition range\" OR \"low-load\") AND hypertrophy AND \"resistance training\") AND (meta-analysis[pt] OR systematic review[pt])",
+   "revues": 38
+  },
+  "surcharge-progressive": {
+   "requete": "((\"progressive overload\" OR \"load progression\") AND resistance) AND (meta-analysis[pt] OR systematic review[pt])",
+   "revues": 6
+  },
+  "1rm-estimation": {
+   "requete": "((\"one repetition maximum\" OR 1RM) AND (prediction OR estimation OR equation)) AND (meta-analysis[pt] OR systematic review[pt])",
+   "revues": 30
+  },
+  "deload-periodisation": {
+   "requete": "((periodization OR periodisation OR deload OR tapering) AND \"resistance training\") AND (meta-analysis[pt] OR systematic review[pt])",
+   "revues": 21
+  },
+  "tempo": {
+   "requete": "((\"repetition duration\" OR tempo OR \"time under tension\") AND resistance) AND (meta-analysis[pt] OR systematic review[pt])",
+   "revues": 11
+  },
+  "amplitude": {
+   "requete": "((\"range of motion\" OR \"partial range\") AND resistance AND hypertrophy) AND (meta-analysis[pt] OR systematic review[pt])",
+   "revues": 4
+  },
+  "echauffement": {
+   "requete": "((\"warm-up\" OR warmup) AND (strength OR resistance) AND performance) AND (meta-analysis[pt] OR systematic review[pt])",
+   "revues": 34
+  },
+  "top-set-back-off": {
+   "requete": "((\"top set\" OR \"back-off set\" OR \"backoff\") AND resistance) AND (meta-analysis[pt] OR systematic review[pt])",
+   "revues": 0
+  },
+  "drop-set": {
+   "requete": "((\"drop set\" OR \"drop-set\" OR \"descending set\") AND resistance) AND (meta-analysis[pt] OR systematic review[pt])",
+   "revues": 2
+  },
+  "proteines": {
+   "requete": "((protein supplementation OR \"protein intake\") AND \"resistance training\" AND (hypertrophy OR \"lean mass\")) AND (meta-analysis[pt] OR systematic review[pt])",
+   "revues": 19
+  },
+  "creatine": {
+   "requete": "(creatine AND \"resistance training\") AND (meta-analysis[pt] OR systematic review[pt])",
+   "revues": 45
+  },
+  "sommeil": {
+   "requete": "((sleep) AND (\"resistance training\" OR \"muscle strength\" OR hypertrophy)) AND (meta-analysis[pt] OR systematic review[pt])",
+   "revues": 153
+  },
+  "suivi-carnet": {
+   "requete": "((\"training log\" OR \"training diary\" OR \"self-monitoring\") AND (resistance OR exercise) AND adherence) AND (meta-analysis[pt] OR systematic review[pt])",
+   "revues": 37
+  }
+ }
+}

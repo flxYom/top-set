@@ -22,6 +22,9 @@ screenshots/
 supabase/
 test/
 
+# Strategie SEO, recherches et donnees de travail
+docs/
+
 # Configuration des outils
 .github/
 .htmlvalidate.json

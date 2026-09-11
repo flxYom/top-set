@@ -1,0 +1,30 @@
+{
+ "accueil": {
+  "url": "https://www.top-set.fr/",
+  "date": "2026-09-11T10:01:11.876Z",
+  "scores": {
+   "performance": 85,
+   "accessibility": 96,
+   "best-practices": 100,
+   "seo": 100
+  },
+  "LCP": "2.3 s",
+  "CLS": "0.201",
+  "TBT": "0 ms",
+  "poids": "Total size was 267 KiB"
+ },
+ "guide": {
+  "url": "https://www.top-set.fr/guide",
+  "date": "2026-09-11T10:01:36.281Z",
+  "scores": {
+   "performance": 99,
+   "accessibility": 100,
+   "best-practices": 100,
+   "seo": 100
+  },
+  "LCP": "1.4 s",
+  "CLS": "0.031",
+  "TBT": "0 ms",
+  "poids": "Total size was 117 KiB"
+ }
+}

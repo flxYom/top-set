@@ -678,6 +678,7 @@ test/                    logique métier (146), gardes de sécurité (151), lien
 LICENSE  SECURITY.md  CONTRIBUTING.md  CHANGELOG.md
 .github/                 modèles d'issues, workflow de CI
 .vercelignore            ce que le site ne publie pas : docs, schéma, tests
+docs/seo/                stratégie SEO et contenu : matrice des sujets, recherche, inventaire
 ```
 
 Les icônes et l'image de partage sont générées à partir de leur géométrie par un
@@ -804,6 +805,14 @@ Ce que le code peut faire est fait :
 
 `test/gabarits.test.mjs` vérifie la longueur du titre et de la description, le
 bloc `WebSite`, le favicon et le plan du site.
+
+**La stratégie de contenu** vit dans [`docs/seo/content-strategy.md`](docs/seo/content-strategy.md) :
+l'audit, les clusters et leurs pages piliers, la méthode de notation, les 20 sujets retenus, l'architecture
+technique prévue, les risques et la boucle Search Console. La matrice (`docs/seo/sujets.json`, 83 sujets)
+est la source de vérité ; `node docs/seo/matrice.mjs` en déduit les notes et régénère la matrice classée
+et l'inventaire, et refuse deux pages qui viseraient la même URL ou la même requête. Les données de
+recherche sont versionnées et datées dans `docs/seo/recherche/` : suggestions de Google, concurrence,
+nombre de revues PubMed par thème, mesure Lighthouse. Aucun volume de recherche n'y est inventé.
 
 Le reste ne se fait pas dans le code. Tant que le domaine n'a pas été déclaré
 dans **Google Search Console**, Google ne le découvre que par hasard, par un lien

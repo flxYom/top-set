@@ -11,6 +11,13 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ### Added
 
+- **SEO and content strategy** (`docs/seo/`, not published). An audit of the
+  real site — the home page shows Googlebot 118 words and a sign-up screen, no
+  page answers a search — research from Google autocomplete (155 seed queries,
+  1,036 suggestions), the organic top 10 of 32 queries, and PubMed review
+  counts per theme; 83 topics scored on eight explicit criteria, 20 selected, a
+  5-page pilot. `matrice.mjs` computes the scores and refuses two active pages
+  on the same URL or query; CI runs it.
 - **Search engine basics.** The page title now says what the app is
   (« Top Set — carnet de musculation gratuit ») instead of « Top Set » alone —
   also the name of a training method whose forum threads outrank it. A real
