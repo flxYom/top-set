@@ -589,7 +589,7 @@ supabase-config.js       project URL + public anon key (see Accounts)
 supabase/schema.sql      tables, RLS policies and sync functions
 supabase/test/           the schema tested on a real Postgres (PGlite): RLS (239),
                          upgrade from every past version (12)
-test/                    business logic (161), hardening guards (171), links (123), content templates (15)
+test/                    business logic (161), hardening guards (171), links (119), content templates (15)
 LICENSE  SECURITY.md  CONTRIBUTING.md  CHANGELOG.md
 .github/                 issue templates, CI workflow
 .vercelignore            what the site does not publish: docs, schema, tests, content sources
@@ -738,11 +738,14 @@ it stores and computes nothing. Content pages carry a bar with the same
 sections under the header, the current one lit like an app tab, and the
 breadcrumb goes through Apprendre. The service worker is unchanged, and every
 visited page stays readable offline. Published pages: the top set, a 1RM calculator, the product
-page, a training log for French school PE (EPS), the plank; then, in batches of
+page, the plank; then, in batches of
 three, the RPE scale, reps in reserve (RIR) and muscle failure; the 1RM, the
 back-off set and an RPE table; progressive overload, rep ranges and sets per
 muscle; rest times, plateaus and tracking your progress; the bench press, bar
-weights and a spreadsheet log template.
+weights and a spreadsheet log template. A page on the log French high-school
+students keep for PE (EPS) was published, then withdrawn: they are not Top Set's
+audience. Its address now redirects permanently to `/carnet-de-musculation`
+(`redirects` in `vercel.json`), and its topic is `RETIRED` in the matrix.
 
 Still no framework and no build step on Vercel. Each page's source lives in
 `contenu/`: an HTML file whose first comment holds JSON metadata.

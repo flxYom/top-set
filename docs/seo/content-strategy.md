@@ -98,7 +98,7 @@ est expliquée (RPE, sauvegarde), le guide renvoie vers la page de documentation
 | **Intensité & autorégulation** | `/documentation/rpe-musculation` | **RIR**, **échec musculaire**, **tableau RPE** (outil), intensité vs effort, autorégulation |
 | **Charge & force maximale** | `/documentation/1rm-musculation` | **calculateur 1RM** (outil), pourcentages du 1RM, tester son 1RM, record personnel, tonnage |
 | **Progression & programmation** | `/entrainement/surcharge-progressive` | **répétitions**, **séries par muscle**, **temps de repos**, **stagnation**, deload, fréquence, périodisation, tempo, amplitude |
-| **Suivi & carnet** | `/entrainement/suivre-sa-progression` (méthode) + `/carnet-de-musculation` (produit) | **carnet EPS**, **modèle Excel/CSV** (outil) |
+| **Suivi & carnet** | `/entrainement/suivre-sa-progression` (méthode) + `/carnet-de-musculation` (produit) | **modèle Excel/CSV** (outil) ; ~~carnet EPS~~ retiré |
 | **Exercices** | `/exercices` (hub) | **planche/gainage**, **développé couché**, **poids de la barre**, squat, soulevé de terre, tractions… |
 | Programmes | plus tard | PPL, full body, 5/3/1 — quand l'app aura des modèles de séance |
 
@@ -139,6 +139,8 @@ Toutes les données sont dans `recherche/`, datées :
    *et* « carnet d'entraînement musculation » : des lycéens doivent tenir un carnet pour l'EPS. En face :
    des PDF d'établissements, Scribd, deux outils EPS (l'un sans bilan ni graphique). TOP SET — gratuit, sans
    compte, exportable — y répond exactement.
+   **Retirée le 2026-09-11** sur décision de l'éditeur : la cible n'est pas les lycéens. La page est
+   supprimée et son adresse redirige vers `/carnet-de-musculation`.
 2. **Le top set est peu couvert en français.** Un fil de forum, un blog de coach (~850 mots, 0 source), une
    page d'éditeur d'app mi-française mi-anglaise (0 source), puis des vidéos. Aucune méta-analyse n'étudie
    la méthode nommée : la page s'appuiera sur la littérature RPE/RIR, proximité de l'échec et charge, et le
@@ -183,7 +185,7 @@ Classés par note, puis ajustés (ajustements justifiés sous le tableau). Tout 
 | 2 | `/documentation/1rm-musculation` | 1rm musculation | définition, pilier | 86 |
 | 3 | `/documentation/back-off-set` | back off set musculation | définition | 85 |
 | 4 | `/documentation/rpe-musculation` | rpe musculation | définition, pilier | 85 |
-| 5 | `/entrainement/carnet-musculation-eps` | carnet de musculation eps | guide | 84 |
+| 5 | ~~`/entrainement/carnet-musculation-eps`~~ (retirée) | carnet de musculation eps | guide | 84 |
 | 6 | `/entrainement/nombre-de-repetitions` | nombre de répétitions hypertrophie | guide | 84 |
 | 7 | `/entrainement/surcharge-progressive` | surcharge progressive musculation | guide, pilier | 83 |
 | 8 | `/outils/calculateur-1rm` | calcul 1rm | outil | 82 |
@@ -218,7 +220,7 @@ accessibles.
 1. `/documentation/top-set-musculation` — définition pilier, liée au produit, meilleure note.
 2. `/outils/calculateur-1rm` — outil ; réutilise les formules déjà testées de `intelligence.js`.
 3. `/carnet-de-musculation` — page produit : le texte que l'accueil ne peut pas porter.
-4. `/entrainement/carnet-musculation-eps` — guide, niche la plus proche du produit.
+4. ~~`/entrainement/carnet-musculation-eps`~~ — publiée, puis retirée le 2026-09-11 (cible hors sujet).
 5. `/exercices/planche-gainage` — gabarit exercice, sur une fonction de l'app (séries au temps).
 
 Plus l'ossature : les hubs (`/documentation`, `/entrainement`, `/exercices`, `/outils`), une page

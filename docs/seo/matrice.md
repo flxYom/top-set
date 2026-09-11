@@ -2,7 +2,7 @@
 
 > Ne pas modifier à la main : éditer `sujets.json` puis lancer `node docs/seo/matrice.mjs`.
 
-83 sujets étudiés — 20 sélectionnés, 9 fusionnés dans une autre page, 2 exclus.
+83 sujets étudiés — 19 sélectionnés, 9 fusionnés dans une autre page, 3 exclus.
 
 Pondération : demand ×2, relevance ×1.5, competition ×1.5, opportunity ×1.5, product ×1.5, authority ×1, sources ×1, linking ×1 ; note = somme pondérée / 55 × 100.
 
@@ -12,7 +12,7 @@ Pondération : demand ×2, relevance ×1.5, competition ×1.5, opportunity ×1.5
 | 2 | Le 1RM (répétition maximale) | 1rm musculation | charge | définition (pilier) | 5 | 5 | 2 | 3 | 5 | 5 | 5 | 5 | **86** | PUBLISHED | /documentation/1rm-musculation | faible |
 | 3 | Le back-off set | back off set musculation | top-set | définition | 5 | 3 | 5 | 5 | 4 | 2 | 5 | 5 | **85** | PUBLISHED | /documentation/back-off-set | faible |
 | 4 | L'échelle RPE en musculation | rpe musculation | intensite | définition (pilier) | 5 | 5 | 2 | 3 | 5 | 4 | 5 | 5 | **85** | PUBLISHED | /documentation/rpe-musculation | faible |
-| 5 | Carnet d'entraînement de musculation pour l'EPS (bac) | carnet de musculation eps | suivi | guide | 5 | 5 | 3 | 5 | 3 | 2 | 4 | 5 | **84** | PUBLISHED | /entrainement/carnet-musculation-eps | faible |
+| 5 | Carnet d'entraînement de musculation pour l'EPS (bac) | carnet de musculation eps | suivi | guide | 5 | 5 | 3 | 5 | 3 | 2 | 4 | 5 | **84** | RETIRED | /entrainement/carnet-musculation-eps | faible |
 | 6 | Combien de répétitions pour l'hypertrophie | nombre de répétitions hypertrophie | progression | guide | 4 | 5 | 2 | 4 | 5 | 5 | 5 | 4 | **84** | PUBLISHED | /entrainement/nombre-de-repetitions | faible |
 | 7 | La surcharge progressive | surcharge progressive musculation | progression | guide (pilier) | 5 | 5 | 2 | 3 | 5 | 3 | 5 | 5 | **83** | PUBLISHED | /entrainement/surcharge-progressive | faible |
 | 8 | Calculateur de 1RM (avec RPE) | calcul 1rm | charge | outil | 5 | 5 | 1 | 3 | 4 | 5 | 5 | 5 | **82** | PUBLISHED | /outils/calculateur-1rm | faible |
@@ -126,13 +126,13 @@ Pondération : demand ×2, relevance ×1.5, competition ×1.5, opportunity ×1.5
 - **Concurrence** : DDG FR : 10 guides « complets » de blogs et coachs, plusieurs avec calculateur ; qualité inégale
 - **Notes** : Se différencier par : échelle basée sur les répétitions en réserve (Zourdos 2016, Helms 2016), précision réelle de l'auto-estimation, exemples de salle, lien direct avec la saisie du RPE dans l'app. Couvre aussi RPE vs Borg (section).
 
-### Carnet d'entraînement de musculation pour l'EPS (bac) — 84 (PUBLISHED)
+### Carnet d'entraînement de musculation pour l'EPS (bac) — 84 (RETIRED)
 
 - **Requête** : carnet de musculation eps · variantes : carnet d'entraînement musculation bac, carnet d'entraînement musculation terminale, carnet musculation lycée, fiche musculation bac
 - **Intention** : informationnelle · **page parente** : /carnet-de-musculation
 - **Demande** : autocomplétion : eps, terminale, bac, bac pro, lycée apparaissent sous « carnet de musculation » ET « carnet d'entraînement musculation »
 - **Concurrence** : DDG FR : PDF d'établissements, Scribd/Studocu, deux outils EPS (un sans bilan ni graphique)
-- **Notes** : Niche la plus proche du produit : un carnet gratuit, sans compte, exportable. Sources : textes officiels de l'EPS (référentiel du champ d'apprentissage) à lire avant rédaction ; ne rien affirmer sur les exigences du bac sans eux.
+- **Notes** : Retiré le 2026-09-11 sur décision de l'éditeur : la cible de Top Set n'est pas les lycéens. La page publiée a été supprimée, son adresse redirige vers /carnet-de-musculation (vercel.json).
 
 ### Combien de répétitions pour l'hypertrophie — 84 (PUBLISHED)
 
