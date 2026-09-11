@@ -632,7 +632,7 @@
   .ex-actions{display:flex;gap:6px;}
 
   /* « Derniere fois » : une ligne grise. Les chiffres sont dans la colonne
-     PRÉC. de chaque serie ; la liste ne s'affiche que la ou elle manque. */
+     de la derniere fois ; la liste ne s'affiche que la ou elle manque. */
   .ex-prev{margin:0;}
   .ex-prev-tete{
     font-size:9.5px;font-weight:800;letter-spacing:.11em;
@@ -666,10 +666,10 @@
   .ex-cible-raison{margin-top:2px;font-size:11px;line-height:1.35;color:var(--dim);}
 
   /* ==== Les series : une ligne chacune ================================== */
-  /* SÉRIE · PRÉC. · KG · REPS · RPE · ✓, la grille des carnets qu'on connait.
+  /* SÉRIE · 8 SEPT. · KG · REPS · RPE · ✓, la grille des carnets qu'on connait.
      Les cibles restent a 44 px de haut : c'est la largeur qu'on partage. La
      carte est un conteneur : sous 300 px utiles (petit telephone, superset
-     sur un 360 px), la colonne PRÉC. cede sa place aux chiffres du jour. */
+     sur un 360 px), la colonne de la derniere fois cede sa place aux chiffres du jour. */
   .ex-card{container-type:inline-size;}
   .series-list{display:flex;flex-direction:column;gap:4px;}
   .series-tete,.serie-main{
@@ -838,6 +838,12 @@
   .btn-add-serie:active{background:var(--orange);color:#0d0c0a;}
   .btn-add-note{flex:0 0 auto;padding:0 12px;white-space:nowrap;border:2px dashed var(--line);color:var(--dim);}
   .btn-add-note:active{border-color:var(--blue);color:var(--blue);}
+
+  /* Pas de derniere fois : pas de colonne. Meme grille que sur un petit ecran. */
+  .ex-card.sans-prec .series-tete,.ex-card.sans-prec .serie-main{grid-template-columns:40px minmax(56px,1.3fr) minmax(40px,1fr) 46px 44px;}
+  .ex-card.sans-prec[data-mode="temps"] .series-tete,
+  .ex-card.sans-prec[data-mode="temps"] .serie-main{grid-template-columns:40px minmax(80px,1fr) 46px 44px;}
+  .ex-card.sans-prec .serie-prec,.ex-card.sans-prec .series-tete .col-prec{display:none;}
 
   @container (max-width:310px){
     .series-tete,.serie-main{grid-template-columns:36px minmax(56px,1.3fr) minmax(40px,1fr) 46px 44px;}

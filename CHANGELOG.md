@@ -9,8 +9,20 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ## [Unreleased]
 
+### Fixed
+
+- **« + SÉRIE » sent the page back to the top on iPhone.** Tapping a button
+  there leaves the focus in the field you were typing in; re-rendering the whole
+  day panel deleted that field and Safari scrolled to the top. The new set is now
+  appended to its card, without the keyboard; any remaining full redraw
+  (`renderDayPanel`, `repeindreCarte`) leaves the field first and restores the
+  scroll position. Two guards keep it that way (174).
+
 ### Changed
 
+- **The last-time column is headed with its date** (« 8 SEPT. ») instead of
+  « PRÉC. », which was not understood, and is hidden for an exercise with no
+  history. Service worker cache `topset-v19` → `topset-v20`.
 - **The exercise card, rebuilt around one row per set.** `SÉRIE · PRÉC. · KG ·
   REPS · RPE · ✓`, the layout of Strong and Hevy, replaces three rows per set
   (weight, then a full-width type menu, then RPE, rest and delete). The set
