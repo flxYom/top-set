@@ -434,5 +434,14 @@ ok('ouvrir la boite recompte la pastille',
 ok('le champ commentaire fait 16 px sous iOS, sinon Safari zoome',
    /@supports \(-webkit-touch-callout:none\)\{[\s\S]{0,300}\.serie-note\{font-size:16px;\}/.test(HTML));
 
+console.log('\n== La carte ne renvoie pas en haut de la page ==');
+// Sur iPhone, un appui sur un bouton laisse le focus au champ ou l'on tapait.
+// Refaire le panneau supprimait ce champ, et Safari remontait tout en haut.
+const ajout = corps("var addSerieBtn = e.target.closest('[data-action=\"add-serie\"]');", "var delSerieBtn");
+ok('+ SERIE ajoute sa ligne sans refaire le panneau',
+   ajout.indexOf('listeS.appendChild(') > -1 && ajout.indexOf('renderDayPanel(') < 0);
+ok('refaire le panneau lache le focus et garde le defilement',
+   /function renderDayPanel\(force\)\{[\s\S]{0,900}lacherFocus\(list\);[\s\S]{0,300}garderDefilement\(y\);/.test(SRC));
+
 console.log(`\n${pass} reussis, ${fail} echoues`);
 process.exit(fail ? 1 : 0);

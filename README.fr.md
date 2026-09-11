@@ -63,13 +63,16 @@ jour, tu ajoutes des exercices, tu ajoutes des séries. Les flèches changent de
 semaine, et le bouton `AUJOURD'HUI` te ramène — il passe en orange dès que tu
 t'es éloigné de la semaine en cours.
 
-**Une série, une ligne.** `SÉRIE · PRÉC. · KG · REPS · RPE · ✓`, la grille de
+**Une série, une ligne.** `SÉRIE · 8 SEPT. · KG · REPS · RPE · ✓`, la grille de
 Strong ou Hevy, reprise parce que c'est celle qu'on connaît. Avant, chaque série
 prenait trois lignes — poids, puis type, puis RPE et repos — et un exercice de
 cinq séries remplissait deux écrans. Le **numéro** porte le type : on le touche,
-le menu natif s'ouvre, et `TOP`, `B.O.` ou `ÉCH.` prend sa place. **PRÉC.**
-montre la même série la dernière fois (la 3e en face de la 3e) et la recopie
+le menu natif s'ouvre, et `TOP`, `B.O.` ou `ÉCH.` prend sa place. La **colonne
+de la dernière fois** porte la date de la séance d'avant — « PRÉC. » ne se
+comprenait pas —, montre la même série ce jour-là (la 3e en face de la 3e) et la recopie
 d'un appui dans *sa* ligne — poids, reps, type ; le RPE reste celui d'aujourd'hui.
+Pour un exercice sans historique, elle n'apparaît pas (`.sans-prec`) : elle
+n'aurait que des tirets.
 Une série **faite** perd ses cadres et se lit comme du texte ; elle reste
 modifiable d'un appui.
 
@@ -85,13 +88,19 @@ côté. C'est un état d'écran, en mémoire, jamais enregistré.
 `DOS`…), avec le menu natif posé dessus. Au temps, superset et suppression
 passent dans le menu `⋯` : ils servaient rarement et prenaient la place d'une
 série. La carte est un conteneur (`container-type: inline-size`) : sous 310 px
-utiles — petit téléphone, superset sur un écran de 360 px — la colonne PRÉC.
+utiles — petit téléphone, superset sur un écran de 360 px — la colonne de la dernière fois
 cède sa place aux chiffres du jour, et la ligne *Dernière fois* liste alors les
 séries précédentes.
 
 **Duplication de série.** `+ SÉRIE` recopie la précédente : poids, reps, RPE,
 repos. Seul `fait` repart à zéro, et le commentaire ne se recopie pas. Sur cinq
-séries identiques, tu en saisis une et tu appuies quatre fois.
+séries identiques, tu en saisis une et tu appuies quatre fois. La ligne s'ajoute
+à la carte sans refaire l'écran, et sans ouvrir le clavier : elle est déjà
+remplie, et `−` `+` corrigent le poids. Refaire tout le panneau supprimait le
+champ où l'on venait de taper — sur iPhone, un appui sur un bouton ne quitte pas
+ce champ — et Safari renvoyait la page tout en haut. Quand l'écran doit encore
+être refait (`renderDayPanel`, `repeindreCarte`), l'app quitte d'abord le champ
+et remet la page où elle était.
 
 **Au temps : gainage, planche, chaise.** Un exercice tenu se mesure en secondes.
 Taper « Planche » ou « Gainage » bascule la série en durée pendant la frappe —
@@ -756,7 +765,7 @@ supabase-config.js       URL du projet + clé publique (voir Comptes)
 supabase/schema.sql      tables, politiques RLS et fonctions de synchro
 supabase/test/           le schéma testé sur un vrai Postgres (PGlite) : RLS (246),
                          montée depuis chaque version passée (13)
-test/                    logique métier (162), gardes de sécurité (172), liens (119), gabarits de contenu (15)
+test/                    logique métier (162), gardes de sécurité (174), liens (119), gabarits de contenu (15)
 LICENSE  SECURITY.md  CONTRIBUTING.md  CHANGELOG.md
 .github/                 modèles d'issues, workflow de CI
 .vercelignore            ce que le site ne publie pas : docs, schéma, tests, source du contenu

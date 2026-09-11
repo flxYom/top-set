@@ -65,13 +65,15 @@ repository is for right now.
 add sets. Arrows move between weeks; an `AUJOURD'HUI` button jumps back to today
 and turns orange as soon as you have navigated away from the current week.
 
-**One set, one row.** `SÉRIE · PRÉC. · KG · REPS · RPE · ✓`, the grid of Strong
+**One set, one row.** `SÉRIE · 8 SEPT. · KG · REPS · RPE · ✓`, the grid of Strong
 or Hevy, kept because it is the one people know. Each set used to take three
 rows — weight, then type, then RPE and rest — and a five-set exercise filled two
 screens. The **number** carries the set type: tap it, the native menu opens, and
-`TOP`, `B.O.` or `ÉCH.` takes its place. **PRÉC.** shows the same set last time
+`TOP`, `B.O.` or `ÉCH.` takes its place. The **last-time column** is headed with
+the previous session's date — « PRÉC. » was not understood — and shows the same set last time
 (the 3rd facing the 3rd) and copies it into *its* row with one tap — weight,
-reps, type; the RPE stays today's. A **done** set loses its borders and reads
+reps, type; the RPE stays today's. For an exercise with no history it is not
+shown (`.sans-prec`): it would hold nothing but dashes. A **done** set loses its borders and reads
 like text; one tap still edits it.
 
 **The open set.** One per exercise, outlined in orange: by default the first one
@@ -86,12 +88,18 @@ kept in memory, never saved.
 native menu laid over it. Timed mode, superset and delete move to the `⋯` menu:
 they were rarely used and took the room of a set. The card is a container
 (`container-type: inline-size`): under 310 px of usable width — small phone,
-superset on a 360 px screen — the PRÉC. column gives way to today's numbers, and
+superset on a 360 px screen — the last-time column gives way to today's numbers, and
 the *Dernière fois* line lists last time's sets instead.
 
 **Set duplication.** `+ SÉRIE` copies the previous set — weight, reps, RPE, rest.
 Only `fait` resets, and the comment is not copied. Five identical sets means
-typing one and tapping four times.
+typing one and tapping four times. The row is added to the card without
+re-rendering the screen, and without opening the keyboard: it is already
+filled in, and `−` `+` fix the weight. Re-rendering the whole panel deleted the
+field you had just typed in — on iPhone, tapping a button does not leave that
+field — and Safari sent the page back to the top. When the screen still has to be
+redrawn (`renderDayPanel`, `repeindreCarte`), the app leaves the field first and
+puts the page back where it was.
 
 **RPE per set.** Reps-in-reserve scale, 10 down to 6 in half points: 10 is
 failure, 9 leaves one rep, 8 leaves two. Optional — leave it empty and nothing
@@ -626,7 +634,7 @@ supabase-config.js       project URL + public anon key (see Accounts)
 supabase/schema.sql      tables, RLS policies and sync functions
 supabase/test/           the schema tested on a real Postgres (PGlite): RLS (246),
                          upgrade from every past version (13)
-test/                    business logic (162), hardening guards (172), links (119), content templates (15)
+test/                    business logic (162), hardening guards (174), links (119), content templates (15)
 LICENSE  SECURITY.md  CONTRIBUTING.md  CHANGELOG.md
 .github/                 issue templates, CI workflow
 .vercelignore            what the site does not publish: docs, schema, tests, content sources

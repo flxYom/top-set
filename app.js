@@ -1195,7 +1195,9 @@
           : '<button type="button" class="ex-menu-item" data-action="superset" data-id="'+ eid +'">⇄ AJOUTER UN EXERCICE EN SUPERSET</button>')
       + '<button type="button" class="ex-menu-item danger ex-del" data-id="'+ eid +'">✕ SUPPRIMER L\'EXERCICE</button>'
       + '</div>';
-    return '<div class="ex-card" style="--card-color:'+color+'" data-id="'+ eid +'" data-mode="'+(auTemps ? 'temps' : 'reps')+'">'
+    // Sans historique, la colonne de la derniere fois n'aurait que des tirets :
+    // elle laisse sa place aux chiffres du jour.
+    return '<div class="ex-card'+(p ? '' : ' sans-prec')+'" style="--card-color:'+color+'" data-id="'+ eid +'" data-mode="'+(auTemps ? 'temps' : 'reps')+'">'
       + '<div class="ex-head">'
       +   '<input class="ex-name" type="text" list="exerciseList" placeholder="Nom de l\'exercice" value="'+esc(ex.nom||'')+'" data-field="nom" data-id="'+ eid +'">'
       // Le groupe se remplit tout seul d'apres le nom : une pastille suffit,
@@ -1224,7 +1226,11 @@
     if (!series.length) return '<div class="empty-state" style="padding:14px;font-size:12px;">Aucune série — ajoute la première ci-dessous.</div>';
     if (p === undefined) p = precedentDe(ex);
     var ouverte = serieOuverteDe(ex);
-    return '<div class="series-tete" aria-hidden="true"><span>SÉRIE</span><span class="col-prec">PRÉC.</span>'
+    // La colonne de la derniere fois porte sa date : « 8 SEPT. » se
+    // comprend tout seul, « PRÉC. » non.
+    var dPrec = p && fromDateStr(p.prec.date);
+    var titrePrec = dPrec ? dPrec.getDate() + ' ' + MONTH_ABBR[dPrec.getMonth()].toUpperCase() : '';
+    return '<div class="series-tete" aria-hidden="true"><span>SÉRIE</span><span class="col-prec">' + esc(titrePrec) + '</span>'
       + (auTemps ? '<span class="col-duree">DURÉE</span><span>DIFF.</span>' : '<span>KG</span><span>REPS</span><span>RPE</span>')
       + '<span>✓</span></div>'
       + series.map(function(s,idx){ return serieRowHTML(s, idx, ex, auTemps, p && p.prec, s.id === ouverte); }).join('');
@@ -1238,9 +1244,11 @@
   function repeindreSeries(card, ex){
     if (!card) return;
     var auTemps = estAuTemps(ex);
+    var p = precedentDe(ex);
     card.dataset.mode = auTemps ? 'temps' : 'reps';
+    card.classList.toggle('sans-prec', !p);
     var liste = card.querySelector('.series-list');
-    if (liste) liste.innerHTML = seriesListeHTML(ex, auTemps);
+    if (liste) liste.innerHTML = seriesListeHTML(ex, auTemps, p);
     var bascule = card.querySelector('[data-action="mesure"]');
     if (bascule) bascule.textContent = libelleMesure(auTemps);
   }
@@ -1248,9 +1256,22 @@
   // replie la ligne et ouvre la suivante.
   function repeindreCarte(card, ex){
     if (!card) return;
+    var y = window.scrollY;
+    lacherFocus(card);
     var tmp = document.createElement('div');
     tmp.innerHTML = exerciseCardHTML(ex);
     card.replaceWith(tmp.firstChild);
+    garderDefilement(y);
+  }
+  // Un champ qui a le focus ne doit pas disparaitre sous les doigts : sur
+  // iPhone, Safari ferme alors le clavier en renvoyant la page tout en haut.
+  // On le quitte d'abord, et on remet la page ou elle etait.
+  function lacherFocus(zone){
+    var ae = document.activeElement;
+    if (ae && ae !== document.body && zone && zone.contains(ae) && ae.blur) ae.blur();
+  }
+  function garderDefilement(y){
+    if (Math.abs(window.scrollY - y) > 1) window.scrollTo(0, y);
   }
   // La pastille laisse la place au nom : « PECS » plutot que « PECTORAUX ».
   // Le menu, lui, garde les noms entiers.
@@ -1693,11 +1714,14 @@
     }
     var day = state.sessions[ds];
     var exercises = day ? day.exercises : [];
+    var y = window.scrollY;
+    lacherFocus(list);
     if (!exercises.length){
       list.innerHTML = '<div class="empty-state">Aucun exercice noté pour ce jour.<br>Ajoute ta première série ci-dessous.</div>';
     } else {
       list.innerHTML = exercisesHTML(exercises);
     }
+    garderDefilement(y);
   }
 
   function renderPlanning(force){
@@ -2416,14 +2440,27 @@
         : { id:genSerieId(), poids:null, reps:'', rpe:null, repos:'', fait:false };
       ex2.series.push(newSerie);
       serieOuverte[ex2.id] = newSerie.id;
+      // La ligne s'ajoute a la carte, sans rien refaire autour. Refaire le
+      // panneau supprimait le champ ou l'on venait de taper — sur iPhone,
+      // un appui sur un bouton ne le quitte pas —, et Safari renvoyait la
+      // page tout en haut. Pas de clavier non plus : la serie est deja
+      // remplie, et − / + corrigent le poids sans lui.
+      var carteS = addSerieBtn.closest('.ex-card');
+      var listeS = carteS && carteS.querySelector('.series-list');
+      if (ex2.series.length === 1 || !listeS) repeindreCarte(carteS, ex2);
+      else {
+        lacherFocus(carteS);
+        var pS = precedentDe(ex2);
+        var tmpS = document.createElement('div');
+        tmpS.innerHTML = serieRowHTML(newSerie, ex2.series.length - 1, ex2, estAuTemps(ex2), pS && pS.prec, true);
+        listeS.appendChild(tmpS.firstChild);
+        ouvrirSerie(carteS, newSerie.id);
+      }
       scheduleSave(state.selectedDay,true);
-      renderDayPanel(true);
       renderDayPills();
       renderWeekStats();
-      requestAnimationFrame(function(){
-        var el = exListEl.querySelector('.serie-poids[data-serie-id="'+newSerie.id+'"]');
-        if (el) el.focus();
-      });
+      var ligneS = exListEl.querySelector('.serie-card[data-serie-id="'+newSerie.id+'"]');
+      if (ligneS && ligneS.scrollIntoView) ligneS.scrollIntoView({ block:'nearest' });
       return;
     }
 
