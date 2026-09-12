@@ -27,6 +27,9 @@
 <link rel="icon" type="image/png" sizes="48x48" href="favicon-48.png">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="manifest" href="manifest.webmanifest">
+<!-- La police arrive avant le premier rendu : sans ça, le texte s'affiche
+     d'abord dans la police du système, puis se recompose et fait bouger la page. -->
+<link rel="preload" href="fonts/bricolage-latin.woff2" as="font" type="font/woff2" crossorigin>
 <title>Top Set — carnet de musculation gratuit</title>
 <!-- Pour Google : le nom du site a afficher au-dessus du resultat. Un bloc
      de donnees n'est pas execute, la CSP (script-src 'self') ne le bloque pas. -->
@@ -1169,6 +1172,12 @@
   .accueil-sous{
     margin:0 0 18px;font-size:13px;line-height:1.5;color:var(--dim);
   }
+  /* « Sans compte » d'abord : c'est ce que promettent la description du site
+     et la page produit. Le compte reste juste en dessous, sans geste de plus. */
+  .accueil-ou{
+    margin:10px 0 12px;font-size:11px;font-weight:800;letter-spacing:.08em;
+    text-transform:uppercase;color:var(--dim);text-align:center;
+  }
   .lien-discret{
     display:block;width:100%;margin-top:14px;padding:12px 0;
     background:none;border:none;
@@ -1751,7 +1760,7 @@
 <body>
 <div class="app">
   <header class="brand">
-    <h1 class="brand-mark"><span class="wm-top">TOP</span><span class="wm-set">SET</span><span class="wm-app">app</span></h1>
+    <p class="brand-mark"><span class="wm-top">TOP</span><span class="wm-set">SET</span><span class="wm-app">app</span></p>
     <button type="button" class="brand-btn msg" id="messagesBtn" aria-label="Messages">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 4.5h17v11.5H10l-5 4v-4H3.5z"/></svg>
       <span class="brand-badge" id="messagesBadge" hidden></span>
@@ -2118,9 +2127,14 @@
     <p class="accueil-marque"><span class="wm-top">TOP</span><span class="wm-set">SET</span><span class="wm-app">app</span></p>
     <h1 class="accueil-titre" id="accueilTitre">Ton carnet de musculation</h1>
     <p class="accueil-sous">
-      Crée un compte pour retrouver tes séances sur tous tes appareils, et ne
-      jamais les perdre si tu changes de téléphone.
+      Gratuit et sans pub. Commence tout de suite sur ce téléphone, ou crée un
+      compte pour retrouver tes séances sur tous tes appareils.
     </p>
+
+    <div id="blocSansCompte">
+      <button type="button" class="btn-sheet" id="accueilSansCompte">COMMENCER SANS COMPTE</button>
+      <p class="accueil-ou">ou avec un compte</p>
+    </div>
 
     <div id="modeConnexion">
       <input type="text" id="comptePseudo" class="sheet-input" placeholder="ton pseudo (facultatif)" autocomplete="nickname" maxlength="24" aria-label="Pseudo">
@@ -2158,8 +2172,6 @@
     </div>
 
     <div class="sheet-msg" id="compteMsg" hidden></div>
-
-    <button type="button" class="lien-discret" id="accueilSansCompte">Continuer sans compte, sur cet appareil</button>
   </div>
 </div>
 

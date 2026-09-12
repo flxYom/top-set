@@ -11,6 +11,8 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ### Fixed
 
+- **Two `<h1>` on the home page.** The header logo is now a paragraph; the only
+  heading is the welcome screen's « Ton carnet de musculation ».
 - **A stray tap on a set already logged overwrote it with last week's numbers.**
   The last-time column now only copies into an empty row; on a filled or
   finished set it is plain text, with no border and nothing to press.
@@ -52,6 +54,18 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ### Changed
 
+- **The first screen leads with « COMMENCER SANS COMPTE ».** It opened on a
+  sign-up form, with « continuer sans compte » as a small underlined link at the
+  very bottom — while the site description and the product page promise « sans
+  compte ». The no-account button now comes first, as a full button; the account
+  form stays right below, with no extra step. It hides during a password reset
+  or change. Service worker cache `topset-v22` → `topset-v23`.
+- **The home page preloads its latin font**, so text is no longer laid out in a
+  system font and then re-set — the layout shift Lighthouse measured at 0.101,
+  just above the 0.1 threshold. A guard checks the preloaded file is the one the
+  `@font-face` asks for.
+- **The web app manifest declares screenshots, an `id` and categories**, used by
+  Chrome on Android for a richer install dialog.
 - **Titles, validations and exercise names are pushed even when no day
   changed.** `pousser()` used to return early on an empty day queue, so they
   waited for the next logged set.

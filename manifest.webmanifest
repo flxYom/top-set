@@ -1,5 +1,6 @@
 {
   "name": "Top Set",
+  "id": "/",
   "short_name": "Top Set",
   "description": "Carnet de musculation gratuit : séances, séries, records et progression.",
   "start_url": "./",
@@ -33,6 +34,34 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
+    }
+  ],
+  "categories": [
+    "health",
+    "fitness",
+    "sports"
+  ],
+  "screenshots": [
+    {
+      "src": "img/carnet-planning.webp",
+      "sizes": "603x705",
+      "type": "image/webp",
+      "form_factor": "narrow",
+      "label": "La semaine et la séance du jour"
+    },
+    {
+      "src": "img/carnet-seance.webp",
+      "sizes": "603x840",
+      "type": "image/webp",
+      "form_factor": "narrow",
+      "label": "Une série par ligne, la dernière fois en face"
+    },
+    {
+      "src": "img/carnet-recap.webp",
+      "sizes": "603x705",
+      "type": "image/webp",
+      "form_factor": "narrow",
+      "label": "Le récap : volume, séries, assiduité"
     }
   ]
 }

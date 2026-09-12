@@ -5123,10 +5123,11 @@
       });
       var msg = document.getElementById('compteMsg');
       if (msg) msg.hidden = true;
-      var sans = document.getElementById('accueilSansCompte');
-      // Pendant un changement de mot de passe, « continuer sans compte »
-      // abandonnerait l'operation a mi-chemin.
-      if (sans) sans.hidden = (mode === 'nouveau');
+      var sans = document.getElementById('blocSansCompte');
+      // « Commencer sans compte » est en tete, au-dessus des formulaires : il
+      // n'accompagne que la connexion. Au milieu d'un oubli ou d'un changement
+      // de mot de passe, il abandonnerait l'operation a mi-chemin.
+      if (sans) sans.hidden = (mode !== 'connexion');
     }
 
     function messageErreur(e){

@@ -58,6 +58,14 @@ c'est exactement à ça que sert ce repo pour l'instant.
 
 ## Ce qu'il fait
 
+**Le premier écran.** À la toute première visite, l'app s'ouvre sur
+`COMMENCER SANS COMPTE`, en tête, puis le formulaire du compte juste en dessous
+— sans geste de plus pour qui en veut un. Avant, c'était l'inverse : un
+formulaire d'inscription, et la sortie en petit lien souligné tout en bas, alors
+que la description du site et la page produit promettent « sans compte ». Le
+bouton se cache pendant un oubli ou un changement de mot de passe, où il
+abandonnerait l'opération à mi-chemin.
+
 **Planning hebdomadaire.** La ligne de pastilles, c'est ta semaine. Tu choisis un
 jour, tu ajoutes des exercices, tu ajoutes des séries. Les flèches changent de
 semaine, et le bouton `AUJOURD'HUI` te ramène — il passe en orange dès que tu
@@ -802,11 +810,12 @@ supabase-config.js       URL du projet + clé publique (voir Comptes)
 supabase/schema.sql      tables, politiques RLS et fonctions de synchro
 supabase/test/           le schéma testé sur un vrai Postgres (PGlite) : RLS (254),
                          montée depuis chaque version passée, garde-fou du projet (17)
-test/                    logique métier (162), gardes de sécurité (181), liens (119), gabarits de contenu (15)
+test/                    logique métier (162), gardes de sécurité (186), liens (119), gabarits de contenu (15)
 LICENSE  SECURITY.md  CONTRIBUTING.md  CHANGELOG.md
 .github/                 modèles d'issues, workflow de CI
 .vercelignore            ce que le site ne publie pas : docs, schéma, tests, source du contenu
 docs/seo/                stratégie SEO et contenu : matrice des sujets, recherche, inventaire
+docs/audit-*.md          audits datés du site face à la concurrence
 contenu/                 source des pages de contenu, bibliographie, rubriques (non publié)
 scripts/                 générateur des pages de contenu et son gabarit (non publié)
 ```
@@ -925,6 +934,15 @@ remplacer la coquille gardée en cache.
 ---
 
 ## Le référencement
+
+**Accueil : la police arrive avant le premier rendu.** Lighthouse (mobile,
+production, 12 septembre 2026) mesurait sur l'accueil un décalage de mise en
+page de 0,101, juste au-dessus du seuil « bon » de 0,1 : le texte s'affichait
+d'abord dans la police du système, puis se recomposait à l'arrivée de Bricolage.
+La police latine est désormais préchargée (`<link rel="preload">`), et un
+garde-fou vérifie qu'elle est bien celle que la page demande — sinon le
+navigateur la téléchargerait deux fois. L'accueil n'a plus qu'un `<h1>` : le logo
+de l'en-tête est un paragraphe.
 
 Ce que le code peut faire est fait :
 
@@ -1081,6 +1099,15 @@ pas celui d'une app posée sur l'écran d'accueil.
 sans réseau, dans une salle au sous-sol, et le carnet est dans le
 `localStorage`. La page passe d'abord par le réseau pour que tu aies toujours la
 dernière version, et rien de ce qui vient de Supabase n'est mis en cache.
+
+**Captures dans le manifeste.** `manifest.webmanifest` déclare les trois
+captures de la page produit (`screenshots`, `form_factor: narrow`), un `id` et
+des catégories : sur Android, Chrome s'en sert pour une fenêtre d'installation
+plus riche, comme une fiche d'application. iOS les ignore.
+
+**Audit du 12 septembre 2026.** Ce qui va, ce qui ne va pas face à Hevy, Strong,
+StrengthLog et aux sites français, ce qui a été corrigé et ce qui reste :
+[`docs/audit-concurrence-2026-09-12.md`](docs/audit-concurrence-2026-09-12.md).
 
 ---
 

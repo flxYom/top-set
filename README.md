@@ -61,6 +61,13 @@ repository is for right now.
 
 ## What it does
 
+**The first screen.** On the very first visit, the app opens on
+`COMMENCER SANS COMPTE` at the top, with the account form right below — no extra
+step for anyone who wants one. It used to be the other way round: a sign-up
+form, with the way out as a small underlined link at the very bottom, while the
+site description and the product page promise "no account". The button hides
+during a password reset or change, where it would abandon the operation halfway.
+
 **Weekly planning.** A row of day pills is your week. Pick a day, add exercises,
 add sets. Arrows move between weeks; an `AUJOURD'HUI` button jumps back to today
 and turns orange as soon as you have navigated away from the current week.
@@ -671,11 +678,12 @@ supabase-config.js       project URL + public anon key (see Accounts)
 supabase/schema.sql      tables, RLS policies and sync functions
 supabase/test/           the schema tested on a real Postgres (PGlite): RLS (254),
                          upgrade from every past version, wrong-project guard (17)
-test/                    business logic (162), hardening guards (181), links (119), content templates (15)
+test/                    business logic (162), hardening guards (186), links (119), content templates (15)
 LICENSE  SECURITY.md  CONTRIBUTING.md  CHANGELOG.md
 .github/                 issue templates, CI workflow
 .vercelignore            what the site does not publish: docs, schema, tests, content sources
 docs/seo/                SEO and content strategy: topic matrix, research, inventory
+docs/audit-*.md          dated audits of the site against competitors
 contenu/                 content page sources, bibliography, sections (not published)
 scripts/                 content page generator and its template (not published)
 ```
@@ -792,6 +800,14 @@ the cached shell.
 
 ## Search engines
 
+**Home page: the font arrives before the first paint.** Lighthouse (mobile,
+production, 12 September 2026) measured a layout shift of 0.101 on the home
+page, just above the 0.1 "good" threshold: text was first laid out in the system
+font, then re-set when Bricolage arrived. The latin font is now preloaded
+(`<link rel="preload">`), and a guard checks it is the one the page asks for —
+otherwise the browser would download it twice. The home page keeps a single
+`<h1>`: the header logo is a paragraph.
+
 What code can do is done: a **title** that says what the app is (« Top Set —
 carnet de musculation gratuit ») rather than just its name, which is also the
 name of a training method; a **description** under 160 characters, where Google
@@ -888,6 +904,15 @@ installed on the home screen.
 in a basement gym, and the logbook is in `localStorage`. The page goes to the
 network first so you always get the latest version, and nothing coming from
 Supabase is ever cached.
+
+**Screenshots in the manifest.** `manifest.webmanifest` lists the product
+page's three screenshots (`screenshots`, `form_factor: narrow`), an `id` and
+categories: on Android, Chrome uses them for a richer install dialog, like a
+store listing. iOS ignores them.
+
+**Audit of 12 September 2026.** What works and what doesn't against Hevy,
+Strong, StrengthLog and French sites, what was fixed and what remains (in
+French): [`docs/audit-concurrence-2026-09-12.md`](docs/audit-concurrence-2026-09-12.md).
 
 ---
 

@@ -462,5 +462,23 @@ ok('l animation se coupe quand l appareil le demande',
    /@media \(prefers-reduced-motion:reduce\)\{[\s\S]{0,220}\.bilan-fini \.anim\{animation:none;\}/.test(HTML) &&
    /prefers-reduced-motion: reduce/.test(SRC));
 
+console.log('\n== L accueil tient ses promesses ==');
+// La description du site et la page produit promettent « sans compte ». Un
+// premier ecran qui ouvrait sur un formulaire d'inscription, avec la sortie en
+// petit lien tout en bas, disait le contraire.
+const carteAccueil = (HTML.match(/<div class="accueil" id="accueil"[\s\S]*?<div class="loader"/) || [''])[0];
+ok('commencer sans compte vient avant le formulaire d inscription',
+   carteAccueil.indexOf('id="accueilSansCompte"') > -1 &&
+   carteAccueil.indexOf('id="accueilSansCompte"') < carteAccueil.indexOf('id="modeConnexion"'));
+ok('et c est un vrai bouton, pas un lien discret',
+   /<button[^>]*class="btn-sheet"[^>]*id="accueilSansCompte"/.test(carteAccueil));
+ok('il se cache pendant un oubli ou un changement de mot de passe',
+   /getElementById\('blocSansCompte'\);[\s\S]{0,300}sans\.hidden = \(mode !== 'connexion'\)/.test(SRC));
+// Un seul titre de page : le logo de l'en-tete n'en est pas un.
+ok('index.html n a qu un h1', (HTML.match(/<h1[\s>]/g) || []).length === 1);
+// La police prechargee doit etre celle que la page demande, sinon le
+// navigateur la telecharge deux fois.
+const pre = (HTML.match(/<link rel="preload" href="([^"]+)" as="font"[^>]*crossorigin>/) || [])[1];
+ok('la police prechargee est celle de la page', !!pre && HTML.indexOf("url('" + pre + "')") > -1, pre);
 console.log(`\n${pass} reussis, ${fail} echoues`);
 process.exit(fail ? 1 : 0);
