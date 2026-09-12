@@ -27,6 +27,13 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ### Added
 
+- **The schema refuses to run in the wrong Supabase project.** This account also
+  hosts Yom Nutrition, and pasting `schema.sql` there failed with
+  `column "cree_le" does not exist` — an index on a table carrying the same name
+  but another shape — which named neither the project nor the mistake. A guard
+  at the top of the file now stops before the first write when it finds that
+  database's tables, and says which project to switch to. Nothing is written
+  there: the whole script is one transaction. Two tests cover it (17).
 - **The end of a session.** `✓ TERMINER MA SÉANCE` at the bottom of the day,
   a confirmation (which counts the logged-but-unchecked sets), a one-second
   loading bar, then an animated recap: volume counting up from zero, sets,

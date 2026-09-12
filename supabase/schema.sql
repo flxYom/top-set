@@ -28,6 +28,32 @@
 
 
 -- ============================================================================
+-- 0. LE BON PROJET
+-- ============================================================================
+-- Ce compte Supabase héberge aussi Yom Nutrition. Coller ce fichier dans le
+-- mauvais projet ne peut pas marcher — les deux bases n'ont rien en commun —
+-- mais l'erreur qui en sort ne le dit pas : elle parle d'une colonne
+-- manquante, et on va la chercher ailleurs pendant une heure. C'est arrivé.
+--
+-- Pire, sur le principe : rien ne garantit qu'une prochaine version de ce
+-- fichier ne poserait pas une table par-dessus celles de l'autre projet.
+-- Alors on s'arrête net, avant la première ligne qui écrit quoi que ce soit,
+-- sur une phrase qui nomme le problème. La transaction entière est annulée :
+-- l'autre base repart intacte.
+--
+-- Deux tables servent de signature, parce qu'elles n'existeront jamais ici :
+-- la table de composition des aliments, et le journal alimentaire.
+do $garde$
+begin
+  if to_regclass('public.aliments_ciqual') is not null
+     or to_regclass('public.user_journal') is not null then
+    raise exception 'Mauvais projet Supabase : cette base est celle de Yom Nutrition. Le schema de Top Set ne doit pas y etre passe. Change de projet en haut a gauche de Supabase, puis relance ce fichier.';
+  end if;
+end
+$garde$;
+
+
+-- ============================================================================
 -- 1. LE CARNET : séances → exercices → séries
 -- ============================================================================
 -- Trois tables plutôt qu'un blob JSON par personne : on peut ne tirer qu'une

@@ -132,5 +132,39 @@ for (const v of versions){
   await db.close();
 }
 
+// Le mauvais projet. Ce compte Supabase porte aussi Yom Nutrition, et coller
+// ce fichier la-bas a deja coute une soiree : l'erreur parlait d'une colonne
+// manquante, jamais du projet. Le schema doit refuser d'y toucher — et surtout
+// ne rien y avoir ecrit avant de refuser.
+const TEMOINS = [
+  ['aliments_ciqual', 'create table public.aliments_ciqual (alim_code text primary key, nom text)'],
+  ['user_journal',    'create table public.user_journal (user_id uuid primary key, data jsonb)'],
+];
+for (const [quoi, poser] of TEMOINS){
+  const db = new PGlite();
+  await db.exec(PRELUDE);
+  await db.exec(poser);
+  try {
+    await db.exec(ACTUEL);
+    fail++;
+    console.log('  FAIL garde-fou — le schema est passe sur une base qui porte ' + quoi);
+  } catch (e) {
+    const dit = /Mauvais projet Supabase/.test(e.message || '');
+    const vierge = (await db.query(
+      "select to_regclass('public.seances') is null as oui")).rows[0].oui;
+    if (dit && vierge){
+      pass++;
+      console.log('  OK   garde-fou — refus net sur une base qui porte ' + quoi);
+    } else if (dit){
+      fail++;
+      console.log('  FAIL garde-fou — des tables ont ete creees avant le refus (' + quoi + ')');
+    } else {
+      fail++;
+      console.log('  FAIL garde-fou — message inattendu (' + quoi + ') : ' + e.message);
+    }
+  }
+  await db.close();
+}
+
 console.log(`\n${pass} reussis, ${fail} echoues`);
 process.exit(fail ? 1 : 0);

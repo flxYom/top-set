@@ -670,7 +670,7 @@ supabase.umd.js          supabase-js 2.115.0, loaded on demand
 supabase-config.js       project URL + public anon key (see Accounts)
 supabase/schema.sql      tables, RLS policies and sync functions
 supabase/test/           the schema tested on a real Postgres (PGlite): RLS (254),
-                         upgrade from every past version (14)
+                         upgrade from every past version, wrong-project guard (17)
 test/                    business logic (162), hardening guards (181), links (119), content templates (15)
 LICENSE  SECURITY.md  CONTRIBUTING.md  CHANGELOG.md
 .github/                 issue templates, CI workflow
@@ -750,6 +750,13 @@ change passes on a fresh database, and Postgres refuses to "replace" it on the
 real one. In the Supabase SQL editor that single error rolls back the whole
 script, silently. It happened once; table-returning functions are now dropped
 before being recreated, and this test runs in CI with the full history.
+
+The same file refuses to run anywhere but in the Top Set project. This Supabase
+account also hosts Yom Nutrition, and pasting the schema there raised a
+missing-column error that named neither the project nor the mistake. A guard at
+the top of the file now stops before the first write as soon as it recognises
+the other database's tables: the whole script is a single transaction, so
+nothing is written there and the other project is left intact.
 
 ---
 
