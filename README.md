@@ -73,7 +73,9 @@ screens. The **number** carries the set type: tap it, the native menu opens, and
 the previous session's date — « PRÉC. » was not understood — and shows the same set last time
 (the 3rd facing the 3rd) and copies it into *its* row with one tap — weight,
 reps, type; the RPE stays today's. For an exercise with no history it is not
-shown (`.sans-prec`): it would hold nothing but dashes. A **done** set loses its borders and reads
+shown (`.sans-prec`): it would hold nothing but dashes. It only copies into an
+**empty row**: a stray tap on a set already done pasted last week's numbers over
+what had just been lifted. A **done** set loses its borders and reads
 like text; one tap still edits it.
 
 **The open set.** One per exercise, outlined in orange: by default the first one
@@ -85,8 +87,8 @@ between press and release, and the tap landed elsewhere. It is screen state,
 kept in memory, never saved.
 
 **The card.** The muscle group is a chip in the header (`PECS`, `DOS`…) with the
-native menu laid over it. Timed mode, superset and delete move to the `⋯` menu:
-they were rarely used and took the room of a set. The card is a container
+native menu laid over it. The superset button stays under `+ SÉRIE` — it is a
+logging action, not a setting; timed mode and delete live in the `⋯` menu. The card is a container
 (`container-type: inline-size`): under 310 px of usable width — small phone,
 superset on a 360 px screen — the last-time column gives way to today's numbers, and
 the *Dernière fois* line lists last time's sets instead.
@@ -141,7 +143,20 @@ nowhere to put it.
 
 **Exercise memory.** Type an exercise that is not in the built-in list and it is
 remembered for next time, muscle group included. Saved on blur rather than on
-each keystroke, so you do not end up with `B`, `Be`, `Ben`.
+each keystroke, so you do not end up with `B`, `Be`, `Ben`. The card then asks
+the question in plain words: **add it to my exercises**, or **link it to an
+existing one** (same movement, another name: the history stays in one piece). It
+used to announce « ajouté à tes exercices » without showing that linking was
+possible — and since the new card, the box was inserted next to an element that
+had moved into the header, so it no longer appeared at all.
+
+**Gym shorthand.** `RDL`, `OHP`, `bench`, `deadlift`, `BSS`…: some forty
+abbreviations and English names point at a name in the built-in list
+(`SYNONYMES`). No fuzzy match could find them — « RDL » and « Soulevé de terre
+roumain » share no letter. While typing, the card offers the full name;
+accepting **renames** the exercise and keeps the abbreviation **linked** to the
+real name for next time. Nothing is decided without the user: the table only
+suggests.
 
 **Recap.** Total volume (weight × reps, summed), a training calendar, per-exercise
 records and a muscle-group split — over a week, a month or a year.

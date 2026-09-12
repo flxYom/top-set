@@ -72,7 +72,9 @@ de la dernière fois** porte la date de la séance d'avant — « PRÉC. » ne s
 comprenait pas —, montre la même série ce jour-là (la 3e en face de la 3e) et la recopie
 d'un appui dans *sa* ligne — poids, reps, type ; le RPE reste celui d'aujourd'hui.
 Pour un exercice sans historique, elle n'apparaît pas (`.sans-prec`) : elle
-n'aurait que des tirets.
+n'aurait que des tirets. Elle ne recopie que dans une **ligne vide** : un appui
+de travers sur une série déjà faite y collait les chiffres de la semaine
+d'avant, et effaçait ce qu'on venait de soulever.
 Une série **faite** perd ses cadres et se lit comme du texte ; elle reste
 modifiable d'un appui.
 
@@ -85,9 +87,9 @@ focus déplaçait la barre entre l'appui et le relâchement, et l'appui tombait 
 côté. C'est un état d'écran, en mémoire, jamais enregistré.
 
 **La carte.** Le groupe musculaire est une pastille dans l'en-tête (`PECS`,
-`DOS`…), avec le menu natif posé dessus. Au temps, superset et suppression
-passent dans le menu `⋯` : ils servaient rarement et prenaient la place d'une
-série. La carte est un conteneur (`container-type: inline-size`) : sous 310 px
+`DOS`…), avec le menu natif posé dessus. Le superset reste sous `+ SÉRIE` —
+c'est une action de saisie, pas un réglage ; passer au temps et supprimer
+l'exercice sont dans le menu `⋯`. La carte est un conteneur (`container-type: inline-size`) : sous 310 px
 utiles — petit téléphone, superset sur un écran de 360 px — la colonne de la dernière fois
 cède sa place aux chiffres du jour, et la ligne *Dernière fois* liste alors les
 séries précédentes.
@@ -148,7 +150,20 @@ série garde le sien, faute d'endroit où le poser.
 **Mémoire des exercices.** Tape un exercice absent de la base et il est retenu
 pour la prochaine fois, groupe musculaire compris. L'enregistrement se fait quand
 tu quittes le champ, pas à chaque lettre — sinon tu te retrouverais avec `B`,
-`Be`, `Ben`.
+`Be`, `Ben`. La carte pose alors la question en toutes lettres :
+**l'ajouter à mes exercices**, ou **le relier à un exercice existant** (même
+mouvement, autre nom : l'historique reste d'un seul tenant). Avant, elle
+annonçait « ajouté à tes exercices » sans montrer qu'on pouvait le rattacher —
+et depuis la nouvelle carte, l'encart s'insérait à côté d'un élément parti dans
+l'en-tête, donc il ne s'affichait plus du tout.
+
+**Les abréviations de salle.** `RDL`, `OHP`, `bench`, `deadlift`, `BSS`… :
+une quarantaine d'abréviations et de noms anglais pointent vers un nom de la
+base (`SYNONYMES`). Aucun rapprochement automatique ne pouvait les trouver —
+« RDL » et « Soulevé de terre roumain » n'ont pas une lettre en commun. Dès la
+frappe, la carte propose le nom entier ; accepter **renomme** l'exercice et
+garde l'abréviation **rattachée** au vrai nom, pour la prochaine fois. Rien
+n'est décidé sans l'utilisateur : la table ne sert qu'à proposer.
 
 **Récap.** Volume total (poids × répétitions, additionné), calendrier des séances,
 records par exercice et répartition par groupe musculaire — sur la semaine, le
