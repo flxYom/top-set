@@ -805,7 +805,10 @@ production, 12 September 2026) measured a layout shift of 0.101 on the home
 page, just above the 0.1 "good" threshold: text was first laid out in the system
 font, then re-set when Bricolage arrived. The latin font is now preloaded
 (`<link rel="preload">`), and a guard checks it is the one the page asks for —
-otherwise the browser would download it twice. The home page keeps a single
+otherwise the browser would download it twice. Measured again after deploying,
+three runs: CLS 0, then 0.088 and 0.088, performance 93 to 95 (was 92), first
+contentful paint 1.9 to 2.0 s (was 2.3). The remaining shift comes from the day
+panel. The home page keeps a single
 `<h1>`: the header logo is a paragraph.
 
 What code can do is done: a **title** that says what the app is (« Top Set —

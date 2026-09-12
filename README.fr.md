@@ -941,7 +941,9 @@ page de 0,101, juste au-dessus du seuil « bon » de 0,1 : le texte s'affichait
 d'abord dans la police du système, puis se recomposait à l'arrivée de Bricolage.
 La police latine est désormais préchargée (`<link rel="preload">`), et un
 garde-fou vérifie qu'elle est bien celle que la page demande — sinon le
-navigateur la téléchargerait deux fois. L'accueil n'a plus qu'un `<h1>` : le logo
+navigateur la téléchargerait deux fois. Remesuré après déploiement, trois passages :
+CLS 0 puis 0,088 et 0,088, performance 93 à 95 (au lieu de 92), premier affichage
+1,9 à 2,0 s (au lieu de 2,3). Le décalage restant vient du panneau du jour. L'accueil n'a plus qu'un `<h1>` : le logo
 de l'en-tête est un paragraphe.
 
 Ce que le code peut faire est fait :
