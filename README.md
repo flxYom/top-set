@@ -141,6 +141,23 @@ assisted. `normalizeExercise()` moves an old exercise comment onto its last set
 something; nothing is lost. An exercise with no set keeps its own, having
 nowhere to put it.
 
+**The end of a session.** At the bottom of the planning screen, once anything
+is logged, `✓ TERMINER MA SÉANCE` asks for confirmation — pointing out sets
+that are logged but unchecked, which still count — then shows a **recap**: the
+day's volume counting up from zero, sets, exercises, records broken, the **top
+set of the day** (highest estimated 1RM, not the heaviest raw load), the
+exercises that beat **last time** (estimated 1RM against estimated 1RM,
+duration against duration for holds), the **week** against the one before, and
+one line drawn from the date — the same all day, another one tomorrow.
+Everything comes from the logged sets: no line appears without the numbers to
+compute it.
+
+Validation is a **timestamp** on the day (`termine`), not a boolean: the recap
+shows the time, and two devices can compare them. It travels through its own
+call, `pousser_fin`, modelled on the title — a database without the
+`seances.terminee` column returns a day **without the key**, and the local
+validation stays. Nothing is locked: sets remain editable afterwards.
+
 **Exercise memory.** Type an exercise that is not in the built-in list and it is
 remembered for next time, muscle group included. Saved on blur rather than on
 each keystroke, so you do not end up with `B`, `Be`, `Ben`. The card then asks
@@ -315,6 +332,11 @@ The first press shows what will arrive — « 25 séries sur 4 jours (dont 3 que
 n'avais pas) » — the second applies it, redoing the merge on the logbook as it
 is at that moment. Only the days that changed are sent to the account.
 Importing the same file twice adds nothing.
+
+**Titles, session validations and names now go out on their own.** `pousser()`
+returned early when no day had changed, so a renamed session, a validated
+session or a new exercise name waited for the next logged set — sometimes for
+days. The four queues are now checked together.
 
 **The CSV imports back.** `lireCsvCarnet()` reads the exported CSV, and what
 Excel makes of it when it re-saves it: commas instead of semicolons, DD/MM/YYYY
@@ -647,9 +669,9 @@ img/                     app screenshots for the product page (WebP)
 supabase.umd.js          supabase-js 2.115.0, loaded on demand
 supabase-config.js       project URL + public anon key (see Accounts)
 supabase/schema.sql      tables, RLS policies and sync functions
-supabase/test/           the schema tested on a real Postgres (PGlite): RLS (246),
-                         upgrade from every past version (13)
-test/                    business logic (162), hardening guards (174), links (119), content templates (15)
+supabase/test/           the schema tested on a real Postgres (PGlite): RLS (254),
+                         upgrade from every past version (14)
+test/                    business logic (162), hardening guards (181), links (119), content templates (15)
 LICENSE  SECURITY.md  CONTRIBUTING.md  CHANGELOG.md
 .github/                 issue templates, CI workflow
 .vercelignore            what the site does not publish: docs, schema, tests, content sources

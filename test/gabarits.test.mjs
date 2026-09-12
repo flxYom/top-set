@@ -443,5 +443,24 @@ ok('+ SERIE ajoute sa ligne sans refaire le panneau',
 ok('refaire le panneau lache le focus et garde le defilement',
    /function renderDayPanel\(force\)\{[\s\S]{0,900}lacherFocus\(list\);[\s\S]{0,300}garderDefilement\(y\);/.test(SRC));
 
+console.log('\n== La fin de seance ==');
+// Valider une seance, c'est une donnee de plus a synchroniser : elle suit la
+// meme regle que le titre et les commentaires.
+ok('l ecran de fin existe dans la page',
+   HTML.indexOf('id="bilanEcran"') > -1 && HTML.indexOf('id="finZone"') > -1);
+ok('une base sans la colonne n efface pas la validation locale',
+   SRC.indexOf("if (d && ('termine' in d)){ if (d.termine) j.termine = d.termine; }") > -1);
+ok('la validation part a la base par son propre appel',
+   /pousser_fin/.test(SRC) && /m\.fins\[ds\] = 1/.test(SRC));
+ok('un titre ou une fin partent meme sans journee modifiee',
+   /if \(!dates\.length && !Object\.keys\(enAttente\.titres/.test(SRC));
+ok('le mot du jour se tire de la date, pas du hasard',
+   /function motDuJour\(ds\)\{[\s\S]{0,220}somme % MOTS_FIN\.length/.test(SRC));
+ok('il y a de quoi ne pas se repeter trop vite',
+   (SRC.match(/var MOTS_FIN = \[([\s\S]*?)\n  \];/) || ['', ''])[1].split("',").length >= 20);
+ok('l animation se coupe quand l appareil le demande',
+   /@media \(prefers-reduced-motion:reduce\)\{[\s\S]{0,220}\.bilan-fini \.anim\{animation:none;\}/.test(HTML) &&
+   /prefers-reduced-motion: reduce/.test(SRC));
+
 console.log(`\n${pass} reussis, ${fail} echoues`);
 process.exit(fail ? 1 : 0);

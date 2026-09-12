@@ -1512,6 +1512,154 @@
     }).length;
   }
 
+  // ---------- la fin de seance ----------
+  // Valider sa seance, c'est dire « c'est fini » — et recevoir en retour ce
+  // qu'on vient de faire, en chiffres. L'app ne le calcule que la : pendant la
+  // seance, on note, on ne contemple pas.
+  //
+  // Rien n'est invente : chaque ligne du bilan vient des series saisies, et
+  // les comparaisons se font sur le 1RM estime (formule d'Epley, celle du
+  // reste de l'app), parce que 105 × 8 vaut mieux que 112,5 × 5.
+  function estTerminee(ds){
+    var day = state.sessions[ds];
+    return !!(day && day.termine);
+  }
+  function marquerSeanceFinie(ds, fin){
+    var day = getOrCreateDay(ds);
+    if (fin) day.termine = fin; else delete day.termine;
+    scheduleSave(ds, true);
+    if (typeof Sync !== 'undefined' && Sync.marquerFin) Sync.marquerFin(ds);
+  }
+
+  // Des phrases courtes, une par jour, tirees de la date : le meme jour donne
+  // toujours la meme, et demain change. Rien de medical, rien de mielleux.
+  var MOTS_FIN = [
+    'C\'est plié. Une de plus au compteur.',
+    'Le travail est fait. Personne peut te l\'enlever.',
+    'Pas spectaculaire, juste du travail. C\'est le meilleur genre.',
+    'T\'es venu : c\'est déjà la moitié du truc.',
+    'La barre monte parce que tu reviens.',
+    'Une séance de plus que la version de toi qui est restée au lit.',
+    'Régulier bat motivé.',
+    'Rien de magique : des séries, des semaines, des années.',
+    'Ce que tu viens de faire compte, même si ça se voit pas encore.',
+    'Tu t\'es présenté. Le reste suit.',
+    'Les grosses séances se construisent avec des séances comme ça.',
+    'Bien joué. Mange, dors, recommence.',
+    'La progression, c\'est ça : encore une fois.',
+    'Tu sais ce qui marche ? Revenir. Tu viens de le faire.',
+    'Une brique de plus.',
+    'Personne d\'autre n\'a soulevé ça pour toi.',
+    'Le carnet retient ce que la tête oublie.',
+    'C\'est dans la boîte.',
+    'Tu as fait ta part du marché.',
+    'Un jour où tu ne t\'es pas trouvé d\'excuse.',
+    'Chaque série notée, c\'est une preuve de plus.',
+    'On ne triche pas avec la barre. Toi non plus.',
+    'Solide. À la prochaine.',
+    'La semaine se gagne à ce genre de jour.',
+    'Rentre, récupère : le muscle se fabrique après.',
+    'Tu viens de rendre la prochaine séance plus facile.',
+    'Discipline 1 — canapé 0.',
+    'Tu n\'as pas besoin d\'être motivé, tu as juste besoin d\'y aller. Fait.',
+    'Ça, c\'est du concret.',
+    'Le meilleur exercice, c\'est celui que tu fais. Coché.'
+  ];
+  function motDuJour(ds){
+    var somme = 0;
+    String(ds || '').split('').forEach(function(c){ somme += c.charCodeAt(0); });
+    return MOTS_FIN[somme % MOTS_FIN.length];
+  }
+
+  // Le volume d'une semaine entiere, pour la comparaison « mieux que la
+  // semaine derniere ».
+  function volumeSemaine(depart){
+    var total = 0;
+    for (var i = 0; i < 7; i++) total += dayVolume(toDateStr(addDays(depart, i)));
+    return total;
+  }
+
+  function bilanDuJour(ds){
+    var day = state.sessions[ds];
+    if (!day) return null;
+    var exos = (day.exercises || []).filter(function(e){ return seriesRemplies(e).length; });
+    if (!exos.length) return null;
+
+    var bilan = {
+      date: ds,
+      titre: titreSeance(ds),
+      volume: dayVolume(ds),
+      series: compterJour(day),
+      exos: exos.length,
+      records: 0,
+      top: null,
+      progres: [],
+      semaine: null,
+      mot: motDuJour(ds)
+    };
+
+    exos.forEach(function(e){
+      var remplies = seriesRemplies(e);
+      remplies.forEach(function(s){ if (isNewRecord(s, e.nom)) bilan.records++; });
+
+      var top = TS.calculerTopSet(remplies);
+      if (top){
+        var rm = TS.epleySerie(top);
+        // Le top set du jour : celui dont le 1RM estime est le plus haut.
+        if (rm && (!bilan.top || rm > bilan.top.rm)){
+          bilan.top = { nom:nomCanonique(e.nom) || e.nom, texte:perfTexte(top), rm:rm };
+        }
+      }
+
+      // Mieux que la derniere fois, sur le meme exercice : on compare ce qui
+      // est comparable — 1RM estime contre 1RM estime, duree contre duree.
+      var histo = seancesDeLExo(e.nom).filter(function(j){ return j.date < ds; });
+      var avant = histo[histo.length - 1];
+      if (!avant) return;
+      var tenu = remplies.map(function(s){ return TS.dureeSecondes(s.reps); })
+                         .filter(function(d){ return d !== null; });
+      if (tenu.length){
+        var best = Math.max.apply(null, tenu);
+        var bestAvant = TS.meilleureDuree([avant]);
+        if (bestAvant && best > bestAvant){
+          bilan.progres.push({ nom:nomCanonique(e.nom) || e.nom,
+            texte: TS.formatDuree(best) + ' contre ' + TS.formatDuree(bestAvant) + ' le ' + jourCourt(avant.date) });
+        }
+        return;
+      }
+      if (!top) return;
+      var topAvant = TS.calculerTopSet(avant.series);
+      var rmAvant = topAvant ? TS.epleySerie(topAvant) : null;
+      var rmTop = TS.epleySerie(top);
+      if (!rmAvant || !rmTop || rmTop <= rmAvant) return;
+      var pourcent = Math.round(((rmTop - rmAvant) / rmAvant) * 1000) / 10;
+      bilan.progres.push({ nom:nomCanonique(e.nom) || e.nom,
+        texte: formatWeight(Math.round(rmTop)) + ' kg estimés contre ' + formatWeight(Math.round(rmAvant))
+             + ' le ' + jourCourt(avant.date) + (pourcent >= 0.5 ? ' · +' + String(pourcent).replace('.', ',') + ' %' : '') });
+    });
+
+    // La semaine en cours contre la precedente : seulement quand la semaine
+    // d'avant a servi, sinon la comparaison ne veut rien dire.
+    var debutSemaine = startOfWeek(fromDateStr(ds));
+    var avantSemaine = addDays(debutSemaine, -7);
+    var vSem = volumeSemaine(debutSemaine), vAvant = volumeSemaine(avantSemaine);
+    if (vAvant > 0 && vSem > 0){
+      bilan.semaine = { volume:vSem, avant:vAvant,
+                        delta: Math.round(((vSem - vAvant) / vAvant) * 100) };
+    }
+    return bilan;
+  }
+  // « samedi » -> « Samedi » : la premiere lettre seulement, sinon le mois
+  // prend une majuscule qu il n a pas en francais.
+  function majuscule(t){
+    t = String(t == null ? '' : t);
+    return t.charAt(0).toUpperCase() + t.slice(1);
+  }
+  function jourCourt(ds){
+    var d = fromDateStr(ds);
+    return d.getDate() + ' ' + MONTH_ABBR[d.getMonth()];
+  }
+
   // ---------- la page Mes seances ----------
   // Deux rubriques, et la frontiere est la meme que celle qu'on a dans la
   // tete : ce qui reste a faire d'un cote, ce qui est fait de l'autre.
@@ -1781,6 +1929,32 @@
       list.innerHTML = exercisesHTML(exercises);
     }
     garderDefilement(y);
+    majBoutonFin(ds);
+  }
+
+  // « Terminer ma séance » n'a de sens qu'une fois quelque chose de noté, et
+  // la validation ne s'affiche qu'une fois donnée : un bouton qui ne sert à
+  // rien tous les autres jours, c'est un bouton qu'on n'appuie plus.
+  function majBoutonFin(ds){
+    var zone = document.getElementById('finZone');
+    if (!zone) return;
+    var day = state.sessions[ds];
+    var noté = day && compterJour(day) > 0;
+    if (!noté){ zone.hidden = true; zone.innerHTML = ''; return; }
+    zone.hidden = false;
+    if (estTerminee(ds)){
+      var h = fromISO(day.termine);
+      zone.innerHTML = '<div class="fin-faite"><span class="fin-faite-tag">SÉANCE VALIDÉE</span>'
+        + (h ? '<span class="fin-faite-heure">' + esc(h) + '</span>' : '')
+        + '<button type="button" class="fin-revoir" id="finRevoir">REVOIR LE BILAN ›</button></div>';
+    } else {
+      zone.innerHTML = '<button type="button" class="btn-fin" id="finBtn">✓ TERMINER MA SÉANCE</button>';
+    }
+  }
+  function fromISO(iso){
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return '';
+    return 'à ' + d.getHours() + 'h' + String(d.getMinutes()).padStart(2, '0');
   }
 
   function renderPlanning(force){
@@ -2752,6 +2926,152 @@
     var corps = card.querySelector('.ex-body');
     if (corps) corps.insertBefore(box, corps.firstChild);
   }
+
+  // ---------- l'ecran de fin de seance ----------
+  // Trois temps sur le meme ecran : la question, une seconde de chargement,
+  // puis le bilan qui se pose ligne par ligne. Le chargement n'est pas du
+  // decor : il separe « je valide » de « voici ce que j'ai fait », et evite
+  // que les chiffres apparaissent avant qu'on ait fini d'appuyer.
+  var bilanEcran = document.getElementById('bilanEcran');
+  var bilanCorps = document.getElementById('bilanCorps');
+  var bilanJour = null;
+
+  function ouvrirEcranFin(ds, direct){
+    bilanJour = ds;
+    bilanEcran.hidden = false;
+    document.body.classList.add('en-bilan');
+    if (direct) montrerBilan(ds); else demanderFin(ds);
+  }
+  function fermerEcranFin(){
+    bilanEcran.hidden = true;
+    bilanCorps.innerHTML = '';
+    document.body.classList.remove('en-bilan');
+  }
+
+  function demanderFin(ds){
+    var day = state.sessions[ds] || { exercises:[] };
+    var restantes = 0;
+    (day.exercises || []).forEach(function(e){
+      (e.series || []).forEach(function(s){ if (hasData(s) && !s.fait) restantes++; });
+    });
+    bilanCorps.innerHTML = '<div class="bilan-demande">'
+      + '<h2 class="bilan-question" id="bilanTitre">C\'est fini pour aujourd\'hui&nbsp;?</h2>'
+      + '<p class="bilan-sous">On valide ta séance, et on regarde ce que tu viens de faire.</p>'
+      + (restantes
+          ? '<p class="bilan-alerte">' + restantes + (restantes > 1 ? ' séries notées ne sont pas cochées' : ' série notée n\'est pas cochée')
+            + '. Elles comptent quand même dans le bilan.</p>'
+          : '')
+      + '<button type="button" class="btn-sheet primary" id="finOui">OUI, C\'EST PLIÉ</button>'
+      + '<button type="button" class="btn-sheet" id="finNon">PAS ENCORE</button>'
+      + '</div>';
+  }
+
+  function validerFin(ds){
+    marquerSeanceFinie(ds, new Date().toISOString());
+    renderDayPills();
+    renderWeekStats();
+    majBoutonFin(ds);
+    chargerPuisBilan(ds);
+  }
+
+  function chargerPuisBilan(ds){
+    bilanCorps.innerHTML = '<div class="bilan-chargement">'
+      + '<div class="bilan-barre"><i></i></div>'
+      + '<p class="bilan-sous">On compte tes séries…</p>'
+      + '</div>';
+    // Assez long pour qu'on lache le bouton, assez court pour ne pas attendre.
+    setTimeout(function(){ if (bilanJour === ds && !bilanEcran.hidden) montrerBilan(ds); }, 1100);
+  }
+
+  function montrerBilan(ds){
+    var b = bilanDuJour(ds);
+    if (!b){
+      bilanCorps.innerHTML = '<div class="bilan-demande"><h2 class="bilan-question" id="bilanTitre">Rien à afficher</h2>'
+        + '<p class="bilan-sous">Cette séance n\'a aucune série notée.</p>'
+        + '<button type="button" class="btn-sheet" id="finFermer">FERMER</button></div>';
+      return;
+    }
+    var d = fromDateStr(ds);
+    var html = '<div class="bilan-fini">'
+      + '<p class="bilan-tag anim" style="--i:0">SÉANCE TERMINÉE</p>'
+      + '<h2 class="bilan-titre anim" id="bilanTitre" style="--i:1">' + esc(b.titre) + '</h2>'
+      + '<p class="bilan-date anim" style="--i:1">' + esc(majuscule(DAY_NAMES[(d.getDay()+6)%7]) + ' ' + d.getDate() + ' ' + MONTH_NAMES[d.getMonth()]) + '</p>'
+      + '<div class="bilan-volume anim" style="--i:2">'
+      +   '<span class="bilan-volume-num" data-compteur="' + Math.round(b.volume) + '">0</span>'
+      +   '<span class="bilan-volume-unite">kg soulevés</span>'
+      + '</div>'
+      + '<div class="bilan-tuiles anim" style="--i:3">'
+      +   '<div class="bilan-tuile"><b>' + b.series + '</b><span>' + (b.series > 1 ? 'SÉRIES' : 'SÉRIE') + '</span></div>'
+      +   '<div class="bilan-tuile"><b>' + b.exos + '</b><span>' + (b.exos > 1 ? 'EXOS' : 'EXO') + '</span></div>'
+      +   '<div class="bilan-tuile' + (b.records ? ' or' : '') + '"><b>' + b.records + '</b><span>' + (b.records > 1 ? 'RECORDS' : 'RECORD') + '</span></div>'
+      + '</div>';
+
+    if (b.top){
+      html += '<div class="bilan-bloc anim" style="--i:4">'
+        + '<div class="bilan-bloc-tete">TOP SET DU JOUR</div>'
+        + '<div class="bilan-ligne"><b>' + esc(b.top.nom) + '</b><span>' + esc(b.top.texte) + '</span></div>'
+        + '<div class="bilan-bloc-note">1RM estimé : ' + esc(formatWeight(Math.round(b.top.rm))) + ' kg</div>'
+        + '</div>';
+    }
+    if (b.progres.length){
+      html += '<div class="bilan-bloc vert anim" style="--i:5">'
+        + '<div class="bilan-bloc-tete">MIEUX QUE LA DERNIÈRE FOIS</div>'
+        + b.progres.slice(0, 4).map(function(p){
+            return '<div class="bilan-ligne"><b>' + esc(p.nom) + '</b><span>' + esc(p.texte) + '</span></div>';
+          }).join('')
+        + '</div>';
+    }
+    if (b.semaine){
+      var d7 = b.semaine.delta;
+      var vs = formatVolume(b.semaine.volume);
+      html += '<div class="bilan-bloc anim" style="--i:6">'
+        + '<div class="bilan-bloc-tete">CETTE SEMAINE</div>'
+        + '<div class="bilan-ligne"><b>' + esc(vs.num + ' ' + vs.unit) + '</b>'
+        +   '<span>' + (d7 > 0 ? '+' + d7 + ' % par rapport à la semaine dernière'
+                      : (d7 < 0 ? d7 + ' % par rapport à la semaine dernière' : 'autant que la semaine dernière')) + '</span></div>'
+        + '</div>';
+    }
+    html += '<p class="bilan-mot anim" style="--i:7">« ' + esc(b.mot) + ' »</p>'
+      + '<button type="button" class="btn-sheet primary anim" style="--i:8" id="finFiche">VOIR LA FICHE DE LA SÉANCE</button>'
+      + '<button type="button" class="btn-sheet anim" style="--i:8" id="finFermer">FERMER</button>'
+      + '</div>';
+    bilanCorps.innerHTML = html;
+    animerCompteur(bilanCorps.querySelector('[data-compteur]'));
+  }
+
+  // Le volume monte de 0 a sa valeur : c'est le chiffre qu'on retient, et le
+  // voir grimper dit « tout ca, aujourd'hui ». Coupe quand l'appareil demande
+  // moins d'animation.
+  function animerCompteur(el){
+    if (!el) return;
+    var cible = Number(el.dataset.compteur) || 0;
+    var sobre = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (sobre || cible <= 0){ el.textContent = formatWeight(cible); return; }
+    var debut = 0, duree = 900;
+    function pas(t){
+      if (!debut) debut = t;
+      var k = Math.min(1, (t - debut) / duree);
+      // Ralentit a l'arrivee : le dernier chiffre se lit.
+      var val = Math.round(cible * (1 - Math.pow(1 - k, 3)));
+      el.textContent = formatWeight(val);
+      if (k < 1) requestAnimationFrame(pas);
+    }
+    requestAnimationFrame(pas);
+  }
+
+  document.getElementById('finZone').addEventListener('click', function(e){
+    if (e.target.closest('#finBtn')) ouvrirEcranFin(state.selectedDay, false);
+    else if (e.target.closest('#finRevoir')) ouvrirEcranFin(state.selectedDay, true);
+  });
+  bilanEcran.addEventListener('click', function(e){
+    if (e.target.closest('#finOui')) validerFin(bilanJour);
+    else if (e.target.closest('#finNon') || e.target.closest('#finFermer')) fermerEcranFin();
+    else if (e.target.closest('#finFiche')){
+      var ds = bilanJour;
+      fermerEcranFin();
+      ouvrirSeance(ds);
+    }
+  });
 
   document.getElementById('reprendreBtn').addEventListener('click', function(){
     montrerVue('seances');
@@ -4428,6 +4748,11 @@
       });
       var j = { date:ds, exercises:distants.map(normalizeExercise) };
       if (d && typeof d.titre === 'string' && d.titre.trim()) j.titre = d.titre.trim();
+      // « Séance terminée » suit la même règle que les commentaires : une base
+      // sans la colonne rend une journée SANS la clé, et la validation d'ici
+      // reste. Une base à jour rend termine:null, et là, on suit.
+      if (d && ('termine' in d)){ if (d.termine) j.termine = d.termine; }
+      else if (state.sessions[ds] && state.sessions[ds].termine) j.termine = state.sessions[ds].termine;
       return j;
     }
 
@@ -4450,7 +4775,12 @@
     function pousser(){
       if (!user || enCours) return Promise.resolve(0);
       var dates = Object.keys(sales());
-      if (!dates.length) return Promise.resolve(0);
+      // Un titre, une fin de séance ou un nom d'exercice partent même si
+      // aucune journée n'a bougé : sinon ils attendaient la prochaine série
+      // notée, parfois des jours.
+      var enAttente = lireMeta();
+      if (!dates.length && !Object.keys(enAttente.titres || {}).length
+          && !Object.keys(enAttente.fins || {}).length && !enAttente.exosSales) return Promise.resolve(0);
       enCours = true; echec = ''; majUI();
       return client().then(function(c){
         var chaine = Promise.resolve();
@@ -4474,6 +4804,7 @@
             return lireMeta().exosSales ? pousserExos().catch(function(){}) : null;
           })
           .then(function(){ return pousserTitres().catch(function(){}); })
+          .then(function(){ return pousserFins().catch(function(){}); })
           .then(function(){ return dates.length; });
       }).then(function(n){
         enCours = false; majUI();
@@ -4595,6 +4926,33 @@
         });
         return chaine;
       });
+    }
+
+    // Les fins de séance partent à part, comme les titres : un appel séparé
+    // échoue seul, et les journées passent quand même.
+    function pousserFins(){
+      if (!user) return Promise.resolve();
+      var dates = Object.keys(lireMeta().fins || {});
+      if (!dates.length) return Promise.resolve();
+      return client().then(function(c){
+        var chaine = Promise.resolve();
+        dates.forEach(function(ds){
+          chaine = chaine.then(function(){
+            var f = (state.sessions[ds] && state.sessions[ds].termine) || null;
+            return c.rpc('pousser_fin', { p_date:ds, p_fin:f }).then(function(r){
+              if (r.error) throw r.error;
+              majMeta(function(x){ if (x.fins) delete x.fins[ds]; });
+            });
+          });
+        });
+        return chaine;
+      });
+    }
+
+    function marquerFin(ds){
+      if (!dispo()) return;
+      majMeta(function(m){ m.fins = m.fins || {}; m.fins[ds] = 1; });
+      if (user) planifier(2500);
     }
 
     function marquerTitre(ds){
@@ -5464,7 +5822,7 @@
       adminMembres:function(){ return rpcAdmin('admin_membres'); },
       adminRetours:function(s){ return rpcAdmin('admin_retours', { p_statut: s || null }); },
       adminMarquer:function(id, s){ return rpcAdmin('admin_marquer_retour', { p_id:id, p_statut:s }); },
-      marquerExos:marquerExos, marquerTitre:marquerTitre,
+      marquerExos:marquerExos, marquerTitre:marquerTitre, marquerFin:marquerFin,
       enregistrerPseudo:enregistrerPseudo, envoyerLienMdp:envoyerLienMdp,
       changerMdp:changerMdp, modeAccueil:modeAccueil,
       montrerAccueil:montrerAccueil, fermerAccueil:fermerAccueil,

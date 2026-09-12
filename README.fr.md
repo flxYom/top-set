@@ -147,6 +147,23 @@ sur sa dernière série (après le sien, s'il y en avait un), là où « assist�
 la dernière » voulait dire quelque chose ; rien ne se perd. Un exercice sans
 série garde le sien, faute d'endroit où le poser.
 
+**La fin de séance.** En bas du planning, une fois quelque chose de noté,
+`✓ TERMINER MA SÉANCE` pose la question — en signalant les séries notées mais
+pas cochées, qui comptent quand même — puis affiche un **bilan** : le volume du
+jour qui monte de 0 à son total, les séries, les exercices, les records battus,
+le **top set du jour** (celui dont le 1RM estimé est le plus haut, pas le plus
+lourd en valeur brute), les exercices **meilleurs que la dernière fois** (1RM
+estimé contre 1RM estimé, durée contre durée pour un exercice tenu), la
+**semaine** comparée à la précédente, et une phrase tirée de la date du jour —
+la même toute la journée, une autre demain. Tout vient des séries saisies :
+aucune ligne n'apparaît sans de quoi la calculer.
+
+La validation est un **horodatage** sur la journée (`termine`), pas un booléen :
+le bilan affiche l'heure, et deux appareils peuvent la comparer. Elle voyage
+par son propre appel, `pousser_fin`, sur le modèle du titre — une base sans la
+colonne `seances.terminee` rend une journée **sans la clé**, et la validation
+d'ici reste. Rien ne se verrouille : les séries restent modifiables après.
+
 **Mémoire des exercices.** Tape un exercice absent de la base et il est retenu
 pour la prochaine fois, groupe musculaire compris. L'enregistrement se fait quand
 tu quittes le champ, pas à chaque lettre — sinon tu te retrouverais avec `B`,
@@ -343,6 +360,11 @@ Le premier appui montre ce qui va arriver — « 25 séries sur 4 jours (dont 3 
 tu n'avais pas) » — le second applique, en refaisant la fusion sur le carnet de
 cet instant. Seules les journées qui ont bougé repartent vers le compte.
 Réimporter deux fois le même fichier n'ajoute rien.
+
+**Titres, fins de séance et noms partent même seuls.** `pousser()` sortait
+quand aucune journée n'avait bougé : un titre changé, une séance validée ou un
+nom d'exercice attendaient alors la prochaine série notée, parfois des jours.
+Les quatre files sont maintenant regardées ensemble.
 
 **Le tableur se réimporte.** `lireCsvCarnet()` relit le CSV exporté, et ce
 qu'Excel en fait quand il le réenregistre : virgules au lieu de points-virgules,
@@ -778,9 +800,9 @@ img/                     captures de l'app pour la page produit (WebP)
 supabase.umd.js          supabase-js 2.115.0, chargé à la demande
 supabase-config.js       URL du projet + clé publique (voir Comptes)
 supabase/schema.sql      tables, politiques RLS et fonctions de synchro
-supabase/test/           le schéma testé sur un vrai Postgres (PGlite) : RLS (246),
-                         montée depuis chaque version passée (13)
-test/                    logique métier (162), gardes de sécurité (174), liens (119), gabarits de contenu (15)
+supabase/test/           le schéma testé sur un vrai Postgres (PGlite) : RLS (254),
+                         montée depuis chaque version passée (14)
+test/                    logique métier (162), gardes de sécurité (181), liens (119), gabarits de contenu (15)
 LICENSE  SECURITY.md  CONTRIBUTING.md  CHANGELOG.md
 .github/                 modèles d'issues, workflow de CI
 .vercelignore            ce que le site ne publie pas : docs, schéma, tests, source du contenu

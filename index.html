@@ -1491,6 +1491,101 @@
   .sheet-msg.warn{border-color:var(--yellow);color:var(--yellow);}
   .sheet-msg.err{border-color:var(--orange);color:var(--orange);}
 
+  /* ==== Fin de seance ================================================== */
+  /* Le bouton ferme la seance : il est vert, il est grand, et il ne s'affiche
+     qu'une fois quelque chose de note. */
+  .btn-fin{
+    width:100%;min-height:52px;
+    background:var(--green);border:2.5px solid var(--ink);
+    box-shadow:4px 4px 0 rgba(18,192,122,.35);
+    color:#0d0c0a;font-family:inherit;
+    font-size:14px;font-weight:800;letter-spacing:.05em;cursor:pointer;
+  }
+  .btn-fin:active{transform:translate(2px,2px);box-shadow:2px 2px 0 rgba(18,192,122,.35);}
+  .fin-faite{
+    display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+    border:2px dashed var(--green);padding:9px 11px;
+  }
+  .fin-faite-tag{font-size:11px;font-weight:800;letter-spacing:.08em;color:var(--green);}
+  .fin-faite-heure{font-size:11px;font-weight:700;color:var(--dim);}
+  .fin-revoir{
+    margin-left:auto;background:none;border:none;padding:6px 0;
+    color:var(--ink);font-family:inherit;font-size:11.5px;font-weight:800;
+    letter-spacing:.04em;text-decoration:underline;text-underline-offset:3px;cursor:pointer;
+  }
+
+  /* L'ecran : par-dessus tout, comme l'accueil. */
+  .bilan{
+    position:fixed;inset:0;z-index:60;
+    background:rgba(13,12,10,.94);
+    display:flex;align-items:flex-start;justify-content:center;
+    overflow-y:auto;
+    padding:max(18px,env(safe-area-inset-top)) 14px calc(24px + env(safe-area-inset-bottom));
+  }
+  body.en-bilan{overflow:hidden;}
+  .bilan-carte{
+    width:100%;max-width:460px;
+    border:2.5px solid var(--ink);box-shadow:5px 5px 0 var(--green);
+    background:var(--panel);
+    padding:16px 14px 18px;
+  }
+  .bilan-demande,.bilan-fini,.bilan-chargement{display:flex;flex-direction:column;gap:10px;}
+  .bilan-question{font-size:21px;font-weight:800;letter-spacing:-.01em;line-height:1.2;}
+  .bilan-sous{font-size:13px;line-height:1.5;color:var(--dim);}
+  .bilan-alerte{
+    font-size:12.5px;line-height:1.45;color:var(--ink);
+    border-left:3px solid var(--yellow);padding-left:9px;
+  }
+
+  /* Le chargement : une barre qui se remplit une fois. Elle dure ce que dure
+     le calcul annonce, pas plus. */
+  .bilan-chargement{padding:26px 0;align-items:center;}
+  .bilan-barre{width:100%;height:10px;border:2px solid var(--line);background:var(--bg);overflow:hidden;}
+  .bilan-barre i{display:block;height:100%;width:0;background:var(--green);animation:remplir 1.05s ease-out forwards;}
+  @keyframes remplir{ from{width:0;} to{width:100%;} }
+
+  .bilan-tag{
+    align-self:flex-start;
+    background:var(--green);color:#0d0c0a;
+    font-size:10px;font-weight:800;letter-spacing:.12em;padding:3px 7px;
+  }
+  .bilan-titre{font-size:24px;font-weight:800;letter-spacing:-.02em;line-height:1.1;}
+  .bilan-date{font-size:12px;font-weight:700;color:var(--dim);margin-top:-6px;}
+  .bilan-volume{display:flex;align-items:baseline;gap:8px;border-top:2px solid var(--line);padding-top:12px;}
+  .bilan-volume-num{font-size:40px;font-weight:800;letter-spacing:-.03em;line-height:1;font-variant-numeric:tabular-nums;}
+  .bilan-volume-unite{font-size:12px;font-weight:800;letter-spacing:.06em;color:var(--dim);}
+  .bilan-tuiles{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;}
+  .bilan-tuile{
+    border:2px solid var(--line);background:var(--panel2);padding:9px 6px;
+    display:flex;flex-direction:column;align-items:center;gap:3px;
+  }
+  .bilan-tuile b{font-size:20px;font-weight:800;letter-spacing:-.02em;}
+  .bilan-tuile span{font-size:9.5px;font-weight:800;letter-spacing:.09em;color:var(--dim);}
+  .bilan-tuile.or{border-color:var(--yellow);}
+  .bilan-tuile.or b{color:var(--yellow);}
+
+  .bilan-bloc{border:2px solid var(--line);padding:9px 11px;}
+  .bilan-bloc.vert{border-color:var(--green);background:rgba(18,192,122,.06);}
+  .bilan-bloc-tete{font-size:9.5px;font-weight:800;letter-spacing:.11em;color:var(--dim);margin-bottom:6px;}
+  .bilan-ligne{display:flex;flex-direction:column;gap:2px;padding:4px 0;}
+  .bilan-ligne + .bilan-ligne{border-top:1px solid var(--line);}
+  .bilan-ligne b{font-size:13.5px;font-weight:800;}
+  .bilan-ligne span{font-size:12px;color:var(--dim);font-weight:700;}
+  .bilan-bloc-note{margin-top:5px;font-size:11px;color:var(--dim);font-weight:700;}
+  .bilan-mot{
+    font-size:14px;line-height:1.5;font-style:italic;font-weight:700;
+    border-left:3px solid var(--green);padding-left:10px;
+  }
+
+  /* Chaque bloc se pose l'un apres l'autre, une seule fois : ca se regarde
+     comme un resultat qui s'affiche, pas comme une page qui charge. */
+  .bilan-fini .anim{animation:poser .42s cubic-bezier(.2,.7,.3,1) backwards;animation-delay:calc(var(--i) * .09s);}
+  @keyframes poser{ from{opacity:0;transform:translateY(10px);} to{opacity:1;transform:none;} }
+  @media (prefers-reduced-motion:reduce){
+    .bilan-fini .anim{animation:none;}
+    .bilan-barre i{animation-duration:.01s;}
+  }
+
   /* ==== Telephone : zoom, barre du haut, retour en haut ================ */
   /* Deux appuis rapides sur « + » ajoutent 5 kg : ce n'est pas une demande
      de zoom. « manipulation » garde le pincement et le defilement, et retire
@@ -1695,6 +1790,7 @@
       <div class="day-panel-header"><h2 id="dayTitle">—</h2></div>
       <div class="ex-list" id="exList"></div>
       <button type="button" class="btn-add" id="addExerciseBtn">+ AJOUTER UN EXERCICE</button>
+      <div id="finZone" hidden></div>
       <button type="button" class="btn-reprendre" id="reprendreBtn">⟳ SÉLECTIONNER UNE SÉANCE</button>
       <button type="button" class="btn-recap-jour" id="recapJourBtn">VOIR LE RÉCAP DE CETTE SÉANCE ›</button>
     </div>
@@ -2006,6 +2102,14 @@
       <div class="sheet-label">CE QUE TU AS DÉJÀ ENVOYÉ</div>
       <div id="retourListe"></div>
     </div>
+  </div>
+</div>
+
+<!-- La fin de séance : la question, puis le bilan. Un seul écran, deux temps,
+     pour que valider et voir ce qu'on a fait soient le même geste. -->
+<div class="bilan" id="bilanEcran" hidden>
+  <div class="bilan-carte" role="dialog" aria-modal="true" aria-labelledby="bilanTitre">
+    <div class="bilan-corps" id="bilanCorps"></div>
   </div>
 </div>
 

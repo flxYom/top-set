@@ -27,6 +27,16 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ### Added
 
+- **The end of a session.** `✓ TERMINER MA SÉANCE` at the bottom of the day,
+  a confirmation (which counts the logged-but-unchecked sets), a one-second
+  loading bar, then an animated recap: volume counting up from zero, sets,
+  exercises, records, the top set of the day by estimated 1RM, the exercises
+  that beat last time, this week against the one before, and a line of the day
+  drawn from the date out of thirty. The day is then marked validated
+  (`termine`, a timestamp) with a « revoir le bilan » banner; nothing is
+  locked. New nullable `seances.terminee` column and `pousser_fin` RPC, on the
+  model of the title: a database without the column cannot erase a local
+  validation. Animations stop under `prefers-reduced-motion`.
 - **Gym shorthand.** Around forty abbreviations and English names (`RDL`,
   `OHP`, `bench`, `deadlift`, `BSS`…) map to a name in the built-in list. While
   you type, the card offers the full name; accepting renames the exercise and
@@ -35,6 +45,9 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ### Changed
 
+- **Titles, validations and exercise names are pushed even when no day
+  changed.** `pousser()` used to return early on an empty day queue, so they
+  waited for the next logged set.
 - **The superset button is back under « + SÉRIE »**, where sets are added,
   instead of the `⋯` menu. Service worker cache `topset-v20` → `topset-v21`.
 - **The last-time column is headed with its date** (« 8 SEPT. ») instead of

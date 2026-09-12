@@ -281,6 +281,36 @@ await as(A, `select public.pousser_jour('2026-09-08'::date, $1::jsonb)`, [JSON.s
   { id: 'b1', nom: 'Bench', groupe: 'Pectoraux', series: [{ poids: 80, reps: '5' }] }
 ])]);
 
+console.log('\n== 13 quater. La fin de seance fait l aller-retour ==');
+r = await as(A, `select public.tirer_jours(null) as j`);
+ok('une journee non terminee rend termine null',
+   r.rows[0].j['2026-09-08'].termine === null, JSON.stringify(r.rows[0].j['2026-09-08'].termine));
+ok('la cle termine est toujours rendue',
+   'termine' in r.rows[0].j['2026-09-08'], JSON.stringify(Object.keys(r.rows[0].j['2026-09-08'])));
+await as(A, `select public.pousser_fin('2026-09-08'::date, '2026-09-08T19:12:00Z'::timestamptz)`);
+r = await as(A, `select public.tirer_jours(null) as j`);
+ok('la validation revient avec sa date',
+   String(r.rows[0].j['2026-09-08'].termine).startsWith('2026-09-08T19:12'), JSON.stringify(r.rows[0].j['2026-09-08'].termine));
+// Repousser la journee ne doit pas effacer la validation : pousser_jour ne
+// touche que les exercices.
+await as(A, `select public.pousser_jour('2026-09-08'::date, $1::jsonb)`, [JSON.stringify([
+  { id: 'b1', nom: 'Bench', groupe: 'Pectoraux', series: [{ poids: 80, reps: '5' }] }
+])]);
+r = await as(A, `select public.tirer_jours(null) as j`);
+ok('renvoyer la journee ne deverrouille pas la seance',
+   String(r.rows[0].j['2026-09-08'].termine).startsWith('2026-09-08T19:12'), JSON.stringify(r.rows[0].j['2026-09-08'].termine));
+await as(A, `select public.pousser_fin('2026-09-08'::date, null)`);
+r = await as(A, `select public.tirer_jours(null) as j`);
+ok('on peut revenir en arriere', r.rows[0].j['2026-09-08'].termine === null, JSON.stringify(r.rows[0].j['2026-09-08'].termine));
+// Une date jamais vue cree la journee : valider une seance vide est possible,
+// et sans danger — elle n'a aucun exercice.
+await as(A, `select public.pousser_fin('2026-11-30'::date, now())`);
+r = await as(A, `select count(*)::int n from public.seances where user_id = auth.uid() and date = '2026-11-30'`);
+ok('valider une date inconnue cree sa seance', r.rows[0].n === 1, 'n=' + r.rows[0].n);
+await as(A, `delete from public.seances where date = '2026-11-30'`);
+await refuse('anon ne peut pas valider une seance', () =>
+  asAnon(`select public.pousser_fin('2026-09-08'::date, now())`));
+
 console.log('\n== 14. Les noms d exercices memorises suivent le compte ==');
 await as(A, `select public.pousser_exos_perso($1::jsonb)`, [JSON.stringify([
   { cle: 'bench leger', nom: 'Bench leger', groupe: 'Pectoraux' },
@@ -663,6 +693,7 @@ ok('et il voit bien les series',
 ok('et le commentaire de l exercice',
    rr.rows[0].j['2026-10-01'].exercises[0].note === 'Dernière rep assistée',
    JSON.stringify(rr.rows[0].j['2026-10-01'].exercises[0].note));
+ok('et la fin de seance', 'termine' in rr.rows[0].j['2026-10-01'], JSON.stringify(Object.keys(rr.rows[0].j['2026-10-01'])));
 ok('et le commentaire de chaque serie',
    rr.rows[0].j['2026-10-01'].exercises[0].series[0].note === 'Sangles',
    JSON.stringify(rr.rows[0].j['2026-10-01'].exercises[0].series[0].note));
