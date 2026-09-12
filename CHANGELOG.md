@@ -11,6 +11,13 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ### Fixed
 
+- **A stray tap on a set already logged overwrote it with last week's numbers.**
+  The last-time column now only copies into an empty row; on a filled or
+  finished set it is plain text, with no border and nothing to press.
+- **The unknown-exercise box no longer appeared at all.** It was inserted
+  relative to the muscle-group select, which moved into the card header with the
+  new card. It is back at the top of the card body, and now states both ways
+  out: « L'AJOUTER À MES EXERCICES » or « LE RELIER À UN EXERCICE EXISTANT ».
 - **« + SÉRIE » sent the page back to the top on iPhone.** Tapping a button
   there leaves the focus in the field you were typing in; re-rendering the whole
   day panel deleted that field and Safari scrolled to the top. The new set is now
@@ -18,8 +25,18 @@ while it stays below `1.0.0`, breaking changes (in particular to the
   (`renderDayPanel`, `repeindreCarte`) leaves the field first and restores the
   scroll position. Two guards keep it that way (174).
 
+### Added
+
+- **Gym shorthand.** Around forty abbreviations and English names (`RDL`,
+  `OHP`, `bench`, `deadlift`, `BSS`…) map to a name in the built-in list. While
+  you type, the card offers the full name; accepting renames the exercise and
+  keeps the abbreviation linked to it, so the history stays in one piece. The
+  table only suggests — nothing is renamed without a tap.
+
 ### Changed
 
+- **The superset button is back under « + SÉRIE »**, where sets are added,
+  instead of the `⋯` menu. Service worker cache `topset-v20` → `topset-v21`.
 - **The last-time column is headed with its date** (« 8 SEPT. ») instead of
   « PRÉC. », which was not understood, and is hidden for an exercise with no
   history. Service worker cache `topset-v19` → `topset-v20`.

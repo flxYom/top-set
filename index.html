@@ -354,6 +354,11 @@
     font-size:13px;font-weight:800;text-align:left;cursor:pointer;
   }
   .alias-choix:active{background:var(--yellow);color:#0d0c0a;}
+  /* La question, entre le nom et les reponses. */
+  .alias-prompt .alias-question{font-size:13px;font-weight:800;margin-top:2px;}
+  /* « C'est un nouvel exercice » est une reponse comme une autre, mais ce
+     n'est pas celle qu'on propose en premier : bord gris, pas jaune. */
+  .alias-garder{border-color:var(--line);}
   .btn-retour{
     align-self:flex-start;min-height:44px;padding:0 14px;
     background:transparent;border:2px solid var(--line);
@@ -630,6 +635,15 @@
   }
 
   .ex-actions{display:flex;gap:6px;}
+  /* Le superset, sous « + SERIE » : plus discret, parce qu'on s'en sert moins. */
+  .btn-superset{
+    width:100%;min-height:40px;margin-top:6px;padding:0 10px;
+    background:none;border:2px dashed var(--line);
+    color:var(--dim);
+    font-family:inherit;font-size:11px;font-weight:800;letter-spacing:.05em;
+    cursor:pointer;
+  }
+  .btn-superset:active{border-color:var(--yellow);color:var(--yellow);}
 
   /* « Derniere fois » : une ligne grise. Les chiffres sont dans la colonne
      de la derniere fois ; la liste ne s'affiche que la ou elle manque. */
@@ -726,6 +740,9 @@
   .serie-prec.top{color:var(--yellow);border-color:rgba(255,210,63,.45);}
   .serie-prec:active{background:var(--line);color:var(--ink);}
   .serie-prec.vide{border-color:transparent;cursor:default;}
+  /* Une serie deja remplie garde sa reference en face, mais sans bordure :
+     il n'y a plus rien a recopier, donc plus rien a toucher. */
+  .serie-prec.fige{border-color:transparent;cursor:default;opacity:.75;}
 
   .serie-poids,.serie-reps,.serie-duree{
     width:100%;min-width:0;height:44px;

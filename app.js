@@ -40,6 +40,55 @@
     'Course à pied':'Cardio','Rameur':'Cardio','Vélo elliptique':'Cardio','Vélo':'Cardio','Corde à sauter':'Cardio',
     'Tapis de course':'Cardio','Burpees':'Cardio','Marche rapide':'Cardio','Natation':'Cardio'
   };
+  // Les abreviations et les noms anglais qu'on tape en salle. Ce ne sont pas
+  // des exercices : chacune pointe vers un nom de la base, et l'app se
+  // contente de PROPOSER — le nom retenu reste celui que l'utilisateur
+  // choisit. « RDL » ne ressemble a « Souleve de terre roumain » par aucune
+  // lettre : aucun rapprochement automatique ne pouvait le trouver.
+  var SYNONYMES = {
+    'rdl':'Soulevé de terre roumain', 'romanian deadlift':'Soulevé de terre roumain',
+    'romanian dead lift':'Soulevé de terre roumain', 'sdtr':'Soulevé de terre roumain',
+    'sdt':'Soulevé de terre', 'deadlift':'Soulevé de terre', 'dead lift':'Soulevé de terre',
+    'dead':'Soulevé de terre', 'dl':'Soulevé de terre',
+    'sumo deadlift':'Soulevé de terre sumo',
+    'stiff leg deadlift':'Soulevé de terre jambes tendues', 'stiff':'Soulevé de terre jambes tendues',
+    'dc':'Développé couché', 'bench':'Développé couché', 'bench press':'Développé couché',
+    'bp':'Développé couché', 'close grip bench':'Développé couché prise serrée',
+    'incline bench':'Développé incliné', 'di':'Développé incliné',
+    'ohp':'Développé militaire', 'overhead press':'Développé militaire',
+    'military press':'Développé militaire', 'dm':'Développé militaire', 'shoulder press':'Développé militaire',
+    'back squat':'Squat', 'front squat':'Squat avant', 'bss':'Fentes bulgares',
+    'bulgarian split squat':'Fentes bulgares', 'split squat':'Fentes bulgares',
+    'leg press':'Presse à cuisses', 'calf raise':'Mollets debout',
+    'pull up':'Tractions', 'pullup':'Tractions', 'pull ups':'Tractions', 'chin up':'Tractions',
+    'lat pulldown':'Tirage vertical', 'pulldown':'Tirage vertical',
+    'barbell row':'Rowing barre', 'bent over row':'Rowing barre', 'pendlay row':'Rowing Pendlay',
+    'seated row':'Tirage horizontal poulie basse', 'cable row':'Tirage horizontal poulie basse',
+    'lateral raise':'Élévations latérales', 'side raise':'Élévations latérales',
+    'skull crusher':'Barre au front', 'skullcrusher':'Barre au front',
+    'gm':'Good morning', 'ht':'Hip thrust', 'hip thrusts':'Hip thrust',
+    'plank':'Planche', 'push up':'Pompes', 'pushup':'Pompes', 'push ups':'Pompes'
+  };
+  function sansAccents(t){
+    return String(t == null ? '' : t).toLowerCase()
+      .replace(/[àâä]/g,'a').replace(/[éèêë]/g,'e').replace(/[îï]/g,'i')
+      .replace(/[ôö]/g,'o').replace(/[ùûü]/g,'u').replace(/ç/g,'c');
+  }
+  function cleSynonyme(t){
+    return sansAccents(t).replace(/[^a-z0-9]+/g,' ').trim();
+  }
+  // Le nom de la base vise par ce qu'on vient de taper, ou null. Exact
+  // seulement : proposer sur un debut de mot ferait clignoter une question a
+  // chaque lettre.
+  function synonymeDe(saisi){
+    var cible = SYNONYMES[cleSynonyme(saisi)];
+    if (!cible) return null;
+    // Deja le bon nom, ou un nom que l'utilisateur s'est approprie : rien a dire.
+    if (cleExo(cible) === cleExo(saisi)) return null;
+    if (CUSTOM_PAR_CLE[cleExo(saisi)]) return null;
+    return cible;
+  }
+
   // Exercices ajoutes par l'utilisateur ("bench leger", "curl maison"...).
   // Ils rejoignent la liste de suggestions et suivent la sauvegarde.
   var CUSTOM_KEY = 'topset_custom_exercises';
@@ -634,6 +683,10 @@
     var k = cleExo(saisi);
     if (k.length < 2) return [];
     var vus = {}, out = [];
+    // Une abreviation connue passe devant : « RDL » n'a aucune lettre commune
+    // avec « Souleve de terre roumain ».
+    var syn = synonymeDe(saisi);
+    if (syn){ vus[cleExo(syn)] = 1; out.push({ cle:cleExo(syn), nom:normalizeName(syn), quand:null }); }
     function ajouter(nom, quand){
       var c = cleExo(nom);
       if (!c || c === k || vus[c]) return;
@@ -1034,14 +1087,18 @@
 
     // La meme serie, la derniere fois : la 3e d'aujourd'hui en face de la 3e.
     var ps = prec && prec.series[idx];
-    var precHTML = ps
+    // On ne recopie que dans une ligne vide. Toucher une serie deja remplie
+    // — ou deja faite — y collait les chiffres de la derniere fois, et on
+    // perdait ce qu'on venait de soulever.
+    var precHTML = (ps && !hasData(s))
       ? '<button type="button" class="serie-prec' + (prec.topSet && ps === prec.topSet ? ' top' : '') + '"'
         + ' data-copier="' + esc(ex.id) + '" data-cible="' + sid + '"'
         + ' data-poids="' + (typeof ps.poids === 'number' ? ps.poids : '') + '"'
         + ' data-reps="' + esc(ps.reps || '') + '" data-type="' + esc(ps.type || '') + '"'
         + ' aria-label="Recopier la dernière fois, ' + esc(perfTexte(ps)) + ', dans la série ' + num + '">'
         + esc(perfCourt(ps)) + '</button>'
-      : '<span class="serie-prec vide" aria-hidden="true">—</span>';
+      : (ps ? '<span class="serie-prec fige' + (prec.topSet && ps === prec.topSet ? ' top' : '') + '" aria-hidden="true">' + esc(perfCourt(ps)) + '</span>'
+            : '<span class="serie-prec vide" aria-hidden="true">—</span>');
 
     var valeur = auTemps
       ? '<label class="serie-duree-champ"><input type="text" inputmode="numeric" enterkeyhint="done" class="serie-duree" placeholder="sec" aria-label="Durée en secondes, série '+num+'" data-field="duree" data-serie-id="'+ sid +'" value="'+esc(secondesAffichees(s))+'"><span class="serie-unite" aria-hidden="true">s</span></label>'
@@ -1190,9 +1247,6 @@
       + (auTemps || nomAuTemps(ex.nom) || !series.some(serieRemplie)
           ? '<button type="button" class="ex-menu-item" data-action="mesure" data-id="'+ eid +'">'+libelleMesure(auTemps)+'</button>'
           : '')
-      + (ex.bloc
-          ? '<button type="button" class="ex-menu-item" data-action="detacher" data-id="'+ eid +'">⇄ SORTIR DU SUPERSET</button>'
-          : '<button type="button" class="ex-menu-item" data-action="superset" data-id="'+ eid +'">⇄ AJOUTER UN EXERCICE EN SUPERSET</button>')
       + '<button type="button" class="ex-menu-item danger ex-del" data-id="'+ eid +'">✕ SUPPRIMER L\'EXERCICE</button>'
       + '</div>';
     // Sans historique, la colonne de la derniere fois n'aurait que des tirets :
@@ -1217,6 +1271,11 @@
       // juste apres la serie. Il va sur la derniere serie faite.
       +     (series.length ? '<button type="button" class="btn-add-note" data-action="ajout-note" data-id="'+ eid +'">+ COMMENTAIRE</button>' : '')
       +   '</div>'
+      // Le superset est une action de saisie, pas un reglage : il reste avec
+      // « + SERIE », la ou on ajoute quelque chose a sa seance.
+      +   (ex.bloc
+            ? '<button type="button" class="btn-superset" data-action="detacher" data-id="'+ eid +'">⇄ SORTIR DU SUPERSET</button>'
+            : '<button type="button" class="btn-superset" data-action="superset" data-id="'+ eid +'">⇄ AJOUTER UN EXERCICE EN SUPERSET</button>')
       + '</div>'
       + '</div>';
   }
@@ -2244,6 +2303,12 @@
       // devient utile. Mis à jour ici, sans reconstruire la carte.
       majBlocPrecedent(card, ex);
       repeindreSeries(card, ex);
+      // Une abreviation connue se propose pendant la frappe : attendre de
+      // quitter le champ, c'est deja trop tard, on est passe a la suite.
+      var pourSyn = synonymeDe(t.value);
+      var boite = card && card.querySelector('.alias-prompt');
+      if (pourSyn && (!boite || boite.dataset.pour !== cleExo(t.value))) proposerRattachement(card, ex);
+      else if (!pourSyn && boite && boite.dataset.syn === '1') boite.remove();
     }
     scheduleSave(state.selectedDay);
     renderDayPills();
@@ -2574,6 +2639,12 @@
   // Affiche la proposition dans la carte, sans re-render : re-dessiner ferait
   // perdre le focus et la position de scroll au moment precis ou l'utilisateur
   // est en train de saisir.
+  //
+  // Deux questions, et une seule a la fois : « c'est le meme exercice que … ? »
+  // quand quelque chose ressemble, sinon « on le garde comme nouvel exercice ».
+  // Les deux sorties sont toujours ecrites en toutes lettres : avant, la carte
+  // annoncait juste « ajoute a tes exercices » et personne ne savait qu'on
+  // pouvait le rattacher.
   function proposerRattachement(card, ex){
     if (!card) return;
     var vieux = card.querySelector('.alias-prompt');
@@ -2581,48 +2652,82 @@
     var choix = candidatsAlias(ex.nom);
     var liste = tousLesExos(cleExo(ex.nom));
     if (!choix.length && !liste.length) return;
+    var syn = synonymeDe(ex.nom);
 
     var box = document.createElement('div');
     box.className = 'alias-prompt';
-    var html;
-    if (choix.length){
-      html = '<p><b>« ' + esc(normalizeName(ex.nom)) + ' »</b> — c\'est le même exercice que&nbsp;?</p>';
+    box.dataset.pour = cleExo(ex.nom);
+    box.dataset.syn = syn ? '1' : '0';
+    var nomAffiche = normalizeName(ex.nom);
+    var html = '<p><b>« ' + esc(nomAffiche) + ' »</b> n\'est pas encore dans tes exercices.</p>';
+    if (syn){
+      // Une abreviation connue : le plus souvent, c'est le nom entier qu'on veut.
+      html += '<p class="alias-question">C\'est <b>' + esc(syn) + '</b>&nbsp;?</p>'
+           +  '<button type="button" class="alias-choix" data-action="renommer" data-nom="' + esc(syn) + '">OUI : ' + esc(syn.toUpperCase()) + '</button>'
+           +  '<button type="button" class="alias-choix alias-lien" data-cle="' + esc(cleExo(syn)) + '">GARDER « ' + esc(nomAffiche.toUpperCase()) +' » ET LE RELIER</button>';
+    } else if (choix.length){
+      html += '<p class="alias-question">C\'est le même exercice que&nbsp;?</p>';
       choix.forEach(function(c){
         var quand = '';
         if (c.quand){
           var d = fromDateStr(c.quand);
           quand = ' <span style="color:var(--dim);font-weight:700;">· ' + d.getDate() + ' ' + MONTH_ABBR[d.getMonth()] + '</span>';
         }
-        html += '<button type="button" class="alias-choix" data-cle="' + esc(c.cle) + '">' + esc(c.nom) + quand + '</button>';
+        html += '<button type="button" class="alias-choix alias-lien" data-cle="' + esc(c.cle) + '">' + esc(c.nom) + quand + '</button>';
       });
-      html += '<button type="button" class="alias-non">NON, C\'EST UN NOUVEL EXERCICE</button>';
-    } else {
-      // Rien ne ressemble : le nom est deja retenu, on ne pose pas de question
-      // pour le plaisir. Le rattachement reste disponible, replie.
-      html = '<p><b>« ' + esc(normalizeName(ex.nom)) + ' »</b> est ajouté à tes exercices.</p>'
-           + '<button type="button" class="alias-non" data-action="ouvrir-liste">LE RATTACHER À UN EXERCICE EXISTANT</button>';
     }
-    html += '<div class="alias-liste" hidden>'
-         +   '<select class="alias-select" aria-label="Exercice auquel rattacher ce nom">'
-         +     '<option value="">Choisis l\'exercice…</option>'
-         +     liste.map(function(c){ return '<option value="' + esc(c.cle) + '">' + esc(c.nom) + '</option>'; }).join('')
-         +   '</select>'
-         +   '<button type="button" class="alias-choix" data-action="rattacher">RATTACHER</button>'
-         + '</div>';
+    html += '<button type="button" class="alias-choix alias-garder" data-action="garder">'
+         +    (syn || choix.length ? 'NON, C\'EST UN NOUVEL EXERCICE' : 'L\'AJOUTER À MES EXERCICES') + '</button>'
+         +  '<button type="button" class="alias-non" data-action="ouvrir-liste">LE RELIER À UN EXERCICE EXISTANT…</button>'
+         +  '<div class="alias-liste" hidden>'
+         +    '<select class="alias-select" aria-label="Exercice auquel rattacher ce nom">'
+         +      '<option value="">Choisis l\'exercice…</option>'
+         +      liste.map(function(c){ return '<option value="' + esc(c.cle) + '">' + esc(c.nom) + '</option>'; }).join('')
+         +    '</select>'
+         +    '<button type="button" class="alias-choix" data-action="rattacher">RATTACHER</button>'
+         +  '</div>';
     box.innerHTML = html;
 
+    function relier(cle){
+      definirAlias(ex.nom, cle);
+      var g = groupeCanonique(ex.nom); if (g) ex.groupe = g;
+      scheduleSave(state.selectedDay, true);
+      box.remove();
+      // L'historique change de sens d'un coup : « derniere fois », records et
+      // recap doivent refleter le rattachement tout de suite.
+      renderDayPanel(true);
+      renderWeekStats();
+      showToast('« ' + nomAffiche + ' » rejoint ton historique');
+    }
+
     box.addEventListener('click', function(e){
-      var b = e.target.closest('.alias-choix[data-cle]');
-      if (b){
-        definirAlias(ex.nom, b.dataset.cle);
-        var g1 = groupeCanonique(ex.nom); if (g1) ex.groupe = g1;
+      var lien = e.target.closest('.alias-lien[data-cle]');
+      if (lien){ relier(lien.dataset.cle); return; }
+
+      var ren = e.target.closest('[data-action="renommer"]');
+      if (ren){
+        // Renommer plutot que rattacher : un seul nom dans le carnet, donc un
+        // seul historique, et rien a expliquer plus tard.
+        var neuf = ren.dataset.nom;
+        // L'abreviation reste, rattachee au vrai nom : la prochaine fois
+        // qu'on tape « RDL », l'app sait de quoi il s'agit, et l'historique
+        // ne se coupe pas en deux. (Un nom efface ici reviendrait du cloud :
+        // la synchro des noms fusionne, elle ne supprime pas.)
+        definirAlias(ex.nom, cleExo(neuf));
+        ex.nom = neuf;
+        var gr = findExerciseMatch(neuf); if (gr) ex.groupe = gr;
         scheduleSave(state.selectedDay, true);
         box.remove();
-        // L'historique change de sens d'un coup : « derniere fois », records et
-        // recap doivent refleter le rattachement tout de suite.
         renderDayPanel(true);
         renderWeekStats();
-        showToast('« ' + normalizeName(ex.nom) +' » rejoint ton historique');
+        showToast('Renommé en « ' + neuf + ' »');
+        return;
+      }
+
+      if (e.target.closest('[data-action="garder"]')){
+        definirAlias(ex.nom, null);
+        box.remove();
+        showToast('« ' + nomAffiche + ' » est dans tes exercices');
         return;
       }
       if (e.target.closest('[data-action="ouvrir-liste"]')){
@@ -2633,13 +2738,7 @@
       if (e.target.closest('[data-action="rattacher"]')){
         var sel = box.querySelector('.alias-select');
         if (!sel.value){ sel.focus(); return; }
-        definirAlias(ex.nom, sel.value);
-        var g2 = groupeCanonique(ex.nom); if (g2) ex.groupe = g2;
-        scheduleSave(state.selectedDay, true);
-        box.remove();
-        renderDayPanel(true);
-        renderWeekStats();
-        showToast('« ' + normalizeName(ex.nom) + ' » rejoint ton historique');
+        relier(sel.value);
         return;
       }
       if (e.target.closest('.alias-non')){
@@ -2648,10 +2747,10 @@
       }
     });
 
+    // En tete du corps de la carte : le groupe musculaire est remonte dans
+    // l'en-tete, et inserer « apres lui » jetait une erreur.
     var corps = card.querySelector('.ex-body');
-    var apres = card.querySelector('.ex-groupe');
-    if (corps && apres) corps.insertBefore(box, apres.nextSibling);
-    else if (corps) corps.appendChild(box);
+    if (corps) corps.insertBefore(box, corps.firstChild);
   }
 
   document.getElementById('reprendreBtn').addEventListener('click', function(){
