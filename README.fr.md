@@ -801,7 +801,7 @@ supabase.umd.js          supabase-js 2.115.0, chargé à la demande
 supabase-config.js       URL du projet + clé publique (voir Comptes)
 supabase/schema.sql      tables, politiques RLS et fonctions de synchro
 supabase/test/           le schéma testé sur un vrai Postgres (PGlite) : RLS (254),
-                         montée depuis chaque version passée (14)
+                         montée depuis chaque version passée, garde-fou du projet (17)
 test/                    logique métier (162), gardes de sécurité (181), liens (119), gabarits de contenu (15)
 LICENSE  SECURITY.md  CONTRIBUTING.md  CHANGELOG.md
 .github/                 modèles d'issues, workflow de CI
@@ -884,6 +884,13 @@ colonnes de retour changent passe sur une base neuve, et Postgres refuse de la
 annule tout le script, sans que rien ne le dise. C'est arrivé une fois ; les
 fonctions qui renvoient un tableau sont désormais supprimées avant d'être
 recréées, et ce test tourne dans la CI avec l'historique complet.
+
+Le même fichier refuse de s'exécuter ailleurs que dans le projet Top Set. Ce
+compte Supabase héberge aussi Yom Nutrition, et y coller le schéma donnait une
+erreur de colonne manquante qui ne nommait ni le projet ni la méprise. Une garde
+en tête de fichier s'arrête désormais net, avant la première écriture, dès
+qu'elle reconnaît les tables de l'autre base : tout le script est une seule
+transaction, donc rien n'y est écrit, et l'autre projet repart intact.
 
 ---
 
