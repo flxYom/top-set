@@ -58,7 +58,9 @@ dernière fois en face, la grille de Strong et Hevy (refaite le 11).
    juste en dessous, sans geste de plus.
 2. **L'accueil bougeait au chargement** (CLS 0,101 pour un seuil « bon » à 0,1) :
    texte posé dans la police du système, puis recomposé. La police est
-   préchargée.
+   préchargée. Remesuré en production, trois passages : CLS 0, 0,088 et 0,088 ;
+   performance 93 à 95 ; premier affichage 1,9 à 2,0 s au lieu de 2,3. Le
+   décalage qui reste vient du panneau du jour, sous le seuil.
 3. **Deux `<h1>`** sur l'accueil (le logo et le titre de bienvenue). Le logo est
    un paragraphe.
 4. **Le manifeste n'avait pas de captures.** Les apps concurrentes ont une fiche
