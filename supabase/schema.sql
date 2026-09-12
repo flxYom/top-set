@@ -142,6 +142,12 @@ begin
   end if;
 end $$;
 
+-- Fin de séance : l'instant où l'utilisateur a validé sa séance. Nullable —
+-- une journée en cours, ou une journée d'avant cette colonne, n'a rien à
+-- porter. Un horodatage plutôt qu'un booléen : il dit aussi QUAND, ce que le
+-- bilan affiche, et il se compare entre appareils.
+alter table public.seances add column if not exists terminee timestamptz;
+
 create index if not exists seances_user_maj_idx  on public.seances   (user_id, updated_at desc);
 create index if not exists seances_user_date_idx on public.seances   (user_id, date desc);
 create index if not exists exercices_seance_idx  on public.exercices (user_id, seance_id, ordre);
@@ -388,6 +394,33 @@ begin
 end;
 $$;
 
+-- La fin de séance part à part, comme le titre : un appel séparé échoue seul,
+-- et la journée passe quand même.
+create or replace function public.pousser_fin(p_date date, p_fin timestamptz)
+returns timestamptz
+language plpgsql
+security invoker
+set search_path = public
+as $$
+declare
+  v_user uuid := auth.uid();
+  v_maj  timestamptz;
+begin
+  if v_user is null then
+    raise exception 'Aucune session : connexion requise.';
+  end if;
+
+  insert into public.seances (user_id, date, terminee)
+  values (v_user, p_date, p_fin)
+  on conflict (user_id, date) do update
+    set terminee = p_fin,
+        updated_at = now()
+  returning updated_at into v_maj;
+
+  return v_maj;
+end;
+$$;
+
 -- Rend les journées dans la forme exacte que l'app utilise en local, pour que
 -- le client n'ait aucune conversion à faire. Sans argument : tout l'historique
 -- (nouvel appareil). Avec p_depuis : seulement ce qui a bougé depuis.
@@ -405,6 +438,7 @@ as $$
       jsonb_build_object(
         'date', s.date::text,
         'titre', s.titre,
+        'termine', s.terminee,
         'updatedAt', s.updated_at,
         'exercises', coalesce((
           select jsonb_agg(
@@ -509,7 +543,9 @@ revoke execute on function public.tirer_exos_perso()        from anon, public;
 grant  execute on function public.pousser_exos_perso(jsonb) to authenticated;
 grant  execute on function public.tirer_exos_perso()        to authenticated;
 
+revoke execute on function public.pousser_fin(date, timestamptz) from anon, public;
 revoke execute on function public.pousser_titre(date, text) from anon, public;
+grant  execute on function public.pousser_fin(date, timestamptz) to authenticated;
 grant  execute on function public.pousser_titre(date, text) to authenticated;
 
 revoke execute on function public.pousser_jour(date, jsonb) from anon, public;
@@ -1255,6 +1291,7 @@ as $$
       jsonb_build_object(
         'date', s.date::text,
         'titre', s.titre,
+        'termine', s.terminee,
         'updatedAt', s.updated_at,
         'exercises', coalesce((
           select jsonb_agg(
