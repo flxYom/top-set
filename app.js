@@ -3,9 +3,16 @@
 
   var GROUPS = ['Pectoraux','Dos','Épaules','Bras','Jambes','Abdos','Cardio','Autre'];
   var GROUP_COLORS = {
-    'Pectoraux':'#ff5c38','Dos':'#4d7cff','Épaules':'#ffd23f','Bras':'#c9a3ff',
-    'Jambes':'#12c07a','Abdos':'#ff9f43','Cardio':'#ff6fae','Autre':'#b5ada0'
+    'Pectoraux':'#ff7aa2','Dos':'#22b8a8','Épaules':'#a99bff','Bras':'#d45fc4',
+    'Jambes':'#b3d236','Abdos':'#c99a6b','Cardio':'#6fd6f5','Autre':'#8f887d'
   };
+  // Une attente courte (une liste, un graphique, un fil) : la meme barre
+  // qu'on charge, en petit, pour que toutes les attentes parlent la meme
+  // langue que le chargement du bilan.
+  function attente(texte){
+    return '<span class="attente" role="status"><span class="attente-barre" aria-hidden="true"><i></i><i></i><b></b><i></i><i></i></span>'
+      + '<span class="attente-texte">' + esc(texte || 'Chargement…') + '</span></span>';
+  }
   // Le dessin du bandeau, par groupe dominant. « Autre » et la seance vide
   // gardent la photo des disques.
   var ILLUSTRATIONS = {
@@ -1918,7 +1925,7 @@
 
     var list = document.getElementById('exList');
     if (state.loading){
-      list.innerHTML = '<div class="empty-state">Chargement…</div>';
+      list.innerHTML = '<div class="empty-state">' + attente() + '</div>';
       return;
     }
     var day = state.sessions[ds];
@@ -1980,7 +1987,7 @@
       muscleEl.innerHTML = '';
       document.getElementById('recapStats').innerHTML = '';
       document.getElementById('recapHeatmap').innerHTML = '';
-      groupsEl.innerHTML = '<div class="empty-state">Chargement…</div>';
+      groupsEl.innerHTML = '<div class="empty-state">' + attente() + '</div>';
       return;
     }
 
@@ -2159,7 +2166,7 @@
             + ' data-periode="' + p.cle + '">' + p.label + '</button>';
         }).join('')
       + '</div>'
-      + '<div class="exo-chart" id="exoChart"><div class="recap-chart-empty">Chargement du graphique…</div></div>'
+      + '<div class="exo-chart" id="exoChart"><div class="recap-chart-empty">' + attente('Chargement du graphique…') + '</div></div>'
       + '</div>';
 
     // --- records par fourchette de reps
@@ -2311,7 +2318,36 @@
     renderAll();
     majBoutonHaut();
     majRetour();
+    placerLoupe(true);
   }
+  // La loupe suit l'onglet actif. Elle ne s'anime que si elle change vraiment
+  // de place : au chargement et quand l'ecran change de largeur, elle s'y pose
+  // sans bouger. Les vues sans onglet (messages, coach) la cachent.
+  var minuteurLoupe = null;
+  function placerLoupe(anime){
+    var loupe = document.getElementById('ongletLoupe');
+    if (!loupe) return;
+    var actif = document.querySelector('.topbar-tab.active');
+    if (!actif){ loupe.hidden = true; return; }
+    var avant = loupe.hidden ? NaN : parseFloat(loupe.style.getPropertyValue('--x'));
+    var x = actif.offsetLeft, w = actif.offsetWidth;
+    loupe.hidden = false;
+    if (anime && !isNaN(avant) && Math.abs(avant - x) > 1){
+      loupe.classList.add('pose');
+      loupe.classList.toggle('gauche', x < avant);
+      loupe.classList.remove('glisse');
+      void loupe.offsetWidth;
+      loupe.classList.add('glisse');
+      clearTimeout(minuteurLoupe);
+      minuteurLoupe = setTimeout(function(){ loupe.classList.remove('glisse'); }, 480);
+    } else {
+      loupe.classList.remove('pose', 'glisse');
+    }
+    loupe.style.setProperty('--x', x + 'px');
+    loupe.style.width = w + 'px';
+  }
+  window.addEventListener('resize', function(){ placerLoupe(false); });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(function(){ placerLoupe(false); });
   // Sur telephone, la barre d'onglets vit en bas. Quand le clavier sort, elle
   // monterait avec lui et couvrirait la ligne qu'on remplit : elle se range le
   // temps de la saisie. Une case a cocher ou un fichier n'ouvrent pas de clavier.
@@ -2989,7 +3025,11 @@
     bilanJour = ds;
     bilanEcran.hidden = false;
     document.body.classList.add('en-bilan');
-    if (direct) montrerBilan(ds); else demanderFin(ds);
+    // Revoir le bilan passe aussi par la barre, en plus court : le meme
+    // geste, le meme moment. Sans serie notee, rien a charger.
+    if (!direct) demanderFin(ds);
+    else if (bilanDuJour(ds)) chargerPuisBilan(ds, true);
+    else montrerBilan(ds);
   }
   function fermerEcranFin(){
     bilanEcran.hidden = true;
@@ -3027,8 +3067,9 @@
   // son groupe, le plus haut pour celui qui a le plus pese. Les compteurs
   // montent pendant que les noms defilent, puis la barre se leve. Un appui
   // passe directement au bilan : on ne fait pas attendre qui a compris.
+  // rapide : pour revoir un bilan deja vu, la meme scene deux fois plus vite.
   var minuteurBilan = null;
-  function chargerPuisBilan(ds){
+  function chargerPuisBilan(ds, rapide){
     var day = state.sessions[ds] || { exercises:[] };
     var exos = (day.exercises || []).map(function(e){
       var vol = 0, n = 0;
@@ -3049,11 +3090,15 @@
       var h = volMax ? 46 + Math.round(54 * x.vol / volMax) : 70;
       return '<i class="disque" style="--h:' + h + 'px;--c:' + (GROUP_COLORS[x.groupe] || GROUP_COLORS.Autre) + ';--i:' + i + '"></i>';
     }).join('');
-    bilanCorps.innerHTML = '<div class="bilan-chargement" role="status">'
+    // Le collier claque apres le dernier disque : --n donne son tour.
+    var nDisques = Math.max(1, Math.min(exos.length, 5));
+    function cote(sens){
+      return '<div class="barre-cote ' + sens + '" style="--n:' + nDisques + '"><div class="disques">' + disques + '</div><i class="collier"></i></div>';
+    }
+    bilanCorps.innerHTML = '<div class="bilan-chargement' + (rapide ? ' rapide' : '') + '" role="status">'
       + '<div class="barre-scene" aria-hidden="true">'
-      +   '<div class="barre-cote gauche">' + disques + '</div>'
-      +   '<div class="barre-tige"></div>'
-      +   '<div class="barre-cote droite">' + disques + '</div>'
+      +   '<i class="barre-ombre"></i>'
+      +   '<div class="barre-leve">' + cote('gauche') + '<div class="barre-tige"></div>' + cote('droite') + '</div>'
       + '</div>'
       + '<p class="barre-compteurs"><b data-vers="' + nSeries + '">0</b> ' + (nSeries > 1 ? 'séries' : 'série')
       +   ' · <b data-vers="' + total + '">0</b> kg</p>'
@@ -3061,7 +3106,7 @@
       + '<p class="barre-passer">Touche pour voir ton bilan</p>'
       + '</div>';
     var reduit = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    var duree = reduit ? 600 : 1500;
+    var duree = reduit ? 600 : (rapide ? 1300 : 1800);
     var debut = performance.now();
     var scene = bilanCorps.querySelector('.bilan-chargement');
     var compteurs = scene.querySelectorAll('.barre-compteurs b');
@@ -3853,7 +3898,7 @@
     conv = c;
     conv.depuis = depuis || null;
     convCle = '';
-    document.getElementById('convFil').innerHTML = '<div class="fil-vide">Chargement…</div>';
+    document.getElementById('convFil').innerHTML = '<div class="fil-vide">' + attente() + '</div>';
     document.getElementById('convCorps').value = '';
     ajusterChamp();
     document.getElementById('convMsg').hidden = true;
@@ -3890,7 +3935,7 @@
   // ------------------------------------------------------------ la boite
   function renderBoite(){
     var liste = document.getElementById('messagesListe');
-    if (liste.dataset.pret !== '1') liste.innerHTML = '<div class="admin-vide">Chargement…</div>';
+    if (liste.dataset.pret !== '1') liste.innerHTML = '<div class="admin-vide">' + attente() + '</div>';
     var admin = Sync.estAdmin(), estCoach = Sync.estCoach();
     var jeton = ++jetonBoite;
     function rien(){ return []; }
@@ -4311,7 +4356,7 @@
 
     if (coachClient){
       titre.textContent = (coachClient.pseudo || 'CARNET').toUpperCase();
-      zone.innerHTML = '<div class="admin-vide">Lecture du carnet…</div>';
+      zone.innerHTML = '<div class="admin-vide">' + attente('Lecture du carnet…') + '</div>';
       // Lire une seance et vouloir en parler, c'est le meme geste : le bouton
       // est la ou naissent les questions.
       var ecrire = '<div class="coache-actions">'
@@ -4358,7 +4403,7 @@
     }
 
     titre.textContent = 'MES COACHÉS';
-    zone.innerHTML = '<div class="admin-vide">Chargement…</div>';
+    zone.innerHTML = '<div class="admin-vide">' + attente() + '</div>';
     Promise.all([Sync.mesCoaches(), Sync.nonLusCoach()]).then(function(res){
       var rows = res[0], nonLus = res[1];
       if (!rows || !rows.length){

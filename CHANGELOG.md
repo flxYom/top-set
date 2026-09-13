@@ -11,6 +11,32 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ### Changed
 
+- **A glass lens under the active tab.** It slides to the tab you pick,
+  stretches in the direction of travel and lights its iridescent rim for the
+  trip (0.46 s), then settles with a quiet highlight; hidden on views without a
+  tab, no animation under `prefers-reduced-motion`. The only deliberate glass
+  element in the app.
+- **New muscle-group palette.** Groups no longer reuse the meaning colours
+  (orange brand/action, yellow record, green success, blue information):
+  Pectoraux `#ff7aa2`, Dos `#22b8a8`, Épaules `#a99bff`, Bras `#d45fc4`, Jambes
+  `#b3d236`, Abdos `#c99a6b`, Cardio `#6fd6f5`, Autre `#8f887d`. The closest
+  pair across normal vision and three simulated colour vision deficiencies
+  goes from ΔE2000 6.7 (deuteranopia) to 7.5 (tritanopia), and no group sits
+  closer than 10 to a meaning colour.
+  `scripts/palette-groupes.mjs` checks it; a guard blocks regressions.
+- **One loading language: loading a barbell.** The end-of-session loader gains
+  orange collars, a lift-off with lagging plates and a tightening floor shadow
+  (1.8 s); « REVOIR LE BILAN » now plays a quick version (1.3 s) instead of
+  jumping straight in. The account loader loops the same scene with neutral
+  plates instead of orange/yellow/green ones. Short waits in lists, the
+  exercise chart, the message thread and admin show a small barbell
+  (`attente()`) instead of a bare « Chargement… ». The name scrolling during the
+  loader is no longer record-yellow.
+- **`DESIGN_SYSTEM.md`** records colour roles, the group palette, glass, motion,
+  loading, image rules and the decisions still open; the 13 September visual
+  audit is in `docs/design/audit-identite-2026-09-13.md`. Service worker cache
+  `topset-v25` → `topset-v26`.
+
 - **The « Salle noire » visual redesign.** Same screens, data and logic, in a
   single `<style id="refonte">` layer after the original styles: near-black
   background with three surface levels instead of cream borders and offset
