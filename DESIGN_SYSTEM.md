@@ -129,7 +129,7 @@ simple décor. Toutes s'arrêtent quand l'appareil demande moins d'animations
 
 | Élément | Comportement | Durée |
 |---|---|---|
-| Loupe des onglets (`#ongletLoupe`) | glisse sous l'onglet choisi, s'étire dans le sens du mouvement comme une goutte, liseré irisé allumé pendant le trajet, reflet en haut au repos ; ne bouge pas au chargement ni au redimensionnement ; cachée dans les vues sans onglet | 0,46 s |
+| Loupe des onglets (`#ongletLoupe`) | glisse sous l'onglet choisi, s'étire dans le sens du mouvement comme une goutte, un seul reflet chaud fait le tour du liseré pendant le trajet (l'arc-en-ciel a été retiré le 13/09 : « trop RGB »), reflet en haut au repos ; se fait glisser du doigt (se soulève, suit le doigt, l'onglet le plus proche s'ouvre au lâcher) ; ne bouge pas au chargement ni au redimensionnement ; cachée dans les vues sans onglet | 0,46 s |
 | Changement de vue | la vue glisse de 6 px en apparaissant | 0,24 s |
 | Appui | le bouton s'enfonce | instantané |
 

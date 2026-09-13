@@ -106,10 +106,13 @@ ruled out (Pinterest, Canva), in French:
 
 **The tab lens, muscle-group colours, waiting states (September 2026).** Under
 the active tab sits a piece of glass (`#ongletLoupe`, placed by `placerLoupe()`
-on every `montrerVue`): a highlight on top, a barely visible iridescent rim.
-Switching tabs, it slides, stretches in the direction of travel and its rim
-lights up in rainbow colours for the trip (0.46 s); the label stays above it,
-sharp. It is the app's only deliberate piece of glass, and it jumps without
+on every `montrerVue`): a highlight on top, a barely visible light rim.
+Switching tabs, it slides, stretches in the direction of travel and a single
+warm glint runs around the rim for the trip (0.46 s); the label stays above it,
+sharp. It can also be **dragged with a finger**: past 8 px of horizontal
+movement it lifts and follows the finger, the tab underneath lights up, and the
+nearest one opens on release; a plain tap is still a click (Pointer Events,
+`touch-action:none` on the bottom bar). It is the app's only deliberate piece of glass, and it jumps without
 animation when the device asks for reduced motion. **Muscle groups** no longer
 reuse any meaning colour — orange (brand, action), yellow (record), green
 (success), blue (information): Pectoraux `#ff7aa2`, Dos `#22b8a8`, Épaules
@@ -736,7 +739,7 @@ supabase-config.js       project URL + public anon key (see Accounts)
 supabase/schema.sql      tables, RLS policies and sync functions
 supabase/test/           the schema tested on a real Postgres (PGlite): RLS (254),
                          upgrade from every past version, wrong-project guard (17)
-test/                    business logic (162), hardening guards (204), links (119), content templates (15)
+test/                    business logic (162), hardening guards (206), links (119), content templates (15)
 LICENSE  SECURITY.md  CONTRIBUTING.md  CHANGELOG.md
 .github/                 issue templates, CI workflow
 .vercelignore            what the site does not publish: docs, schema, tests, content sources

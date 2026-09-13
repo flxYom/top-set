@@ -2244,9 +2244,10 @@
 
   /* ---- La loupe des onglets ------------------------------------------------ */
   /* Une piece de verre sous l'onglet actif. Au repos : un reflet en haut et un
-     liseré irisé a peine visible. Quand on change d'onglet, elle glisse,
-     s'etire dans le sens du mouvement comme une goutte, et son liseré
-     s'allume en arc-en-ciel le temps du trajet. Elle passe sous le texte :
+     liseré clair a peine visible. Quand on change d'onglet, elle glisse,
+     s'etire dans le sens du mouvement comme une goutte, et un seul reflet
+     chaud fait le tour du liseré le temps du trajet (pas d'arc-en-ciel : trop
+     « effet RGB »). On peut aussi la faire glisser du doigt. Elle passe sous le texte :
      le libelle reste net. Seule exception assumee au « pas de verre » (voir
      docs/design/audit-identite-2026-09-13.md). */
   @property --loupe-angle{syntax:'<angle>';inherits:false;initial-value:210deg;}
@@ -2261,10 +2262,10 @@
     box-shadow:inset 0 1px 0 rgba(255,255,255,.24),inset 0 -1px 0 rgba(255,255,255,.07),0 8px 22px -10px rgba(0,0,0,.9);
     -webkit-backdrop-filter:saturate(1.6) brightness(1.12);backdrop-filter:saturate(1.6) brightness(1.12);
   }
-  .onglet-loupe.pose{transition:translate .46s cubic-bezier(.3,1.25,.45,1),width .46s cubic-bezier(.3,1.25,.45,1);}
+  .onglet-loupe.pose{transition:translate .46s cubic-bezier(.3,1.25,.45,1),width .46s cubic-bezier(.3,1.25,.45,1),scale .22s ease;}
   .onglet-loupe::before{
     content:'';position:absolute;inset:0;border-radius:inherit;padding:1.5px;
-    background:conic-gradient(from var(--loupe-angle),#ff5c38,#ffd23f,#2bd08a,#47c8ff,#8f7bff,#ff6fae,#ff5c38);
+    background:conic-gradient(from var(--loupe-angle),rgba(255,248,238,.12) 0deg,rgba(255,248,238,.12) 190deg,rgba(255,248,238,.9) 245deg,rgba(255,170,130,.55) 280deg,rgba(255,248,238,.12) 330deg);
     -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
     -webkit-mask-composite:xor;mask-composite:exclude;
     opacity:.2;transition:opacity .5s ease;
@@ -2275,11 +2276,21 @@
     background:linear-gradient(180deg,rgba(255,255,255,.13),rgba(255,255,255,0));
   }
   .onglet-loupe.glisse{animation:loupe-goutte .46s cubic-bezier(.3,.9,.4,1);}
-  .onglet-loupe.glisse::before{opacity:.95;animation:loupe-irise .46s ease-out;}
+  .onglet-loupe.glisse::before{opacity:.8;animation:loupe-irise .46s ease-out;}
+  /* Tenue au doigt : elle se souleve un peu, le reflet suit sa position, et
+     l'onglet qu'elle survole s'allume a la place de l'actif. */
+  #mainTabs{touch-action:pan-y;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;}
+  .onglet-loupe.tenue{transition:scale .22s cubic-bezier(.3,1.25,.45,1);scale:1.06 1.08;animation:none;}
+  .onglet-loupe.tenue::before{opacity:.7;--loupe-angle:var(--reflet,210deg);}
+  #mainTabs.tenu .topbar-tab{color:var(--dim);}
+  #mainTabs.tenu .topbar-tab .onglet-ico{color:currentColor;}
+  #mainTabs.tenu .topbar-tab.vise{color:var(--ink);}
+  #mainTabs.tenu .topbar-tab.vise .onglet-ico{color:var(--orange);}
   .onglet-loupe.glisse.gauche::before{animation-direction:reverse;}
   @keyframes loupe-goutte{0%{scale:1 1;}30%{scale:1.2 .88;}64%{scale:.96 1.04;}100%{scale:1 1;}}
   @keyframes loupe-irise{from{--loupe-angle:90deg;}to{--loupe-angle:330deg;}}
   @media (max-width:899px){
+    #mainTabs{touch-action:none;}
     .topbar-tab.active::before{content:none;}
     .onglet-loupe{top:2px;height:calc(100% - 4px);border-radius:16px;}
     .topbar-tab.active .onglet-ico{scale:1.06;}
@@ -2288,6 +2299,7 @@
     .onglet-loupe.pose{transition:none;}
     .onglet-loupe.glisse,.onglet-loupe.glisse::before{animation:none;}
     .onglet-loupe.glisse::before{opacity:.2;}
+    .onglet-loupe.tenue{transition:none;}
   }
 </style>
 </head>

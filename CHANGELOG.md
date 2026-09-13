@@ -11,6 +11,12 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ### Changed
 
+- **The tab lens can be dragged, and its rim is no longer rainbow.** Drag it
+  along the tab bar with a finger or the mouse: it lifts, follows, lights the
+  tab underneath and opens the nearest one on release; a plain tap is still a
+  click. During a switch, a single warm glint runs around the rim instead of a
+  full RGB spectrum. Service worker `topset-v27`.
+
 - **A glass lens under the active tab.** It slides to the tab you pick,
   stretches in the direction of travel and lights its iridescent rim for the
   trip (0.46 s), then settles with a quiet highlight; hidden on views without a

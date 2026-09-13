@@ -107,10 +107,14 @@ chargement. Les choix, les sources et ce qui a été écarté (Pinterest, Canva)
 
 **La loupe des onglets, les couleurs des groupes, les attentes (septembre
 2026).** Sous l'onglet actif, une pièce de verre (`#ongletLoupe`, placée par
-`placerLoupe()` à chaque `montrerVue`) : un reflet en haut, un liseré irisé à
+`placerLoupe()` à chaque `montrerVue`) : un reflet en haut, un liseré clair à
 peine visible. Quand on change d'onglet, elle glisse, s'étire dans le sens du
-mouvement et son liseré s'allume en arc-en-ciel le temps du trajet (0,46 s) ;
-le libellé reste au-dessus, net. C'est la seule pièce de verre assumée de
+mouvement et un seul reflet chaud fait le tour du liseré le temps du trajet
+(0,46 s) ; le libellé reste au-dessus, net. Elle se fait aussi **glisser du
+doigt** : passé 8 px de déplacement horizontal, elle se soulève et suit le
+doigt, l'onglet survolé s'allume, et le plus proche s'ouvre au lâcher ; un
+simple appui reste un clic (Pointer Events, `touch-action:none` sur la barre
+du bas). C'est la seule pièce de verre assumée de
 l'app ; elle saute sans animation si l'appareil en demande moins. Les
 **groupes musculaires** ne reprennent plus aucune couleur de sens — l'orange
 (marque, action), le jaune (record), le vert (réussite), le bleu (information) :
@@ -872,7 +876,7 @@ supabase-config.js       URL du projet + clé publique (voir Comptes)
 supabase/schema.sql      tables, politiques RLS et fonctions de synchro
 supabase/test/           le schéma testé sur un vrai Postgres (PGlite) : RLS (254),
                          montée depuis chaque version passée, garde-fou du projet (17)
-test/                    logique métier (162), gardes de sécurité (204), liens (119), gabarits de contenu (15)
+test/                    logique métier (162), gardes de sécurité (206), liens (119), gabarits de contenu (15)
 LICENSE  SECURITY.md  CONTRIBUTING.md  CHANGELOG.md
 .github/                 modèles d'issues, workflow de CI
 .vercelignore            ce que le site ne publie pas : docs, schéma, tests, source du contenu

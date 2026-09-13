@@ -2329,6 +2329,8 @@
     if (!loupe) return;
     var actif = document.querySelector('.topbar-tab.active');
     if (!actif){ loupe.hidden = true; return; }
+    // Tenue au doigt : c'est le doigt qui la place, pas un redimensionnement.
+    if (loupe.classList.contains('tenue')) return;
     var avant = loupe.hidden ? NaN : parseFloat(loupe.style.getPropertyValue('--x'));
     var x = actif.offsetLeft, w = actif.offsetWidth;
     loupe.hidden = false;
@@ -2348,6 +2350,75 @@
   }
   window.addEventListener('resize', function(){ placerLoupe(false); });
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(function(){ placerLoupe(false); });
+  // La loupe se fait aussi glisser du doigt, comme la barre d'onglets d'iOS :
+  // passe 8 px de deplacement horizontal, elle suit le doigt, et l'onglet le
+  // plus proche s'ouvre au lacher. Un simple appui reste un clic normal.
+  (function(){
+    var barre = document.getElementById('mainTabs');
+    var loupe = document.getElementById('ongletLoupe');
+    if (!barre || !loupe || !window.PointerEvent) return;
+    var doigt = null, tenue = false, sansClic = false;
+    function onglets(){ return barre.querySelectorAll('.topbar-tab'); }
+    function plusProche(centre){
+      var meilleur = null, ecart = Infinity;
+      onglets().forEach(function(b){
+        var d = Math.abs(b.offsetLeft + b.offsetWidth / 2 - centre);
+        if (d < ecart){ ecart = d; meilleur = b; }
+      });
+      return meilleur;
+    }
+    barre.addEventListener('pointerdown', function(e){
+      if (!e.isPrimary || e.button > 0 || loupe.hidden) return;
+      doigt = { id: e.pointerId, x: e.clientX, y: e.clientY };
+      tenue = false;
+    });
+    barre.addEventListener('pointermove', function(e){
+      if (!doigt || e.pointerId !== doigt.id) return;
+      var dx = e.clientX - doigt.x;
+      if (!tenue){
+        if (Math.abs(dx) < 8) return;
+        if (Math.abs(e.clientY - doigt.y) > Math.abs(dx)){ doigt = null; return; }
+        tenue = true;
+        try { barre.setPointerCapture(e.pointerId); } catch (err) {}
+        clearTimeout(minuteurLoupe);
+        loupe.classList.remove('pose', 'glisse');
+        loupe.classList.add('tenue');
+        barre.classList.add('tenu');
+      }
+      var liste = onglets(), w = loupe.offsetWidth;
+      var min = liste[0].offsetLeft, max = liste[liste.length - 1].offsetLeft + liste[liste.length - 1].offsetWidth - w;
+      var r = barre.getBoundingClientRect();
+      var x = Math.max(min, Math.min(max, e.clientX - r.left - barre.clientLeft - w / 2));
+      loupe.style.setProperty('--x', x + 'px');
+      loupe.style.setProperty('--reflet', (90 + 240 * (max > min ? (x - min) / (max - min) : 0)) + 'deg');
+      var vise = plusProche(x + w / 2);
+      liste.forEach(function(b){ b.classList.toggle('vise', b === vise); });
+      e.preventDefault();
+    });
+    function lacher(e){
+      if (!doigt || e.pointerId !== doigt.id) return;
+      var etaitTenue = tenue;
+      doigt = null; tenue = false;
+      if (!etaitTenue) return;
+      var cible = plusProche(parseFloat(loupe.style.getPropertyValue('--x')) + loupe.offsetWidth / 2);
+      loupe.classList.remove('tenue');
+      barre.classList.remove('tenu');
+      onglets().forEach(function(b){ b.classList.remove('vise'); });
+      // Le navigateur peut envoyer un clic juste apres : il ne doit rien rouvrir.
+      sansClic = true;
+      setTimeout(function(){ sansClic = false; }, 400);
+      if (e.type === 'pointerup' && cible && !cible.classList.contains('active')) montrerVue(cible.dataset.view);
+      else placerLoupe(true);
+    }
+    barre.addEventListener('pointerup', lacher);
+    barre.addEventListener('pointercancel', lacher);
+    barre.addEventListener('click', function(e){
+      if (!sansClic) return;
+      sansClic = false;
+      e.stopImmediatePropagation();
+      e.preventDefault();
+    }, true);
+  })();
   // Sur telephone, la barre d'onglets vit en bas. Quand le clavier sort, elle
   // monterait avec lui et couvrirait la ligne qu'on remplit : elle se range le
   // temps de la saisie. Une case a cocher ou un fichier n'ouvrent pas de clavier.
