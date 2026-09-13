@@ -11,7 +11,7 @@
 //
 //   node test/gabarits.test.mjs
 
-import { readFileSync } from 'fs';
+import { readFileSync, existsSync } from 'fs';
 
 // Le JS de l'app vit dans app.js depuis qu'on a retire 'unsafe-inline' de la
 // CSP : sans etape de build, un script externe est le seul moyen de se passer
@@ -480,5 +480,35 @@ ok('index.html n a qu un h1', (HTML.match(/<h1[\s>]/g) || []).length === 1);
 // navigateur la telecharge deux fois.
 const pre = (HTML.match(/<link rel="preload" href="([^"]+)" as="font"[^>]*crossorigin>/) || [])[1];
 ok('la police prechargee est celle de la page', !!pre && HTML.indexOf("url('" + pre + "')") > -1, pre);
+console.log('\n== La derniere fois se lit, elle ne se recopie plus ==');
+// Un appui de travers dans la colonne de la derniere fois collait les chiffres
+// de la semaine d'avant dans la ligne, a 4 px de la case du poids.
+const ligneSerie = (SRC.match(/function serieRowHTML[\s\S]*?\n  \}\n/) || [''])[0];
+ok('la colonne de la derniere fois n est plus un bouton',
+   ligneSerie.indexOf('class="serie-prec') > -1 && !/<button[^\n]*class="serie-prec/.test(ligneSerie) && ligneSerie.indexOf('data-copier') < 0);
+ok('la date en tete de colonne mene a la seance d avant',
+   SRC.indexOf('class="col-prec-lien" data-action="voir-prec" data-date="\' + esc(p.prec.date) + \'" data-ex="\' + esc(ex.id) + \'"') > -1);
+ok('une barre ramene a la seance en cours, et s efface une fois revenu',
+   HTML.indexOf('id="retourSeance"') > -1 && SRC.indexOf('if (retourSeance && state.selectedDay === retourSeance.ds) retourSeance = null;') > -1);
+ok('la barre de retour ne cache ni le toast ni le bas de la page',
+   /body\.avec-retour \.app\{padding-bottom:/.test(HTML) && /body\.avec-retour \.toast\{bottom:/.test(HTML));
+ok('les boutons de la carte font 44 px de haut',
+   ['.step-btn{', '.serie-outil{', '.ex-cible-copie{', '.ex-menu-btn{'].every(sel => {
+     const r = HTML.slice(HTML.indexOf('  ' + sel)); return /height:44px/.test(r.slice(0, r.indexOf('}')));
+   }));
+
+console.log('\n== Le chargement du bilan et les dessins du bandeau ==');
+ok('un appui pendant le chargement passe au bilan',
+   SRC.indexOf("else if (e.target.closest('.bilan-chargement')) passerAuBilan(bilanJour);") > -1);
+ok('le compteur s arrete sur les chiffres du bilan',
+   /function chargerPuisBilan\(ds\)\{[\s\S]{0,1200}var b = bilanDuJour\(ds\);/.test(SRC));
+ok('les disques s arretent quand l appareil le demande',
+   /@media \(prefers-reduced-motion:reduce\)\{\s*\.disque\{animation:none;opacity:1;\}/.test(HTML));
+const DESSINS = ['pectoraux', 'dos', 'epaules', 'bras', 'jambes', 'abdos', 'cardio'];
+ok('chaque dessin existe, est branche et part dans le cache hors ligne',
+   DESSINS.every(n => existsSync(new URL('../img/hero/' + n + '.svg', import.meta.url))
+     && HTML.indexOf('.hero[data-illu="' + n + '"] .hero-photo{background-image:url(\'img/hero/' + n + '.svg\');}') > -1
+     && SW.indexOf("'img/hero/" + n + ".svg'") > -1));
+
 console.log(`\n${pass} reussis, ${fail} echoues`);
 process.exit(fail ? 1 : 0);

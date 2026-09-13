@@ -78,12 +78,23 @@ rows — weight, then type, then RPE and rest — and a five-set exercise filled
 screens. The **number** carries the set type: tap it, the native menu opens, and
 `TOP`, `B.O.` or `ÉCH.` takes its place. The **last-time column** is headed with
 the previous session's date — « PRÉC. » was not understood — and shows the same set last time
-(the 3rd facing the 3rd) and copies it into *its* row with one tap — weight,
-reps, type; the RPE stays today's. For an exercise with no history it is not
-shown (`.sans-prec`): it would hold nothing but dashes. It only copies into an
-**empty row**: a stray tap on a set already done pasted last week's numbers over
-what had just been lifted. A **done** set loses its borders and reads
-like text; one tap still edits it.
+(the 3rd facing the 3rd). It is **read**, it no longer copies anything: it used
+to copy on tap, from a cell 4 px away from the weight field, and a stray tap
+logged a set that was never lifted. The **date heading the column** is a real
+button, outlined, with an arrow: it opens the previous session in the planning,
+and an orange bar at the bottom of the screen, `RETOUR À MA SÉANCE`, brings you
+back to the day you left, on the exercise you left from. The bar tracks one
+round trip, not a chain: from the previous session its own date leads further
+back, but the return always targets the starting point. It hides on other tabs
+and goes away once you are back on the starting day, through it or the day
+pills. For an exercise with no history the column is not shown (`.sans-prec`).
+A **done** set loses its borders and its row turns faintly green — you see where
+you are without reading every check, as in Hevy — and one tap still edits it.
+
+**44 px targets.** Measured on a 375 px screen, eight buttons on the card were
+below Apple's recommended 44 points: the `⋯` menu (40), the suggestion copy
+(36), the `−` `+` steps, rest, comment and bin (40), superset (40), and the
+exercise name (22 px tall). All are now 44 px; the name, 40.
 
 **The open set.** One per exercise, outlined in orange: by default the first one
 not done yet. Under it, its tools — `−` `+` (2.5 kg, or 5 s for timed sets),
@@ -147,6 +158,13 @@ assisted. `normalizeExercise()` moves an old exercise comment onto its last set
 (before that set's own, if it had one), where « assisted on the last one » meant
 something; nothing is lost. An exercise with no set keeps its own, having
 nowhere to put it.
+
+**The day banner takes a drawing** from the session's dominant muscle group: a
+bench for chest, a squat rack for legs, a bar and rings for back, dumbbells for
+shoulders, an EZ bar for arms, an ab wheel for abs, a heartbeat trace and a
+rope for cardio. Grey SVGs (`img/hero/`) that the group's tint colours over,
+like the photo; « Autre » and an empty session keep the plates photo. They are
+in the service worker's shell, so they work offline too.
 
 **The end of a session.** At the bottom of the planning screen, once anything
 is logged, `✓ TERMINER MA SÉANCE` asks for confirmation — pointing out sets
