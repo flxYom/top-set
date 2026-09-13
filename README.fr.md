@@ -92,6 +92,19 @@ Une série **faite** perd ses cadres, sa ligne se teinte de vert — on voit où
 en est sans lire les coches une à une, comme chez Hevy — et elle reste
 modifiable d'un appui.
 
+**La refonte « Salle noire » (septembre 2026).** Une passe visuelle, pas une
+réécriture : mêmes écrans, mêmes données, même logique. Elle vit dans un seul
+bloc, `<style id="refonte">`, posé après les styles d'origine — le retirer
+rend l'ancienne interface. Fond quasi noir, trois niveaux de surface au lieu
+des bordures crème, rayons de 10 à 26 px, une ombre douce et une seule lueur
+orange pour l'action principale ; Bricolage Grotesque garde les titres et les
+chiffres, le texte courant passe à la police du téléphone. Les onglets passent
+en bas sur téléphone. Le bandeau d'un jour vide et l'écran d'accueil portent
+deux images d'ambiance générées avec Higgsfield (Seedream 5 Lite), en WebP de
+22 et 23 Ko ; la photo encodée dans la page disparaît, 86 Ko de moins à chaque
+chargement. Les choix, les sources et ce qui a été écarté (Pinterest, Canva) :
+[`docs/design/direction-refonte-2026-09.md`](docs/design/direction-refonte-2026-09.md).
+
 **Des cibles de 44 px.** Mesurés sur un écran de 375 px, huit boutons de la
 carte faisaient moins que les 44 points recommandés par Apple : le menu `⋯`
 (40), la recopie de la suggestion (36), les pas `−` `+`, le repos, le
@@ -238,13 +251,16 @@ attend. Voir [La messagerie](#la-messagerie).
 (sauvegarde, tableur, import). Le compte et les fichiers vivaient dans la même
 feuille, qui était devenue un fourre-tout.
 
-**Pensé pour le téléphone.** Les onglets restent en haut quand on descend —
-y compris dans l'app installée sur iPhone, où ils glissaient sous la barre
-d'état. Une flèche « revenir en haut » apparaît dès qu'on est descendu d'un
+**Pensé pour le téléphone.** Sur un écran de moins de 900 px, les onglets
+vivent **en bas**, sous le pouce, avec leurs icônes ; ils se rangent le temps
+qu'un champ a le clavier (`body.clavier`), et laissent la place à la saisie
+dans une conversation. Sur un ordinateur, ils restent une barre segmentée en haut. Une flèche « revenir en haut » apparaît dès qu'on est descendu d'un
 écran. Deux appuis rapides sur `+` ajoutent 5 kg au lieu de zoomer
 (`touch-action: manipulation`), et toucher un champ ne fait plus zoomer
 Safari : sous iOS, tous les champs sont écrits en 16 px au moins, la taille en
-dessous de laquelle Safari zoome d'office — et ne dézoome plus. Cette règle est
+dessous de laquelle Safari zoome d'office — et ne dézoome plus. La couche de la
+refonte vient après elle, mais ne touche jamais la taille de ces champs : une
+garde le vérifie. Cette règle est
 **la dernière de la feuille de style** : à spécificité égale, c'est la règle
 écrite plus bas qui gagne, et placée plus haut elle perdait contre le champ de
 la messagerie, qui restait en 14 px. Un garde-fou le vérifie.
@@ -825,17 +841,20 @@ outils/outils.js         calculateurs (fichier externe : la CSP refuse le script
 outils/tableau-rpe.js    le tableau RPE : % du 1RM ou kg, même formule que le carnet
 outils/*.csv             modèle de carnet vierge et exemple, au format de l'export (réimportables, testés)
 img/                     captures de l'app pour la page produit (WebP)
+img/hero/                dessins du bandeau, un par groupe musculaire (SVG)
+img/ambiance/            images d'ambiance du bandeau vide et de l'accueil (WebP, Higgsfield)
 supabase.umd.js          supabase-js 2.115.0, chargé à la demande
 supabase-config.js       URL du projet + clé publique (voir Comptes)
 supabase/schema.sql      tables, politiques RLS et fonctions de synchro
 supabase/test/           le schéma testé sur un vrai Postgres (PGlite) : RLS (254),
                          montée depuis chaque version passée, garde-fou du projet (17)
-test/                    logique métier (162), gardes de sécurité (186), liens (119), gabarits de contenu (15)
+test/                    logique métier (162), gardes de sécurité (198), liens (119), gabarits de contenu (15)
 LICENSE  SECURITY.md  CONTRIBUTING.md  CHANGELOG.md
 .github/                 modèles d'issues, workflow de CI
 .vercelignore            ce que le site ne publie pas : docs, schéma, tests, source du contenu
 docs/seo/                stratégie SEO et contenu : matrice des sujets, recherche, inventaire
 docs/audit-*.md          audits datés du site face à la concurrence
+docs/design/             direction artistique de la refonte
 contenu/                 source des pages de contenu, bibliographie, rubriques (non publié)
 scripts/                 générateur des pages de contenu et son gabarit (non publié)
 ```
