@@ -1,0 +1,250 @@
+# Design system Top Set
+
+Ce fichier sert à prendre des décisions cohérentes, pas à décrire l'interface
+pour le plaisir. Chaque règle dit **ce qu'on fait**, **pourquoi**, et d'où vient
+la décision. Ce qui n'est pas encore tranché est marqué **À décider**.
+
+Point de départ mesuré : [`docs/design/audit-identite-2026-09-13.md`](docs/design/audit-identite-2026-09-13.md).
+Implémentation : les styles d'origine dans `index.html`, puis la couche
+`<style id="refonte">` qui les surcharge. Toute retouche visuelle va dans la
+couche de refonte, jamais dans les règles d'origine.
+
+## 1. Priorités
+
+Dans cet ordre, toujours :
+
+1. rapidité de saisie pendant une séance ;
+2. lisibilité des performances (charges, répétitions, RPE, records) ;
+3. compréhension immédiate de la progression ;
+4. ergonomie mobile ;
+5. fiabilité ;
+6. esthétique et effets, seulement ensuite.
+
+Question à se poser avant chaque changement : *est-ce que ça fait davantage
+penser à une application de musculation professionnelle utilisée tous les
+jours, ou seulement à une interface plus décorée ?* Si c'est seulement plus
+décoré, on ne le fait pas.
+
+## 2. Couleurs
+
+### Base de marque
+
+| Jeton | Valeur | Rôle |
+|---|---|---|
+| `--bg` | `#0c0b0a` | fond, noir chaud |
+| `--s1` / `--s2` / `--s3` | `#151412` / `#1d1b19` / `#27241f` | trois niveaux de surface |
+| `--trait` / `--trait2` | `rgba(255,244,230,.08)` / `.15` | filets et contours |
+| `--ink` | `#f5f2ec` | texte principal, blanc cassé |
+| `--dim` | `#a39b8f` | texte secondaire |
+| `--ink3` | `#7c756b` | texte tertiaire |
+
+### Couleurs de sens — un rôle chacune
+
+| Couleur | Valeur | Sert à | Ne sert jamais à |
+|---|---|---|---|
+| Orange Top Set | `#ff5c38` | la marque, l'action principale, l'onglet actif, le collier du chargement | décorer, désigner un groupe musculaire |
+| Jaune | `#ffd23f` | le record | une alerte, un groupe, un nom qui défile |
+| Vert | `#2bd08a` (`#12c07a` dans les styles d'origine) | série faite, réussite, progression | un groupe musculaire |
+| Bleu | `#4d7cff` | l'information, le commentaire | un groupe musculaire |
+
+**À décider (phase 2)** :
+- une couleur d'erreur à part (aujourd'hui l'erreur est orange, comme l'action) ;
+- le jaune des alertes ;
+- la pastille TOP set.
+
+### Groupes musculaires — validés le 13/09/2026
+
+Les groupes ne reprennent **jamais** une couleur de sens.
+
+| Groupe | Couleur |
+|---|---|
+| Pectoraux | `#ff7aa2` rose vif |
+| Dos | `#22b8a8` turquoise |
+| Épaules | `#a99bff` violet |
+| Bras | `#d45fc4` magenta |
+| Jambes | `#b3d236` citron vert |
+| Abdos | `#c99a6b` cuivre |
+| Cardio | `#6fd6f5` bleu ciel |
+| Autre | `#8f887d` gris chaud |
+
+Source unique : `GROUP_COLORS` dans `app.js`.
+
+Pour changer une teinte, lancer `node scripts/palette-groupes.mjs`. Le script
+vérifie trois choses :
+- chaque groupe reste loin de chaque couleur de sens (écart ≥ 10 en ΔE2000) ;
+- les groupes restent distincts entre eux, en vision normale et pour les
+  trois daltonismes courants (écart ≥ 7 ; l'ancienne palette tombait à 6,7,
+  la nouvelle à 7,5 pour la paire Pectoraux/Bras en tritanopie) ;
+- le contraste sur la surface des cartes est d'au moins 4,5:1.
+
+Une garde de `test/gabarits.test.mjs` refuse aussi qu'un groupe reprenne une
+couleur de sens.
+
+Historique :
+- une palette pastel a été écartée : « trop pastel » ;
+- l'ancienne palette réutilisait l'orange, le jaune, le vert et le bleu.
+
+## 3. Typographie
+
+État actuel :
+- **Bricolage Grotesque** pour la marque, les titres et les grands chiffres ;
+- la **police du système** pour le reste (SF Pro sur iPhone).
+
+Les chiffres des compteurs du chargement sont en `tabular-nums`.
+
+**À décider (phase 2)** :
+- une échelle de six tailles au plus (il y en a 29 aujourd'hui), avec
+  11 px minimum pour un libellé ;
+- trois graisses ;
+- `tabular-nums` sur tous les chiffres de performance ;
+- des libellés et des boutons en minuscules, les capitales réservées à
+  quelques étiquettes courtes.
+
+Contrainte existante : aucune règle ne change la taille des champs de saisie
+listés dans la garde iOS. En dessous de 16 px, Safari zoome.
+
+## 4. Surfaces, profondeur, verre
+
+La profondeur vient des surfaces (`--s1` → `--s3`), pas des bordures épaisses
+ni des ombres décalées.
+
+**Salle noire, en plus sobre (décision du 13/09/2026).** On garde la refonte,
+mais on réduit ce qui est devenu systématique :
+- les dégradés ;
+- les lueurs ;
+- le flou ;
+- les boutons en pointillés ;
+- les points de fond.
+
+Le détail sera tranché en phase 2.
+
+**Le verre : une seule exception, la loupe des onglets** (décision du
+13/09/2026). Aucun nouvel élément en verre ailleurs.
+
+## 5. Mouvement
+
+Une animation sert une interaction, une hiérarchie ou l'identité. Jamais un
+simple décor. Toutes s'arrêtent quand l'appareil demande moins d'animations
+(`prefers-reduced-motion`).
+
+| Élément | Comportement | Durée |
+|---|---|---|
+| Loupe des onglets (`#ongletLoupe`) | glisse sous l'onglet choisi, s'étire dans le sens du mouvement comme une goutte, liseré irisé allumé pendant le trajet, reflet en haut au repos ; ne bouge pas au chargement ni au redimensionnement ; cachée dans les vues sans onglet | 0,46 s |
+| Changement de vue | la vue glisse de 6 px en apparaissant | 0,24 s |
+| Appui | le bouton s'enfonce | instantané |
+
+## 6. Chargement — une seule langue : la barre qu'on charge
+
+On n'affiche jamais un « Chargement… » tout seul.
+
+| Moment | Variante | Détail |
+|---|---|---|
+| « OUI, C'EST PLIÉ » | scène complète, 1,8 s | un disque par exercice, à la couleur de son groupe, hauteur selon le volume ; les colliers orange claquent ; la barre décolle, les disques suivent avec un temps de retard, l'ombre au sol se resserre ; les compteurs montent jusqu'aux chiffres du bilan ; un appui passe au bilan |
+| « REVOIR LE BILAN » | scène rapide, 1,3 s | la même, deux fois plus vite |
+| Compte, synchronisation (`#loader`) | boucle de 2,4 s | charger, clic des colliers, lever, reposer, décharger ; disques neutres, seul le collier est orange |
+| Listes, graphique, fil, admin | `attente()` en petit | quatre disques qui glissent sur une barre de 30 px, puis le texte |
+
+Un essai en vidéo générée a été écarté le 13/09/2026 (Higgsfield, Veo 3.1 Lite,
+4 crédits). Le prompt n'a pas été respecté :
+- disques présents dès la première image ;
+- caméra qui bouge ;
+- reflet façon démo IA ;
+- pas de boucle.
+
+La vidéo pesait aussi 857 Ko, ne se teinte pas selon les données et reste floue
+en petit.
+
+## 7. États
+
+**À décider (phase 2).**
+
+Principe : un état ne se distingue jamais par la seule couleur. Il faut aussi
+une icône, un texte, une position ou un mouvement.
+
+| État | Aujourd'hui | Problème relevé à l'audit |
+|---|---|---|
+| Neutre | surface + filet | — |
+| Fait | ligne teintée verte + coche verte | lisible |
+| Cible / suggéré | bloc bordé orange au-dessus de la grille | prend ~100 px, couleur de la marque |
+| Record | petite étoile jaune dans le coin de la coche | quasi invisible en séance |
+| Alerte | trait gauche jaune | même jaune que le record |
+| Erreur | texte orange | même orange que l'action |
+
+## 8. Icônes
+
+**À décider (phase 3).**
+
+Aujourd'hui, 13 SVG sur une grille de 24 px, avec 10 épaisseurs de trait
+différentes, mêlés à des caractères (⇄ ↺ ◷ ✎ ✕) et à des emoji (🟢 🟠 🔴 ⚪).
+
+Cible :
+- un seul jeu, grille de 24 px ;
+- un seul trait, 1,9 comme les onglets ;
+- extrémités rondes ;
+- aucun caractère de texte ni emoji utilisé comme icône.
+
+## 9. Images et assets générés par IA
+
+- Top Set n'est pas une galerie d'images IA. Une image doit être éditoriale et
+  servir la force, la précision, la progression ou la discipline.
+- **Higgsfield** sert d'abord au mouvement. Il faut peu de générations, avec
+  des prompts précis :
+  - composition ;
+  - mouvement ;
+  - durée ;
+  - caméra ;
+  - lumière ;
+  - matériaux ;
+  - point de départ et d'arrivée ;
+  - ce qu'il faut éviter.
+- On annonce le coût réel avant de dépenser : une vidéo coûte au moins
+  4 crédits.
+- En cas de doute sur un résultat : une ressource libre de droits, ou on
+  demande. On n'intègre jamais une génération médiocre.
+- Les pages de contenu gardent leurs schémas SVG et de vraies captures de
+  l'app, sans photos (décision du 11/09/2026).
+- Poids : une image d'interface doit rester sous 25 Ko en WebP, et partir dans
+  le cache hors ligne (`A_PRECHARGER` dans `sw.js`).
+
+## 10. Responsive et ergonomie en séance
+
+- **Téléphone d'abord.** Sous 900 px, les onglets sont en bas, sous le pouce.
+  Ils se rangent quand le clavier sort (`body.clavier`), dans une conversation
+  et sur l'écran de bilan.
+- **Cibles tactiles de 44 px** sur la carte d'exercice. Restent sous ce seuil :
+  - REVOIR LE BILAN (27 px de haut) ;
+  - la date de la dernière fois (32 px) ;
+  - les onglets semaine / mois / année (42 px).
+- **Zones sûres de l'iPhone** (`env(safe-area-inset-*)`) sur toutes les barres
+  fixes.
+- **Vérifier à 320, 360, 375 et 430 px**, et dans un superset.
+
+## 11. Méthode avant un changement important
+
+1. Lire le code concerné.
+2. Chercher le composant ou le motif qui existe déjà, et le réutiliser.
+3. Relire ce fichier.
+4. Ne pas créer un nouveau motif sans nécessité.
+5. Vérifier le responsive et l'accessibilité.
+6. Vérifier les interactions existantes : focus iOS, clavier, retours en
+   arrière.
+7. Vérifier que les données et le comportement métier n'ont pas bougé :
+   `localStorage`, formats JSON et CSV, mode sans compte, hors ligne.
+
+Si le changement rouvre une décision déjà clôturée, le signaler et demander
+avant de le faire.
+
+### Décisions clôturées à ne pas rouvrir en silence
+
+- **Carte d'exercice** (11–12/09) :
+  - une ligne par série ;
+  - outils seulement sur la série ouverte ;
+  - commentaire par série ;
+  - superset sous « + SÉRIE ».
+- **Colonne de la dernière fois** (13/09) : elle se lit, ne recopie pas, et sa
+  date ouvre la séance d'avant.
+- **Pages de contenu** (11/09) : sans photos.
+- **Salle noire** (13/09) : on la garde, en plus sobre.
+- **Loupe Liquid Glass** (13/09) : sur les onglets uniquement.
+- **Palette des groupes** (13/09) : section 2.
+- **Loader** (13/09) : en code, pas en vidéo générée.

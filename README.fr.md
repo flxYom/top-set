@@ -105,6 +105,30 @@ deux images d'ambiance générées avec Higgsfield (Seedream 5 Lite), en WebP de
 chargement. Les choix, les sources et ce qui a été écarté (Pinterest, Canva) :
 [`docs/design/direction-refonte-2026-09.md`](docs/design/direction-refonte-2026-09.md).
 
+**La loupe des onglets, les couleurs des groupes, les attentes (septembre
+2026).** Sous l'onglet actif, une pièce de verre (`#ongletLoupe`, placée par
+`placerLoupe()` à chaque `montrerVue`) : un reflet en haut, un liseré irisé à
+peine visible. Quand on change d'onglet, elle glisse, s'étire dans le sens du
+mouvement et son liseré s'allume en arc-en-ciel le temps du trajet (0,46 s) ;
+le libellé reste au-dessus, net. C'est la seule pièce de verre assumée de
+l'app ; elle saute sans animation si l'appareil en demande moins. Les
+**groupes musculaires** ne reprennent plus aucune couleur de sens — l'orange
+(marque, action), le jaune (record), le vert (réussite), le bleu (information) :
+Pectoraux `#ff7aa2`, Dos `#22b8a8`, Épaules `#a99bff`, Bras `#d45fc4`, Jambes
+`#b3d236`, Abdos `#c99a6b`, Cardio `#6fd6f5`, Autre `#8f887d`.
+`node scripts/palette-groupes.mjs` vérifie l'écart avec les couleurs de sens,
+l'écart entre groupes pour les trois daltonismes courants et le contraste ; une
+garde refuse qu'un groupe reprenne une couleur de sens. Les **attentes** parlent
+une seule langue, la barre qu'on charge : après « OUI, C'EST PLIÉ » (1,8 s) et
+désormais aussi « REVOIR LE BILAN » (version rapide, 1,3 s), un disque par
+exercice à la couleur de son groupe, les colliers orange claquent, la barre
+décolle, les disques suivent avec un temps de retard et l'ombre au sol se
+resserre ; un appui passe au bilan. Le loader du compte joue la même scène en
+boucle, avec des disques neutres. Les attentes courtes (listes, graphique, fil
+de messages, admin) montrent la barre en petit (`attente()`) au lieu d'un
+« Chargement… » seul. Les règles et ce qui reste à décider :
+[`DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md).
+
 **Des cibles de 44 px.** Mesurés sur un écran de 375 px, huit boutons de la
 carte faisaient moins que les 44 points recommandés par Apple : le menu `⋯`
 (40), la recopie de la suggestion (36), les pas `−` `+`, le repos, le
@@ -848,15 +872,15 @@ supabase-config.js       URL du projet + clé publique (voir Comptes)
 supabase/schema.sql      tables, politiques RLS et fonctions de synchro
 supabase/test/           le schéma testé sur un vrai Postgres (PGlite) : RLS (254),
                          montée depuis chaque version passée, garde-fou du projet (17)
-test/                    logique métier (162), gardes de sécurité (198), liens (119), gabarits de contenu (15)
+test/                    logique métier (162), gardes de sécurité (204), liens (119), gabarits de contenu (15)
 LICENSE  SECURITY.md  CONTRIBUTING.md  CHANGELOG.md
 .github/                 modèles d'issues, workflow de CI
 .vercelignore            ce que le site ne publie pas : docs, schéma, tests, source du contenu
 docs/seo/                stratégie SEO et contenu : matrice des sujets, recherche, inventaire
 docs/audit-*.md          audits datés du site face à la concurrence
-docs/design/             direction artistique de la refonte
+docs/design/             direction artistique de la refonte, audit d'identité ; règles dans DESIGN_SYSTEM.md
 contenu/                 source des pages de contenu, bibliographie, rubriques (non publié)
-scripts/                 générateur des pages de contenu et son gabarit (non publié)
+scripts/                 générateur des pages de contenu et son gabarit, vérificateur de la palette des groupes (non publiés)
 ```
 
 Les icônes et l'image de partage sont générées à partir de leur géométrie par un

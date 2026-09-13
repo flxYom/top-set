@@ -1239,20 +1239,27 @@
   }
   .loader[hidden]{display:none;}
   .loader-boite{width:100%;max-width:300px;text-align:center;display:flex;flex-direction:column;align-items:center;}
-  /* La meme barre que le bilan, en boucle : on charge, on leve, on decharge. */
-  .loader .barre-scene{height:100px;animation:lever 1.8s ease-in-out infinite;}
-  .loader .disque{opacity:1;animation:charger-g 1.8s cubic-bezier(.3,1.3,.5,1) infinite;animation-delay:calc(var(--i) * 90ms);}
+  /* La meme barre que le bilan, en boucle et sans couleur de sens : on charge,
+     les colliers claquent, on leve, on repose, on decharge. Les disques sont
+     dans les tons de la barre ; seul le collier porte l'orange de la marque. */
+  .loader .barre-scene{height:110px;}
+  .loader .disque{opacity:1;animation:charger-g 2.4s cubic-bezier(.3,1.3,.5,1) infinite;animation-delay:calc(var(--i) * 90ms);}
   .loader .barre-cote.droite .disque{animation-name:charger-d;}
+  .loader .collier{opacity:1;animation:collier-boucle 2.4s ease-out infinite;}
+  .loader .barre-leve{animation:lever 2.4s ease-in-out infinite;}
+  .loader .barre-ombre{animation:ombre 2.4s ease-in-out infinite;}
   @keyframes charger-g{
-    0%{opacity:0;transform:translateX(-50px);} 25%,75%{opacity:1;transform:none;} 100%{opacity:0;transform:translateX(-50px);}
+    0%{opacity:0;transform:translateX(-50px);} 22%,80%{opacity:1;transform:none;} 100%{opacity:0;transform:translateX(-50px);}
   }
   @keyframes charger-d{
-    0%{opacity:0;transform:translateX(50px);} 25%,75%{opacity:1;transform:none;} 100%{opacity:0;transform:translateX(50px);}
+    0%{opacity:0;transform:translateX(50px);} 22%,80%{opacity:1;transform:none;} 100%{opacity:0;transform:translateX(50px);}
   }
-  @keyframes lever{ 0%,30%{transform:none;} 45%,60%{transform:translateY(-12px);} 75%,100%{transform:none;} }
-  .loader-texte{margin:14px 0 0;font-size:13px;font-weight:800;color:var(--dim);}
+  @keyframes collier-boucle{ 0%,26%{opacity:0;transform:scaleY(.2);} 32%,74%{opacity:1;transform:none;} 80%,100%{opacity:0;transform:scaleY(.2);} }
+  @keyframes lever{ 0%,36%{transform:none;} 48%{transform:translateY(-16px);} 53%{transform:translateY(-13px);} 60%{transform:translateY(-14px);} 72%,100%{transform:none;} }
+  @keyframes ombre{ 0%,36%{transform:scaleX(1);opacity:1;} 48%,60%{transform:scaleX(.7);opacity:.4;} 72%,100%{transform:scaleX(1);opacity:1;} }
+  .loader-texte{margin:18px 0 0;font-size:14px;font-weight:600;color:var(--dim);}
   @media (prefers-reduced-motion: reduce){
-    .loader .barre-scene,.loader .disque{animation:none;opacity:1;}
+    .loader .disque,.loader .collier,.loader .barre-leve,.loader .barre-ombre{animation:none;opacity:1;}
   }
   .sheet-etat{
     display:flex;align-items:center;gap:8px;
@@ -1589,41 +1596,77 @@
     border-left:3px solid var(--yellow);padding-left:9px;
   }
 
-  /* Le chargement : on charge une barre. Les disques glissent sur la tige un
-     par un, du centre vers l'exterieur, puis la barre se leve. */
+  /* Le chargement : on charge une barre. Les disques glissent sur les
+     manchons du centre vers l'exterieur, les colliers claquent, puis la barre
+     decolle : elle monte avec un leger rebond, les disques suivent avec un
+     temps de retard, et son ombre au sol se resserre. */
   .bilan-chargement{padding:14px 0 4px;align-items:center;text-align:center;cursor:pointer;}
-  .barre-scene{
-    position:relative;width:100%;max-width:340px;height:120px;
-    display:flex;align-items:center;justify-content:center;
-    transition:transform .35s cubic-bezier(.3,1.6,.5,1);
+  .barre-scene{position:relative;width:100%;max-width:340px;height:132px;}
+  .barre-leve{
+    position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    transition:transform .5s cubic-bezier(.3,1.45,.5,1);
+  }
+  .barre-ombre{
+    position:absolute;left:11%;right:11%;bottom:-2px;height:10px;border-radius:50%;
+    background:radial-gradient(closest-side,rgba(0,0,0,.7),rgba(0,0,0,0));
+    transition:transform .5s cubic-bezier(.3,1.45,.5,1),opacity .5s ease;
   }
   .bilan-chargement .barre-scene::after{
-    content:'';position:absolute;left:6%;right:6%;bottom:-6px;height:3px;background:var(--line);
+    content:'';position:absolute;left:6%;right:6%;bottom:2px;height:1px;background:var(--line);
   }
-  .bilan-chargement.leve .barre-scene{transform:translateY(-14px);}
-  .barre-tige{flex:0 0 34%;height:8px;background:var(--ink);border-radius:2px;}
-  .barre-cote{flex:1;height:100%;display:flex;align-items:center;gap:3px;position:relative;}
-  .barre-cote::before{content:'';position:absolute;top:50%;left:0;right:0;height:6px;margin-top:-3px;background:var(--dim);}
-  .barre-cote.gauche{flex-direction:row-reverse;}
+  .bilan-chargement.leve .barre-leve{transform:translateY(-16px);}
+  .bilan-chargement.leve .barre-ombre{transform:scaleX(.7);opacity:.4;}
+  .bilan-chargement.leve .disques{animation:disques-suivent .55s cubic-bezier(.3,.9,.4,1);}
+  .barre-tige{flex:0 0 34%;height:6px;background:#d6cfc3;border-radius:3px;}
+  .barre-cote{flex:1;height:100%;display:flex;align-items:center;gap:2px;position:relative;}
+  .barre-cote::before{content:'';position:absolute;top:50%;left:0;right:0;height:5px;margin-top:-2.5px;border-radius:2px;background:var(--dim);}
+  .barre-cote.gauche,.barre-cote.gauche .disques{flex-direction:row-reverse;}
+  .disques{position:relative;display:flex;align-items:center;gap:2px;}
   .disque{
-    position:relative;flex:none;width:13px;height:var(--h);
-    background:var(--c);border:2px solid #0d0c0a;border-radius:3px;
-    box-shadow:2px 2px 0 rgba(0,0,0,.45);
+    position:relative;flex:none;width:12px;height:var(--h);
+    background:var(--c);border-radius:3px;
+    box-shadow:inset -3px 0 0 rgba(0,0,0,.22);
     opacity:0;
-    animation:disque-g .42s cubic-bezier(.2,1.4,.4,1) forwards;
-    animation-delay:calc(var(--i) * 170ms);
+    animation:disque-g .46s cubic-bezier(.2,1.35,.4,1) forwards;
+    animation-delay:calc(var(--i) * 140ms);
   }
-  .barre-cote.droite .disque{animation-name:disque-d;}
-  @keyframes disque-g{ from{opacity:0;transform:translateX(-60px);} to{opacity:1;transform:none;} }
-  @keyframes disque-d{ from{opacity:0;transform:translateX(60px);} to{opacity:1;transform:none;} }
-  .barre-compteurs{margin:14px 0 0;font-size:13px;font-weight:800;color:var(--dim);}
-  .barre-compteurs b{font-size:28px;color:var(--ink);font-variant-numeric:tabular-nums;letter-spacing:-.02em;}
-  .barre-defile{margin:0;min-height:18px;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--yellow);}
-  .barre-passer{margin:8px 0 0;font-size:10.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);}
+  .barre-cote.droite .disque{animation-name:disque-d;box-shadow:inset 3px 0 0 rgba(0,0,0,.22);}
+  .collier{
+    position:relative;flex:none;width:6px;height:20px;border-radius:2px;background:var(--orange);
+    opacity:0;animation:collier .24s cubic-bezier(.2,1.6,.4,1) forwards;
+    animation-delay:calc(var(--n, 1) * 140ms + 260ms);
+  }
+  /* « Revoir le bilan » : la meme scene, deux fois plus vite. */
+  .bilan-chargement.rapide .disque{animation-duration:.34s;animation-delay:calc(var(--i) * 80ms);}
+  .bilan-chargement.rapide .collier{animation-delay:calc(var(--n, 1) * 80ms + 160ms);}
+  @keyframes disque-g{ from{opacity:0;transform:translateX(-70px);} to{opacity:1;transform:none;} }
+  @keyframes disque-d{ from{opacity:0;transform:translateX(70px);} to{opacity:1;transform:none;} }
+  @keyframes collier{ from{opacity:0;transform:scaleY(.2);} to{opacity:1;transform:none;} }
+  @keyframes disques-suivent{ 0%{transform:none;} 30%{transform:translateY(4px);} 65%{transform:translateY(-1.5px);} 100%{transform:none;} }
+  .barre-compteurs{margin:16px 0 0;font-size:14px;font-weight:600;color:var(--dim);}
+  .barre-compteurs b{font-size:30px;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums;letter-spacing:-.02em;}
+  .barre-defile{margin:0;min-height:20px;font-size:14px;font-weight:600;color:var(--ink);}
+  .barre-passer{margin:8px 0 0;font-size:12px;font-weight:500;color:var(--dim);}
   @media (prefers-reduced-motion:reduce){
     .disque{animation:none;opacity:1;}
-    .barre-scene{transition:none;}
+    .collier{animation:none;opacity:1;}
+    .barre-leve,.barre-ombre{transition:none;}
+    .bilan-chargement.leve .disques{animation:none;}
   }
+
+  /* L'attente courte (une liste, un graphique, un fil) : la meme barre en
+     petit. Les disques glissent sur les manchons puis en ressortent. */
+  .attente{display:inline-flex;flex-direction:column;align-items:center;gap:10px;}
+  .attente-barre{display:flex;align-items:center;gap:2px;height:20px;}
+  .attente-barre b{width:30px;height:3px;border-radius:2px;background:var(--dim);}
+  .attente-barre i{width:4px;height:12px;border-radius:1.5px;background:var(--ink);opacity:.2;animation:attente-disque 1.3s ease-in-out infinite;}
+  .attente-barre i:nth-child(-n+2){--sens:-6px;}
+  .attente-barre i:nth-child(n+4){--sens:6px;}
+  .attente-barre i:nth-child(2),.attente-barre i:nth-child(4){height:16px;}
+  .attente-barre i:nth-child(1),.attente-barre i:nth-child(5){animation-delay:.14s;}
+  @keyframes attente-disque{ 0%,100%{opacity:.15;transform:translateX(var(--sens));} 40%,70%{opacity:1;transform:none;} }
+  .attente-texte{font-size:13px;font-weight:500;color:var(--dim);}
+  @media (prefers-reduced-motion:reduce){ .attente-barre i{animation:none;opacity:.7;} }
 
   .bilan-tag{
     align-self:flex-start;
@@ -2198,6 +2241,54 @@
   /* « 7 – 13 sept. 2026 » passait sur deux lignes a 375 px : la semaine tient
      sur une ligne, quitte a raccourcir un peu la police sur les petits ecrans. */
   .week-label{white-space:nowrap;font-size:clamp(13px, 3.7vw, 15px);min-width:0;overflow:hidden;text-overflow:ellipsis;}
+
+  /* ---- La loupe des onglets ------------------------------------------------ */
+  /* Une piece de verre sous l'onglet actif. Au repos : un reflet en haut et un
+     liseré irisé a peine visible. Quand on change d'onglet, elle glisse,
+     s'etire dans le sens du mouvement comme une goutte, et son liseré
+     s'allume en arc-en-ciel le temps du trajet. Elle passe sous le texte :
+     le libelle reste net. Seule exception assumee au « pas de verre » (voir
+     docs/design/audit-identite-2026-09-13.md). */
+  @property --loupe-angle{syntax:'<angle>';inherits:false;initial-value:210deg;}
+  #mainTabs{position:relative;}
+  .topbar-tab{position:relative;z-index:1;}
+  .topbar-tab.active,.topbar-tab.active:hover{background:transparent;box-shadow:none;}
+  .onglet-loupe{
+    position:absolute;top:0;left:0;height:100%;width:0;z-index:0;
+    border-radius:12px;pointer-events:none;
+    translate:var(--x,0px) 0;
+    background:linear-gradient(180deg,rgba(255,248,238,.13) 0%,rgba(255,248,238,.04) 48%,rgba(255,248,238,.08) 100%);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.24),inset 0 -1px 0 rgba(255,255,255,.07),0 8px 22px -10px rgba(0,0,0,.9);
+    -webkit-backdrop-filter:saturate(1.6) brightness(1.12);backdrop-filter:saturate(1.6) brightness(1.12);
+  }
+  .onglet-loupe.pose{transition:translate .46s cubic-bezier(.3,1.25,.45,1),width .46s cubic-bezier(.3,1.25,.45,1);}
+  .onglet-loupe::before{
+    content:'';position:absolute;inset:0;border-radius:inherit;padding:1.5px;
+    background:conic-gradient(from var(--loupe-angle),#ff5c38,#ffd23f,#2bd08a,#47c8ff,#8f7bff,#ff6fae,#ff5c38);
+    -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+    -webkit-mask-composite:xor;mask-composite:exclude;
+    opacity:.2;transition:opacity .5s ease;
+  }
+  .onglet-loupe::after{
+    content:'';position:absolute;left:18%;right:18%;top:2px;height:30%;
+    border-radius:10px 10px 50% 50% / 10px 10px 100% 100%;
+    background:linear-gradient(180deg,rgba(255,255,255,.13),rgba(255,255,255,0));
+  }
+  .onglet-loupe.glisse{animation:loupe-goutte .46s cubic-bezier(.3,.9,.4,1);}
+  .onglet-loupe.glisse::before{opacity:.95;animation:loupe-irise .46s ease-out;}
+  .onglet-loupe.glisse.gauche::before{animation-direction:reverse;}
+  @keyframes loupe-goutte{0%{scale:1 1;}30%{scale:1.2 .88;}64%{scale:.96 1.04;}100%{scale:1 1;}}
+  @keyframes loupe-irise{from{--loupe-angle:90deg;}to{--loupe-angle:330deg;}}
+  @media (max-width:899px){
+    .topbar-tab.active::before{content:none;}
+    .onglet-loupe{top:2px;height:calc(100% - 4px);border-radius:16px;}
+    .topbar-tab.active .onglet-ico{scale:1.06;}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .onglet-loupe.pose{transition:none;}
+    .onglet-loupe.glisse,.onglet-loupe.glisse::before{animation:none;}
+    .onglet-loupe.glisse::before{opacity:.2;}
+  }
 </style>
 </head>
 
@@ -2219,6 +2310,7 @@
 
   <nav class="topbar">
     <div class="topbar-inner" id="mainTabs">
+      <span class="onglet-loupe" id="ongletLoupe" aria-hidden="true"></span>
       <button type="button" class="topbar-tab active" data-view="planning"><svg class="onglet-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17M8.5 3v4M15.5 3v4"/></svg><span>PLANNING</span></button>
       <button type="button" class="topbar-tab" data-view="seances"><svg class="onglet-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 7.5v9M3.5 10v4M17.5 7.5v9M20.5 10v4M6.5 12h11"/></svg><span>SÉANCES</span></button>
       <button type="button" class="topbar-tab" data-view="recap"><svg class="onglet-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 19.5V12M12 19.5V5M19 19.5v-5"/></svg><span>RÉCAP</span></button>
@@ -2622,9 +2714,12 @@
 <div class="loader" id="loader" hidden>
   <div class="loader-boite">
     <div class="barre-scene" aria-hidden="true">
-      <div class="barre-cote gauche"><i class="disque" style="--h:86px;--c:var(--orange);--i:0"></i><i class="disque" style="--h:66px;--c:var(--yellow);--i:1"></i><i class="disque" style="--h:48px;--c:var(--green);--i:2"></i></div>
-      <div class="barre-tige"></div>
-      <div class="barre-cote droite"><i class="disque" style="--h:86px;--c:var(--orange);--i:0"></i><i class="disque" style="--h:66px;--c:var(--yellow);--i:1"></i><i class="disque" style="--h:48px;--c:var(--green);--i:2"></i></div>
+      <i class="barre-ombre"></i>
+      <div class="barre-leve">
+        <div class="barre-cote gauche"><div class="disques"><i class="disque" style="--h:86px;--c:#d6cfc3;--i:0"></i><i class="disque" style="--h:66px;--c:#8f887d;--i:1"></i><i class="disque" style="--h:48px;--c:#5c564e;--i:2"></i></div><i class="collier"></i></div>
+        <div class="barre-tige"></div>
+        <div class="barre-cote droite"><div class="disques"><i class="disque" style="--h:86px;--c:#d6cfc3;--i:0"></i><i class="disque" style="--h:66px;--c:#8f887d;--i:1"></i><i class="disque" style="--h:48px;--c:#5c564e;--i:2"></i></div><i class="collier"></i></div>
+      </div>
     </div>
     <p class="loader-texte" id="loaderTexte">Un instant…</p>
   </div>

@@ -501,7 +501,7 @@ console.log('\n== Le chargement du bilan et les dessins du bandeau ==');
 ok('un appui pendant le chargement passe au bilan',
    SRC.indexOf("else if (e.target.closest('.bilan-chargement')) passerAuBilan(bilanJour);") > -1);
 ok('le compteur s arrete sur les chiffres du bilan',
-   /function chargerPuisBilan\(ds\)\{[\s\S]{0,1200}var b = bilanDuJour\(ds\);/.test(SRC));
+   /function chargerPuisBilan\(ds, rapide\)\{[\s\S]{0,1200}var b = bilanDuJour\(ds\);/.test(SRC));
 ok('les disques s arretent quand l appareil le demande',
    /@media \(prefers-reduced-motion:reduce\)\{\s*\.disque\{animation:none;opacity:1;\}/.test(HTML));
 const DESSINS = ['pectoraux', 'dos', 'epaules', 'bras', 'jambes', 'abdos', 'cardio'];
@@ -525,6 +525,27 @@ ok('la barre du bas se range quand le clavier sort',
 ok('les images d ambiance existent et partent dans le cache hors ligne',
    ['bandeau', 'accueil'].every(n => existsSync(new URL('../img/ambiance/' + n + '.webp', import.meta.url))
      && SW.indexOf("'img/ambiance/" + n + ".webp'") > -1 && HTML.indexOf("img/ambiance/" + n + ".webp") > -1));
+
+console.log('\n== Loupe, palette des groupes, attentes ==');
+// Revoir un bilan deja vu passe aussi par la barre, en plus court.
+ok('revoir le bilan passe par le chargement rapide',
+   SRC.indexOf('else if (bilanDuJour(ds)) chargerPuisBilan(ds, true);') > -1);
+// Plus aucune attente en simple texte : la meme barre, en petit.
+ok('les attentes courtes utilisent la barre en petit',
+   !/>Chargement…</.test(SRC) && (SRC.match(/attente\(/g) || []).length >= 8);
+// Un groupe musculaire ne reprend jamais une couleur de sens (marque,
+// record, reussite, info) : sinon « orange » ne veut plus rien dire.
+const couleursGroupes = ((SRC.match(/var GROUP_COLORS = \{([\s\S]*?)\};/) || ['', ''])[1].match(/#[0-9a-f]{6}/gi) || []).map(c => c.toLowerCase());
+ok('aucun groupe musculaire ne porte une couleur de sens',
+   couleursGroupes.length === 8 && couleursGroupes.every(c => !['#ff5c38', '#ffd23f', '#12c07a', '#2bd08a', '#4d7cff'].includes(c)));
+const blocLoader = HTML.slice(HTML.indexOf('<div class="loader" id="loader"'), HTML.indexOf('<p class="loader-texte"'));
+ok('le loader global n habille pas ses disques des couleurs de sens',
+   blocLoader.indexOf('class="collier"') > -1 && !/--c:var\(--/.test(blocLoader));
+ok('la loupe vit dans la barre d onglets et suit l onglet actif',
+   /<div class="topbar-inner" id="mainTabs">\s*<span class="onglet-loupe" id="ongletLoupe" aria-hidden="true"><\/span>/.test(HTML)
+   && /placerLoupe\(true\);\n  \}/.test(SRC));
+ok('la loupe ne glisse pas quand l appareil demande moins d animations',
+   /@media \(prefers-reduced-motion:reduce\)\{\s*\.onglet-loupe\.pose\{transition:none;\}/.test(HTML));
 
 console.log(`\n${pass} reussis, ${fail} echoues`);
 process.exit(fail ? 1 : 0);

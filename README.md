@@ -104,6 +104,28 @@ the page is gone, 86 KB less on every load. Decisions, sources and what was
 ruled out (Pinterest, Canva), in French:
 [`docs/design/direction-refonte-2026-09.md`](docs/design/direction-refonte-2026-09.md).
 
+**The tab lens, muscle-group colours, waiting states (September 2026).** Under
+the active tab sits a piece of glass (`#ongletLoupe`, placed by `placerLoupe()`
+on every `montrerVue`): a highlight on top, a barely visible iridescent rim.
+Switching tabs, it slides, stretches in the direction of travel and its rim
+lights up in rainbow colours for the trip (0.46 s); the label stays above it,
+sharp. It is the app's only deliberate piece of glass, and it jumps without
+animation when the device asks for reduced motion. **Muscle groups** no longer
+reuse any meaning colour — orange (brand, action), yellow (record), green
+(success), blue (information): Pectoraux `#ff7aa2`, Dos `#22b8a8`, Épaules
+`#a99bff`, Bras `#d45fc4`, Jambes `#b3d236`, Abdos `#c99a6b`, Cardio `#6fd6f5`,
+Autre `#8f887d`. `node scripts/palette-groupes.mjs` checks the distance to the
+meaning colours, the distance between groups under the three common colour
+vision deficiencies, and contrast; a guard refuses a group reusing a meaning
+colour. **Waiting** speaks one language, loading a barbell: after « OUI, C'EST
+PLIÉ » (1.8 s) and now also « REVOIR LE BILAN » (quick version, 1.3 s), one
+plate per exercise in its group colour, orange collars snap on, the bar lifts
+off, the plates follow a beat late and the floor shadow tightens; a tap skips
+to the summary. The account loader plays the same scene in a loop with neutral
+plates. Short waits (lists, chart, message thread, admin) show the bar small
+(`attente()`) instead of a bare « Chargement… ». Rules and open decisions, in
+French: [`DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md).
+
 **44 px targets.** Measured on a 375 px screen, eight buttons on the card were
 below Apple's recommended 44 points: the `⋯` menu (40), the suggestion copy
 (36), the `−` `+` steps, rest, comment and bin (40), superset (40), and the
@@ -714,15 +736,15 @@ supabase-config.js       project URL + public anon key (see Accounts)
 supabase/schema.sql      tables, RLS policies and sync functions
 supabase/test/           the schema tested on a real Postgres (PGlite): RLS (254),
                          upgrade from every past version, wrong-project guard (17)
-test/                    business logic (162), hardening guards (198), links (119), content templates (15)
+test/                    business logic (162), hardening guards (204), links (119), content templates (15)
 LICENSE  SECURITY.md  CONTRIBUTING.md  CHANGELOG.md
 .github/                 issue templates, CI workflow
 .vercelignore            what the site does not publish: docs, schema, tests, content sources
 docs/seo/                SEO and content strategy: topic matrix, research, inventory
 docs/audit-*.md          dated audits of the site against competitors
-docs/design/             art direction of the redesign
+docs/design/             art direction of the redesign, identity audit; rules in DESIGN_SYSTEM.md
 contenu/                 content page sources, bibliography, sections (not published)
-scripts/                 content page generator and its template (not published)
+scripts/                 content page generator and its template, group palette checker (not published)
 ```
 
 Icons and the social image are generated from geometry by a script rather than
