@@ -11,6 +11,16 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ### Fixed
 
+- **The last-time column still pasted last week's numbers.** Even limited to
+  empty rows, a tap on a cell 4 px from the weight field logged a set that was
+  never lifted. The column is now plain text. Its **date heading** is an
+  outlined button that opens the previous session in the planning, and an
+  orange « RETOUR À MA SÉANCE » bar at the bottom brings you back to the
+  starting day and exercise; it hides on other tabs and clears once you are
+  back. Service worker cache `topset-v23` → `topset-v24`.
+- **Eight card buttons were under 44 px** (menu, suggestion copy, steps, rest,
+  comment, bin, superset; the exercise name was 22 px tall). All are 44 px, the
+  name 40.
 - **Two `<h1>` on the home page.** The header logo is now a paragraph; the only
   heading is the welcome screen's « Ton carnet de musculation ».
 - **A stray tap on a set already logged overwrote it with last week's numbers.**
@@ -54,6 +64,16 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ### Changed
 
+- **The end-of-session loader loads a barbell.** One plate per exercise slides
+  onto each side in its muscle group's colour, tallest for the heaviest volume;
+  the set and kilogram counters count up to the recap's own figures while the
+  exercise names scroll, then the bar lifts. A tap skips straight to the recap.
+  The account loader uses the same barbell, looping. Both stop under
+  `prefers-reduced-motion`.
+- **The day banner draws the session's dominant muscle group** — bench, squat
+  rack, bar and rings, dumbbells, EZ bar, ab wheel, heartbeat and rope — as grey
+  SVGs tinted by the group colour, precached for offline use.
+- **A done set's whole row turns faintly green**, as in Hevy.
 - **The first screen leads with « COMMENCER SANS COMPTE ».** It opened on a
   sign-up form, with « continuer sans compte » as a small underlined link at the
   very bottom — while the site description and the product page promise « sans

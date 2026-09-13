@@ -77,14 +77,26 @@ prenait trois lignes — poids, puis type, puis RPE et repos — et un exercice 
 cinq séries remplissait deux écrans. Le **numéro** porte le type : on le touche,
 le menu natif s'ouvre, et `TOP`, `B.O.` ou `ÉCH.` prend sa place. La **colonne
 de la dernière fois** porte la date de la séance d'avant — « PRÉC. » ne se
-comprenait pas —, montre la même série ce jour-là (la 3e en face de la 3e) et la recopie
-d'un appui dans *sa* ligne — poids, reps, type ; le RPE reste celui d'aujourd'hui.
-Pour un exercice sans historique, elle n'apparaît pas (`.sans-prec`) : elle
-n'aurait que des tirets. Elle ne recopie que dans une **ligne vide** : un appui
-de travers sur une série déjà faite y collait les chiffres de la semaine
-d'avant, et effaçait ce qu'on venait de soulever.
-Une série **faite** perd ses cadres et se lit comme du texte ; elle reste
+comprenait pas —, et montre la même série ce jour-là (la 3e en face de la 3e).
+Elle se **lit**, elle ne recopie plus rien : elle recopiait d'un appui, dans une
+case posée à 4 px de celle du poids, et un appui de travers notait une série
+qu'on n'avait pas faite. La **date en tête de colonne** est un vrai bouton,
+encadré, avec sa flèche : il ouvre la séance d'avant dans le planning, et une
+barre orange en bas de l'écran, `RETOUR À MA SÉANCE`, ramène au jour de départ,
+sur l'exercice d'où l'on était parti. La barre suit un aller-retour, pas une
+chaîne : depuis la séance d'avant, sa propre date mène plus loin, mais le retour
+vise toujours le point de départ. Elle se cache dans les autres onglets et
+disparaît quand on revient au jour de départ, par elle ou par les pastilles.
+Pour un exercice sans historique, la colonne n'apparaît pas (`.sans-prec`).
+Une série **faite** perd ses cadres, sa ligne se teinte de vert — on voit où on
+en est sans lire les coches une à une, comme chez Hevy — et elle reste
 modifiable d'un appui.
+
+**Des cibles de 44 px.** Mesurés sur un écran de 375 px, huit boutons de la
+carte faisaient moins que les 44 points recommandés par Apple : le menu `⋯`
+(40), la recopie de la suggestion (36), les pas `−` `+`, le repos, le
+commentaire et la corbeille (40), le superset (40), et le nom de l'exercice
+(22 px de haut). Tous font 44 px ; le nom, 40.
 
 **La série ouverte.** Une seule par exercice, encadrée en orange : par défaut la
 première pas encore faite. Dessous, ses outils — `−` `+` (2,5 kg, ou 5 s au
@@ -154,6 +166,14 @@ avait été assistée. `normalizeExercise()` range un ancien commentaire d'exerc
 sur sa dernière série (après le sien, s'il y en avait un), là où « assisté sur
 la dernière » voulait dire quelque chose ; rien ne se perd. Un exercice sans
 série garde le sien, faute d'endroit où le poser.
+
+**Le bandeau du jour prend un dessin** selon le groupe musculaire dominant de
+la séance : un banc pour les pectoraux, une cage à squat pour les jambes, une
+barre et des anneaux pour le dos, des haltères pour les épaules, une barre EZ
+pour les bras, une roue pour les abdos, un tracé cardiaque et une corde pour le
+cardio. Des SVG en gris (`img/hero/`), que la teinte du groupe colore
+par-dessus comme la photo ; « Autre » et la séance vide gardent la photo des
+disques. Ils sont dans la coquille du service worker : hors ligne aussi.
 
 **La fin de séance.** En bas du planning, une fois quelque chose de noté,
 `✓ TERMINER MA SÉANCE` pose la question — en signalant les séries notées mais

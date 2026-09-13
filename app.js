@@ -6,6 +6,12 @@
     'Pectoraux':'#ff5c38','Dos':'#4d7cff','Épaules':'#ffd23f','Bras':'#c9a3ff',
     'Jambes':'#12c07a','Abdos':'#ff9f43','Cardio':'#ff6fae','Autre':'#b5ada0'
   };
+  // Le dessin du bandeau, par groupe dominant. « Autre » et la seance vide
+  // gardent la photo des disques.
+  var ILLUSTRATIONS = {
+    'Pectoraux':'pectoraux','Dos':'dos','Épaules':'epaules','Bras':'bras',
+    'Jambes':'jambes','Abdos':'abdos','Cardio':'cardio'
+  };
   var EXERCISE_DB = {
     'Développé couché':'Pectoraux','Développé couché prise serrée':'Pectoraux','Développé incliné':'Pectoraux',
     'Développé incliné haltères':'Pectoraux','Développé décliné':'Pectoraux','Écarté couché haltères':'Pectoraux',
@@ -940,6 +946,8 @@
 
     var hero = document.getElementById('heroBand');
     hero.style.setProperty('--hero-color', heroColor);
+    if (dom && ILLUSTRATIONS[dom]) hero.dataset.illu = ILLUSTRATIONS[dom];
+    else delete hero.dataset.illu;
     hero.innerHTML = '<div class="hero-photo"></div><div class="hero-tint"></div><div class="hero-scrim"></div><div class="hero-dots"></div>'
       + '<div class="hero-top">'
       +   '<span class="hero-kicker">'+esc(kicker.toUpperCase())+'</span>'
@@ -1087,18 +1095,13 @@
 
     // La meme serie, la derniere fois : la 3e d'aujourd'hui en face de la 3e.
     var ps = prec && prec.series[idx];
-    // On ne recopie que dans une ligne vide. Toucher une serie deja remplie
-    // — ou deja faite — y collait les chiffres de la derniere fois, et on
-    // perdait ce qu'on venait de soulever.
-    var precHTML = (ps && !hasData(s))
-      ? '<button type="button" class="serie-prec' + (prec.topSet && ps === prec.topSet ? ' top' : '') + '"'
-        + ' data-copier="' + esc(ex.id) + '" data-cible="' + sid + '"'
-        + ' data-poids="' + (typeof ps.poids === 'number' ? ps.poids : '') + '"'
-        + ' data-reps="' + esc(ps.reps || '') + '" data-type="' + esc(ps.type || '') + '"'
-        + ' aria-label="Recopier la dernière fois, ' + esc(perfTexte(ps)) + ', dans la série ' + num + '">'
-        + esc(perfCourt(ps)) + '</button>'
-      : (ps ? '<span class="serie-prec fige' + (prec.topSet && ps === prec.topSet ? ' top' : '') + '" aria-hidden="true">' + esc(perfCourt(ps)) + '</span>'
-            : '<span class="serie-prec vide" aria-hidden="true">—</span>');
+    // Du texte, rien a toucher. Recopier d'un appui collait les chiffres de
+    // la semaine d'avant dans une ligne a 4 px de la case du poids : un appui
+    // de travers, et on notait une serie qu'on n'avait pas faite. Pour revoir
+    // cette seance, c'est la date en tete de colonne.
+    var precHTML = ps
+      ? '<span class="serie-prec' + (prec.topSet && ps === prec.topSet ? ' top' : '') + '" aria-hidden="true">' + esc(perfCourt(ps)) + '</span>'
+      : '<span class="serie-prec vide" aria-hidden="true">—</span>';
 
     var valeur = auTemps
       ? '<label class="serie-duree-champ"><input type="text" inputmode="numeric" enterkeyhint="done" class="serie-duree" placeholder="sec" aria-label="Durée en secondes, série '+num+'" data-field="duree" data-serie-id="'+ sid +'" value="'+esc(secondesAffichees(s))+'"><span class="serie-unite" aria-hidden="true">s</span></label>'
@@ -1189,22 +1192,14 @@
 
   // Recopier la cible ne valide rien : ca remplit la premiere serie encore
   // vide, et n'en ajoute une que s'il n'en reste aucune. Aucune valeur deja
-  // saisie n'est ecrasee. Recopier la colonne PRÉC. vise, elle, SA serie :
-  // on a touche cette ligne-la, c'est elle qu'on veut remplir.
-  function copierPerf(exId, poids, reps, type, cibleId){
+  // saisie n'est ecrasee. C'est la seule recopie qui reste : la colonne de la
+  // derniere fois se lit, elle ne recopie plus rien.
+  function copierPerf(exId, poids, reps, type){
     var day = getOrCreateDay(state.selectedDay);
     var ex = findExercise(day, exId);
     if (!ex) return null;
     if (!ex.series) ex.series = [];
     var cible = null;
-    if (cibleId){
-      cible = ex.series.filter(function(s){ return s.id === cibleId; })[0] || null;
-      if (!cible) return null;
-      cible.poids = poids;
-      cible.reps = reps;
-      if (type) cible.type = type; else delete cible.type;
-      return cible;
-    }
     for (var i = 0; i < ex.series.length; i++){
       if (!hasData(ex.series[i])){ cible = ex.series[i]; break; }
     }
@@ -1289,9 +1284,16 @@
     // comprend tout seul, « PRÉC. » non.
     var dPrec = p && fromDateStr(p.prec.date);
     var titrePrec = dPrec ? dPrec.getDate() + ' ' + MONTH_ABBR[dPrec.getMonth()].toUpperCase() : '';
-    return '<div class="series-tete" aria-hidden="true"><span>SÉRIE</span><span class="col-prec">' + esc(titrePrec) + '</span>'
-      + (auTemps ? '<span class="col-duree">DURÉE</span><span>DIFF.</span>' : '<span>KG</span><span>REPS</span><span>RPE</span>')
-      + '<span>✓</span></div>'
+    // La date est le seul chemin vers la seance d'avant : un vrai bouton,
+    // encadre, au-dessus des lignes et loin des cases a remplir.
+    var lienPrec = dPrec
+      ? '<button type="button" class="col-prec-lien" data-action="voir-prec" data-date="' + esc(p.prec.date) + '" data-ex="' + esc(ex.id) + '"'
+        + ' aria-label="Ouvrir la séance du ' + dPrec.getDate() + ' ' + MONTH_NAMES[dPrec.getMonth()] + '">' + esc(titrePrec) + '<i aria-hidden="true">›</i></button>'
+      : '';
+    return '<div class="series-tete"><span aria-hidden="true">SÉRIE</span><span class="col-prec">' + lienPrec + '</span>'
+      + (auTemps ? '<span class="col-duree" aria-hidden="true">DURÉE</span><span aria-hidden="true">DIFF.</span>'
+                 : '<span aria-hidden="true">KG</span><span aria-hidden="true">REPS</span><span aria-hidden="true">RPE</span>')
+      + '<span aria-hidden="true">✓</span></div>'
       + series.map(function(s,idx){ return serieRowHTML(s, idx, ex, auTemps, p && p.prec, s.id === ouverte); }).join('');
   }
   function libelleMesure(auTemps){
@@ -1962,6 +1964,7 @@
     renderDayPills();
     renderWeekStats();
     renderDayPanel(force);
+    majRetour();
   }
 
   function renderRecap(){
@@ -2307,6 +2310,7 @@
     }
     renderAll();
     majBoutonHaut();
+    majRetour();
   }
   // Revenir en haut : des qu'on a descendu d'un ecran, un bouton apparait en
   // bas a droite. C'est la ou les sites le mettent sur telephone, sous le
@@ -2539,23 +2543,53 @@
     var brut = btn.dataset.poids;
     var poids = brut === '' ? null : Number(brut);
     if (poids !== null && isNaN(poids)) poids = null;
-    var ciblee = btn.dataset.cible || '';
-    var serie = copierPerf(btn.dataset.copier, poids, btn.dataset.reps || '', btn.dataset.type || '', ciblee);
+    var serie = copierPerf(btn.dataset.copier, poids, btn.dataset.reps || '', btn.dataset.type || '');
     if (!serie) return;
-    // La serie remplie s'ouvre : c'est elle qu'on va faire, ou corriger.
-    if (ciblee) serieOuverte[btn.dataset.copier] = serie.id;
     scheduleSave(state.selectedDay, true);
     renderDayPanel(true);
     renderDayPills();
     renderWeekStats();
     showToast('Série remplie — à toi de valider');
-    // Depuis la colonne PRÉC., la ligne est deja sous le doigt : ouvrir le
-    // clavier cacherait ce qu'on vient de remplir.
-    if (!ciblee) requestAnimationFrame(function(){
+    requestAnimationFrame(function(){
       var el = exListEl.querySelector('.serie-poids[data-serie-id="' + serie.id + '"]');
       if (el) el.focus();
     });
     e.stopPropagation();
+  });
+
+  // Revoir la seance d'avant. On y va pour de vrai — le planning de ce
+  // jour-la, avec ses commentaires —, et une barre en bas ramene a la seance
+  // en cours, sur l'exercice d'ou l'on est parti.
+  var retourSeance = null;
+  var retourBtn = document.getElementById('retourSeance');
+  function majRetour(){
+    if (!retourBtn) return;
+    if (retourSeance && state.selectedDay === retourSeance.ds) retourSeance = null;
+    var montrer = !!retourSeance && state.view === 'planning';
+    retourBtn.hidden = !montrer;
+    document.body.classList.toggle('avec-retour', montrer);
+    if (!montrer) return;
+    var d = fromDateStr(retourSeance.ds);
+    retourBtn.querySelector('.retour-quand').textContent =
+      DAY_NAMES[(d.getDay()+6)%7].slice(0, 3).toUpperCase() + '. ' + d.getDate() + ' ' + MONTH_ABBR[d.getMonth()].toUpperCase();
+  }
+  exListEl.addEventListener('click', function(e){
+    var lien = e.target.closest('[data-action="voir-prec"]');
+    if (!lien) return;
+    lacherFocus(exListEl);
+    // Un aller-retour, pas une chaine : depuis la seance d'avant, sa propre
+    // date mene plus loin, mais la barre ramene toujours au point de depart.
+    if (!retourSeance) retourSeance = { ds: state.selectedDay, ex: lien.dataset.ex };
+    allerAuJour(lien.dataset.date);
+    e.stopPropagation();
+  });
+  if (retourBtn) retourBtn.addEventListener('click', function(){
+    var r = retourSeance;
+    if (!r) return;
+    retourSeance = null;
+    allerAuJour(r.ds);
+    var carte = exListEl.querySelector('.ex-card[data-id="' + (window.CSS && CSS.escape ? CSS.escape(r.ex) : r.ex) + '"]');
+    if (carte) carte.scrollIntoView({ block:'center' });
   });
 
   // Increments de poids : eviter d'ouvrir le clavier pour 2,5 kg.
@@ -2974,13 +3008,65 @@
     chargerPuisBilan(ds);
   }
 
+  // Le chargement charge une barre : un disque par exercice, a la couleur de
+  // son groupe, le plus haut pour celui qui a le plus pese. Les compteurs
+  // montent pendant que les noms defilent, puis la barre se leve. Un appui
+  // passe directement au bilan : on ne fait pas attendre qui a compris.
+  var minuteurBilan = null;
   function chargerPuisBilan(ds){
-    bilanCorps.innerHTML = '<div class="bilan-chargement">'
-      + '<div class="bilan-barre"><i></i></div>'
-      + '<p class="bilan-sous">On compte tes séries…</p>'
+    var day = state.sessions[ds] || { exercises:[] };
+    var exos = (day.exercises || []).map(function(e){
+      var vol = 0, n = 0;
+      (e.series || []).forEach(function(s){
+        if (!hasData(s)) return;
+        n++;
+        vol += (typeof s.poids === 'number' ? s.poids : 0) * (parseInt(s.reps, 10) || 0);
+      });
+      return { nom: (e.nom || '').trim() || 'Exercice', groupe: e.groupe, vol: vol, n: n };
+    }).filter(function(x){ return x.n; });
+    var volMax = exos.reduce(function(m, x){ return Math.max(m, x.vol); }, 0);
+    // Les memes chiffres que le bilan qui suit : un compteur qui s'arrete sur
+    // un autre total que la tuile d'apres ferait douter des deux.
+    var b = bilanDuJour(ds);
+    var nSeries = b ? b.series : 0;
+    var total = b ? Math.round(b.volume) : 0;
+    var disques = exos.slice(0, 5).map(function(x, i){
+      var h = volMax ? 46 + Math.round(54 * x.vol / volMax) : 70;
+      return '<i class="disque" style="--h:' + h + 'px;--c:' + (GROUP_COLORS[x.groupe] || GROUP_COLORS.Autre) + ';--i:' + i + '"></i>';
+    }).join('');
+    bilanCorps.innerHTML = '<div class="bilan-chargement" role="status">'
+      + '<div class="barre-scene" aria-hidden="true">'
+      +   '<div class="barre-cote gauche">' + disques + '</div>'
+      +   '<div class="barre-tige"></div>'
+      +   '<div class="barre-cote droite">' + disques + '</div>'
+      + '</div>'
+      + '<p class="barre-compteurs"><b data-vers="' + nSeries + '">0</b> ' + (nSeries > 1 ? 'séries' : 'série')
+      +   ' · <b data-vers="' + total + '">0</b> kg</p>'
+      + '<p class="barre-defile" aria-hidden="true">' + esc(exos.length ? exos[0].nom : '') + '</p>'
+      + '<p class="barre-passer">Touche pour voir ton bilan</p>'
       + '</div>';
-    // Assez long pour qu'on lache le bouton, assez court pour ne pas attendre.
-    setTimeout(function(){ if (bilanJour === ds && !bilanEcran.hidden) montrerBilan(ds); }, 1100);
+    var reduit = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var duree = reduit ? 600 : 1500;
+    var debut = performance.now();
+    var scene = bilanCorps.querySelector('.bilan-chargement');
+    var compteurs = scene.querySelectorAll('.barre-compteurs b');
+    var defile = scene.querySelector('.barre-defile');
+    function image(t){
+      if (bilanJour !== ds || bilanEcran.hidden || !scene.isConnected) return;
+      var k = reduit ? 1 : Math.max(0, Math.min(1, (t - debut) / (duree * 0.8)));
+      var ease = 1 - Math.pow(1 - k, 3);
+      compteurs.forEach(function(el){ el.textContent = Math.round(Number(el.dataset.vers) * ease).toLocaleString('fr-FR'); });
+      if (exos.length > 1) defile.textContent = exos[Math.min(exos.length - 1, Math.floor(k * exos.length))].nom;
+      if (k < 1) requestAnimationFrame(image); else scene.classList.add('leve');
+    }
+    requestAnimationFrame(image);
+    clearTimeout(minuteurBilan);
+    minuteurBilan = setTimeout(function(){ passerAuBilan(ds); }, duree);
+  }
+  function passerAuBilan(ds){
+    clearTimeout(minuteurBilan);
+    minuteurBilan = null;
+    if (bilanJour === ds && !bilanEcran.hidden && bilanCorps.querySelector('.bilan-chargement')) montrerBilan(ds);
   }
 
   function montrerBilan(ds){
@@ -3071,6 +3157,7 @@
       fermerEcranFin();
       ouvrirSeance(ds);
     }
+    else if (e.target.closest('.bilan-chargement')) passerAuBilan(bilanJour);
   });
 
   document.getElementById('reprendreBtn').addEventListener('click', function(){
