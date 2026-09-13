@@ -16,6 +16,9 @@ while it stays below `1.0.0`, breaking changes (in particular to the
   tab underneath and opens the nearest one on release; a plain tap is still a
   click. During a switch, a single warm glint runs around the rim instead of a
   full RGB spectrum. Service worker `topset-v27`.
+- **Slower loading scene, so it reads as real loading.** End of session
+  1.8 s → 3.2 s, « REVOIR LE BILAN » 1.3 s → 2 s, account loader loop
+  2.4 s → 3.6 s; each plate now visibly slides on before the collars snap.
 
 - **A glass lens under the active tab.** It slides to the tab you pick,
   stretches in the direction of travel and lights its iridescent rim for the

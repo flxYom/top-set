@@ -121,7 +121,7 @@ Autre `#8f887d`. `node scripts/palette-groupes.mjs` checks the distance to the
 meaning colours, the distance between groups under the three common colour
 vision deficiencies, and contrast; a guard refuses a group reusing a meaning
 colour. **Waiting** speaks one language, loading a barbell: after « OUI, C'EST
-PLIÉ » (1.8 s) and now also « REVOIR LE BILAN » (quick version, 1.3 s), one
+PLIÉ » (3.2 s) and now also « REVOIR LE BILAN » (quick version, 2 s), one
 plate per exercise in its group colour, orange collars snap on, the bar lifts
 off, the plates follow a beat late and the floor shadow tightens; a tap skips
 to the summary. The account loader plays the same scene in a loop with neutral

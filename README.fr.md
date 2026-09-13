@@ -123,8 +123,8 @@ Pectoraux `#ff7aa2`, Dos `#22b8a8`, Épaules `#a99bff`, Bras `#d45fc4`, Jambes
 `node scripts/palette-groupes.mjs` vérifie l'écart avec les couleurs de sens,
 l'écart entre groupes pour les trois daltonismes courants et le contraste ; une
 garde refuse qu'un groupe reprenne une couleur de sens. Les **attentes** parlent
-une seule langue, la barre qu'on charge : après « OUI, C'EST PLIÉ » (1,8 s) et
-désormais aussi « REVOIR LE BILAN » (version rapide, 1,3 s), un disque par
+une seule langue, la barre qu'on charge : après « OUI, C'EST PLIÉ » (3,2 s) et
+désormais aussi « REVOIR LE BILAN » (version rapide, 2 s), un disque par
 exercice à la couleur de son groupe, les colliers orange claquent, la barre
 décolle, les disques suivent avec un temps de retard et l'ombre au sol se
 resserre ; un appui passe au bilan. Le loader du compte joue la même scène en

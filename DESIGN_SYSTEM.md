@@ -139,9 +139,9 @@ On n'affiche jamais un « Chargement… » tout seul.
 
 | Moment | Variante | Détail |
 |---|---|---|
-| « OUI, C'EST PLIÉ » | scène complète, 1,8 s | un disque par exercice, à la couleur de son groupe, hauteur selon le volume ; les colliers orange claquent ; la barre décolle, les disques suivent avec un temps de retard, l'ombre au sol se resserre ; les compteurs montent jusqu'aux chiffres du bilan ; un appui passe au bilan |
-| « REVOIR LE BILAN » | scène rapide, 1,3 s | la même, deux fois plus vite |
-| Compte, synchronisation (`#loader`) | boucle de 2,4 s | charger, clic des colliers, lever, reposer, décharger ; disques neutres, seul le collier est orange |
+| « OUI, C'EST PLIÉ » | scène complète, 3,2 s (ralentie le 13/09 : « impression de vrai chargement ») | un disque par exercice, à la couleur de son groupe, hauteur selon le volume ; les colliers orange claquent ; la barre décolle, les disques suivent avec un temps de retard, l'ombre au sol se resserre ; les compteurs montent jusqu'aux chiffres du bilan ; un appui passe au bilan |
+| « REVOIR LE BILAN » | scène rapide, 2 s | la même, plus vite |
+| Compte, synchronisation (`#loader`) | boucle de 3,6 s | charger, clic des colliers, lever, reposer, décharger ; disques neutres, seul le collier est orange |
 | Listes, graphique, fil, admin | `attente()` en petit | quatre disques qui glissent sur une barre de 30 px, puis le texte |
 
 Un essai en vidéo générée a été écarté le 13/09/2026 (Higgsfield, Veo 3.1 Lite,

@@ -3138,7 +3138,9 @@
   // son groupe, le plus haut pour celui qui a le plus pese. Les compteurs
   // montent pendant que les noms defilent, puis la barre se leve. Un appui
   // passe directement au bilan : on ne fait pas attendre qui a compris.
-  // rapide : pour revoir un bilan deja vu, la meme scene deux fois plus vite.
+  // Assez lent pour qu'on voie chaque disque se poser : ca doit ressembler a
+  // un vrai chargement, pas a un flash (3,2 s).
+  // rapide : pour revoir un bilan deja vu, la meme scene plus vite (2 s).
   var minuteurBilan = null;
   function chargerPuisBilan(ds, rapide){
     var day = state.sessions[ds] || { exercises:[] };
@@ -3177,7 +3179,7 @@
       + '<p class="barre-passer">Touche pour voir ton bilan</p>'
       + '</div>';
     var reduit = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    var duree = reduit ? 600 : (rapide ? 1300 : 1800);
+    var duree = reduit ? 600 : (rapide ? 2000 : 3200);
     var debut = performance.now();
     var scene = bilanCorps.querySelector('.bilan-chargement');
     var compteurs = scene.querySelectorAll('.barre-compteurs b');
