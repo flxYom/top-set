@@ -510,5 +510,21 @@ ok('chaque dessin existe, est branche et part dans le cache hors ligne',
      && HTML.indexOf('.hero[data-illu="' + n + '"] .hero-photo{background-image:url(\'img/hero/' + n + '.svg\');}') > -1
      && SW.indexOf("'img/hero/" + n + ".svg'") > -1));
 
+console.log('\n== La refonte « Salle noire » ==');
+// Une couche posee apres les styles d'origine : si elle passait avant, les
+// regles d'origine gagneraient a specificite egale et la refonte disparaitrait
+// sans bruit.
+const posRefonte = HTML.indexOf('<style id="refonte">');
+ok('la couche de la refonte existe et vient apres les styles d origine',
+   posRefonte > -1 && posRefonte > HTML.lastIndexOf('@supports (-webkit-touch-callout:none)') && posRefonte < HTML.indexOf('</head>'));
+// Sur telephone la barre d'onglets vit en bas : elle doit se ranger quand le
+// clavier sort, sinon elle couvre la ligne qu'on remplit.
+ok('la barre du bas se range quand le clavier sort',
+   SRC.indexOf("document.body.classList.add('clavier')") > -1 &&
+   /body\.clavier \.topbar[^{]*\{transform:translateY\(120%\);\}/.test(HTML));
+ok('les images d ambiance existent et partent dans le cache hors ligne',
+   ['bandeau', 'accueil'].every(n => existsSync(new URL('../img/ambiance/' + n + '.webp', import.meta.url))
+     && SW.indexOf("'img/ambiance/" + n + ".webp'") > -1 && HTML.indexOf("img/ambiance/" + n + ".webp") > -1));
+
 console.log(`\n${pass} reussis, ${fail} echoues`);
 process.exit(fail ? 1 : 0);

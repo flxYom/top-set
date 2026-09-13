@@ -2312,6 +2312,21 @@
     majBoutonHaut();
     majRetour();
   }
+  // Sur telephone, la barre d'onglets vit en bas. Quand le clavier sort, elle
+  // monterait avec lui et couvrirait la ligne qu'on remplit : elle se range le
+  // temps de la saisie. Une case a cocher ou un fichier n'ouvrent pas de clavier.
+  function ouvreClavier(el){
+    return !!el && /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName) && el.type !== 'checkbox' && el.type !== 'file';
+  }
+  document.addEventListener('focusin', function(e){
+    if (ouvreClavier(e.target)) document.body.classList.add('clavier');
+  });
+  document.addEventListener('focusout', function(){
+    setTimeout(function(){
+      if (!ouvreClavier(document.activeElement)) document.body.classList.remove('clavier');
+    }, 80);
+  });
+
   // Revenir en haut : des qu'on a descendu d'un ecran, un bouton apparait en
   // bas a droite. C'est la ou les sites le mettent sur telephone, sous le
   // pouce. Le defilement est ecoute en mode passif, et le calcul attend la

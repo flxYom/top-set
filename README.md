@@ -91,6 +91,19 @@ pills. For an exercise with no history the column is not shown (`.sans-prec`).
 A **done** set loses its borders and its row turns faintly green — you see where
 you are without reading every check, as in Hevy — and one tap still edits it.
 
+**The « Salle noire » redesign (September 2026).** A visual pass, not a
+rewrite: same screens, same data, same logic. It lives in a single
+`<style id="refonte">` block placed after the original styles — removing it
+brings the old interface back. Near-black background, three surface levels
+instead of cream borders, 10 to 26 px radii, one soft shadow and a single orange
+glow for the main action; Bricolage Grotesque keeps headings and numbers, body
+text moves to the phone's own font. Tabs move to the bottom on phones. An empty
+day's banner and the welcome screen carry two ambient images generated with
+Higgsfield (Seedream 5 Lite), as 22 and 23 KB WebP files; the photo encoded in
+the page is gone, 86 KB less on every load. Decisions, sources and what was
+ruled out (Pinterest, Canva), in French:
+[`docs/design/direction-refonte-2026-09.md`](docs/design/direction-refonte-2026-09.md).
+
 **44 px targets.** Measured on a 375 px screen, eight buttons on the card were
 below Apple's recommended 44 points: the `⋯` menu (40), the suggestion copy
 (36), the `−` `+` steps, rest, comment and bin (40), superset (40), and the
@@ -217,13 +230,16 @@ is waiting. See [Messaging](#messaging).
 (account, pseudonym, coach, sync) and `⇅` for **data** (backup, CSV, import).
 Account and files used to share one sheet, which had become a catch-all.
 
-**Built for the phone.** Tabs stay at the top while scrolling — including in
-the installed iPhone app, where they used to slide under the status bar. A
+**Built for the phone.** Below 900 px the tabs live **at the bottom**, under
+the thumb, with icons; they tuck away while a field has the keyboard
+(`body.clavier`) and make room for the composer in a conversation. On a
+desktop they stay a segmented bar at the top. A
 back-to-top arrow appears once you are a screen down. Double-tapping `+` adds
 5 kg instead of zooming (`touch-action: manipulation`), and focusing a field no
 longer zooms Safari: on iOS every field is at least 16 px, the size below which
-Safari zooms in on its own — and never zooms back out. That rule is **the last
-one in the stylesheet**: at equal specificity the rule written lower wins, and
+Safari zooms in on its own — and never zooms back out. The redesign layer comes
+after it but never touches those fields' size, which a guard checks. That rule is **the last
+one among the original styles**: at equal specificity the rule written lower wins, and
 placed higher it lost to the message field, which stayed at 14 px. A guard
 checks it.
 
@@ -691,17 +707,20 @@ outils/outils.js         calculators (external file: the CSP refuses inline scri
 outils/tableau-rpe.js    the RPE table: % of 1RM or kg, same formula as the log
 outils/*.csv             blank and sample log templates in the export format (re-importable, tested)
 img/                     app screenshots for the product page (WebP)
+img/hero/                banner drawings, one per muscle group (SVG)
+img/ambiance/            ambient images for the empty banner and welcome screen (WebP, Higgsfield)
 supabase.umd.js          supabase-js 2.115.0, loaded on demand
 supabase-config.js       project URL + public anon key (see Accounts)
 supabase/schema.sql      tables, RLS policies and sync functions
 supabase/test/           the schema tested on a real Postgres (PGlite): RLS (254),
                          upgrade from every past version, wrong-project guard (17)
-test/                    business logic (162), hardening guards (186), links (119), content templates (15)
+test/                    business logic (162), hardening guards (198), links (119), content templates (15)
 LICENSE  SECURITY.md  CONTRIBUTING.md  CHANGELOG.md
 .github/                 issue templates, CI workflow
 .vercelignore            what the site does not publish: docs, schema, tests, content sources
 docs/seo/                SEO and content strategy: topic matrix, research, inventory
 docs/audit-*.md          dated audits of the site against competitors
+docs/design/             art direction of the redesign
 contenu/                 content page sources, bibliography, sections (not published)
 scripts/                 content page generator and its template (not published)
 ```

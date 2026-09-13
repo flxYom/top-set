@@ -9,6 +9,27 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ## [Unreleased]
 
+### Changed
+
+- **The « Salle noire » visual redesign.** Same screens, data and logic, in a
+  single `<style id="refonte">` layer after the original styles: near-black
+  background with three surface levels instead of cream borders and offset
+  shadows, 10–26 px radii, one soft shadow and one orange glow for the main
+  action, Bricolage Grotesque for headings and numbers and the system font for
+  body text, pill chips, gradient headers tinted by muscle group, rounded
+  attendance cells, blurred sheets, short press and view transitions that stop
+  under `prefers-reduced-motion`. Art direction and sources in
+  `docs/design/direction-refonte-2026-09.md`.
+- **Tabs move to the bottom on phones** (below 900 px), with icons, and tuck
+  away while the keyboard is open or a conversation is on screen; desktop keeps
+  a segmented bar at the top. The return bar, toast and back-to-top button sit
+  above it.
+- **Two ambient images generated with Higgsfield** (Seedream 5 Lite): plates for
+  an empty day's banner, a barbell on the floor behind the welcome screen, as
+  22–23 KB WebP files, precached. The base64 photo inlined in `index.html` is
+  removed (−86 KB per load). Service worker cache `topset-v24` → `topset-v25`.
+- **The week range stays on one line** on small phones.
+
 ### Fixed
 
 - **The last-time column still pasted last week's numbers.** Even limited to
