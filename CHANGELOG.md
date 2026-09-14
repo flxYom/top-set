@@ -19,9 +19,17 @@ while it stays below `1.0.0`, breaking changes (in particular to the
   New `series.vitesse` / `series.inclinaison` columns (re-run `schema.sql`),
   two new CSV columns on the right; older files still import. Service worker
   `topset-v28`.
+- **Redo last time.** `↺ DERNIÈRE FOIS` next to `+ SÉRIE` fills the exercise
+  with last session's sets; `+ AJOUTER À MA SÉANCE DU JOUR` under each exercise
+  of a past, done session copies it into today's session; an empty day offers
+  to redo the same weekday of last week, or the last session.
 
 ### Changed
 
+- **The tab bubble looks like Tinder's.** Clear glass the colour of the bar, a
+  hairline rim with a white highlight, the rainbow only on the rounded ends,
+  and a sharp cut between the magnified centre and the edge instead of blurry
+  doubled letters.
 - **iOS 26 style bottom bar on phones.** A floating grey capsule with a grey
   pill under the active tab and lowercase labels. On touch, while dragging or
   switching tabs, the pill becomes a glass bubble that magnifies a copy of the

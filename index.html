@@ -650,7 +650,7 @@
     color:var(--dim);overflow-wrap:anywhere;
   }
 
-  .ex-actions{display:flex;gap:6px;}
+  .ex-actions{display:flex;flex-wrap:wrap;gap:6px;}
   /* Le superset, sous « + SERIE » : plus discret, parce qu'on s'en sert moins. */
   .btn-superset{
     width:100%;min-height:44px;margin-top:6px;padding:0 10px;
@@ -896,6 +896,29 @@
     font-family:inherit;font-weight:800;font-size:12px;letter-spacing:.04em;
     font-variant-numeric:tabular-nums;cursor:pointer;
   }
+  /* « Derniere fois » : un pointille neutre, comme « + COMMENTAIRE ». */
+  .btn-comme-avant{
+    flex:0 0 auto;min-height:46px;padding:0 12px;white-space:nowrap;
+    background:transparent;border:2px dashed var(--line);color:var(--ink);
+    font-family:inherit;font-weight:800;font-size:12px;letter-spacing:.04em;cursor:pointer;
+  }
+  .btn-comme-avant:active{border-color:var(--orange);color:var(--orange);}
+  .btn-ajout-jour{
+    width:100%;min-height:44px;margin-top:6px;padding:0 10px;
+    background:none;border:2px solid var(--line);color:var(--ink);
+    font-family:inherit;font-size:11px;font-weight:800;letter-spacing:.05em;cursor:pointer;
+  }
+  .btn-ajout-jour:active{border-color:var(--orange);color:var(--orange);}
+  .btn-ajout-jour:disabled{border-color:var(--ok);color:var(--ok);cursor:default;}
+  .btn-refaire{
+    display:flex;flex-direction:column;align-items:flex-start;gap:3px;
+    width:100%;margin-top:8px;padding:12px 14px;
+    background:transparent;border:2px solid var(--line);color:var(--ink);
+    font-family:inherit;text-align:left;cursor:pointer;
+  }
+  .btn-refaire-quoi{font-size:12px;font-weight:800;letter-spacing:.05em;color:var(--orange);}
+  .btn-refaire-titre{font-size:13px;font-weight:700;color:var(--dim);}
+  .btn-refaire:active{border-color:var(--orange);}
   .btn-chrono.en-cours{background:var(--orange);border-color:var(--orange);color:#0d0c0a;font-size:15px;min-width:92px;}
 
   /* Pas de derniere fois : pas de colonne. Meme grille que sur un petit ecran. */
@@ -918,7 +941,8 @@
     .serie-repos-champ{padding-left:5px;gap:2px;}
     .serie-repos-champ > span{font-size:8px;letter-spacing:.04em;}
     .btn-add-serie,.btn-add-note,.btn-chrono{font-size:11px;letter-spacing:.02em;}
-    .btn-chrono{padding:0 8px;}
+    .btn-chrono,.btn-comme-avant{padding:0 8px;}
+    .btn-comme-avant{font-size:11px;letter-spacing:.02em;}
     .btn-add-note{padding:0 8px;}
     .ex-groupe-chip{padding:0 6px;letter-spacing:.04em;}
   }
@@ -2102,6 +2126,8 @@
   }
   .serie-cardio{font-size:16px;}
   .btn-chrono{border-width:1.5px;border-radius:var(--r-m);}
+  .btn-comme-avant,.btn-ajout-jour{border-width:1.5px;border-radius:var(--r-m);}
+  .btn-refaire{border:1px solid var(--trait);border-radius:var(--r-m);background:var(--s1);}
   .serie-rpe{border:1px solid transparent;border-radius:var(--r-s);background:var(--s2);}
   .serie-check{border:1.5px solid #57514a;border-radius:12px;}
   .serie-check.checked{background:var(--ok);border-color:var(--ok);color:#04140c;box-shadow:0 8px 18px -8px rgba(43,208,138,.7);}
@@ -2370,18 +2396,40 @@
       transition:scale .34s cubic-bezier(.3,1.3,.45,1),background-color .2s ease,box-shadow .2s ease,z-index 0s linear .2s;
     }
     .onglet-loupe.pose{transition:translate .46s cubic-bezier(.3,1.1,.45,1),width .46s cubic-bezier(.3,1.1,.45,1),scale .34s cubic-bezier(.3,1.3,.45,1),background-color .2s ease,box-shadow .2s ease,z-index 0s linear .2s;}
-    .onglet-loupe::before,.onglet-loupe::after{content:none;}
-    /* Au toucher, pendant un glisser ou un changement d'onglet : la bulle. */
+    .onglet-loupe::before{content:none;}
+    /* Au toucher, pendant un glisser ou un changement d'onglet : la bulle.
+       D'apres la barre de Tinder (14/09) : du verre clair de la couleur de la
+       barre, un filet sombre tres fin, un reflet blanc en haut et en bas, et
+       l'arc-en-ciel seulement sur les bouts arrondis. */
     .onglet-loupe:is(.bulle,.tenue,.glisse){
-      z-index:2;scale:1.3;animation:none;background-color:#2b2b2b;
-      box-shadow:inset 0 0 0 1px rgba(255,255,255,.3),inset 0 6px 7px -4px rgba(0,0,0,.9),inset 0 -3px 5px -3px rgba(255,255,255,.28),0 8px 18px -8px rgba(0,0,0,.8);
+      z-index:2;scale:1.3;animation:none;background-color:#282828;
+      box-shadow:
+        inset 0 0 0 .6px rgba(0,0,0,.85),
+        inset 0 1.3px 0 .3px rgba(255,255,255,.62),
+        inset 0 -1px 0 .2px rgba(255,255,255,.3),
+        inset 0 5px 6px -4px rgba(0,0,0,.6),
+        0 0 0 .5px rgba(255,255,255,.16),
+        0 6px 14px -6px rgba(0,0,0,.7);
       transition:scale .3s cubic-bezier(.3,1.35,.45,1),background-color .06s ease,box-shadow .06s ease,z-index 0s;
     }
+    /* Le liseré de prisme : un anneau de 1,2 px, blanc et discret, qui ne
+       prend ses couleurs qu'a l'extremite des deux bouts arrondis. */
+    .onglet-loupe::after{
+      content:'';position:absolute;inset:0;width:auto;height:auto;z-index:3;
+      border-radius:inherit;padding:1.2px;box-sizing:border-box;pointer-events:none;
+      animation:none;box-shadow:none;filter:none;opacity:0;transition:opacity .18s ease;
+      background:linear-gradient(90deg,#ff4fa8 0%,#ffd84a 3.5%,#3ee6ff 7%,rgba(255,255,255,.45) 12%,rgba(255,255,255,.08) 22%,rgba(255,255,255,.08) 78%,rgba(255,255,255,.45) 88%,#3ee6ff 93%,#ffd84a 96.5%,#ff4fa8 100%);
+      -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;
+      mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0);
+    }
+    .onglet-loupe:is(.bulle,.tenue,.glisse)::after{opacity:.75;transition:none;}
     .onglet-loupe.pose:is(.bulle,.glisse){transition:translate .46s cubic-bezier(.3,1.1,.45,1),width .46s cubic-bezier(.3,1.1,.45,1),scale .3s cubic-bezier(.3,1.35,.45,1),background-color .06s ease,box-shadow .06s ease,z-index 0s;}
     .bulle-coeur,.bulle-bord{display:block;position:absolute;inset:0;opacity:0;transition:opacity .18s ease;}
     .onglet-loupe:is(.bulle,.tenue,.glisse) > :is(.bulle-coeur,.bulle-bord){opacity:1;transition:none;}
-    .bulle-coeur{-webkit-mask-image:radial-gradient(ellipse closest-side,#000 62%,transparent 100%);mask-image:radial-gradient(ellipse closest-side,#000 62%,transparent 100%);}
-    .bulle-bord{-webkit-mask-image:radial-gradient(ellipse closest-side,transparent 58%,#000 100%);mask-image:radial-gradient(ellipse closest-side,transparent 58%,#000 100%);}
+    /* Une coupure nette entre le centre et le bord, comme sur le verre
+       d'iOS : les lettres se cassent au lieu de se dedoubler en flou. */
+    .bulle-coeur{-webkit-mask-image:radial-gradient(ellipse closest-side,#000 72%,transparent 74%);mask-image:radial-gradient(ellipse closest-side,#000 72%,transparent 74%);}
+    .bulle-bord{-webkit-mask-image:radial-gradient(ellipse closest-side,transparent 72%,#000 74%);mask-image:radial-gradient(ellipse closest-side,transparent 72%,#000 74%);}
     .bulle-vue{
       position:absolute;top:-5px;left:calc(-1 * var(--x, 0px));width:var(--barre-w, 100%);height:calc(100% + 10px);
       display:grid;grid-template-columns:repeat(4,minmax(0,1fr));padding:5px;box-sizing:border-box;
@@ -2391,9 +2439,12 @@
        l'agrandit depuis ce point, sans origine calculee. */
     .bulle-ancre{position:absolute;left:50%;top:50%;width:0;height:0;transform-origin:0 0;}
     .bulle-ancre .bulle-vue{left:calc(-1 * var(--x, 0px) - var(--w, 0px) / 2);top:calc(-1 * var(--h, 54px) / 2 - 5px);height:calc(var(--h, 54px) + 10px);}
-    .bulle-ancre.cyan{scale:.975;mix-blend-mode:screen;}
-    .bulle-ancre.jaune{scale:1.012;mix-blend-mode:screen;}
-    .bulle-ancre.magenta{scale:1.028;mix-blend-mode:screen;}
+    /* Au bord, la vue est etiree vers l'exterieur (le verre bombe) et les
+       trois couleurs s'ecartent un peu de la copie blanche. */
+    .bulle-ancre.blanc{scale:1.06;}
+    .bulle-ancre.cyan{scale:1.045;mix-blend-mode:screen;opacity:.45;}
+    .bulle-ancre.jaune{scale:1.06;mix-blend-mode:screen;opacity:.45;}
+    .bulle-ancre.magenta{scale:1.075;mix-blend-mode:screen;opacity:.45;}
     .bulle-ancre.cyan .bulle-onglet{color:#3ee6ff;}
     .bulle-ancre.jaune .bulle-onglet{color:#ffd84a;}
     .bulle-ancre.magenta .bulle-onglet{color:#ff4fa8;}

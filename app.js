@@ -1350,6 +1350,9 @@
       +   '<div class="series-list">'+seriesListeHTML(ex, auTemps, p)+'</div>'
       +   '<div class="ex-actions">'
       +     '<button type="button" class="btn-add-serie" data-action="add-serie" data-id="'+ eid +'" aria-label="Ajouter une série'+(series.length?', qui reprend la précédente':'')+'">+ SÉRIE</button>'
+      // La derniere fois, en un appui, a cote de « + SERIE » : tant qu'aucune
+      // serie n'est remplie. La colonne de la derniere fois, elle, se lit.
+      +     (p && !series.some(hasData) ? '<button type="button" class="btn-comme-avant" data-action="comme-avant" data-id="'+ eid +'">↺ DERNIÈRE FOIS</button>' : '')
       // Le chrono d'un gainage : lancer, puis pause, et la serie est notee.
       +     (auTemps && !estCardio(ex) ? boutonChronoHTML(ex) : '')
       // A cote de « + SERIE », parce que c'est au meme moment qu'on y pense :
@@ -1361,6 +1364,10 @@
       +   (ex.bloc
             ? '<button type="button" class="btn-superset" data-action="detacher" data-id="'+ eid +'">⇄ SORTIR DU SUPERSET</button>'
             : '<button type="button" class="btn-superset" data-action="superset" data-id="'+ eid +'">⇄ AJOUTER UN EXERCICE EN SUPERSET</button>')
+      // Une seance passee et faite : l'exercice se recopie dans celle d'aujourd'hui.
+      +   (seanceFaite(state.selectedDay) && series.some(serieRemplie)
+            ? '<button type="button" class="btn-ajout-jour" data-action="ajout-jour" data-id="'+ eid +'">+ AJOUTER À MA SÉANCE DU JOUR</button>'
+            : '')
       + '</div>'
       + '</div>';
   }
@@ -1923,6 +1930,7 @@
       + statTile(fois + '×', fois > 1 ? 'FOIS CETTE SÉANCE' : 'PREMIÈRE FOIS')
       + '</div>';
 
+    var faite = seanceFaite(ds);
     exos.forEach(function(e){
       var series = seriesRemplies(e);
       var pesees = series.filter(function(s){ return typeof s.poids === 'number' && s.poids > 0; });
@@ -1940,7 +1948,9 @@
         + (tenues.length
             ? ligneProgressionDuree(e.nom, ds, Math.max.apply(null, tenues))
             : ligneProgression(e.nom, ds, meilleure))
-        + '</button>';
+        + '</button>'
+        // A cote de la carte, pas dedans : la carte entiere ouvre l'exercice.
+        + (faite ? '<button type="button" class="btn-ajout-jour" data-ajout-jour="' + esc(e.id) + '">+ AJOUTER À MA SÉANCE DU JOUR</button>' : '');
     });
 
     var meme = (ds === state.selectedDay);
@@ -2019,7 +2029,7 @@
     var y = window.scrollY;
     lacherFocus(list);
     if (!exercises.length){
-      list.innerHTML = '<div class="empty-state">Aucun exercice noté pour ce jour.<br>Ajoute ta première série ci-dessous.</div>';
+      list.innerHTML = '<div class="empty-state">Aucun exercice noté pour ce jour.<br>Ajoute ta première série ci-dessous.</div>' + refaireHTML(ds);
     } else {
       list.innerHTML = exercisesHTML(exercises);
     }
@@ -2900,6 +2910,138 @@
     e.stopPropagation();
   });
 
+  // ---------- reprendre la derniere fois ----------
+  // « ↺ DERNIÈRE FOIS » : les series de la derniere seance sur cet exercice,
+  // la 3e en face de la 3e. Une serie deja remplie n'est pas touchee ; rien
+  // n'est coche, et le RPE reste a dire aujourd'hui.
+  function repriseSerie(s, cible){
+    cible.poids = (typeof s.poids === 'number') ? s.poids : null;
+    cible.reps = s.reps || '';
+    cible.rpe = null;
+    cible.fait = false;
+    if (s.type) cible.type = s.type; else delete cible.type;
+    if (s.repos) cible.repos = s.repos;
+    ['vitesse', 'inclinaison'].forEach(function(f){
+      if (typeof s[f] === 'number') cible[f] = s[f]; else delete cible[f];
+    });
+    return cible;
+  }
+  exListEl.addEventListener('click', function(e){
+    var b = e.target.closest('[data-action="comme-avant"]');
+    if (!b) return;
+    var day = getOrCreateDay(state.selectedDay);
+    var ex = findExercise(day, b.dataset.id);
+    var p = ex && precedentDe(ex);
+    if (!p) return;
+    if (!ex.series) ex.series = [];
+    var n = 0;
+    p.prec.series.forEach(function(s, i){
+      var cible = ex.series[i];
+      if (cible && hasData(cible)) return;
+      if (!cible){
+        cible = { id:genSerieId(), poids:null, reps:'', rpe:null, repos:'', fait:false };
+        ex.series.push(cible);
+      }
+      repriseSerie(s, cible);
+      n++;
+    });
+    delete serieOuverte[ex.id];
+    scheduleSave(state.selectedDay, true);
+    repeindreCarte(b.closest('.ex-card'), ex);
+    var d = fromDateStr(p.prec.date);
+    showToast(n + (n > 1 ? ' séries reprises du ' : ' série reprise du ') + d.getDate() + ' ' + MONTH_NAMES[d.getMonth()]);
+    renderDayPills();
+    renderWeekStats();
+  });
+
+  // ---------- ajouter a ma seance du jour ----------
+  // Depuis une seance passee et faite, un exercice se recopie dans celle
+  // d'aujourd'hui avec ses series, poids, reps et RPE compris ; « fait »
+  // repart a faux. Une seance d'avant la validation compte comme faite des
+  // qu'elle a des series : sinon aucun ancien carnet n'en profiterait.
+  function seanceFaite(ds){
+    var auj = toDateStr(new Date());
+    if (!ds || ds === auj || !state.sessions[ds]) return false;
+    return estTerminee(ds) || (ds < auj && compterJour(state.sessions[ds]) > 0);
+  }
+  function ajouterAuJour(dsSource, exId){
+    var src = state.sessions[dsSource];
+    var ex = src && findExercise(src, exId);
+    var series = ex ? seriesRemplies(ex) : [];
+    if (!series.length) return null;
+    var auj = toDateStr(new Date());
+    var jour = getOrCreateDay(auj);
+    var copies = series.map(function(s){
+      return { id:genSerieId(), poids:s.poids, reps:s.reps, rpe:s.rpe,
+               vitesse:s.vitesse, inclinaison:s.inclinaison,
+               repos:s.repos || '', type:s.type, fait:false };
+    });
+    // Le meme exercice deja pose aujourd'hui, encore vide, recoit les series
+    // au lieu d'un doublon.
+    var cle = ex.nom ? cleCanonique(ex.nom) : '';
+    var vide = cle && jour.exercises.filter(function(x){
+      return x.nom && cleCanonique(x.nom) === cle && !(x.series || []).some(hasData);
+    })[0];
+    if (vide){
+      vide.series = copies;
+      if (ex.mesure) vide.mesure = ex.mesure;
+    } else {
+      jour.exercises.push({ id:genId(), nom:ex.nom || '', groupe:ex.groupe || 'Autre',
+                            repos:ex.repos || '', mesure:ex.mesure, series:copies });
+    }
+    scheduleSave(auj, true);
+    populateDatalist();
+    if (state.selectedDay === auj) renderPlanning(true);
+    return normalizeName(ex.nom) || 'L\'exercice';
+  }
+  function marquerAjoute(bouton, nom){
+    bouton.disabled = true;
+    bouton.textContent = '✓ AJOUTÉ À TA SÉANCE DU JOUR';
+    showToast(nom + ' ajouté à ta séance du jour');
+  }
+  exListEl.addEventListener('click', function(e){
+    var b = e.target.closest('[data-action="ajout-jour"]');
+    if (!b) return;
+    var nom = ajouterAuJour(state.selectedDay, b.dataset.id);
+    if (nom) marquerAjoute(b, nom);
+  });
+
+  // ---------- refaire une seance, sur un jour vide ----------
+  // Celle du meme jour la semaine d'avant, et la toute derniere si ce n'est
+  // pas la meme. Tout se recopie, valeurs comprises (selectionnerSeance).
+  function seancesARefaire(ds){
+    var out = [];
+    var semaine = toDateStr(addDays(fromDateStr(ds), -7));
+    if (state.sessions[semaine] && compterJour(state.sessions[semaine]) > 0) out.push({ ds:semaine, semaine:true });
+    var dates = Object.keys(state.sessions).filter(function(x){
+      return x < ds && compterJour(state.sessions[x]) > 0;
+    }).sort();
+    var derniere = dates[dates.length - 1];
+    if (derniere && derniere !== semaine) out.push({ ds:derniere, semaine:false });
+    return out;
+  }
+  function refaireHTML(ds){
+    return seancesARefaire(ds).map(function(r){
+      var d = fromDateStr(r.ds);
+      var quoi = r.semaine
+        ? 'CELLE DE ' + DAY_NAMES[(d.getDay()+6)%7].toUpperCase() + ' DERNIER'
+        : 'MA DERNIÈRE SÉANCE · ' + d.getDate() + ' ' + MONTH_ABBR[d.getMonth()].toUpperCase();
+      return '<button type="button" class="btn-refaire" data-refaire="' + esc(r.ds) + '">'
+        + '<span class="btn-refaire-quoi">↺ REFAIRE ' + esc(quoi) + '</span>'
+        + '<span class="btn-refaire-titre">' + esc(titreSeance(r.ds)) + '</span></button>';
+    }).join('');
+  }
+  exListEl.addEventListener('click', function(e){
+    var b = e.target.closest('[data-refaire]');
+    if (!b) return;
+    var n = selectionnerSeance(b.dataset.refaire);
+    if (!n){ showToast('Cette séance est vide'); return; }
+    scheduleSave(state.selectedDay, true);
+    populateDatalist();
+    renderPlanning(true);
+    showToast(n + (n > 1 ? ' exercices repris' : ' exercice repris'));
+  });
+
   // ---------- chrono des exercices au temps ----------
   // Un appui lance, le suivant met en pause : la duree tenue remplit la
   // premiere serie encore vide (un lest deja note reste), la coche, et le
@@ -3588,6 +3730,12 @@
     }
     if (e.target.closest('#ficheModifier')){
       modifierSeance(state.seanceOuverte);
+      return;
+    }
+    var ajout = e.target.closest('[data-ajout-jour]');
+    if (ajout){
+      var nomA = ajouterAuJour(state.seanceOuverte, ajout.dataset.ajoutJour);
+      if (nomA) marquerAjoute(ajout, nomA);
       return;
     }
     var exoBtn = e.target.closest('[data-exo]');

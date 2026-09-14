@@ -569,5 +569,14 @@ ok('le chrono du gainage note une serie faite a chaque pause et survit a une app
    && /localStorage\.setItem\(CLE_CHRONO/.test(SRC) && /data-action="chrono"/.test(SRC)
    && /\(auTemps && !estCardio\(ex\) \? boutonChronoHTML\(ex\) : ''\)/.test(SRC));
 
+ok('la derniere fois se reprend d un bouton a cote de + SERIE, pas depuis la colonne',
+   /data-action="comme-avant"/.test(SRC) && /function repriseSerie\(s, cible\)\{/.test(SRC)
+   && !/class="serie-prec[^>]*data-action/.test(SRC));
+ok('un exercice d une seance faite s ajoute a la seance du jour, series comprises',
+   /function ajouterAuJour\(dsSource, exId\)\{/.test(SRC) && /data-ajout-jour="/.test(SRC)
+   && /data-action="ajout-jour"/.test(SRC) && /function seanceFaite\(ds\)\{/.test(SRC));
+ok('un jour vide propose de refaire la seance de la semaine d avant ou la derniere',
+   /function seancesARefaire\(ds\)\{/.test(SRC) && /data-refaire="/.test(SRC) && /\+ refaireHTML\(ds\);/.test(SRC));
+
 console.log(`\n${pass} reussis, ${fail} echoues`);
 process.exit(fail ? 1 : 0);

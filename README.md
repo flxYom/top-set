@@ -208,6 +208,23 @@ on the right, `Vitesse (km/h)` and `Inclinaison (%)`; an older CSV still
 imports. A treadmill already logged in reps stays in reps: history wins over
 the name.
 
+**Redo last time.** Three gestures, never from the last-time column, which is
+read and copies nothing:
+- `↺ DERNIÈRE FOIS`, next to `+ SÉRIE`, while no set is filled: the sets of the
+  last session on that exercise, the 3rd facing the 3rd (weight, reps, type,
+  rest, speed and incline). Nothing is ticked, RPE is left for today, a set
+  already filled is not touched (`repriseSerie`).
+- `+ AJOUTER À MA SÉANCE DU JOUR`, under each exercise of a past, done session —
+  in its page, or in the planning when opened from the last-time date: the
+  exercise lands in today's session with its sets, RPE included, nothing
+  ticked. The same exercise already placed and still empty receives the sets
+  instead of a duplicate (`ajouterAuJour`). "Done" means validated, or past
+  with sets — otherwise no logbook from before validation would benefit
+  (`seanceFaite`).
+- On an empty day, `↺ REFAIRE CELLE DE LUNDI DERNIER` (same weekday, the week
+  before) and `↺ REFAIRE MA DERNIÈRE SÉANCE` when it is a different one, with
+  their title; everything is copied by `selectionnerSeance`.
+
 **Rest per set**, not per exercise, and carried over when a set is duplicated.
 
 **A comment per set.** For what the numbers don't say: « assisted », « with
@@ -769,7 +786,7 @@ supabase-config.js       project URL + public anon key (see Accounts)
 supabase/schema.sql      tables, RLS policies and sync functions
 supabase/test/           the schema tested on a real Postgres (PGlite): RLS (259),
                          upgrade from every past version, wrong-project guard (17)
-test/                    business logic (167), hardening guards (209), links (119), content templates (15)
+test/                    business logic (167), hardening guards (212), links (119), content templates (15)
 LICENSE  SECURITY.md  CONTRIBUTING.md  CHANGELOG.md
 .github/                 issue templates, CI workflow
 .vercelignore            what the site does not publish: docs, schema, tests, content sources

@@ -215,6 +215,23 @@ deux colonnes à droite, `Vitesse (km/h)` et `Inclinaison (%)` ; un ancien table
 se réimporte tel quel. Un tapis déjà noté en répétitions le reste : l'historique
 passe avant le nom.
 
+**Refaire la dernière fois.** Trois gestes, jamais depuis la colonne de la
+dernière fois, qui se lit et ne recopie rien :
+- `↺ DERNIÈRE FOIS`, à côté de `+ SÉRIE`, tant qu'aucune série n'est remplie :
+  les séries de la dernière séance sur cet exercice, la 3e en face de la 3e
+  (poids, reps, type, repos, vitesse et inclinaison). Rien n'est coché, le RPE
+  reste à dire, une série déjà remplie n'est pas touchée (`repriseSerie`).
+- `+ AJOUTER À MA SÉANCE DU JOUR`, sous chaque exercice d'une séance passée et
+  faite — dans sa fiche, ou dans le planning quand on l'ouvre par la date de la
+  dernière fois : l'exercice arrive dans la séance d'aujourd'hui avec ses séries,
+  RPE compris, rien de coché. Le même exercice déjà posé et encore vide reçoit
+  les séries au lieu d'un doublon (`ajouterAuJour`). « Faite » : validée, ou
+  passée avec des séries — sans quoi aucun carnet d'avant la validation n'en
+  profiterait (`seanceFaite`).
+- Sur un jour vide, `↺ REFAIRE CELLE DE LUNDI DERNIER` (le même jour, la
+  semaine d'avant) et `↺ REFAIRE MA DERNIÈRE SÉANCE` si ce n'est pas la même,
+  avec leur titre ; tout se recopie par `selectionnerSeance`.
+
 **RPE par série.** Échelle des répétitions en réserve, de 10 à 6 par demi-points :
 10 c'est l'échec, 9 il t'en restait une, 8 il t'en restait deux. Facultatif —
 laisse vide, rien ne casse. La cellule n'a la place que du chiffre : la phrase
@@ -909,7 +926,7 @@ supabase-config.js       URL du projet + clé publique (voir Comptes)
 supabase/schema.sql      tables, politiques RLS et fonctions de synchro
 supabase/test/           le schéma testé sur un vrai Postgres (PGlite) : RLS (259),
                          montée depuis chaque version passée, garde-fou du projet (17)
-test/                    logique métier (167), gardes de sécurité (209), liens (119), gabarits de contenu (15)
+test/                    logique métier (167), gardes de sécurité (212), liens (119), gabarits de contenu (15)
 LICENSE  SECURITY.md  CONTRIBUTING.md  CHANGELOG.md
 .github/                 modèles d'issues, workflow de CI
 .vercelignore            ce que le site ne publie pas : docs, schéma, tests, source du contenu

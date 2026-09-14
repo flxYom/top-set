@@ -222,7 +222,11 @@ Cible :
   marche, il passe orange (l'action en cours) avec des chiffres à chasse fixe.
   Une pause = une série cochée.
 - **Ligne cardio** (14/09) : `MIN · KM/H · INCL. %`, sans colonne de
-  difficulté, pas de `−1′` / `+1′`. Tient à 360 px sans déborder.
+  difficulté, avec `−1′` / `+1′`. Tient à 360 px sans déborder.
+- **Reprendre la dernière fois** (14/09) : jamais depuis la colonne de la
+  dernière fois (elle se lit). `↺ DERNIÈRE FOIS` en pointillé neutre à côté de
+  `+ SÉRIE` ; `+ AJOUTER À MA SÉANCE DU JOUR` sous chaque exercice d'une séance
+  faite ; sur un jour vide, `↺ REFAIRE…` en carte, libellé orange et titre gris.
 
 ## 11. Méthode avant un changement important
 
@@ -251,6 +255,6 @@ avant de le faire.
 - **Pages de contenu** (11/09) : sans photos.
 - **Salle noire** (13/09) : on la garde, en plus sobre.
 - **Loupe Liquid Glass** (13/09) : sur les onglets uniquement.
-- **Barre du bas façon iOS 26** (14/09) : sur téléphone, capsule grise, pastille grise, bulle à franges de prisme. Écart assumé avec la charte : l'onglet actif n'y est plus orange.
+- **Barre du bas façon iOS 26** (14/09) : sur téléphone, capsule grise, pastille grise, bulle à franges de prisme ; reprise d'après Tinder le même jour : verre de la couleur de la barre, filet fin et reflet blanc, arc-en-ciel seulement aux bouts arrondis, coupure nette entre centre et bord. Écart assumé avec la charte : l'onglet actif n'y est plus orange.
 - **Palette des groupes** (13/09) : section 2.
 - **Loader** (13/09) : en code, pas en vidéo générée.
