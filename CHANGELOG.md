@@ -38,9 +38,10 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 - **PLANNING becomes a calendar; you log in SÉANCES › DU JOUR.** The app opens
   on today's session. PLANNING shows the week (default), the month or one day:
   done sessions in their muscle-group colour, planned ones outlined, today with
-  an orange edge; tapping a day opens it in DU JOUR. SÉANCES has three
-  sections: DU JOUR, MES SÉANCES, HISTORIQUE. The week's day pills are gone.
-  Service worker `topset-v30`.
+  an orange edge; tapping a session shows its sheet under MES SÉANCES
+  (`‹ RETOUR` goes back to the calendar), an empty day opens in DU JOUR.
+  SÉANCES has three sections: DU JOUR, MES SÉANCES, HISTORIQUE. The week's day
+  pills are gone. Service worker `topset-v31`.
 - **The session recap compares with the same session last week.** Matched by
   its exercises, one line per exercise going up, down or steady; the kilos
   lifted and the week's tonnage are gone.

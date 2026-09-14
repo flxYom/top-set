@@ -273,4 +273,5 @@ avant de le faire.
 - **Loader** (13/09) : en code, pas en vidéo générée.
 - **Navigation** (14/09) : on note dans SÉANCES › DU JOUR, où l'app s'ouvre ;
   PLANNING est un calendrier qu'on regarde (semaine par défaut, mois, jour), et
-  toucher un jour l'ouvre dans DU JOUR. Plus de pastilles de semaine.
+  toucher une séance montre sa fiche sous MES SÉANCES (RETOUR ramène au
+  calendrier), un jour vide s'ouvre dans DU JOUR. Plus de pastilles de semaine.

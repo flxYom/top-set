@@ -75,8 +75,9 @@ sets, done or planned, then the muscle groups of the week), **MOIS** (the grid,
 a dot in the colour of the main muscle group, filled for a done session,
 outlined for a planned one) and **JOUR** (one session in detail). Arrows move by
 day, week or month; `AUJOURD'HUI` turns orange once you have moved away.
-Tapping a day opens it in DU JOUR; on any other day than today, `AUJOURD'HUI ›`
-brings you back. **SÉANCES** has three sections: DU JOUR, MES SÉANCES and
+Tapping a session shows its sheet, filed under MES SÉANCES, and `‹ RETOUR`
+brings you back to the calendar; an empty day opens in DU JOUR, where
+`AUJOURD'HUI ›` brings you back to today. **SÉANCES** has three sections: DU JOUR, MES SÉANCES and
 HISTORIQUE.
 
 **One set, one row.** `SÉRIE · 8 SEPT. · KG · REPS · RPE · ✓`, the grid of Strong

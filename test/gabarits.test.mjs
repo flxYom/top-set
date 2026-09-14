@@ -595,10 +595,11 @@ ok('le repos monte apres une serie cochee ou un chrono en pause, et s ecrit dans
    && /localStorage\.setItem\(CLE_REPOS/.test(SRC) && /id="reposPastille"/.test(HTML)
    && /function validerFin\(ds\)\{\s*finirRepos\(false\);/.test(SRC));
 
-ok('le planning est un calendrier jour, semaine, mois ; un jour touche s ouvre dans SEANCES > DU JOUR',
+ok('le planning est un calendrier jour, semaine, mois ; un jour touche montre sa fiche sous MES SEANCES, un jour vide s ouvre dans DU JOUR',
    /id="calVues"/.test(HTML) && /data-cal="mois"/.test(HTML) && /function calMoisHTML\(annee, mois\)\{/.test(SRC)
    && /function calSemaineHTML\(debut\)\{/.test(SRC) && /function calJourHTML\(ds\)\{/.test(SRC)
-   && /seancesOnglet = 'jour';\n    montrerVue\('seances'\);/.test(SRC) && /allerAuJour\(b\.dataset\.calJour\)/.test(SRC));
+   && /seancesOnglet = 'jour';\n    montrerVue\('seances'\);/.test(SRC) && /if \(etatJour\(ds\)\) ouvrirSeance\(ds, 'planning'\); else allerAuJour\(ds\);/.test(SRC)
+   && /if \(depuis === 'planning'\) seancesOnglet = 'mes';/.test(SRC) && /montrerVue\(state\.ficheRetour \|\| 'seances'\)/.test(SRC));
 ok('SEANCES : du jour, mes seances, historique ; l app s ouvre sur la seance du jour',
    /data-onglet="jour">DU JOUR</.test(HTML) && /view:'seances',/.test(SRC) && /var seancesOnglet = 'jour';/.test(SRC)
    && /<section class="view" id="view-seances">\s*<div class="segmented sub" id="seancesTabs">/.test(HTML)
