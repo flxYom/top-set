@@ -9,6 +9,22 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ## [Unreleased]
 
+### Security
+
+- **Writes stop at the columns the app fills.** A member could insert a
+  feedback already marked `traite` (hidden from the admin queue) or backdated,
+  a backdated consent, or a coach message already read. `retours`,
+  `consentements` and `messages_coach` now grant `insert` on their content
+  columns only; status, dates and the read flag come from the database.
+  Re-run `schema.sql`.
+- **You mark as read what the other side wrote, never your own.** In the
+  support thread and the coach thread alike: marking your own messages read
+  used to remove them from the other side's unread count.
+- **The coach invite code comes from a cryptographic generator**
+  (`gen_random_uuid()`), not `random()`.
+- **`Cross-Origin-Opener-Policy: same-origin`** joins the security headers;
+  the feedback list escapes its type and status labels too.
+
 ### Added
 
 - **Stopwatch for timed exercises.** `▶ CHRONO` starts it, a second tap pauses
@@ -35,6 +51,19 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ### Changed
 
+- **The Apprendre header stays on screen.** On every content page, the logo,
+  `OUVRIR LE CARNET` and the section bar stay stuck at the top while reading;
+  anchors stop below them.
+- **Search engines and speed.** The app's scripts no longer block the first
+  paint (`defer`), content pages preload their font, indexable pages allow
+  large image previews, the home page declares the site's logo
+  (`Organization`), and the legal pages have fuller titles and descriptions.
+- **Repository layout.** Icons in `icons/`, stylesheets in `css/`, vendored
+  libraries in `vendor/`, the share image in `img/`; the old addresses
+  redirect permanently. `CONTRIBUTING.md` and `SECURITY.md` moved to
+  `.github/`, the design system, audits and screenshots to `docs/`. Both
+  READMEs are now short; the details live in `docs/fr/` and `docs/en/`.
+  Service worker `topset-v32`.
 - **PLANNING becomes a calendar; you log in SÉANCES › DU JOUR.** The app opens
   on today's session. PLANNING shows the week (default), the month or one day:
   done sessions in their muscle-group colour, planned ones outlined, today with
@@ -109,6 +138,9 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 - **The week range stays on one line** on small phones.
 
 ### Fixed
+
+- **`✓ TERMINER MA SÉANCE` appears as soon as a set is logged.** It used to
+  wait for a full redraw (switching tabs, reopening the app).
 
 - **The last-time column still pasted last week's numbers.** Even limited to
   empty rows, a tap on a cell 4 px from the weight field logged a set that was

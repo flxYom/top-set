@@ -27,7 +27,7 @@ const SUJETS = JSON.parse(lire('docs/seo/sujets.json')).sujets;
 
 // Budget de performance (docs/seo/content-strategy.md, section F).
 const POIDS_MAX_PAGE = 30 * 1024;   // HTML compresse
-const POIDS_MAX_CSS = 8 * 1024;     // contenu.css compresse
+const POIDS_MAX_CSS = 8 * 1024;     // css/contenu.css compresse
 
 // Ce que chaque type de page doit contenir (docs/seo/content-strategy.md,
 // gabarits) : des sections, reperees par l'identifiant de leur h2 — le titre
@@ -267,12 +267,12 @@ for (const p of pages){
     '@context': 'https://schema.org', '@type': 'Article',
     headline: texteBrut(p.h1), description: texteBrut(p.description),
     datePublished: p.published, dateModified: p.reviewed, inLanguage: 'fr',
-    mainEntityOfPage: url, image: [SITE + '/og-image.png'], isAccessibleForFree: true,
+    mainEntityOfPage: url, image: [SITE + '/img/og-image.png'], isAccessibleForFree: true,
     // L'auteur est l'editeur du site. L'aide de l'IA est dite en toutes lettres
     // sur la page et sur /methode-editoriale ; on ne fait pas d'une IA un auteur
     // au sens des donnees structurees.
     author: { '@type': 'Organization', name: 'Yom Industry', url: SITE + '/methode-editoriale' },
-    publisher: { '@type': 'Organization', name: 'Top Set', url: SITE + '/', logo: { '@type': 'ImageObject', url: SITE + '/icon-512.png' } }
+    publisher: { '@type': 'Organization', name: 'Top Set', url: SITE + '/', logo: { '@type': 'ImageObject', url: SITE + '/icons/icon-512.png' } }
   });
   if (T.logiciel) jsonld.push({
     '@context': 'https://schema.org', '@type': 'SoftwareApplication',
@@ -341,8 +341,8 @@ for (const [f, t] of sorties){
   if (gz > POIDS_MAX_PAGE) err(f, `trop lourde : ${gz} octets compressés (budget ${POIDS_MAX_PAGE})`);
 }
 {
-  const gz = gzipSync(readFileSync(join(RACINE, 'contenu.css'))).length;
-  if (gz > POIDS_MAX_CSS) err('contenu.css', `trop lourde : ${gz} octets compressés (budget ${POIDS_MAX_CSS})`);
+  const gz = gzipSync(readFileSync(join(RACINE, 'css/contenu.css'))).length;
+  if (gz > POIDS_MAX_CSS) err('css/contenu.css', `trop lourde : ${gz} octets compressés (budget ${POIDS_MAX_CSS})`);
 }
 
 // ------------------------------------------------------------ ecriture ou verification

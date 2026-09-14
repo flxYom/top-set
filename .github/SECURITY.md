@@ -26,13 +26,13 @@ Classes of issue that matter here:
 - Anything that lets someone write into a conversation they are not part
   of, or sign a message as someone else (`admin`, `coach`, `systeme`).
 - Ways to read or exfiltrate another visitor's `localStorage` data.
-- Supply-chain issues in the vendored assets (`chart.umd.js`,
-  `supabase.umd.js`, the self-hosted fonts).
+- Supply-chain issues in the vendored assets (`vendor/chart.umd.js`,
+  `vendor/supabase.umd.js`, the self-hosted fonts).
 - Anything that defeats the "no third-party network requests" guarantee
   described in the privacy policy (`confidentialite.html`).
 
 Cosmetic bugs, broken layout, or feature requests are not security
-issues — please open a regular [issue](../../issues) for those instead.
+issues — please open a regular [issue](https://github.com/flxYom/top-set/issues) for those instead.
 
 ## Accepted linter warnings
 
@@ -90,6 +90,32 @@ or any function without a pinned `search_path`.
 
 ---
 
+## Hardening log
+
+**14 September 2026 audit.** Found and fixed:
+
+- `retours`, `consentements` and `messages_coach` granted `insert` on every
+  column. A member could send a feedback already marked `traite` (so it never
+  showed in the admin queue), backdate a consent, or post a coach message
+  already read. Inserts are now limited to the columns the app fills; status,
+  dates and `lu` come from the database.
+- The `update (lu)` policies let a sender mark their own messages read,
+  removing them from the other side's unread count. Each side now marks only
+  what the other side wrote.
+- `devenir_coach()` built invite codes with `random()`, which is not a
+  cryptographic generator. It now draws from `gen_random_uuid()`.
+- Added `Cross-Origin-Opener-Policy: same-origin`. Two feedback labels reached
+  HTML unescaped; their values were constrained by the database, so this was
+  not exploitable, but they now go through `esc()` like everything else.
+
+Checked and found sound: RLS on every table, `anon` without rights, admin and
+coach functions checking the caller first, `search_path` pinned on every
+function, no secret in the repository or its history, the CSP (no inline
+script), escaping of every user-supplied value rendered as HTML.
+
+Not verifiable from the repository: the Supabase dashboard settings (email
+confirmation, leaked-password protection, Auth rate limits).
+
 ## Supported versions
 
 This project has no long-term-support branches. Only the code currently
@@ -101,7 +127,7 @@ please make sure you can reproduce the issue there before reporting.
 Please **do not** open a public issue for a security report. Instead,
 use GitHub's private reporting form for this repository:
 
-**[Report a vulnerability](../../security/advisories/new)**
+**[Report a vulnerability](https://github.com/flxYom/top-set/security/advisories/new)**
 (Security tab → "Report a vulnerability")
 
 Include what you found, the steps to reproduce it, and, if relevant,

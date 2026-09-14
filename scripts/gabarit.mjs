@@ -82,19 +82,19 @@ function tete(p, ctx){
     `<meta property="og:title" content="${titre}">`,
     `<meta property="og:description" content="${descr}">`,
     `<meta property="og:url" content="${url}">`,
-    `<meta property="og:image" content="${SITE}/og-image.png">`,
+    `<meta property="og:image" content="${SITE}/img/og-image.png">`,
     '<meta property="og:image:width" content="1200">',
     '<meta property="og:image:height" content="630">',
     '<meta property="og:image:alt" content="Top Set — carnet de musculation">',
     '<meta name="twitter:card" content="summary_large_image">',
     p.url === '/404' ? '' : `<link rel="canonical" href="${url}">`,
-    '<link rel="icon" type="image/svg+xml" href="/icon.svg">',
-    '<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">',
-    '<link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png">',
+    '<link rel="icon" type="image/svg+xml" href="/icons/icon.svg">',
+    '<link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">',
+    '<link rel="icon" type="image/png" sizes="48x48" href="/icons/favicon-48.png">',
     // La police part avec la page : sans ce preload, le texte s'affiche
     // d'abord dans la police systeme, puis saute.
     '<link rel="preload" href="/fonts/bricolage-latin.woff2" as="font" type="font/woff2" crossorigin>',
-    '<link rel="stylesheet" href="/contenu.css">',
+    '<link rel="stylesheet" href="/css/contenu.css">',
     ...p.jsonld.map(ld),
     '</head>'
   ];

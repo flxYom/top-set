@@ -7,6 +7,66 @@
       "source": "/entrainement/carnet-musculation-eps",
       "destination": "/carnet-de-musculation",
       "permanent": true
+    },
+    {
+      "source": "/icon.svg",
+      "destination": "/icons/icon.svg",
+      "permanent": true
+    },
+    {
+      "source": "/favicon-16.png",
+      "destination": "/icons/favicon-16.png",
+      "permanent": true
+    },
+    {
+      "source": "/favicon-32.png",
+      "destination": "/icons/favicon-32.png",
+      "permanent": true
+    },
+    {
+      "source": "/favicon-48.png",
+      "destination": "/icons/favicon-48.png",
+      "permanent": true
+    },
+    {
+      "source": "/icon-180.png",
+      "destination": "/icons/icon-180.png",
+      "permanent": true
+    },
+    {
+      "source": "/icon-192.png",
+      "destination": "/icons/icon-192.png",
+      "permanent": true
+    },
+    {
+      "source": "/icon-512.png",
+      "destination": "/icons/icon-512.png",
+      "permanent": true
+    },
+    {
+      "source": "/og-image.png",
+      "destination": "/img/og-image.png",
+      "permanent": true
+    },
+    {
+      "source": "/chart.umd.js",
+      "destination": "/vendor/chart.umd.js",
+      "permanent": true
+    },
+    {
+      "source": "/supabase.umd.js",
+      "destination": "/vendor/supabase.umd.js",
+      "permanent": true
+    },
+    {
+      "source": "/legal.css",
+      "destination": "/css/legal.css",
+      "permanent": true
+    },
+    {
+      "source": "/contenu.css",
+      "destination": "/css/contenu.css",
+      "permanent": true
     }
   ],
   "headers": [
@@ -53,7 +113,7 @@
       ]
     },
     {
-      "source": "/chart.umd.js",
+      "source": "/vendor/chart.umd.js",
       "headers": [
         {
           "key": "Cache-Control",
@@ -62,7 +122,7 @@
       ]
     },
     {
-      "source": "/supabase.umd.js",
+      "source": "/vendor/supabase.umd.js",
       "headers": [
         {
           "key": "Cache-Control",

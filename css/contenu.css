@@ -1,5 +1,5 @@
 /* Pages de contenu (documentation, entrainement, exercices, outils).
-   Meme identite que l'app et que legal.css : fond sombre, orange, une seule
+   Meme identite que l'app et que css/legal.css : fond sombre, orange, une seule
    police. Une seule feuille pour toutes ces pages : elle est mise en cache
    une fois, puis chaque page ne pese que son texte. */
 :root{

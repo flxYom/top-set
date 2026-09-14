@@ -966,6 +966,9 @@
   // Rend le bandeau du jour selectionne.
   function renderBandeau(){
     var ds = state.selectedDay;
+    // TERMINER MA SEANCE suit ce qui est note : sans ca, le bouton n'apparaissait
+    // qu'au prochain rendu complet (changer d'onglet, rouvrir l'app).
+    majBoutonFin(ds);
     var d = fromDateStr(ds);
     var day = state.sessions[ds];
     var exercises = day ? day.exercises : [];
@@ -2539,7 +2542,7 @@
     if (chartLibPromise) return chartLibPromise;
     chartLibPromise = new Promise(function(resolve, reject){
       var s = document.createElement('script');
-      s.src = 'chart.umd.js';
+      s.src = 'vendor/chart.umd.js';
       s.onload = function(){ resolve(); };
       s.onerror = function(){ chartLibPromise = null; reject(new Error('chart load failed')); };
       document.head.appendChild(s);
@@ -5574,7 +5577,7 @@
       if (libPromise) return libPromise;
       libPromise = new Promise(function(res, rej){
         var s = document.createElement('script');
-        s.src = 'supabase.umd.js';
+        s.src = 'vendor/supabase.umd.js';
         s.onload = function(){ res(); };
         s.onerror = function(){ libPromise = null; rej(new Error('Bibliotheque indisponible')); };
         document.head.appendChild(s);

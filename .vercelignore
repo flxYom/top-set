@@ -13,16 +13,13 @@
 README.md
 README.fr.md
 CHANGELOG.md
-CONTRIBUTING.md
-SECURITY.md
 LICENSE
-screenshots/
 
 # Base de donnees et tests
 supabase/
 test/
 
-# Strategie SEO, recherches et donnees de travail
+# Documentation detaillee, design, strategie SEO, audits, captures
 docs/
 
 # Source des pages de contenu et leur generateur : seules les pages produites

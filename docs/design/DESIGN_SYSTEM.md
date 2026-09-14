@@ -4,7 +4,7 @@ Ce fichier sert à prendre des décisions cohérentes, pas à décrire l'interfa
 pour le plaisir. Chaque règle dit **ce qu'on fait**, **pourquoi**, et d'où vient
 la décision. Ce qui n'est pas encore tranché est marqué **À décider**.
 
-Point de départ mesuré : [`docs/design/audit-identite-2026-09-13.md`](docs/design/audit-identite-2026-09-13.md).
+Point de départ mesuré : [`docs/design/audit-identite-2026-09-13.md`](audit-identite-2026-09-13.md).
 Implémentation : les styles d'origine dans `index.html`, puis la couche
 `<style id="refonte">` qui les surcharge. Toute retouche visuelle va dans la
 couche de refonte, jamais dans les règles d'origine.
@@ -275,3 +275,6 @@ avant de le faire.
   PLANNING est un calendrier qu'on regarde (semaine par défaut, mois, jour), et
   toucher une séance montre sa fiche sous MES SÉANCES (RETOUR ramène au
   calendrier), un jour vide s'ouvre dans DU JOUR. Plus de pastilles de semaine.
+- **En-tête d'Apprendre** (14/09) : le logo, OUVRIR LE CARNET et la barre des
+  rubriques restent collés en haut des pages de contenu ; les ancres s'arrêtent
+  dessous.
