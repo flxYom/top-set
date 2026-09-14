@@ -34,7 +34,7 @@ body{
 a{color:var(--orange);text-underline-offset:.15em;}
 a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--yellow);outline-offset:2px;}
 .lien-evitement{position:absolute;left:-999px;}
-.lien-evitement:focus{left:12px;top:12px;z-index:9;background:var(--yellow);color:#0d0c0a;padding:8px 12px;}
+.lien-evitement:focus{left:12px;top:12px;z-index:11;background:var(--yellow);color:#0d0c0a;padding:8px 12px;}
 
 /* ------------------------------------------------------------- en-tete */
 .barre{
@@ -52,6 +52,10 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{ou
 }
 .bouton:active{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--ink);}
 .barre .bouton{margin-left:auto;min-height:40px;padding:0 12px;font-size:12px;box-shadow:3px 3px 0 var(--ink);}
+/* L'en-tete et les rubriques restent visibles pendant la lecture. Les ancres
+   (sommaire, « aller au contenu ») s'arretent sous lui, pas derriere. */
+.entete{position:sticky;top:0;z-index:10;background:var(--bg);}
+html{scroll-padding-top:150px;}
 
 /* La barre des rubriques d'Apprendre : les memes cases que les onglets de
    l'app. Elle defile en largeur sur telephone, la page jamais. */

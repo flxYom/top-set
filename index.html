@@ -36,6 +36,9 @@
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"WebSite","name":"Top Set","alternateName":["Top Set app","top-set.fr"],"url":"https://www.top-set.fr/","inLanguage":"fr"}
 </script>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"Organization","name":"Top Set","url":"https://www.top-set.fr/","logo":"https://www.top-set.fr/icon-512.png"}
+</script>
 <style>
   /* Police servie depuis notre propre domaine : aucun appel a un tiers,
      et donc aucune IP de visiteur envoyee a Google. */
@@ -3018,10 +3021,10 @@
 </button>
 <div class="toast" id="toast"></div>
 
-<script src="intelligence.js"></script>
+<script src="intelligence.js" defer></script>
 <!-- Coordonnees publiques du projet Supabase. Absent ou vide : l'app reste
      en mode 100 % local, sans bouton mort ni erreur. -->
-<script src="supabase-config.js"></script>
-<script src="app.js"></script>
+<script src="supabase-config.js" defer></script>
+<script src="app.js" defer></script>
 </body>
 </html>

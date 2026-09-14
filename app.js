@@ -4473,8 +4473,8 @@
         var st = STATUT_MOT[x.statut] || x.statut;
         return '<div class="retour-mien">'
           + '<div class="retour-mien-tete">'
-          +   '<span>' + (RETOUR_MOT[x.type] || x.type) + ' · ' + esc(quandCourt(x.cree_le)) + '</span>'
-          +   '<span class="retour-statut ' + esc(x.statut) + '">' + st + '</span>'
+          +   '<span>' + esc(RETOUR_MOT[x.type] || x.type) + ' · ' + esc(quandCourt(x.cree_le)) + '</span>'
+          +   '<span class="retour-statut ' + esc(x.statut) + '">' + esc(st) + '</span>'
           + '</div>'
           + '<div class="retour-mien-corps">' + esc(x.corps) + '</div>'
           + '</div>';
