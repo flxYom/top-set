@@ -1673,12 +1673,73 @@
     return MOTS_FIN[somme % MOTS_FIN.length];
   }
 
-  // Le volume d'une semaine entiere, pour la comparaison « mieux que la
-  // semaine derniere ».
-  function volumeSemaine(depart){
-    var total = 0;
-    for (var i = 0; i < 7; i++) total += dayVolume(toDateStr(addDays(depart, i)));
-    return total;
+  // La meme seance la semaine d'avant, reconnue a ses exercices : parmi les
+  // quatorze jours precedents, celui qui en partage le plus avec ce jour, et a
+  // egalite le plus proche de sept jours. minimum : combien il en faut en
+  // commun — un gainage partage ne fait pas d'une seance jambes une seance pecs.
+  function clesDuJour(ds, remplisSeuls){
+    var day = state.sessions[ds], cles = {};
+    ((day && day.exercises) || []).forEach(function(e){
+      if (!e.nom || !e.nom.trim()) return;
+      if (remplisSeuls && !seriesRemplies(e).length) return;
+      cles[cleCanonique(e.nom)] = true;
+    });
+    return cles;
+  }
+  function seanceComparable(ds, cles, minimum){
+    var liste = Object.keys(cles);
+    if (!liste.length) return null;
+    var base = fromDateStr(ds), best = null;
+    for (var k = 1; k <= 14; k++){
+      var x = toDateStr(addDays(base, -k));
+      if (!state.sessions[x] || !compterJour(state.sessions[x])) continue;
+      var autres = clesDuJour(x, true);
+      var communs = liste.filter(function(c){ return autres[c]; }).length;
+      var ecart = Math.abs(k - 7);
+      if (communs && (!best || communs > best.communs || (communs === best.communs && ecart < best.ecart))){
+        best = { ds:x, communs:communs, ecart:ecart };
+      }
+    }
+    return best && best.communs >= (minimum || 1) ? best.ds : null;
+  }
+  function seriesDuJourPour(ds, cle){
+    var out = [];
+    ((state.sessions[ds] && state.sessions[ds].exercises) || []).forEach(function(e){
+      if (e.nom && cleCanonique(e.nom) === cle) out = out.concat(seriesRemplies(e));
+    });
+    return out;
+  }
+  // Un exercice contre lui-meme ce jour-la, sur ce qui se compare : le 1RM
+  // estime du top set, les reps d'un exercice sans charge, la duree totale
+  // d'un cardio, la meilleure tenue d'un gainage.
+  function comparerExo(e, avant){
+    var auj = seriesRemplies(e);
+    function durees(ss){ return ss.map(function(s){ return TS.dureeSecondes(s.reps); }).filter(function(d){ return d !== null; }); }
+    var dAuj = durees(auj), dAvant = durees(avant);
+    var val, valAvant, texte, texteAvant;
+    if (dAuj.length && dAvant.length){
+      var somme = function(t){ return t.reduce(function(a, b){ return a + b; }, 0); };
+      if (estCardio(e)){ val = somme(dAuj); valAvant = somme(dAvant); }
+      else { val = Math.max.apply(null, dAuj); valAvant = Math.max.apply(null, dAvant); }
+      texte = TS.formatDuree(val); texteAvant = TS.formatDuree(valAvant);
+    } else if (!dAuj.length && !dAvant.length){
+      var top = TS.calculerTopSet(auj), topAvant = TS.calculerTopSet(avant);
+      if (!top || !topAvant) return null;
+      val = TS.epleySerie(top); valAvant = TS.epleySerie(topAvant);
+      if (!val && !valAvant && !(top.poids > 0) && !(topAvant.poids > 0)){
+        val = parseInt(top.reps, 10); valAvant = parseInt(topAvant.reps, 10);
+      }
+      texte = perfTexte(top); texteAvant = perfTexte(topAvant);
+    } else return null;
+    if (!(val > 0) || !(valAvant > 0)) return null;
+    var pct = Math.round(((val - valAvant) / valAvant) * 1000) / 10;
+    var sens = (texte === texteAvant || Math.abs(pct) < 0.5) ? 'egal' : (pct > 0 ? 'hausse' : 'baisse');
+    return { nom:nomCanonique(e.nom) || e.nom, texte:texte, avant:texteAvant, pct:pct, sens:sens };
+  }
+  function sensTexte(l){
+    if (l.sens === 'egal') return '= STABLE';
+    var p = String(Math.abs(l.pct)).replace('.', ',');
+    return l.sens === 'hausse' ? '▲ +' + p + ' %' : '▼ −' + p + ' %';
   }
 
   function bilanDuJour(ds){
@@ -1690,15 +1751,37 @@
     var bilan = {
       date: ds,
       titre: titreSeance(ds),
-      volume: dayVolume(ds),
       series: compterJour(day),
       exos: exos.length,
       records: 0,
       top: null,
       progres: [],
-      semaine: null,
+      comparaison: null,
       mot: motDuJour(ds)
     };
+
+    // D'abord la meme seance la semaine d'avant : c'est la comparaison qui
+    // compte. Un exercice deja compare la ne se repete pas plus bas.
+    var cles = clesDuJour(ds, true);
+    var ref = seanceComparable(ds, cles, Math.max(1, Math.ceil(Object.keys(cles).length / 2)));
+    var compares = {};
+    if (ref){
+      var lignes = [];
+      exos.forEach(function(e){
+        var cle = cleCanonique(e.nom || '');
+        if (!e.nom || compares[cle]) return;
+        var avantRef = seriesDuJourPour(ref, cle);
+        if (!avantRef.length) return;
+        var l = comparerExo(e, avantRef);
+        if (!l) return;
+        compares[cle] = true;
+        lignes.push(l);
+      });
+      if (lignes.length){
+        bilan.comparaison = { ds:ref, lignes:lignes,
+          hausse: lignes.filter(function(l){ return l.sens === 'hausse'; }).length };
+      }
+    }
 
     exos.forEach(function(e){
       var remplies = seriesRemplies(e);
@@ -1715,6 +1798,7 @@
 
       // Mieux que la derniere fois, sur le meme exercice : on compare ce qui
       // est comparable — 1RM estime contre 1RM estime, duree contre duree.
+      if (e.nom && compares[cleCanonique(e.nom)]) return;
       var histo = seancesDeLExo(e.nom).filter(function(j){ return j.date < ds; });
       var avant = histo[histo.length - 1];
       if (!avant) return;
@@ -1739,16 +1823,6 @@
         texte: formatWeight(Math.round(rmTop)) + ' kg estimés contre ' + formatWeight(Math.round(rmAvant))
              + ' le ' + jourCourt(avant.date) + (pourcent >= 0.5 ? ' · +' + String(pourcent).replace('.', ',') + ' %' : '') });
     });
-
-    // La semaine en cours contre la precedente : seulement quand la semaine
-    // d'avant a servi, sinon la comparaison ne veut rien dire.
-    var debutSemaine = startOfWeek(fromDateStr(ds));
-    var avantSemaine = addDays(debutSemaine, -7);
-    var vSem = volumeSemaine(debutSemaine), vAvant = volumeSemaine(avantSemaine);
-    if (vAvant > 0 && vSem > 0){
-      bilan.semaine = { volume:vSem, avant:vAvant,
-                        delta: Math.round(((vSem - vAvant) / vAvant) * 100) };
-    }
     return bilan;
   }
   // « samedi » -> « Samedi » : la premiere lettre seulement, sinon le mois
@@ -1760,6 +1834,11 @@
   function jourCourt(ds){
     var d = fromDateStr(ds);
     return d.getDate() + ' ' + MONTH_ABBR[d.getMonth()];
+  }
+  // « lundi 7 sept. »
+  function jourDe(ds){
+    var d = fromDateStr(ds);
+    return DAY_NAMES[(d.getDay()+6)%7].toLowerCase() + ' ' + jourCourt(ds);
   }
 
   // ---------- la page Mes seances ----------
@@ -2035,6 +2114,7 @@
     }
     garderDefilement(y);
     majBoutonFin(ds);
+    majSuggestions();
   }
 
   // « Terminer ma séance » n'a de sens qu'une fois quelque chose de noté, et
@@ -3042,6 +3122,59 @@
     showToast(n + (n > 1 ? ' exercices repris' : ' exercice repris'));
   });
 
+  // ---------- ce que tu avais fait avec ----------
+  // Sous « + AJOUTER UN EXERCICE » : les exercices de la meme seance la
+  // semaine d'avant (seanceComparable) qui ne sont pas encore dans celle-ci.
+  // Un appui pose l'exercice vide, avec autant de series que ce jour-la : la
+  // colonne de la derniere fois et ↺ DERNIÈRE FOIS font le reste. Rien sur une
+  // seance deja faite.
+  function suggestionsExo(ds){
+    if (!state.sessions[ds] || estTerminee(ds) || seanceFaite(ds)) return null;
+    var cles = clesDuJour(ds, false);
+    var ref = seanceComparable(ds, cles, 1);
+    if (!ref) return null;
+    var vus = {}, exos = [];
+    state.sessions[ref].exercises.forEach(function(e){
+      if (!e.nom || !e.nom.trim() || !seriesRemplies(e).length) return;
+      var cle = cleCanonique(e.nom);
+      if (cles[cle] || vus[cle]) return;
+      vus[cle] = true;
+      exos.push(e);
+    });
+    return exos.length ? { ds:ref, exos:exos.slice(0, 4) } : null;
+  }
+  function majSuggestions(){
+    var zone = document.getElementById('suggestExo');
+    if (!zone) return;
+    var s = state.loading ? null : suggestionsExo(state.selectedDay);
+    if (!s){ zone.hidden = true; zone.innerHTML = ''; return; }
+    zone.hidden = false;
+    zone.innerHTML = '<p class="suggest-tete">' + esc(jourDe(s.ds).toUpperCase()) + ', TU AVAIS AUSSI FAIT</p>'
+      + '<div class="suggest-liste">' + s.exos.map(function(e){
+          return '<button type="button" class="suggest-btn" data-suggestion="' + esc(e.id) + '" data-depuis="' + esc(s.ds) + '">+ '
+            + esc(nomCanonique(e.nom) || e.nom) + '</button>';
+        }).join('') + '</div>';
+  }
+  document.getElementById('suggestExo').addEventListener('click', function(e){
+    var b = e.target.closest('[data-suggestion]');
+    if (!b) return;
+    var src = state.sessions[b.dataset.depuis];
+    var ex = src && findExercise(src, b.dataset.suggestion);
+    if (!ex) return;
+    var day = getOrCreateDay(state.selectedDay);
+    var n = Math.max(1, Math.min(10, seriesRemplies(ex).length));
+    var series = [];
+    for (var i = 0; i < n; i++) series.push({ id:genSerieId(), poids:null, reps:'', rpe:null, repos:'', fait:false });
+    var nouveau = { id:genId(), nom:ex.nom, groupe:ex.groupe || 'Autre', repos:ex.repos || '', series:series };
+    if (ex.mesure) nouveau.mesure = ex.mesure;
+    day.exercises.push(nouveau);
+    scheduleSave(state.selectedDay, true);
+    renderDayPanel(true);
+    renderDayPills();
+    renderWeekStats();
+    showToast((normalizeName(ex.nom) || 'L\'exercice') + ' ajouté · ↺ DERNIÈRE FOIS reprend ses séries');
+  });
+
   // ---------- chrono des exercices au temps ----------
   // Un appui lance, le suivant met en pause : la duree tenue remplit la
   // premiere serie encore vide (un lest deja note reste), la coche, et le
@@ -3350,6 +3483,7 @@
                      !!EXERCISE_DB_LOWER[String(ex.nom).trim().toLowerCase()];
     if (rememberExercise(ex.nom, ex.groupe)) populateDatalist();
     if (!etaitConnu) proposerRattachement(t.closest('.ex-card'), ex);
+    majSuggestions();
   });
 
   // Affiche la proposition dans la carte, sans re-render : re-dessiner ferait
@@ -3544,7 +3678,7 @@
     // un autre total que la tuile d'apres ferait douter des deux.
     var b = bilanDuJour(ds);
     var nSeries = b ? b.series : 0;
-    var total = b ? Math.round(b.volume) : 0;
+    var nExos = b ? b.exos : 0;
     var disques = exos.slice(0, 5).map(function(x, i){
       var h = volMax ? 46 + Math.round(54 * x.vol / volMax) : 70;
       return '<i class="disque" style="--h:' + h + 'px;--c:' + (GROUP_COLORS[x.groupe] || GROUP_COLORS.Autre) + ';--i:' + i + '"></i>';
@@ -3560,7 +3694,7 @@
       +   '<div class="barre-leve">' + cote('gauche') + '<div class="barre-tige"></div>' + cote('droite') + '</div>'
       + '</div>'
       + '<p class="barre-compteurs"><b data-vers="' + nSeries + '">0</b> ' + (nSeries > 1 ? 'séries' : 'série')
-      +   ' · <b data-vers="' + total + '">0</b> kg</p>'
+      +   ' · <b data-vers="' + nExos + '">0</b> ' + (nExos > 1 ? 'exos' : 'exo') + '</p>'
       + '<p class="barre-defile" aria-hidden="true">' + esc(exos.length ? exos[0].nom : '') + '</p>'
       + '<p class="barre-passer">Touche pour voir ton bilan</p>'
       + '</div>';
@@ -3600,40 +3734,45 @@
     var html = '<div class="bilan-fini">'
       + '<p class="bilan-tag anim" style="--i:0">SÉANCE TERMINÉE</p>'
       + '<h2 class="bilan-titre anim" id="bilanTitre" style="--i:1">' + esc(b.titre) + '</h2>'
-      + '<p class="bilan-date anim" style="--i:1">' + esc(majuscule(DAY_NAMES[(d.getDay()+6)%7]) + ' ' + d.getDate() + ' ' + MONTH_NAMES[d.getMonth()]) + '</p>'
-      + '<div class="bilan-volume anim" style="--i:2">'
-      +   '<span class="bilan-volume-num" data-compteur="' + Math.round(b.volume) + '">0</span>'
-      +   '<span class="bilan-volume-unite">kg soulevés</span>'
-      + '</div>'
-      + '<div class="bilan-tuiles anim" style="--i:3">'
+      + '<p class="bilan-date anim" style="--i:1">' + esc(majuscule(DAY_NAMES[(d.getDay()+6)%7]) + ' ' + d.getDate() + ' ' + MONTH_NAMES[d.getMonth()]) + '</p>';
+    var c = b.comparaison;
+    if (c){
+      var n = c.lignes.length;
+      html += '<div class="bilan-volume anim" style="--i:2">'
+        +   '<span class="bilan-volume-num" data-compteur="' + c.hausse + '">0</span>'
+        +   '<span class="bilan-volume-unite">sur ' + n + (n > 1 ? ' exos' : ' exo') + ' en hausse par rapport à ' + esc(jourDe(c.ds)) + '</span>'
+        + '</div>';
+    }
+    html += '<div class="bilan-tuiles anim" style="--i:3">'
       +   '<div class="bilan-tuile"><b>' + b.series + '</b><span>' + (b.series > 1 ? 'SÉRIES' : 'SÉRIE') + '</span></div>'
       +   '<div class="bilan-tuile"><b>' + b.exos + '</b><span>' + (b.exos > 1 ? 'EXOS' : 'EXO') + '</span></div>'
       +   '<div class="bilan-tuile' + (b.records ? ' or' : '') + '"><b>' + b.records + '</b><span>' + (b.records > 1 ? 'RECORDS' : 'RECORD') + '</span></div>'
       + '</div>';
 
-    if (b.top){
+    if (c){
       html += '<div class="bilan-bloc anim" style="--i:4">'
+        + '<div class="bilan-bloc-tete">PAR RAPPORT À ' + esc(jourDe(c.ds).toUpperCase()) + '</div>'
+        + c.lignes.map(function(l){
+            return '<div class="bilan-ligne bilan-compare"><b>' + esc(l.nom) + '</b>'
+              + '<span>' + esc(l.texte) + (l.texte === l.avant ? ', comme ce jour-là' : ' contre ' + esc(l.avant)) + '</span>'
+              + '<i class="bilan-sens ' + l.sens + '">' + sensTexte(l) + '</i></div>';
+          }).join('')
+        + '<div class="bilan-bloc-note">' + esc(titreSeance(c.ds)) + ' · 1RM estimé, ou durée</div>'
+        + '</div>';
+    }
+    if (b.top){
+      html += '<div class="bilan-bloc anim" style="--i:5">'
         + '<div class="bilan-bloc-tete">TOP SET DU JOUR</div>'
         + '<div class="bilan-ligne"><b>' + esc(b.top.nom) + '</b><span>' + esc(b.top.texte) + '</span></div>'
         + '<div class="bilan-bloc-note">1RM estimé : ' + esc(formatWeight(Math.round(b.top.rm))) + ' kg</div>'
         + '</div>';
     }
     if (b.progres.length){
-      html += '<div class="bilan-bloc vert anim" style="--i:5">'
+      html += '<div class="bilan-bloc vert anim" style="--i:6">'
         + '<div class="bilan-bloc-tete">MIEUX QUE LA DERNIÈRE FOIS</div>'
         + b.progres.slice(0, 4).map(function(p){
             return '<div class="bilan-ligne"><b>' + esc(p.nom) + '</b><span>' + esc(p.texte) + '</span></div>';
           }).join('')
-        + '</div>';
-    }
-    if (b.semaine){
-      var d7 = b.semaine.delta;
-      var vs = formatVolume(b.semaine.volume);
-      html += '<div class="bilan-bloc anim" style="--i:6">'
-        + '<div class="bilan-bloc-tete">CETTE SEMAINE</div>'
-        + '<div class="bilan-ligne"><b>' + esc(vs.num + ' ' + vs.unit) + '</b>'
-        +   '<span>' + (d7 > 0 ? '+' + d7 + ' % par rapport à la semaine dernière'
-                      : (d7 < 0 ? d7 + ' % par rapport à la semaine dernière' : 'autant que la semaine dernière')) + '</span></div>'
         + '</div>';
     }
     html += '<p class="bilan-mot anim" style="--i:7">« ' + esc(b.mot) + ' »</p>'

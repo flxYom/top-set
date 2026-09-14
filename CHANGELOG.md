@@ -23,9 +23,17 @@ while it stays below `1.0.0`, breaking changes (in particular to the
   with last session's sets; `+ AJOUTER À MA SÉANCE DU JOUR` under each exercise
   of a past, done session copies it into today's session; an empty day offers
   to redo the same weekday of last week, or the last session.
+- **Exercises from last week's session.** Under `+ AJOUTER UN EXERCICE`, the
+  exercises that went with today's ones in the same session last week, one tap
+  to add each.
+- **Tools on the planning screen.** 1RM calculator, RPE table and spreadsheet
+  template, linked at the bottom of the planning.
 
 ### Changed
 
+- **The session recap compares with the same session last week.** Matched by
+  its exercises, one line per exercise going up, down or steady; the kilos
+  lifted and the week's tonnage are gone.
 - **The tab bubble looks like Tinder's.** Clear glass the colour of the bar, a
   hairline rim with a white highlight, the rainbow only on the rounded ends,
   and a sharp cut between the magnified centre and the edge instead of blurry

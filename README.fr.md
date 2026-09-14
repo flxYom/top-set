@@ -232,6 +232,18 @@ dernière fois, qui se lit et ne recopie rien :
   semaine d'avant) et `↺ REFAIRE MA DERNIÈRE SÉANCE` si ce n'est pas la même,
   avec leur titre ; tout se recopie par `selectionnerSeance`.
 
+**Ce qui allait avec, la semaine d'avant.** Sous `+ AJOUTER UN EXERCICE`, dès
+qu'un exercice du jour a un nom : les exercices de la même séance la semaine
+d'avant (même reconnaissance que le bilan, un exercice en commun suffit) qui ne
+sont pas encore dans celle du jour, quatre au plus. Un appui l'ajoute vide, avec
+autant de séries que ce jour-là — la colonne de la dernière fois et
+`↺ DERNIÈRE FOIS` font le reste. Rien sur une séance déjà faite
+(`suggestionsExo`).
+
+**Les outils sous le planning.** Le calculateur de 1RM, le tableau RPE et le
+modèle de tableur : trois liens en bas du planning, en plus de l'onglet
+Apprendre.
+
 **RPE par série.** Échelle des répétitions en réserve, de 10 à 6 par demi-points :
 10 c'est l'échec, 9 il t'en restait une, 8 il t'en restait deux. Facultatif —
 laisse vide, rien ne casse. La cellule n'a la place que du chiffre : la phrase
@@ -268,13 +280,17 @@ disques. Ils sont dans la coquille du service worker : hors ligne aussi.
 
 **La fin de séance.** En bas du planning, une fois quelque chose de noté,
 `✓ TERMINER MA SÉANCE` pose la question — en signalant les séries notées mais
-pas cochées, qui comptent quand même — puis affiche un **bilan** : le volume du
-jour qui monte de 0 à son total, les séries, les exercices, les records battus,
-le **top set du jour** (celui dont le 1RM estimé est le plus haut, pas le plus
-lourd en valeur brute), les exercices **meilleurs que la dernière fois** (1RM
-estimé contre 1RM estimé, durée contre durée pour un exercice tenu), la
-**semaine** comparée à la précédente, et une phrase tirée de la date du jour —
-la même toute la journée, une autre demain. Tout vient des séries saisies :
+pas cochées, qui comptent quand même — puis affiche un **bilan**. D'abord
+**la même séance la semaine d'avant**, reconnue à ses exercices (parmi les 14
+jours précédents, celui qui en partage le plus, à égalité le plus proche de
+7 jours, et au moins la moitié en commun) : combien d'exercices sont en hausse,
+compté depuis 0, puis une ligne par exercice avec sa pastille ▲ / ▼ / = (1RM
+estimé du top set, reps sans charge, durée totale en cardio, meilleure tenue en
+gainage). Ensuite les séries, les exercices, les records battus, le **top set
+du jour** (celui dont le 1RM estimé est le plus haut, pas le plus lourd en
+valeur brute), les autres exercices **meilleurs que la dernière fois**, et une
+phrase tirée de la date du jour — la même toute la journée, une autre demain.
+Plus de tonnage : les kilos soulevés ne disaient rien de la progression. Tout vient des séries saisies :
 aucune ligne n'apparaît sans de quoi la calculer.
 
 La validation est un **horodatage** sur la journée (`termine`), pas un booléen :

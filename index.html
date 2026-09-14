@@ -165,6 +165,19 @@
   .apprendre-carte.carnet{--c:var(--ink);}
   .apprendre-carte.methode{--c:var(--dim);}
   a.btn-add{display:flex;align-items:center;justify-content:center;text-decoration:none;}
+  /* Les outils aussi sous le planning : trois liens courts, les memes pages. */
+  .outils-planning{display:flex;flex-direction:column;gap:8px;margin-top:16px;}
+  .outils-planning-tete{margin:0;font-size:11px;font-weight:800;letter-spacing:.12em;color:var(--dim);}
+  .outils-planning-liste{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;}
+  .outil-lien{
+    display:flex;flex-direction:column;gap:3px;min-height:64px;padding:10px 10px 11px;
+    border:2px solid var(--line);border-top:4px solid var(--yellow);
+    background:var(--panel);color:var(--ink);text-decoration:none;
+  }
+  .outil-lien strong{font-size:14px;font-weight:800;letter-spacing:.05em;}
+  .outil-lien span{font-size:11.5px;line-height:1.3;color:var(--dim);}
+  .outil-lien:active{transform:translate(2px,2px);}
+  .outil-lien:focus-visible{outline:3px solid var(--yellow);outline-offset:2px;}
   .apprendre-note{color:var(--dim);font-size:12.5px;line-height:1.5;margin:0;}
 
   .view{display:flex;flex-direction:column;gap:14px;}
@@ -920,6 +933,16 @@
   .btn-refaire-titre{font-size:13px;font-weight:700;color:var(--dim);}
   .btn-refaire:active{border-color:var(--orange);}
   .btn-chrono.en-cours{background:var(--orange);border-color:var(--orange);color:#0d0c0a;font-size:15px;min-width:92px;}
+  /* Sous + AJOUTER UN EXERCICE : ce qui accompagnait ces exercices la semaine d'avant. */
+  .suggest-exo{display:flex;flex-direction:column;gap:6px;margin-top:10px;}
+  .suggest-tete{margin:0;font-size:10.5px;font-weight:800;letter-spacing:.1em;color:var(--dim);}
+  .suggest-liste{display:flex;flex-wrap:wrap;gap:6px;}
+  .suggest-btn{
+    min-height:44px;max-width:100%;padding:0 14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+    background:transparent;border:2px dashed var(--line);color:var(--ink);
+    font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;
+  }
+  .suggest-btn:active{border-color:var(--orange);color:var(--orange);}
 
   /* Pas de derniere fois : pas de colonne. Meme grille que sur un petit ecran. */
   .ex-card.sans-prec .series-tete,.ex-card.sans-prec .serie-main{grid-template-columns:40px minmax(56px,1.3fr) minmax(40px,1fr) 46px 44px;}
@@ -1740,6 +1763,16 @@
   .bilan-ligne b{font-size:13.5px;font-weight:800;}
   .bilan-ligne span{font-size:12px;color:var(--dim);font-weight:700;}
   .bilan-bloc-note{margin-top:5px;font-size:11px;color:var(--dim);font-weight:700;}
+  .bilan-compare{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:10px;align-items:center;}
+  .bilan-compare b,.bilan-compare span{grid-column:1;}
+  .bilan-sens{
+    grid-column:2;grid-row:1 / span 2;
+    font-style:normal;font-size:11px;font-weight:800;letter-spacing:.04em;white-space:nowrap;
+    font-variant-numeric:tabular-nums;padding:4px 8px;border:1px solid var(--line);color:var(--dim);
+  }
+  .bilan-sens.hausse{color:var(--green);border-color:var(--green);}
+  .bilan-sens.baisse{color:var(--orange);border-color:var(--orange);}
+  .bilan-volume-unite{line-height:1.35;}
   .bilan-mot{
     font-size:14px;line-height:1.5;font-style:italic;font-weight:700;
     border-left:3px solid var(--green);padding-left:10px;
@@ -2128,6 +2161,7 @@
   .btn-chrono{border-width:1.5px;border-radius:var(--r-m);}
   .btn-comme-avant,.btn-ajout-jour{border-width:1.5px;border-radius:var(--r-m);}
   .btn-refaire{border:1px solid var(--trait);border-radius:var(--r-m);background:var(--s1);}
+  .suggest-btn{border:1.5px dashed var(--trait2);border-radius:999px;}
   .serie-rpe{border:1px solid transparent;border-radius:var(--r-s);background:var(--s2);}
   .serie-check{border:1.5px solid #57514a;border-radius:12px;}
   .serie-check.checked{background:var(--ok);border-color:var(--ok);color:#04140c;box-shadow:0 8px 18px -8px rgba(43,208,138,.7);}
@@ -2185,6 +2219,8 @@
 
   /* ---- Apprendre --------------------------------------------------------------- */
   .apprendre-carte{border:1px solid var(--trait);border-radius:var(--r-l);background:var(--s1);}
+  .outil-lien{border:1px solid var(--trait);border-radius:var(--r-m);background:var(--s1);}
+  .outil-lien strong{color:var(--yellow);}
 
   /* ---- Feuilles ----------------------------------------------------------------- */
   .sheet{background:rgba(6,5,4,.62);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);}
@@ -2207,6 +2243,8 @@
   /* ---- Fin de seance ------------------------------------------------------------------ */
   .bilan-carte{border:1px solid var(--trait2);border-radius:var(--r-xl);box-shadow:0 30px 80px -20px rgba(0,0,0,.85);}
   .bilan-tuile,.bilan-bloc,.bilan-volume{border-width:1px;border-radius:var(--r-m);}
+  .bilan-sens{border-radius:999px;}
+  .bilan-sens.hausse{color:var(--ok);border-color:var(--ok);}
   .bilan-alerte,.bilan-mot{border-left-width:2px;}
   .bilan-tag{border-radius:6px;}
   .disque{border-width:1.5px;}
@@ -2498,9 +2536,19 @@
       <div class="day-panel-header"><h2 id="dayTitle">—</h2></div>
       <div class="ex-list" id="exList"></div>
       <button type="button" class="btn-add" id="addExerciseBtn">+ AJOUTER UN EXERCICE</button>
+      <div class="suggest-exo" id="suggestExo" hidden></div>
       <div id="finZone" hidden></div>
       <button type="button" class="btn-reprendre" id="reprendreBtn">⟳ SÉLECTIONNER UNE SÉANCE</button>
       <button type="button" class="btn-recap-jour" id="recapJourBtn">VOIR LE RÉCAP DE CETTE SÉANCE ›</button>
+    </div>
+
+    <div class="outils-planning">
+      <h2 class="outils-planning-tete">OUTILS</h2>
+      <div class="outils-planning-liste">
+        <a class="outil-lien" href="/outils/calculateur-1rm"><strong>1RM</strong><span>Ta charge max estimée</span></a>
+        <a class="outil-lien" href="/outils/tableau-rpe"><strong>RPE</strong><span>% du 1RM selon les reps</span></a>
+        <a class="outil-lien" href="/outils/modele-carnet-musculation"><strong>MODÈLE</strong><span>Ton carnet pour Excel</span></a>
+      </div>
     </div>
   </section>
 

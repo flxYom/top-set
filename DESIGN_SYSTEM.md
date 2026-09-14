@@ -227,6 +227,13 @@ Cible :
   dernière fois (elle se lit). `↺ DERNIÈRE FOIS` en pointillé neutre à côté de
   `+ SÉRIE` ; `+ AJOUTER À MA SÉANCE DU JOUR` sous chaque exercice d'une séance
   faite ; sur un jour vide, `↺ REFAIRE…` en carte, libellé orange et titre gris.
+- **Suggestions d'exercices** (14/09) : sous `+ AJOUTER UN EXERCICE`, un
+  sur-titre gris et des pastilles en pointillé neutre, 44 px, quatre au plus.
+- **Bilan** (14/09) : plus de tonnage. Le grand chiffre = les exercices en
+  hausse par rapport à la même séance la semaine d'avant ; une ligne par
+  exercice, pastille `▲ +3 %` verte, `▼ −2 %` orange, `= STABLE` grise.
+- **Outils sous le planning** (14/09) : trois liens compacts sur une ligne,
+  accent jaune (celui des outils dans Apprendre).
 
 ## 11. Méthode avant un changement important
 

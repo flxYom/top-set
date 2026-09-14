@@ -578,5 +578,16 @@ ok('un exercice d une seance faite s ajoute a la seance du jour, series comprise
 ok('un jour vide propose de refaire la seance de la semaine d avant ou la derniere',
    /function seancesARefaire\(ds\)\{/.test(SRC) && /data-refaire="/.test(SRC) && /\+ refaireHTML\(ds\);/.test(SRC));
 
+ok('le bilan compare a la meme seance la semaine d avant, sans tonnage',
+   /function seanceComparable\(ds, cles, minimum\)\{/.test(SRC) && /function comparerExo\(e, avant\)\{/.test(SRC)
+   && /PAR RAPPORT À /.test(SRC) && !/kg soulevés/.test(SRC) && !/CETTE SEMAINE/.test(SRC)
+   && !/function volumeSemaine/.test(SRC) && !/b\.volume/.test(SRC));
+ok('sous + AJOUTER UN EXERCICE, les exercices faits avec ceux-la la semaine d avant',
+   /id="addExerciseBtn">\+ AJOUTER UN EXERCICE<\/button>\s*<div class="suggest-exo" id="suggestExo" hidden><\/div>/.test(HTML)
+   && /function suggestionsExo\(ds\)\{/.test(SRC) && /data-suggestion="/.test(SRC) && /majBoutonFin\(ds\);\n    majSuggestions\(\);/.test(SRC));
+ok('les outils ont leur rubrique sous le planning',
+   (() => { const v = HTML.slice(HTML.indexOf('id="view-planning"'), HTML.indexOf('id="view-seances"'));
+            return ['/outils/calculateur-1rm', '/outils/tableau-rpe', '/outils/modele-carnet-musculation'].every(h => v.includes('href="' + h + '"')); })());
+
 console.log(`\n${pass} reussis, ${fail} echoues`);
 process.exit(fail ? 1 : 0);

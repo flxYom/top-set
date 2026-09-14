@@ -225,6 +225,17 @@ read and copies nothing:
   before) and `↺ REFAIRE MA DERNIÈRE SÉANCE` when it is a different one, with
   their title; everything is copied by `selectionnerSeance`.
 
+**What went with it last week.** Under `+ AJOUTER UN EXERCICE`, as soon as an
+exercise of the day has a name: the exercises of the same session last week
+(same matching as the recap, one exercise in common is enough) that are not in
+today's yet, four at most. A tap adds it empty, with as many sets as that day —
+the last-time column and `↺ DERNIÈRE FOIS` do the rest. Nothing on a session
+already done (`suggestionsExo`).
+
+**Tools under the planning.** The 1RM calculator, the RPE table and the
+spreadsheet template: three links at the bottom of the planning screen, on top
+of the Learn tab.
+
 **Rest per set**, not per exercise, and carried over when a set is duplicated.
 
 **A comment per set.** For what the numbers don't say: « assisted », « with
@@ -253,12 +264,16 @@ in the service worker's shell, so they work offline too.
 
 **The end of a session.** At the bottom of the planning screen, once anything
 is logged, `✓ TERMINER MA SÉANCE` asks for confirmation — pointing out sets
-that are logged but unchecked, which still count — then shows a **recap**: the
-day's volume counting up from zero, sets, exercises, records broken, the **top
-set of the day** (highest estimated 1RM, not the heaviest raw load), the
-exercises that beat **last time** (estimated 1RM against estimated 1RM,
-duration against duration for holds), the **week** against the one before, and
-one line drawn from the date — the same all day, another one tomorrow.
+that are logged but unchecked, which still count — then shows a **recap**. First
+**the same session last week**, recognised by its exercises (of the 14 days
+before, the one sharing the most, ties going to the one closest to 7 days back,
+at least half of them in common): how many exercises went up, counting from
+zero, then one line per exercise with its badge ▲ / ▼ / = (estimated 1RM of the
+top set, reps without load, total time for cardio, best hold for a plank). Then
+sets, exercises, records broken, the **top set of the day** (highest estimated
+1RM, not the heaviest raw load), the other exercises that beat **last time**,
+and one line drawn from the date — the same all day, another one tomorrow. No
+tonnage any more: the kilos lifted said nothing about progress.
 Everything comes from the logged sets: no line appears without the numbers to
 compute it.
 
