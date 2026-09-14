@@ -14,6 +14,10 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 - **Stopwatch for timed exercises.** `▶ CHRONO` starts it, a second tap pauses
   it and logs the time held as a ticked set; the next tap starts a new set from
   zero. It survives the app being closed and keeps the screen on while running.
+- **Rest timer.** Ticking a set or pausing the stopwatch starts a rest that
+  counts up in a pill at the bottom left; the next set, restarting the
+  stopwatch or a tap stops it and writes the rest into that set's REST field
+  (10 s to 20 min). Service worker `topset-v29`.
 - **Cardio sets: minutes, speed, incline.** Treadmill, running, bike, rower…
   log a duration in minutes plus optional average speed (km/h) and incline (%).
   New `series.vitesse` / `series.inclinaison` columns (re-run `schema.sql`),

@@ -194,6 +194,15 @@ again from zero: one pause, one set. The start time is kept in `localStorage`
 again, and the screen stays on while it runs (Wake Lock, where available). One
 stopwatch at a time: starting another logs the running one first.
 
+**Rest between sets.** Ticking a set, or pausing the stopwatch, starts the rest:
+it counts up from zero in a pill at the bottom left, facing "back to top".
+Ticking the next set, restarting the stopwatch or tapping the pill stops it and
+writes its length into the REST field of the set that started it. Under 10 s
+(sets ticked after the fact) or over 20 min (a forgotten rest), nothing is
+written; unticking that set cancels it, validating the session drops it. Only
+on today's session, kept in `localStorage` (`topset_repos`) like the
+stopwatch, with the screen kept on.
+
 **Cardio: minutes, speed, incline.** Treadmill, running, walking, bike,
 rower… open as cardio: a set is a duration **in minutes** (`25`, `12,5`), plus
 average speed (km/h) and incline (%), both optional; `−1′` and `+1′` replace

@@ -589,5 +589,11 @@ ok('les outils ont leur rubrique sous le planning',
    (() => { const v = HTML.slice(HTML.indexOf('id="view-planning"'), HTML.indexOf('id="view-seances"'));
             return ['/outils/calculateur-1rm', '/outils/tableau-rpe', '/outils/modele-carnet-musculation'].every(h => v.includes('href="' + h + '"')); })());
 
+ok('le repos monte apres une serie cochee ou un chrono en pause, et s ecrit dans le REPOS de la serie',
+   /function finirRepos\(noter\)\{/.test(SRC) && /found\.serie\.repos = String\(sec\);/.test(SRC)
+   && /lancerRepos\(notee\.ds, notee\.serieId\)/.test(SRC) && /lancerRepos\(state\.selectedDay, serieId2\)/.test(SRC)
+   && /localStorage\.setItem\(CLE_REPOS/.test(SRC) && /id="reposPastille"/.test(HTML)
+   && /function validerFin\(ds\)\{\s*finirRepos\(false\);/.test(SRC));
+
 console.log(`\n${pass} reussis, ${fail} echoues`);
 process.exit(fail ? 1 : 0);

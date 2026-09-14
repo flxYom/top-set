@@ -1113,6 +1113,23 @@
   body.avec-retour .app{padding-bottom:78px;}
   body.avec-retour .toast{bottom:calc(84px + env(safe-area-inset-bottom));}
   body.avec-retour .haut-btn{bottom:calc(84px + env(safe-area-inset-bottom));}
+  /* Le repos entre deux series : en bas a gauche, en face de « revenir en
+     haut », lisible de loin. Un appui l'arrete. Le message monte au-dessus. */
+  .repos-pastille{
+    position:fixed;z-index:42;
+    left:max(16px,calc(env(safe-area-inset-left) + 12px));
+    bottom:calc(22px + env(safe-area-inset-bottom));
+    height:52px;padding:0 16px;display:flex;align-items:center;gap:10px;
+    background:var(--ink);color:#0d0c0a;
+    border:2.5px solid var(--ink);box-shadow:4px 4px 0 var(--green);
+    font-family:inherit;cursor:pointer;
+  }
+  .repos-mot{font-size:10.5px;font-weight:800;letter-spacing:.12em;opacity:.7;}
+  .repos-temps{font-size:22px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums;min-width:3.2ch;}
+  .repos-stop{font-size:10px;opacity:.55;}
+  body.avec-retour .repos-pastille{bottom:calc(84px + env(safe-area-inset-bottom));}
+  body.en-repos .toast{bottom:calc(86px + env(safe-area-inset-bottom));}
+  body.en-repos.avec-retour .toast{bottom:calc(148px + env(safe-area-inset-bottom));}
   .toast{
     position:fixed;
     left:50%;
@@ -2068,6 +2085,11 @@
     .toast{bottom:calc(var(--nav-h) + 18px + env(safe-area-inset-bottom));}
     .haut-btn{bottom:calc(var(--nav-h) + 16px + env(safe-area-inset-bottom));}
     body.avec-retour .toast,body.avec-retour .haut-btn{bottom:calc(var(--nav-h) + 84px + env(safe-area-inset-bottom));}
+    .repos-pastille{bottom:calc(var(--nav-h) + 16px + env(safe-area-inset-bottom));}
+    body.avec-retour .repos-pastille{bottom:calc(var(--nav-h) + 84px + env(safe-area-inset-bottom));}
+    body.en-repos .toast{bottom:calc(var(--nav-h) + 82px + env(safe-area-inset-bottom));}
+    body.en-repos.avec-retour .toast{bottom:calc(var(--nav-h) + 148px + env(safe-area-inset-bottom));}
+    body.clavier .repos-pastille,body.en-conv .repos-pastille,body.en-bilan .repos-pastille{display:none;}
     /* Le clavier sort : la barre se range, sinon elle monterait avec lui et
        couvrirait la ligne qu'on remplit. Dans une conversation, la saisie
        prend sa place. */
@@ -2256,6 +2278,12 @@
   }
   .haut-btn{border:1px solid var(--trait2);border-radius:50%;background:var(--s2);color:var(--ink);box-shadow:0 12px 28px -12px rgba(0,0,0,.8);}
   .haut-btn:active{box-shadow:none;transform:scale(.94);}
+  .repos-pastille{
+    border:1px solid rgba(43,208,138,.5);border-radius:999px;background:var(--s2);color:var(--ink);
+    box-shadow:0 12px 28px -12px rgba(0,0,0,.8), 0 0 0 4px rgba(43,208,138,.08);font-family:var(--f-ui);
+  }
+  .repos-pastille .repos-temps{color:var(--ok);}
+  .repos-pastille:active{transform:scale(.96);}
   .retour-seance{border:0;border-radius:18px;box-shadow:var(--lueur), inset 0 1px 0 rgba(255,255,255,.28);background:linear-gradient(180deg,#ff6c48,#ff4f2b);}
   .retour-seance:active{box-shadow:var(--lueur);transform:scale(.98);}
 
@@ -2940,6 +2968,9 @@
   <span class="retour-fleche" aria-hidden="true">‹</span>
   <span>RETOUR À MA SÉANCE</span>
   <span class="retour-quand"></span>
+</button>
+<button type="button" class="repos-pastille" id="reposPastille" aria-label="Arrêter le repos" hidden>
+  <span class="repos-mot">REPOS</span><span class="repos-temps">0:00</span><span class="repos-stop" aria-hidden="true">■</span>
 </button>
 <div class="toast" id="toast"></div>
 

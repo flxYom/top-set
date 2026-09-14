@@ -221,6 +221,9 @@ Cible :
 - **Chrono du gainage** (14/09) : `▶ CHRONO` neutre à côté de `+ SÉRIE` ; en
   marche, il passe orange (l'action en cours) avec des chiffres à chasse fixe.
   Une pause = une série cochée.
+- **Repos** (14/09) : pastille en bas à gauche, en face de « revenir en haut »,
+  chiffres verts à chasse fixe (le vert = fait, on récupère). Le message monte
+  au-dessus d'elle. Cachée avec le clavier, en conversation et au bilan.
 - **Ligne cardio** (14/09) : `MIN · KM/H · INCL. %`, sans colonne de
   difficulté, avec `−1′` / `+1′`. Tient à 360 px sans déborder.
 - **Reprendre la dernière fois** (14/09) : jamais depuis la colonne de la

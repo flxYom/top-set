@@ -3182,7 +3182,7 @@
   // dans le telephone : une app que l'iPhone a fermee pendant la planche
   // retrouve son chrono. L'ecran reste allume tant qu'il tourne.
   var CLE_CHRONO = 'topset_chrono';
-  var chrono = null, tickChrono = null, verrouEcran = null;
+  var chrono = null, tickChrono = null, verrouEcran = null, repos = null;
   try { chrono = JSON.parse(localStorage.getItem(CLE_CHRONO) || 'null'); } catch (err) { chrono = null; }
   if (!chrono || typeof chrono.debut !== 'number' || !chrono.exId || !chrono.ds) chrono = null;
   function garderChrono(){
@@ -3213,7 +3213,7 @@
   function suivreChrono(){
     clearInterval(tickChrono);
     tickChrono = null;
-    tenirEcran(!!chrono);
+    tenirEcran(!!(chrono || repos));
     if (!chrono) return;
     tickChrono = setInterval(function(){
       var txt = texteChrono(secondesChrono());
@@ -3222,7 +3222,7 @@
   }
   // Le navigateur rend le verrou de l'ecran quand l'app passe en arriere-plan.
   document.addEventListener('visibilitychange', function(){
-    if (!document.hidden && chrono){ verrouEcran = null; tenirEcran(true); }
+    if (!document.hidden && (chrono || repos)){ verrouEcran = null; tenirEcran(true); }
   });
   function arreterChrono(){
     if (!chrono) return null;
@@ -3248,9 +3248,77 @@
     cible.fait = true;
     if (serieOuverte[ex.id] === cible.id) delete serieOuverte[ex.id];
     scheduleSave(c.ds, true);
-    return { ex:ex, num:ex.series.indexOf(cible) + 1, sec:sec, ds:c.ds };
+    return { ex:ex, num:ex.series.indexOf(cible) + 1, sec:sec, ds:c.ds, serieId:cible.id };
   }
   if (chrono) suivreChrono();
+
+  // ---------- repos entre les series ----------
+  // Une serie cochee, ou un chrono de gainage mis en pause, lance le repos :
+  // il monte depuis 0 dans la pastille en bas a gauche. La serie suivante
+  // cochee, ou le chrono relance, l'arrete et ecrit sa duree dans le REPOS de
+  // la serie qui l'a lance ; un appui sur la pastille aussi. Moins de 10 s
+  // (des series cochees apres coup) ou plus de 20 min (un repos oublie) :
+  // rien n'est ecrit. Seulement le jour meme, et garde dans le telephone
+  // comme le chrono.
+  var CLE_REPOS = 'topset_repos';
+  var REPOS_MIN = 10, REPOS_MAX = 1200;
+  var tickRepos = null;
+  var reposPastille = document.getElementById('reposPastille');
+  try { repos = JSON.parse(localStorage.getItem(CLE_REPOS) || 'null'); } catch (err) { repos = null; }
+  if (!repos || typeof repos.debut !== 'number' || !repos.serieId || !repos.ds) repos = null;
+  function garderRepos(){
+    try {
+      if (repos) localStorage.setItem(CLE_REPOS, JSON.stringify(repos));
+      else localStorage.removeItem(CLE_REPOS);
+    } catch (err) {}
+  }
+  function secondesRepos(){ return repos ? Math.max(0, Math.floor((Date.now() - repos.debut) / 1000)) : 0; }
+  function lancerRepos(ds, serieId){
+    if (!serieId || ds !== toDateStr(new Date())) return;
+    repos = { ds:ds, serieId:serieId, debut:Date.now() };
+    garderRepos();
+    suivreRepos();
+  }
+  // noter : faux quand le repos ne veut plus rien dire (serie decochee,
+  // seance validee). Rend les secondes ecrites, ou null.
+  function finirRepos(noter){
+    if (!repos) return null;
+    var sec = secondesRepos(), r = repos;
+    repos = null;
+    garderRepos();
+    suivreRepos();
+    if (!noter || sec < REPOS_MIN || sec > REPOS_MAX) return null;
+    var day = state.sessions[r.ds];
+    var found = day && findSerie(day, r.serieId);
+    if (!found) return null;
+    found.serie.repos = String(sec);
+    scheduleSave(r.ds, true);
+    var champ = document.querySelector('.serie-repos[data-serie-id="' + r.serieId + '"]');
+    if (champ) champ.value = String(sec);
+    return sec;
+  }
+  function suivreRepos(){
+    clearInterval(tickRepos);
+    tickRepos = null;
+    document.body.classList.toggle('en-repos', !!repos);
+    reposPastille.hidden = !repos;
+    tenirEcran(!!(chrono || repos));
+    if (!repos) return;
+    var temps = reposPastille.querySelector('.repos-temps');
+    function pas(){
+      var sec = secondesRepos();
+      if (sec > REPOS_MAX){ finirRepos(false); return; }
+      temps.textContent = texteChrono(sec);
+      reposPastille.setAttribute('aria-label', 'Repos ' + texteChrono(sec) + ' : toucher pour l\'arrêter');
+    }
+    pas();
+    if (repos) tickRepos = setInterval(pas, 500);
+  }
+  reposPastille.addEventListener('click', function(){
+    var sec = finirRepos(true);
+    showToast(sec ? 'Repos ' + texteChrono(sec) + ' noté' : 'Repos arrêté');
+  });
+  if (repos) suivreRepos();
 
   exListEl.addEventListener('click', function(e){
     var b = e.target.closest('[data-action="chrono"]');
@@ -3258,15 +3326,19 @@
     var enCours = !!chrono && chrono.exId === b.dataset.id && chrono.ds === state.selectedDay;
     // Un seul chrono : en lancer un autre note d'abord celui qui tournait.
     var notee = arreterChrono();
+    var reposNote = null;
     if (!enCours){
+      // Relancer, c'est la fin du repos.
+      reposNote = finirRepos(true);
       chrono = { exId:b.dataset.id, ds:state.selectedDay, debut:Date.now() };
       garderChrono();
       suivreChrono();
-    }
+    } else if (notee) lancerRepos(notee.ds, notee.serieId);
     var exC = findExercise(getOrCreateDay(state.selectedDay), b.dataset.id);
     if (notee && notee.ex !== exC) renderDayPanel(true);
     else repeindreCarte(b.closest('.ex-card'), exC);
     if (notee) showToast('Série ' + notee.num + ' notée : ' + TS.formatDuree(notee.sec));
+    else if (reposNote) showToast('Repos ' + texteChrono(reposNote) + ' noté');
     renderDayPills();
     renderWeekStats();
   });
@@ -3400,6 +3472,12 @@
       if (!found4) return;
       found4.serie.fait = !found4.serie.fait;
       scheduleSave(state.selectedDay,true);
+      // Cochee : le repos d'avant s'arrete, le sien commence. Decochee : son
+      // repos est annule.
+      if (found4.serie.fait){
+        finirRepos(true);
+        lancerRepos(state.selectedDay, serieId2);
+      } else if (repos && repos.serieId === serieId2) finirRepos(false);
       // Faite, la serie se replie et la suivante s'ouvre ; decochee, elle
       // se rouvre pour qu'on la corrige.
       if (found4.serie.fait){
@@ -3647,6 +3725,7 @@
   }
 
   function validerFin(ds){
+    finirRepos(false);
     marquerSeanceFinie(ds, new Date().toISOString());
     renderDayPills();
     renderWeekStats();
