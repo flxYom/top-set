@@ -9,6 +9,17 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ## [Unreleased]
 
+### Added
+
+- **Stopwatch for timed exercises.** `▶ CHRONO` starts it, a second tap pauses
+  it and logs the time held as a ticked set; the next tap starts a new set from
+  zero. It survives the app being closed and keeps the screen on while running.
+- **Cardio sets: minutes, speed, incline.** Treadmill, running, bike, rower…
+  log a duration in minutes plus optional average speed (km/h) and incline (%).
+  New `series.vitesse` / `series.inclinaison` columns (re-run `schema.sql`),
+  two new CSV columns on the right; older files still import. Service worker
+  `topset-v28`.
+
 ### Changed
 
 - **iOS 26 style bottom bar on phones.** A floating grey capsule with a grey

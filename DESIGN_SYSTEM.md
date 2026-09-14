@@ -218,6 +218,11 @@ Cible :
 - **Zones sûres de l'iPhone** (`env(safe-area-inset-*)`) sur toutes les barres
   fixes.
 - **Vérifier à 320, 360, 375 et 430 px**, et dans un superset.
+- **Chrono du gainage** (14/09) : `▶ CHRONO` neutre à côté de `+ SÉRIE` ; en
+  marche, il passe orange (l'action en cours) avec des chiffres à chasse fixe.
+  Une pause = une série cochée.
+- **Ligne cardio** (14/09) : `MIN · KM/H · INCL. %`, sans colonne de
+  difficulté, pas de `−1′` / `+1′`. Tient à 360 px sans déborder.
 
 ## 11. Méthode avant un changement important
 

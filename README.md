@@ -186,6 +186,28 @@ carry it without any format change. The unit is mandatory: a bare `45` stays
 45 reps — guessing would reinterpret sets already logged. A duration counts
 toward no volume, no estimated 1RM and no rep record.
 
+**A stopwatch for holds.** On a timed exercise, `▶ CHRONO` next to `+ SÉRIE`
+starts the clock; one more tap pauses it, and the time held fills the first
+empty set (a load already entered stays) and ticks it. The next tap starts
+again from zero: one pause, one set. The start time is kept in `localStorage`
+(`topset_chrono`), so an app the iPhone closed mid-plank finds its stopwatch
+again, and the screen stays on while it runs (Wake Lock, where available). One
+stopwatch at a time: starting another logs the running one first.
+
+**Cardio: minutes, speed, incline.** Treadmill, running, walking, bike,
+rower… open as cardio: a set is a duration **in minutes** (`25`, `12,5`), plus
+average speed (km/h) and incline (%), both optional; `−1′` and `+1′` replace
+the steps. The duration lives in the reps field like a plank, so records, chart
+and recap already read it. Speed and incline are two new set fields, absent
+when empty, bounded (0–99.9 km/h, −30–99.9 %) and rounded to one decimal; in the
+database, `series.vitesse` and `series.inclinaison`, where `pousser_jour` drops
+an unreadable or out-of-range value instead of rejecting the day. Until
+`schema.sql` is re-run, a database that doesn't return those keys doesn't wipe
+them from the phone (`jourDistant`, as for comments). The CSV gains two columns
+on the right, `Vitesse (km/h)` and `Inclinaison (%)`; an older CSV still
+imports. A treadmill already logged in reps stays in reps: history wins over
+the name.
+
 **Rest per set**, not per exercise, and carried over when a set is duplicated.
 
 **A comment per set.** For what the numbers don't say: « assisted », « with
@@ -745,9 +767,9 @@ img/ambiance/            ambient images for the empty banner and welcome screen 
 supabase.umd.js          supabase-js 2.115.0, loaded on demand
 supabase-config.js       project URL + public anon key (see Accounts)
 supabase/schema.sql      tables, RLS policies and sync functions
-supabase/test/           the schema tested on a real Postgres (PGlite): RLS (254),
+supabase/test/           the schema tested on a real Postgres (PGlite): RLS (259),
                          upgrade from every past version, wrong-project guard (17)
-test/                    business logic (162), hardening guards (207), links (119), content templates (15)
+test/                    business logic (167), hardening guards (209), links (119), content templates (15)
 LICENSE  SECURITY.md  CONTRIBUTING.md  CHANGELOG.md
 .github/                 issue templates, CI workflow
 .vercelignore            what the site does not publish: docs, schema, tests, content sources

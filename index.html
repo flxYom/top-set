@@ -711,6 +711,11 @@
   .ex-card[data-mode="temps"] .serie-main{
     grid-template-columns:40px minmax(46px,1fr) minmax(94px,2.1fr) 46px 44px;
   }
+  /* Cardio : minutes, vitesse, inclinaison. Pas de difficulte. */
+  .ex-card[data-mode="cardio"] .series-tete,
+  .ex-card[data-mode="cardio"] .serie-main{
+    grid-template-columns:40px minmax(40px,.9fr) minmax(44px,1fr) minmax(44px,1fr) minmax(38px,.8fr) 44px;
+  }
   .series-tete{
     padding:0 5px;min-height:34px;margin-bottom:3px;
     font-size:9px;font-weight:800;letter-spacing:.1em;color:var(--dim);
@@ -771,7 +776,7 @@
   .col-prec-lien:active{background:var(--line);}
   .col-prec-lien::after{content:'';position:absolute;left:-2px;right:-2px;top:-6px;bottom:-4px;}
 
-  .serie-poids,.serie-reps,.serie-duree{
+  .serie-poids,.serie-reps,.serie-duree,.serie-cardio{
     width:100%;min-width:0;height:44px;
     background:var(--panel2);
     border:2px solid var(--line);
@@ -814,6 +819,7 @@
   .serie-card.fait:not(.ouverte) .serie-poids,
   .serie-card.fait:not(.ouverte) .serie-reps,
   .serie-card.fait:not(.ouverte) .serie-duree,
+  .serie-card.fait:not(.ouverte) .serie-cardio,
   .serie-card.fait:not(.ouverte) .serie-rpe{background:transparent;border-color:transparent;}
   .serie-card.fait:not(.ouverte) .serie-rpe.vide{color:transparent;}
   .serie-card.fait:not(.ouverte) .serie-num{border-color:transparent;background:transparent;}
@@ -834,7 +840,7 @@
     display:flex;align-items:center;justify-content:center;
     -webkit-user-select:none;user-select:none;
   }
-  .ex-card[data-mode="temps"] .step-btn{font-size:14px;}
+  .ex-card[data-mode="temps"] .step-btn,.ex-card[data-mode="cardio"] .step-btn{font-size:14px;}
   .step-btn:active{background:var(--orange);color:#0d0c0a;border-color:var(--ink);}
   .serie-repos-champ{
     flex:1;min-width:0;display:flex;align-items:center;gap:5px;
@@ -882,23 +888,37 @@
   .btn-add-serie:active{background:var(--orange);color:#0d0c0a;}
   .btn-add-note{flex:0 0 auto;padding:0 12px;white-space:nowrap;border:2px dashed var(--line);color:var(--dim);}
   .btn-add-note:active{border-color:var(--blue);color:var(--blue);}
+  /* Le chrono : neutre a l'arret, orange quand il tourne — c'est l'action en
+     cours, et les chiffres ne bougent pas en largeur. */
+  .btn-chrono{
+    flex:0 0 auto;min-height:46px;padding:0 12px;white-space:nowrap;
+    background:transparent;border:2px solid var(--line);color:var(--ink);
+    font-family:inherit;font-weight:800;font-size:12px;letter-spacing:.04em;
+    font-variant-numeric:tabular-nums;cursor:pointer;
+  }
+  .btn-chrono.en-cours{background:var(--orange);border-color:var(--orange);color:#0d0c0a;font-size:15px;min-width:92px;}
 
   /* Pas de derniere fois : pas de colonne. Meme grille que sur un petit ecran. */
   .ex-card.sans-prec .series-tete,.ex-card.sans-prec .serie-main{grid-template-columns:40px minmax(56px,1.3fr) minmax(40px,1fr) 46px 44px;}
   .ex-card.sans-prec[data-mode="temps"] .series-tete,
   .ex-card.sans-prec[data-mode="temps"] .serie-main{grid-template-columns:40px minmax(80px,1fr) 46px 44px;}
+  .ex-card.sans-prec[data-mode="cardio"] .series-tete,
+  .ex-card.sans-prec[data-mode="cardio"] .serie-main{grid-template-columns:40px minmax(50px,1fr) minmax(50px,1fr) minmax(44px,.9fr) 44px;}
   .ex-card.sans-prec .serie-prec,.ex-card.sans-prec .series-tete .col-prec{display:none;}
 
   @container (max-width:310px){
     .series-tete,.serie-main{grid-template-columns:36px minmax(56px,1.3fr) minmax(40px,1fr) 46px 44px;}
     .ex-card[data-mode="temps"] .series-tete,
     .ex-card[data-mode="temps"] .serie-main{grid-template-columns:36px minmax(80px,1fr) 46px 44px;}
+    .ex-card[data-mode="cardio"] .series-tete,
+    .ex-card[data-mode="cardio"] .serie-main{grid-template-columns:36px minmax(46px,1fr) minmax(46px,1fr) minmax(40px,.9fr) 44px;}
     .serie-prec,.series-tete .col-prec{display:none;}
     .ex-prev-liste{display:inline;}
     .step-btn,.serie-outil{width:38px;}
     .serie-repos-champ{padding-left:5px;gap:2px;}
     .serie-repos-champ > span{font-size:8px;letter-spacing:.04em;}
-    .btn-add-serie,.btn-add-note{font-size:11px;letter-spacing:.02em;}
+    .btn-add-serie,.btn-add-note,.btn-chrono{font-size:11px;letter-spacing:.02em;}
+    .btn-chrono{padding:0 8px;}
     .btn-add-note{padding:0 8px;}
     .ex-groupe-chip{padding:0 6px;letter-spacing:.04em;}
   }
@@ -1867,7 +1887,7 @@
   @supports (-webkit-touch-callout:none){
     .sheet-input,.sheet-paste,.ex-name,.ex-groupe,.serie-type,.serie-rpe,
     .serie-repos,.seance-creer-date,.alias-select,.conv-champ,.serie-note{font-size:16px;}
-    @media (max-width:380px){ .serie-poids,.serie-reps,.serie-duree{font-size:16px;} }
+    @media (max-width:380px){ .serie-poids,.serie-reps,.serie-duree,.serie-cardio{font-size:16px;} }
   }
 </style>
 <style id="refonte">
@@ -1917,7 +1937,7 @@
   /* Les chiffres et les titres gardent Bricolage : c'est la voix de Top Set.
      Le texte courant passe a la police du telephone, plus lisible en petit. */
   h1,h2,h3,.hero-title,.brand-mark,.accueil-marque,.dp-num,.week-label,
-  .serie-poids,.serie-reps,.serie-duree,.serie-num,.ex-name,.bilan-question,.bilan-titre,
+  .serie-poids,.serie-reps,.serie-duree,.serie-cardio,.serie-num,.ex-name,.bilan-question,.bilan-titre,
   .bilan-volume-num,.barre-compteurs b,.retour-seance,.btn-add,.btn-fin,.topbar-tab,.seg-btn,
   .btn-sheet,.ex-cible-val,.stat-tile,.volume-block,.recap-label,.seance-carte,.fiche-tete,
   .exo-record,.bilan-tuile b,.hero-tag,.day-panel-header h2{font-family:var(--f-titre);}
@@ -2073,13 +2093,15 @@
   .serie-card.ouverte{border-color:rgba(255,92,56,.55);background:rgba(255,92,56,.06);}
   .serie-card.fait:not(.ouverte){background:rgba(43,208,138,.075);}
   .serie-num{border:1px solid var(--trait);border-radius:var(--r-s);background:var(--s2);}
-  .serie-poids,.serie-reps,.serie-duree{
+  .serie-poids,.serie-reps,.serie-duree,.serie-cardio{
     border:1px solid transparent;border-radius:var(--r-s);background:var(--s2);
     font-size:18px;font-weight:700;
   }
-  .serie-poids:focus,.serie-reps:focus,.serie-duree:focus,.serie-rpe:focus,.serie-repos:focus{
+  .serie-poids:focus,.serie-reps:focus,.serie-duree:focus,.serie-cardio:focus,.serie-rpe:focus,.serie-repos:focus{
     outline:none;border-color:var(--orange);box-shadow:0 0 0 3px rgba(255,92,56,.22);
   }
+  .serie-cardio{font-size:16px;}
+  .btn-chrono{border-width:1.5px;border-radius:var(--r-m);}
   .serie-rpe{border:1px solid transparent;border-radius:var(--r-s);background:var(--s2);}
   .serie-check{border:1.5px solid #57514a;border-radius:12px;}
   .serie-check.checked{background:var(--ok);border-color:var(--ok);color:#04140c;box-shadow:0 8px 18px -8px rgba(43,208,138,.7);}

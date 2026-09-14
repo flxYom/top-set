@@ -674,7 +674,8 @@
       date: col('date'), exo: col('exercice'), groupe: col('groupe'), serie: col('serie'),
       poids: col('poidskg', 'poids'), reps: col('repetitions', 'reps'), rpe: col('rpe'),
       repos: col('reposs', 'repos'), fait: col('fait'),
-      note: col('commentaire', 'commentaires', 'note', 'notes')
+      note: col('commentaire', 'commentaires', 'note', 'notes'),
+      vitesse: col('vitessekmh', 'vitesse'), inclinaison: col('inclinaison')
     };
     if (C.date < 0 || C.exo < 0 || (C.poids < 0 && C.reps < 0)) {
       return { erreur: 'Ce tableur ne vient pas de Top Set : il faut au moins les colonnes Date, Exercice, et Poids ou Répétitions.' };
@@ -708,6 +709,10 @@
         fait: fait === 'oui' || fait === 'true' || fait === '1' || fait === 'x'
       };
       if (note) serie.note = note;
+      var vitesse = C.vitesse > -1 ? nombreCsv(l[C.vitesse]) : null;
+      if (vitesse !== null) serie.vitesse = vitesse;
+      var inclinaison = C.inclinaison > -1 ? nombreCsv(l[C.inclinaison]) : null;
+      if (inclinaison !== null) serie.inclinaison = inclinaison;
       ex.series.push(serie);
       dernier = { ds: ds, nom: nom, num: num, ex: ex };
       lues++;

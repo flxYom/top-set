@@ -191,6 +191,30 @@ réinterpréterait des séances déjà notées, et ce n'est pas à l'app de déc
 après coup qu'une série de pompes était un gainage. Une durée ne compte ni dans le
 volume, ni dans le 1RM estimé, ni dans les records par reps.
 
+**Le chrono du gainage.** Sur un exercice au temps, `▶ CHRONO` à côté de
+`+ SÉRIE` lance le temps ; un appui de plus met en pause, et la durée tenue
+remplit la première série encore vide (un lest déjà noté reste), qui est cochée.
+Le chrono repart de zéro au prochain appui : une pause, une série. L'heure de
+départ est gardée dans `localStorage` (`topset_chrono`) — une app que l'iPhone a
+fermée pendant la planche retrouve son chrono — et l'écran reste allumé tant
+qu'il tourne (Wake Lock, quand le navigateur le permet). Un seul chrono à la fois :
+en lancer un autre note d'abord celui qui tournait.
+
+**Le cardio : minutes, vitesse, inclinaison.** Tapis, course, marche, vélo,
+rameur… s'ouvrent en cardio : une série est une durée **en minutes** (`25`,
+`12,5`), plus la vitesse (km/h) et l'inclinaison (%) moyennes, toutes deux
+facultatives ; `−1′` et `+1′` remplacent les pas. La durée vit dans le champ des
+reps comme pour une planche, donc records, courbe et récap la lisent déjà. La
+vitesse et l'inclinaison sont deux nouveaux champs de série, absents quand ils
+sont vides, bornés (0–99,9 km/h, −30–99,9 %) et arrondis à un chiffre ; en base,
+les colonnes `series.vitesse` et `series.inclinaison`, dont `pousser_jour` écarte
+une valeur illisible ou hors bornes plutôt que de refuser la journée. Tant que
+`schema.sql` n'a pas été relancé, une base qui ne rend pas ces clés ne les efface
+pas du téléphone (`jourDistant`, comme pour les commentaires). Le tableur gagne
+deux colonnes à droite, `Vitesse (km/h)` et `Inclinaison (%)` ; un ancien tableur
+se réimporte tel quel. Un tapis déjà noté en répétitions le reste : l'historique
+passe avant le nom.
+
 **RPE par série.** Échelle des répétitions en réserve, de 10 à 6 par demi-points :
 10 c'est l'échec, 9 il t'en restait une, 8 il t'en restait deux. Facultatif —
 laisse vide, rien ne casse. La cellule n'a la place que du chiffre : la phrase
@@ -883,9 +907,9 @@ img/ambiance/            images d'ambiance du bandeau vide et de l'accueil (WebP
 supabase.umd.js          supabase-js 2.115.0, chargé à la demande
 supabase-config.js       URL du projet + clé publique (voir Comptes)
 supabase/schema.sql      tables, politiques RLS et fonctions de synchro
-supabase/test/           le schéma testé sur un vrai Postgres (PGlite) : RLS (254),
+supabase/test/           le schéma testé sur un vrai Postgres (PGlite) : RLS (259),
                          montée depuis chaque version passée, garde-fou du projet (17)
-test/                    logique métier (162), gardes de sécurité (207), liens (119), gabarits de contenu (15)
+test/                    logique métier (167), gardes de sécurité (209), liens (119), gabarits de contenu (15)
 LICENSE  SECURITY.md  CONTRIBUTING.md  CHANGELOG.md
 .github/                 modèles d'issues, workflow de CI
 .vercelignore            ce que le site ne publie pas : docs, schéma, tests, source du contenu
@@ -1211,11 +1235,9 @@ administrateur.
 **Livré depuis :** le lien coach ↔ coaché (code d'invitation, accord des deux
 côtés, consentement, révocation, lecture du carnet), la messagerie de support —
 où chaque retour ouvre une conversation — et la conversation coach ↔ coaché,
-réunies dans une seule boîte avec sa pastille ; les exercices au temps ; l'import
-qui ajoute sans remplacer, JSON comme tableur ; le profil et les données
-séparés.
-
-**Plus tard :** un chronomètre intégré aux séries au temps.
+réunies dans une seule boîte avec sa pastille ; les exercices au temps et leur
+chrono ; le cardio (minutes, vitesse, inclinaison) ; l'import qui ajoute sans
+remplacer, JSON comme tableur ; le profil et les données séparés.
 
 **En cours :** des modèles de séance rangés en dossiers, assignables dans le
 carnet d'un coaché, et un retour de séance. `profils` est le socle de tout ça —
