@@ -595,5 +595,16 @@ ok('le repos monte apres une serie cochee ou un chrono en pause, et s ecrit dans
    && /localStorage\.setItem\(CLE_REPOS/.test(SRC) && /id="reposPastille"/.test(HTML)
    && /function validerFin\(ds\)\{\s*finirRepos\(false\);/.test(SRC));
 
+ok('le planning est un calendrier jour, semaine, mois ; un jour touche s ouvre dans SEANCES > DU JOUR',
+   /id="calVues"/.test(HTML) && /data-cal="mois"/.test(HTML) && /function calMoisHTML\(annee, mois\)\{/.test(SRC)
+   && /function calSemaineHTML\(debut\)\{/.test(SRC) && /function calJourHTML\(ds\)\{/.test(SRC)
+   && /seancesOnglet = 'jour';\n    montrerVue\('seances'\);/.test(SRC) && /allerAuJour\(b\.dataset\.calJour\)/.test(SRC));
+ok('SEANCES : du jour, mes seances, historique ; l app s ouvre sur la seance du jour',
+   /data-onglet="jour">DU JOUR</.test(HTML) && /view:'seances',/.test(SRC) && /var seancesOnglet = 'jour';/.test(SRC)
+   && /<section class="view" id="view-seances">\s*<div class="segmented sub" id="seancesTabs">/.test(HTML)
+   && (() => { const s = HTML.slice(HTML.indexOf('id="view-seances"'), HTML.indexOf('id="view-seance"'));
+               return s.includes('id="exList"') && s.includes('id="heroBand"') && s.includes('id="seancesListe"'); })()
+   && !/id="dayPills"/.test(HTML) && !/renderDayPills|renderPlanning|planningWeekStart/.test(SRC));
+
 console.log(`\n${pass} reussis, ${fail} echoues`);
 process.exit(fail ? 1 : 0);

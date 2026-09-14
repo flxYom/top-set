@@ -224,6 +224,9 @@ Cible :
 - **Repos** (14/09) : pastille en bas à gauche, en face de « revenir en haut »,
   chiffres verts à chasse fixe (le vert = fait, on récupère). Le message monte
   au-dessus d'elle. Cachée avec le clavier, en conversation et au bilan.
+- **Calendrier** (14/09) : jour fait = couleur du groupe en plein (liseré gauche
+  en semaine, pastille dans le mois), prévu = pointillé ou contour, aujourd'hui
+  = bord orange. Cases du mois ≥ 44 px.
 - **Ligne cardio** (14/09) : `MIN · KM/H · INCL. %`, sans colonne de
   difficulté, avec `−1′` / `+1′`. Tient à 360 px sans déborder.
 - **Reprendre la dernière fois** (14/09) : jamais depuis la colonne de la
@@ -268,3 +271,6 @@ avant de le faire.
 - **Barre du bas façon iOS 26** (14/09) : sur téléphone, capsule grise, pastille grise, bulle à franges de prisme ; reprise d'après Tinder le même jour : verre de la couleur de la barre, filet fin et reflet blanc, arc-en-ciel seulement aux bouts arrondis, coupure nette entre centre et bord. Écart assumé avec la charte : l'onglet actif n'y est plus orange.
 - **Palette des groupes** (13/09) : section 2.
 - **Loader** (13/09) : en code, pas en vidéo générée.
+- **Navigation** (14/09) : on note dans SÉANCES › DU JOUR, où l'app s'ouvre ;
+  PLANNING est un calendrier qu'on regarde (semaine par défaut, mois, jour), et
+  toucher un jour l'ouvre dans DU JOUR. Plus de pastilles de semaine.

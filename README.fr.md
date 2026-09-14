@@ -66,10 +66,17 @@ que la description du site et la page produit promettent « sans compte ». Le
 bouton se cache pendant un oubli ou un changement de mot de passe, où il
 abandonnerait l'opération à mi-chemin.
 
-**Planning hebdomadaire.** La ligne de pastilles, c'est ta semaine. Tu choisis un
-jour, tu ajoutes des exercices, tu ajoutes des séries. Les flèches changent de
-semaine, et le bouton `AUJOURD'HUI` te ramène — il passe en orange dès que tu
-t'es éloigné de la semaine en cours.
+**Planning et séances.** L'app s'ouvre sur **SÉANCES › DU JOUR**, le carnet où
+l'on note : le bandeau du jour, puis les exercices et les séries. Le **PLANNING**
+est un calendrier qu'on regarde : **SEMAINE** (par défaut, une ligne par jour :
+titre de la séance, exercices, séries, faite ou prévue, puis les groupes
+travaillés de la semaine), **MOIS** (la grille, une pastille à la couleur du
+groupe dominant, pleine pour une séance faite, en contour pour une séance
+prévue) et **JOUR** (le détail d'une séance). Les flèches avancent d'un jour,
+d'une semaine ou d'un mois ; `AUJOURD'HUI` passe en orange dès qu'on s'est
+éloigné. Toucher un jour l'ouvre dans DU JOUR ; sur un autre jour
+qu'aujourd'hui, `AUJOURD'HUI ›` y ramène. **SÉANCES** a trois rubriques :
+DU JOUR, MES SÉANCES et HISTORIQUE.
 
 **Une série, une ligne.** `SÉRIE · 8 SEPT. · KG · REPS · RPE · ✓`, la grille de
 Strong ou Hevy, reprise parce que c'est celle qu'on connaît. Avant, chaque série
@@ -81,12 +88,12 @@ comprenait pas —, et montre la même série ce jour-là (la 3e en face de la 3
 Elle se **lit**, elle ne recopie plus rien : elle recopiait d'un appui, dans une
 case posée à 4 px de celle du poids, et un appui de travers notait une série
 qu'on n'avait pas faite. La **date en tête de colonne** est un vrai bouton,
-encadré, avec sa flèche : il ouvre la séance d'avant dans le planning, et une
+encadré, avec sa flèche : il ouvre la séance d'avant dans DU JOUR, et une
 barre orange en bas de l'écran, `RETOUR À MA SÉANCE`, ramène au jour de départ,
 sur l'exercice d'où l'on était parti. La barre suit un aller-retour, pas une
 chaîne : depuis la séance d'avant, sa propre date mène plus loin, mais le retour
 vise toujours le point de départ. Elle se cache dans les autres onglets et
-disparaît quand on revient au jour de départ, par elle ou par les pastilles.
+disparaît quand on revient au jour de départ, par elle ou par le calendrier.
 Pour un exercice sans historique, la colonne n'apparaît pas (`.sans-prec`).
 Une série **faite** perd ses cadres, sa ligne se teinte de vert — on voit où on
 en est sans lire les coches une à une, comme chez Hevy — et elle reste
@@ -231,7 +238,7 @@ dernière fois, qui se lit et ne recopie rien :
   (poids, reps, type, repos, vitesse et inclinaison). Rien n'est coché, le RPE
   reste à dire, une série déjà remplie n'est pas touchée (`repriseSerie`).
 - `+ AJOUTER À MA SÉANCE DU JOUR`, sous chaque exercice d'une séance passée et
-  faite — dans sa fiche, ou dans le planning quand on l'ouvre par la date de la
+  faite — dans sa fiche, ou dans DU JOUR quand on l'ouvre par la date de la
   dernière fois : l'exercice arrive dans la séance d'aujourd'hui avec ses séries,
   RPE compris, rien de coché. Le même exercice déjà posé et encore vide reçoit
   les séries au lieu d'un doublon (`ajouterAuJour`). « Faite » : validée, ou
@@ -287,7 +294,7 @@ cardio. Des SVG en gris (`img/hero/`), que la teinte du groupe colore
 par-dessus comme la photo ; « Autre » et la séance vide gardent la photo des
 disques. Ils sont dans la coquille du service worker : hors ligne aussi.
 
-**La fin de séance.** En bas du planning, une fois quelque chose de noté,
+**La fin de séance.** En bas de la séance du jour, une fois quelque chose de noté,
 `✓ TERMINER MA SÉANCE` pose la question — en signalant les séries notées mais
 pas cochées, qui comptent quand même — puis affiche un **bilan**. D'abord
 **la même séance la semaine d'avant**, reconnue à ses exercices (parmi les 14

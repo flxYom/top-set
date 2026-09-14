@@ -354,9 +354,8 @@
   // ---------- state ----------
   var state = {
     sessions:{},
-    planningWeekStart:startOfWeek(new Date()),
     selectedDay:toDateStr(new Date()),
-    view:'planning',
+    view:'seances',
     seanceOuverte:null,
     exoOuvert:null,
     exoRetour:'recap',
@@ -956,10 +955,6 @@
       + '</svg>';
   }
 
-  function weekDays(){
-    var out=[]; for (var i=0;i<7;i++) out.push(addDays(state.planningWeekStart,i));
-    return out;
-  }
   function dominantGroup(exercises){
     var counts={};
     exercises.forEach(function(e){ var g=e.groupe||'Autre'; counts[g]=(counts[g]||0)+1; });
@@ -968,33 +963,8 @@
     return best;
   }
 
-  function renderWeekNav(){
-    var days = weekDays();
-    document.getElementById('weekLabel').textContent = formatWeekRange(days[0],days[6]);
-  }
-
-  function renderDayPills(){
-    var days = weekDays();
-    var todayStr = toDateStr(new Date());
-    var html = days.map(function(d,i){
-      var ds = toDateStr(d);
-      var day = state.sessions[ds];
-      var hasAny = day && day.exercises.some(function(e){ return (e.series||[]).some(hasData); });
-      var dom = hasAny ? dominantGroup(day.exercises) : null;
-      var isSelected = ds === state.selectedDay;
-      var isToday = ds === todayStr;
-      return '<button type="button" class="day-pill'+(isSelected?' active':'')+(hasAny?' has-data':'')+'" data-date="'+ds+'">'
-        + '<span class="dp-abbr">'+DAY_ABBR[i]+'</span>'
-        + '<span class="dp-num">'+d.getDate()+'</span>'
-        + (hasAny ? '<span class="dp-dot" style="background:'+GROUP_COLORS[dom]+'"></span>' : '')
-        + (isToday ? '<span class="dp-today"></span>' : '')
-        + '</button>';
-    }).join('');
-    document.getElementById('dayPills').innerHTML = html;
-  }
-
-  // Rend le bandeau du jour selectionne + les badges de la semaine.
-  function renderWeekStats(){
+  // Rend le bandeau du jour selectionne.
+  function renderBandeau(){
     var ds = state.selectedDay;
     var d = fromDateStr(ds);
     var day = state.sessions[ds];
@@ -1030,12 +1000,6 @@
       + '</div>'
       + '<div class="hero-tags">'+tags+'</div>';
 
-    var weekStrs = weekDays().map(toDateStr);
-    var counts = groupCountsIn(weekStrs[0], weekStrs[6]);
-    var badges = GROUPS.filter(function(g){return counts[g];}).map(function(g){
-      return '<span class="badge" style="--dot:'+GROUP_COLORS[g]+'"><i></i>'+g+' ×'+counts[g]+'</span>';
-    }).join('');
-    document.getElementById('weekBadges').innerHTML = badges;
   }
 
   // RPE en reps en reserve : 10 = plus rien, 9 = une rep restante, etc.
@@ -1841,8 +1805,9 @@
     return DAY_NAMES[(d.getDay()+6)%7].toLowerCase() + ' ' + jourCourt(ds);
   }
 
-  // ---------- la page Mes seances ----------
-  // Deux rubriques, et la frontiere est la meme que celle qu'on a dans la
+  // ---------- la page Seances ----------
+  // DU JOUR, c'est le carnet ou l'on note : le jour choisi, aujourd'hui a
+  // l'ouverture de l'app. Puis deux rubriques, et la frontiere est la meme que celle qu'on a dans la
   // tete : ce qui reste a faire d'un cote, ce qui est fait de l'autre.
   //
   //   MES SÉANCES  une seance pas encore loguee, quelle que soit sa date, ou
@@ -1875,6 +1840,10 @@
     document.querySelectorAll('#seancesTabs .seg-btn').forEach(function(b){
       b.classList.toggle('active', b.dataset.onglet === seancesOnglet);
     });
+    var duJour = seancesOnglet === 'jour';
+    document.getElementById('seancesJour').hidden = !duJour;
+    document.getElementById('seancesListes').hidden = duJour;
+    if (duJour){ renderSeanceJour(false); return; }
 
     var groupes = trierSeances();
     var mes = seancesOnglet === 'mes';
@@ -1886,7 +1855,7 @@
     if (!seances.length){
       cible.textContent = '';
       liste.innerHTML = '<div class="seances-vide">' + (mes
-        ? 'Aucune séance prévue. Crée-en une ci-dessus, ou note-en une dans le planning.'
+        ? 'Aucune séance prévue. Crée-en une ci-dessus, ou note-la directement dans DU JOUR.'
         : 'Rien dans l\'historique pour l\'instant. Les séances terminées viendront ici toutes seules.')
         + '</div>';
       return;
@@ -2076,16 +2045,14 @@
     if (!ds) return;
     getOrCreateDay(ds);
     allerAuJour(ds);
-    montrerVue('planning');
-    renderPlanning(true);
-    window.scrollTo(0, 0);
   }
 
+  // Un jour s'ouvre la ou l'on note : SÉANCES > DU JOUR.
   function allerAuJour(ds){
     state.selectedDay = ds;
-    state.planningWeekStart = startOfWeek(fromDateStr(ds));
-    montrerVue('planning');
-    renderPlanning(true);
+    seancesOnglet = 'jour';
+    montrerVue('seances');
+    renderSeanceJour(true);
     window.scrollTo(0, 0);
   }
 
@@ -2097,6 +2064,7 @@
     var ds = state.selectedDay;
     var d = fromDateStr(ds);
     document.getElementById('dayTitle').textContent = DAY_NAMES[(d.getDay()+6)%7]+' '+d.getDate()+' '+MONTH_NAMES[d.getMonth()];
+    document.getElementById('jourAuj').hidden = ds === toDateStr(new Date());
 
     var list = document.getElementById('exList');
     if (state.loading){
@@ -2142,12 +2110,139 @@
     return 'à ' + d.getHours() + 'h' + String(d.getMinutes()).padStart(2, '0');
   }
 
-  function renderPlanning(force){
-    renderWeekNav();
-    renderDayPills();
-    renderWeekStats();
+  // La seance du jour : le bandeau, puis le carnet du jour choisi.
+  function renderSeanceJour(force){
+    renderBandeau();
     renderDayPanel(force);
     majRetour();
+  }
+
+  // ---------- le planning : un calendrier ----------
+  // JOUR, SEMAINE ou MOIS autour d'une date de reference. On y regarde, on
+  // n'y note pas : toucher un jour l'ouvre dans SÉANCES > DU JOUR. Un jour
+  // « fait » a des series remplies ; « prevu » a des exercices ou un titre,
+  // sans series.
+  var calVue = 'semaine';
+  var calRef = toDateStr(new Date());
+  function etatJour(ds){
+    var day = state.sessions[ds];
+    if (!day) return '';
+    if (compterJour(day) > 0) return 'faite';
+    return ((day.exercises || []).length || titreChoisi(ds)) ? 'prevue' : '';
+  }
+  function couleurJour(ds){ return GROUP_COLORS[groupesPrincipaux(ds)[0]] || GROUP_COLORS['Autre']; }
+  function exosDuJour(ds){
+    var etat = etatJour(ds);
+    return ((state.sessions[ds] && state.sessions[ds].exercises) || []).filter(function(e){
+      return etat === 'faite' ? seriesRemplies(e).length : true;
+    });
+  }
+  function etatTexte(ds, long){
+    var etat = etatJour(ds);
+    if (etat === 'faite') return (estTerminee(ds) ? '✓ ' + (long ? 'SÉANCE VALIDÉE' : 'VALIDÉE') : '✓ ' + (long ? 'SÉANCE FAITE' : 'FAITE'));
+    if (etat === 'prevue') return long ? 'SÉANCE PRÉVUE' : 'PRÉVUE';
+    return long ? 'RIEN CE JOUR-LÀ' : '';
+  }
+  function decalerCalendrier(sens){
+    var d = fromDateStr(calRef);
+    if (calVue === 'jour') d = addDays(d, sens);
+    else if (calVue === 'semaine') d = addDays(d, 7 * sens);
+    else d = new Date(d.getFullYear(), d.getMonth() + sens, 1);
+    calRef = toDateStr(d);
+    renderCalendrier();
+  }
+  function renderCalendrier(){
+    document.querySelectorAll('#calVues .seg-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.cal === calVue);
+    });
+    var ref = fromDateStr(calRef), maintenant = new Date(), auj = toDateStr(maintenant);
+    var label = document.getElementById('calLabel');
+    var corps = document.getElementById('calCorps');
+    var loin;
+    if (calVue === 'jour'){
+      label.textContent = majuscule(DAY_NAMES[(ref.getDay()+6)%7].toLowerCase()) + ' ' + ref.getDate() + ' ' + MONTH_ABBR[ref.getMonth()];
+      loin = calRef !== auj;
+      corps.innerHTML = calJourHTML(calRef);
+    } else if (calVue === 'semaine'){
+      var debut = startOfWeek(ref);
+      label.textContent = formatWeekRange(debut, addDays(debut, 6));
+      loin = toDateStr(debut) !== toDateStr(startOfWeek(maintenant));
+      corps.innerHTML = calSemaineHTML(debut);
+    } else {
+      label.textContent = majuscule(MONTH_NAMES[ref.getMonth()]) + ' ' + ref.getFullYear();
+      loin = ref.getMonth() !== maintenant.getMonth() || ref.getFullYear() !== maintenant.getFullYear();
+      corps.innerHTML = calMoisHTML(ref.getFullYear(), ref.getMonth());
+    }
+    document.getElementById('calAuj').classList.toggle('loin', loin);
+  }
+  function calSemaineHTML(debut){
+    var auj = toDateStr(new Date()), html = '';
+    for (var i = 0; i < 7; i++){
+      var d = addDays(debut, i), ds = toDateStr(d), etat = etatJour(ds);
+      var sous = '';
+      if (etat){
+        var n = exosDuJour(ds).length, s = compterJour(state.sessions[ds]);
+        sous = n + (n > 1 ? ' exos' : ' exo') + (etat === 'faite' ? ' · ' + s + (s > 1 ? ' séries' : ' série') : '');
+      }
+      html += '<button type="button" class="cal-ligne ' + (etat || 'vide') + (ds === auj ? ' auj' : '') + '" data-cal-jour="' + ds + '"'
+        + (etat ? ' style="--c:' + couleurJour(ds) + '"' : '') + '>'
+        + '<span class="cal-date"><span class="cal-jour">' + DAY_ABBR[i] + '</span><span class="cal-num">' + d.getDate() + '</span></span>'
+        + '<span class="cal-info"><span class="cal-titre">' + esc(etat ? titreSeance(ds) : (ds >= auj ? 'Rien de prévu' : 'Rien de noté')) + '</span>'
+        +   (sous ? '<span class="cal-sous">' + esc(sous) + '</span>' : '') + '</span>'
+        + '<span class="cal-etat">' + etatTexte(ds, false) + '</span>'
+        + '</button>';
+    }
+    // Les groupes travailles dans la semaine, comme sous les anciennes pastilles.
+    var counts = groupCountsIn(toDateStr(debut), toDateStr(addDays(debut, 6)));
+    var badges = GROUPS.filter(function(g){ return counts[g]; }).map(function(g){
+      return '<span class="badge" style="--dot:' + GROUP_COLORS[g] + '"><i></i>' + g + ' ×' + counts[g] + '</span>';
+    }).join('');
+    return html + (badges ? '<div class="badges-row">' + badges + '</div>' : '');
+  }
+  function calMoisHTML(annee, mois){
+    var auj = toDateStr(new Date());
+    var dernier = toDateStr(new Date(annee, mois + 1, 0));
+    var d = startOfWeek(new Date(annee, mois, 1));
+    var html = '<div class="cal-mois">' + DAY_ABBR.map(function(a){ return '<span class="cal-entete">' + a + '</span>'; }).join('');
+    var faites = 0, prevues = 0;
+    // Des semaines entieres, du lundi au dimanche, jusqu'a couvrir le mois.
+    for (var i = 0; i < 42; i++, d = addDays(d, 1)){
+      var ds = toDateStr(d);
+      if (i % 7 === 0 && ds > dernier) break;
+      var etat = etatJour(ds), dedans = d.getMonth() === mois;
+      if (dedans && etat === 'faite') faites++;
+      if (dedans && etat === 'prevue') prevues++;
+      var aria = DAY_NAMES[(d.getDay()+6)%7] + ' ' + d.getDate() + ' ' + MONTH_NAMES[d.getMonth()]
+        + (etat === 'faite' ? ', séance faite' : (etat === 'prevue' ? ', séance prévue' : ''));
+      html += '<button type="button" class="cal-case' + (etat ? ' ' + etat : '') + (dedans ? '' : ' dehors') + (ds === auj ? ' auj' : '') + '"'
+        + ' data-cal-jour="' + ds + '"' + (etat ? ' style="--c:' + couleurJour(ds) + '"' : '') + ' aria-label="' + esc(aria) + '">'
+        + '<span class="cal-num">' + d.getDate() + '</span>' + (etat ? '<i></i>' : '') + '</button>';
+    }
+    var resume = faites + (faites > 1 ? ' séances faites' : ' séance faite')
+      + (prevues ? ' · ' + prevues + (prevues > 1 ? ' prévues' : ' prévue') : '');
+    return html + '</div><p class="cal-resume">' + resume + '</p>'
+      + '<div class="cal-legende"><span class="faite"><i></i>faite</span><span class="prevue"><i></i>prévue</span></div>';
+  }
+  function calJourHTML(ds){
+    var etat = etatJour(ds);
+    var html = '<div class="cal-fiche' + (etat ? ' ' + etat : '') + '"' + (etat ? ' style="--c:' + couleurJour(ds) + '"' : '') + '>'
+      + '<span class="cal-fiche-etat">' + etatTexte(ds, true) + '</span>';
+    if (etat){
+      html += '<h2 class="cal-fiche-titre">' + esc(titreSeance(ds)) + '</h2><ul class="cal-exos">'
+        + exosDuJour(ds).map(function(e){
+            var remplies = seriesRemplies(e);
+            var top = remplies.length ? TS.calculerTopSet(remplies) : null;
+            var detail = remplies.length
+              ? remplies.length + (remplies.length > 1 ? ' séries' : ' série') + (top ? ' · ' + perfTexte(top) : '')
+              : 'à faire';
+            return '<li><b>' + esc(nomCanonique(e.nom) || e.nom || 'Sans nom') + '</b><span>' + esc(detail) + '</span></li>';
+          }).join('')
+        + '</ul>';
+    } else {
+      html += '<p class="cal-vide">Aucune séance notée ni prévue.</p>';
+    }
+    return html + '</div>'
+      + '<button type="button" class="btn-add" data-cal-jour="' + ds + '">' + (etat ? 'OUVRIR DANS SÉANCE DU JOUR' : 'NOTER UNE SÉANCE CE JOUR-LÀ') + '</button>';
   }
 
   function renderRecap(){
@@ -2453,7 +2548,7 @@
   });
 
   function renderAll(){
-    if (state.view === 'planning') renderPlanning(false);
+    if (state.view === 'planning') renderCalendrier();
     else if (state.view === 'seances') renderSeances();
     else if (state.view === 'seance') renderSeanceDetail();
     else if (state.view === 'exercice') renderExerciceDetail();
@@ -2467,10 +2562,10 @@
   }
 
   // ---------- event wiring ----------
-  // « mes » ou « histo ». L'onglet survit a un aller-retour dans une fiche :
+  // « jour », « mes » ou « histo ». L'onglet survit a un aller-retour dans une fiche :
   // revenir d'une seance passee pour retomber sur la liste des seances a venir
   // donnerait l'impression d'avoir perdu sa place.
-  var seancesOnglet = 'mes';
+  var seancesOnglet = 'jour';
 
   var VUES = ['planning','seances','seance','exercice','recap','apprendre','coach','admin','messages'];
   function montrerVue(vue){
@@ -2703,45 +2798,27 @@
     renderRecap();
   });
 
-  // Ramene la semaine affichee ET le jour selectionne sur aujourd'hui.
-  document.getElementById('todayBtn').addEventListener('click', function(){
-    var today = new Date();
-    state.planningWeekStart = startOfWeek(today);
-    state.selectedDay = toDateStr(today);
-    renderPlanning(true);
-    majBoutonToday();
+  // Sur un autre jour qu'aujourd'hui, la seance du jour propose d'y revenir.
+  document.getElementById('jourAuj').addEventListener('click', function(){
+    state.selectedDay = toDateStr(new Date());
+    renderSeanceJour(true);
+    window.scrollTo(0, 0);
   });
 
-  // L'etat du bouton suit la semaine affichee.
-  function majBoutonToday(){
-    var b = document.getElementById('todayBtn');
-    if (!b) return;
-    var memeSemaine = toDateStr(state.planningWeekStart) === toDateStr(startOfWeek(new Date()));
-    b.classList.toggle('loin', !memeSemaine);
-  }
-
-  document.getElementById('prevWeek').addEventListener('click', function(){
-    state.planningWeekStart = addDays(state.planningWeekStart,-7);
-    afterWeekChange();
+  document.getElementById('calVues').addEventListener('click', function(e){
+    var b = e.target.closest('[data-cal]'); if (!b) return;
+    calVue = b.dataset.cal;
+    renderCalendrier();
   });
-  document.getElementById('nextWeek').addEventListener('click', function(){
-    state.planningWeekStart = addDays(state.planningWeekStart,7);
-    afterWeekChange();
+  document.getElementById('calPrec').addEventListener('click', function(){ decalerCalendrier(-1); });
+  document.getElementById('calSuiv').addEventListener('click', function(){ decalerCalendrier(1); });
+  document.getElementById('calAuj').addEventListener('click', function(){
+    calRef = toDateStr(new Date());
+    renderCalendrier();
   });
-  function afterWeekChange(){
-    majBoutonToday();
-    var strs = weekDays().map(toDateStr);
-    if (strs.indexOf(state.selectedDay)===-1){
-      var todayStr = toDateStr(new Date());
-      state.selectedDay = strs.indexOf(todayStr)!==-1 ? todayStr : strs[0];
-    }
-    renderPlanning(true);
-  }
-
-  document.getElementById('dayPills').addEventListener('click', function(e){
-    var btn = e.target.closest('.day-pill'); if (!btn) return;
-    state.selectedDay = btn.dataset.date;
-    renderPlanning(true);
+  document.getElementById('calCorps').addEventListener('click', function(e){
+    var b = e.target.closest('[data-cal-jour]'); if (!b) return;
+    allerAuJour(b.dataset.calJour);
   });
 
   var exListEl = document.getElementById('exList');
@@ -2811,8 +2888,7 @@
       }
 
       scheduleSave(state.selectedDay);
-      renderDayPills();
-      renderWeekStats();
+      renderBandeau();
       return;
     }
 
@@ -2846,8 +2922,7 @@
       else if (!pourSyn && boite && boite.dataset.syn === '1') boite.remove();
     }
     scheduleSave(state.selectedDay);
-    renderDayPills();
-    renderWeekStats();
+    renderBandeau();
   });
 
   exListEl.addEventListener('change', function(e){
@@ -2888,8 +2963,7 @@
     if (ex.nom && rememberExercise(ex.nom, ex.groupe)) populateDatalist();
     majPastilleGroupe(t.closest('.ex-card'), ex.groupe);
     scheduleSave(state.selectedDay,true);
-    renderDayPills();
-    renderWeekStats();
+    renderBandeau();
   });
 
   // Recopier une performance : action volontairement discrete, jamais
@@ -2904,8 +2978,7 @@
     if (!serie) return;
     scheduleSave(state.selectedDay, true);
     renderDayPanel(true);
-    renderDayPills();
-    renderWeekStats();
+    renderBandeau();
     showToast('Série remplie — à toi de valider');
     requestAnimationFrame(function(){
       var el = exListEl.querySelector('.serie-poids[data-serie-id="' + serie.id + '"]');
@@ -2922,7 +2995,7 @@
   function majRetour(){
     if (!retourBtn) return;
     if (retourSeance && state.selectedDay === retourSeance.ds) retourSeance = null;
-    var montrer = !!retourSeance && state.view === 'planning';
+    var montrer = !!retourSeance && state.view === 'seances' && seancesOnglet === 'jour';
     retourBtn.hidden = !montrer;
     document.body.classList.toggle('avec-retour', montrer);
     if (!montrer) return;
@@ -2965,8 +3038,7 @@
     var input = exListEl.querySelector('.serie-poids[data-serie-id="'+found.serie.id+'"]');
     if (input) input.value = poidsAffiche(val);
     scheduleSave(state.selectedDay, true);
-    renderDayPills();
-    renderWeekStats();
+    renderBandeau();
     e.stopPropagation();
   });
 
@@ -2985,8 +3057,7 @@
     if (champMin) champMin.value = minutesAffichees(found.serie);
     scheduleSave(state.selectedDay, true);
     majEtoilesRecord(b.closest('.ex-card'));
-    renderDayPills();
-    renderWeekStats();
+    renderBandeau();
     e.stopPropagation();
   });
 
@@ -3030,8 +3101,7 @@
     repeindreCarte(b.closest('.ex-card'), ex);
     var d = fromDateStr(p.prec.date);
     showToast(n + (n > 1 ? ' séries reprises du ' : ' série reprise du ') + d.getDate() + ' ' + MONTH_NAMES[d.getMonth()]);
-    renderDayPills();
-    renderWeekStats();
+    renderBandeau();
   });
 
   // ---------- ajouter a ma seance du jour ----------
@@ -3071,7 +3141,7 @@
     }
     scheduleSave(auj, true);
     populateDatalist();
-    if (state.selectedDay === auj) renderPlanning(true);
+    if (state.selectedDay === auj) renderSeanceJour(true);
     return normalizeName(ex.nom) || 'L\'exercice';
   }
   function marquerAjoute(bouton, nom){
@@ -3118,7 +3188,7 @@
     if (!n){ showToast('Cette séance est vide'); return; }
     scheduleSave(state.selectedDay, true);
     populateDatalist();
-    renderPlanning(true);
+    renderSeanceJour(true);
     showToast(n + (n > 1 ? ' exercices repris' : ' exercice repris'));
   });
 
@@ -3170,8 +3240,7 @@
     day.exercises.push(nouveau);
     scheduleSave(state.selectedDay, true);
     renderDayPanel(true);
-    renderDayPills();
-    renderWeekStats();
+    renderBandeau();
     showToast((normalizeName(ex.nom) || 'L\'exercice') + ' ajouté · ↺ DERNIÈRE FOIS reprend ses séries');
   });
 
@@ -3339,8 +3408,7 @@
     else repeindreCarte(b.closest('.ex-card'), exC);
     if (notee) showToast('Série ' + notee.num + ' notée : ' + TS.formatDuree(notee.sec));
     else if (reposNote) showToast('Repos ' + texteChrono(reposNote) + ' noté');
-    renderDayPills();
-    renderWeekStats();
+    renderBandeau();
   });
 
   exListEl.addEventListener('click', function(e){
@@ -3365,8 +3433,7 @@
       nettoyerBlocs(day);
       scheduleSave(state.selectedDay,true);
       renderDayPanel(true);
-      renderDayPills();
-      renderWeekStats();
+      renderBandeau();
       return;
     }
 
@@ -3385,8 +3452,7 @@
       dayS.exercises.splice(idx + 1, 0, suivant);
       scheduleSave(state.selectedDay,true);
       renderDayPanel(true);
-      renderDayPills();
-      renderWeekStats();
+      renderBandeau();
       requestAnimationFrame(function(){
         var el = exListEl.querySelector('.ex-name[data-id="'+suivant.id+'"]');
         if (el) el.focus();
@@ -3403,8 +3469,7 @@
       nettoyerBlocs(dayD);
       scheduleSave(state.selectedDay,true);
       renderDayPanel(true);
-      renderDayPills();
-      renderWeekStats();
+      renderBandeau();
       return;
     }
 
@@ -3443,8 +3508,7 @@
         ouvrirSerie(carteS, newSerie.id);
       }
       scheduleSave(state.selectedDay,true);
-      renderDayPills();
-      renderWeekStats();
+      renderBandeau();
       var ligneS = exListEl.querySelector('.serie-card[data-serie-id="'+newSerie.id+'"]');
       if (ligneS && ligneS.scrollIntoView) ligneS.scrollIntoView({ block:'nearest' });
       return;
@@ -3459,8 +3523,7 @@
       found3.exercise.series = found3.exercise.series.filter(function(s){ return s.id!==serieId; });
       scheduleSave(state.selectedDay,true);
       renderDayPanel(true);
-      renderDayPills();
-      renderWeekStats();
+      renderBandeau();
       return;
     }
 
@@ -3624,7 +3687,7 @@
       // L'historique change de sens d'un coup : « derniere fois », records et
       // recap doivent refleter le rattachement tout de suite.
       renderDayPanel(true);
-      renderWeekStats();
+      renderBandeau();
       showToast('« ' + nomAffiche + ' » rejoint ton historique');
     }
 
@@ -3647,7 +3710,7 @@
         scheduleSave(state.selectedDay, true);
         box.remove();
         renderDayPanel(true);
-        renderWeekStats();
+        renderBandeau();
         showToast('Renommé en « ' + neuf + ' »');
         return;
       }
@@ -3727,8 +3790,7 @@
   function validerFin(ds){
     finirRepos(false);
     marquerSeanceFinie(ds, new Date().toISOString());
-    renderDayPills();
-    renderWeekStats();
+    renderBandeau();
     majBoutonFin(ds);
     chargerPuisBilan(ds);
   }
@@ -3897,7 +3959,9 @@
     else if (e.target.closest('.bilan-chargement')) passerAuBilan(bilanJour);
   });
 
+  // On reprend d'abord ce qu'on a deja fait : l'historique.
   document.getElementById('reprendreBtn').addEventListener('click', function(){
+    seancesOnglet = 'histo';
     montrerVue('seances');
     window.scrollTo(0, 0);
   });
@@ -3968,9 +4032,7 @@
     if (!n){ showToast('Cette séance est vide'); return; }
     scheduleSave(state.selectedDay, true);
     populateDatalist();
-    montrerVue('planning');
-    renderPlanning(true);
-    window.scrollTo(0, 0);
+    allerAuJour(state.selectedDay);
     showToast(n + (n > 1 ? ' exercices ajoutés' : ' exercice ajouté'));
   });
 
@@ -3980,8 +4042,7 @@
     day.exercises.push(newEx);
     scheduleSave(state.selectedDay,true);
     renderDayPanel(true);
-    renderDayPills();
-    renderWeekStats();
+    renderBandeau();
     requestAnimationFrame(function(){
       var el = exListEl.querySelector('.ex-name[data-id="'+newEx.id+'"]');
       if (el) el.focus();
@@ -4006,7 +4067,7 @@
 
   function init(){
     populateDatalist();
-    renderPlanning(true);
+    renderSeanceJour(true);
     var local = loadLocal();
     if (local) state.sessions = normalizeLocal(local);
     state.loading = false;
@@ -4884,7 +4945,7 @@
       window.scrollTo(0, 0);
       return;
     }
-    montrerVue('planning');
+    montrerVue('seances');
     window.scrollTo(0, 0);
   });
   document.getElementById('messagesRafraichir').addEventListener('click', function(){
@@ -5133,7 +5194,7 @@
 
   document.getElementById('coachRetourBtn').addEventListener('click', function(){
     if (coachClient){ coachClient = null; renderCoach(); window.scrollTo(0,0); return; }
-    montrerVue('planning');
+    montrerVue('seances');
   });
   document.getElementById('coachRafraichir').addEventListener('click', renderCoach);
 
@@ -5275,7 +5336,7 @@
   });
 
   document.getElementById('adminRetourBtn').addEventListener('click', function(){
-    montrerVue('planning');
+    montrerVue('seances');
   });
   document.getElementById('adminVersMessages').addEventListener('click', function(){
     ouvrirBoite();
