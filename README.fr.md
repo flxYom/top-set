@@ -74,8 +74,9 @@ travaillés de la semaine), **MOIS** (la grille, une pastille à la couleur du
 groupe dominant, pleine pour une séance faite, en contour pour une séance
 prévue) et **JOUR** (le détail d'une séance). Les flèches avancent d'un jour,
 d'une semaine ou d'un mois ; `AUJOURD'HUI` passe en orange dès qu'on s'est
-éloigné. Toucher un jour l'ouvre dans DU JOUR ; sur un autre jour
-qu'aujourd'hui, `AUJOURD'HUI ›` y ramène. **SÉANCES** a trois rubriques :
+éloigné. Toucher une séance montre sa fiche, rangée sous MES
+SÉANCES, et `‹ RETOUR` ramène au calendrier ; un jour vide s'ouvre dans DU JOUR,
+où `AUJOURD'HUI ›` ramène à aujourd'hui. **SÉANCES** a trois rubriques :
 DU JOUR, MES SÉANCES et HISTORIQUE.
 
 **Une série, une ligne.** `SÉRIE · 8 SEPT. · KG · REPS · RPE · ✓`, la grille de

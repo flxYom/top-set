@@ -1895,8 +1895,12 @@
   }
 
   // ---------- la fiche d'une seance ----------
-  function ouvrirSeance(ds){
+  // Depuis le planning, on regarde la seance : sa fiche, rangee sous MES
+  // SÉANCES, et RETOUR ramene au calendrier.
+  function ouvrirSeance(ds, depuis){
     state.seanceOuverte = ds;
+    state.ficheRetour = depuis || 'seances';
+    if (depuis === 'planning') seancesOnglet = 'mes';
     montrerVue('seance');
     window.scrollTo(0, 0);
   }
@@ -2242,7 +2246,7 @@
       html += '<p class="cal-vide">Aucune séance notée ni prévue.</p>';
     }
     return html + '</div>'
-      + '<button type="button" class="btn-add" data-cal-jour="' + ds + '">' + (etat ? 'OUVRIR DANS SÉANCE DU JOUR' : 'NOTER UNE SÉANCE CE JOUR-LÀ') + '</button>';
+      + '<button type="button" class="btn-add" data-cal-jour="' + ds + '">' + (etat ? 'VOIR LA SÉANCE' : 'NOTER UNE SÉANCE CE JOUR-LÀ') + '</button>';
   }
 
   function renderRecap(){
@@ -2818,7 +2822,9 @@
   });
   document.getElementById('calCorps').addEventListener('click', function(e){
     var b = e.target.closest('[data-cal-jour]'); if (!b) return;
-    allerAuJour(b.dataset.calJour);
+    var ds = b.dataset.calJour;
+    // Un jour vide n'a pas de fiche : on l'ouvre la ou l'on note.
+    if (etatJour(ds)) ouvrirSeance(ds, 'planning'); else allerAuJour(ds);
   });
 
   var exListEl = document.getElementById('exList');
@@ -3985,7 +3991,7 @@
   });
 
   document.getElementById('seanceRetour').addEventListener('click', function(){
-    montrerVue('seances');
+    montrerVue(state.ficheRetour || 'seances');
     window.scrollTo(0, 0);
   });
   document.getElementById('seancesListe').addEventListener('click', function(e){
