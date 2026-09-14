@@ -68,9 +68,16 @@ form, with the way out as a small underlined link at the very bottom, while the
 site description and the product page promise "no account". The button hides
 during a password reset or change, where it would abandon the operation halfway.
 
-**Weekly planning.** A row of day pills is your week. Pick a day, add exercises,
-add sets. Arrows move between weeks; an `AUJOURD'HUI` button jumps back to today
-and turns orange as soon as you have navigated away from the current week.
+**Planning and sessions.** The app opens on **SÉANCES › DU JOUR**, the log where
+you write: the day banner, then exercises and sets. **PLANNING** is a calendar
+you look at: **SEMAINE** (default, one row per day: session title, exercises,
+sets, done or planned, then the muscle groups of the week), **MOIS** (the grid,
+a dot in the colour of the main muscle group, filled for a done session,
+outlined for a planned one) and **JOUR** (one session in detail). Arrows move by
+day, week or month; `AUJOURD'HUI` turns orange once you have moved away.
+Tapping a day opens it in DU JOUR; on any other day than today, `AUJOURD'HUI ›`
+brings you back. **SÉANCES** has three sections: DU JOUR, MES SÉANCES and
+HISTORIQUE.
 
 **One set, one row.** `SÉRIE · 8 SEPT. · KG · REPS · RPE · ✓`, the grid of Strong
 or Hevy, kept because it is the one people know. Each set used to take three
@@ -81,13 +88,13 @@ the previous session's date — « PRÉC. » was not understood — and shows th
 (the 3rd facing the 3rd). It is **read**, it no longer copies anything: it used
 to copy on tap, from a cell 4 px away from the weight field, and a stray tap
 logged a set that was never lifted. The **date heading the column** is a real
-button, outlined, with an arrow: it opens the previous session in the planning,
+button, outlined, with an arrow: it opens the previous session in DU JOUR,
 and an orange bar at the bottom of the screen, `RETOUR À MA SÉANCE`, brings you
 back to the day you left, on the exercise you left from. The bar tracks one
 round trip, not a chain: from the previous session its own date leads further
 back, but the return always targets the starting point. It hides on other tabs
-and goes away once you are back on the starting day, through it or the day
-pills. For an exercise with no history the column is not shown (`.sans-prec`).
+and goes away once you are back on the starting day, through it or the
+calendar. For an exercise with no history the column is not shown (`.sans-prec`).
 A **done** set loses its borders and its row turns faintly green — you see where
 you are without reading every check, as in Hevy — and one tap still edits it.
 
@@ -224,7 +231,7 @@ read and copies nothing:
   rest, speed and incline). Nothing is ticked, RPE is left for today, a set
   already filled is not touched (`repriseSerie`).
 - `+ AJOUTER À MA SÉANCE DU JOUR`, under each exercise of a past, done session —
-  in its page, or in the planning when opened from the last-time date: the
+  in its page, or in DU JOUR when opened from the last-time date: the
   exercise lands in today's session with its sets, RPE included, nothing
   ticked. The same exercise already placed and still empty receives the sets
   instead of a duplicate (`ajouterAuJour`). "Done" means validated, or past
@@ -271,7 +278,7 @@ rope for cardio. Grey SVGs (`img/hero/`) that the group's tint colours over,
 like the photo; « Autre » and an empty session keep the plates photo. They are
 in the service worker's shell, so they work offline too.
 
-**The end of a session.** At the bottom of the planning screen, once anything
+**The end of a session.** At the bottom of today's session, once anything
 is logged, `✓ TERMINER MA SÉANCE` asks for confirmation — pointing out sets
 that are logged but unchecked, which still count — then shows a **recap**. First
 **the same session last week**, recognised by its exercises (of the 14 days
