@@ -174,6 +174,26 @@ end $$;
 -- bilan affiche, et il se compare entre appareils.
 alter table public.seances add column if not exists terminee timestamptz;
 
+-- Le cardio : vitesse (km/h) et inclinaison (%) moyennes d'une serie.
+-- Nullables, et vides pour toutes les series d'avant : une serie de muscu
+-- n'en a pas. Les bornes sont larges mais reelles.
+alter table public.series add column if not exists vitesse numeric(4,1);
+alter table public.series add column if not exists inclinaison numeric(4,1);
+
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'series_vitesse_bornee') then
+    alter table public.series
+      add constraint series_vitesse_bornee
+      check (vitesse is null or (vitesse >= 0 and vitesse <= 100));
+  end if;
+  if not exists (select 1 from pg_constraint where conname = 'series_inclinaison_bornee') then
+    alter table public.series
+      add constraint series_inclinaison_bornee
+      check (inclinaison is null or (inclinaison >= -30 and inclinaison <= 100));
+  end if;
+end $$;
+
 create index if not exists seances_user_maj_idx  on public.seances   (user_id, updated_at desc);
 create index if not exists seances_user_date_idx on public.seances   (user_id, date desc);
 create index if not exists exercices_seance_idx  on public.exercices (user_id, seance_id, ordre);
@@ -367,7 +387,7 @@ begin
     j := 0;
     for v_se in select * from jsonb_array_elements(coalesce(v_ex -> 'series', '[]'::jsonb))
     loop
-      insert into public.series (id, exercice_id, user_id, ordre, poids, reps, rpe, repos, type, fait, note)
+      insert into public.series (id, exercice_id, user_id, ordre, poids, reps, rpe, repos, type, fait, note, vitesse, inclinaison)
       values (public.uuid_ou_neuf(v_se ->> 'id'), v_ex_id, v_user, j,
               nullif(v_se ->> 'poids', '')::numeric,
               coalesce(v_se ->> 'reps', ''),
@@ -377,7 +397,15 @@ begin
               -- refuserait la ligne entiere et la journee ne partirait plus.
               nullif(v_se ->> 'type', ''),
               coalesce((v_se ->> 'fait')::boolean, false),
-              nullif(left(btrim(coalesce(v_se ->> 'note', '')), 500), ''));
+              nullif(left(btrim(coalesce(v_se ->> 'note', '')), 500), ''),
+              -- Vitesse et inclinaison : un nombre lisible et dans ses bornes,
+              -- sinon rien. On ne fait pas confiance au corps de la requete :
+              -- une valeur hors bornes ferait refuser la journee entiere.
+              case when (v_se ->> 'vitesse') ~ '^[0-9]{1,2}(\.[0-9]+)?$'
+                   then round((v_se ->> 'vitesse')::numeric, 1) end,
+              case when (v_se ->> 'inclinaison') ~ '^-?[0-9]{1,2}(\.[0-9]+)?$'
+                   then case when (v_se ->> 'inclinaison')::numeric >= -30
+                             then round((v_se ->> 'inclinaison')::numeric, 1) end end);
       j := j + 1;
     end loop;
     i := i + 1;
@@ -485,7 +513,9 @@ as $$
                     'repos', coalesce(se.repos, ''),
                     'type',  se.type,
                     'fait',  se.fait,
-                    'note',  se.note
+                    'note',  se.note,
+                    'vitesse', se.vitesse,
+                    'inclinaison', se.inclinaison
                   ) order by se.ordre)
                 from public.series se where se.user_id = e.user_id and se.exercice_id = e.id
               ), '[]'::jsonb)
@@ -1338,7 +1368,9 @@ as $$
                     'repos', coalesce(se.repos, ''),
                     'type',  se.type,
                     'fait',  se.fait,
-                    'note',  se.note
+                    'note',  se.note,
+                    'vitesse', se.vitesse,
+                    'inclinaison', se.inclinaison
                   ) order by se.ordre)
                 from public.series se where se.user_id = e.user_id and se.exercice_id = e.id
               ), '[]'::jsonb)

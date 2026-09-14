@@ -186,6 +186,56 @@ carry it without any format change. The unit is mandatory: a bare `45` stays
 45 reps — guessing would reinterpret sets already logged. A duration counts
 toward no volume, no estimated 1RM and no rep record.
 
+**A stopwatch for holds.** On a timed exercise, `▶ CHRONO` next to `+ SÉRIE`
+starts the clock; one more tap pauses it, and the time held fills the first
+empty set (a load already entered stays) and ticks it. The next tap starts
+again from zero: one pause, one set. The start time is kept in `localStorage`
+(`topset_chrono`), so an app the iPhone closed mid-plank finds its stopwatch
+again, and the screen stays on while it runs (Wake Lock, where available). One
+stopwatch at a time: starting another logs the running one first.
+
+**Cardio: minutes, speed, incline.** Treadmill, running, walking, bike,
+rower… open as cardio: a set is a duration **in minutes** (`25`, `12,5`), plus
+average speed (km/h) and incline (%), both optional; `−1′` and `+1′` replace
+the steps. The duration lives in the reps field like a plank, so records, chart
+and recap already read it. Speed and incline are two new set fields, absent
+when empty, bounded (0–99.9 km/h, −30–99.9 %) and rounded to one decimal; in the
+database, `series.vitesse` and `series.inclinaison`, where `pousser_jour` drops
+an unreadable or out-of-range value instead of rejecting the day. Until
+`schema.sql` is re-run, a database that doesn't return those keys doesn't wipe
+them from the phone (`jourDistant`, as for comments). The CSV gains two columns
+on the right, `Vitesse (km/h)` and `Inclinaison (%)`; an older CSV still
+imports. A treadmill already logged in reps stays in reps: history wins over
+the name.
+
+**Redo last time.** Three gestures, never from the last-time column, which is
+read and copies nothing:
+- `↺ DERNIÈRE FOIS`, next to `+ SÉRIE`, while no set is filled: the sets of the
+  last session on that exercise, the 3rd facing the 3rd (weight, reps, type,
+  rest, speed and incline). Nothing is ticked, RPE is left for today, a set
+  already filled is not touched (`repriseSerie`).
+- `+ AJOUTER À MA SÉANCE DU JOUR`, under each exercise of a past, done session —
+  in its page, or in the planning when opened from the last-time date: the
+  exercise lands in today's session with its sets, RPE included, nothing
+  ticked. The same exercise already placed and still empty receives the sets
+  instead of a duplicate (`ajouterAuJour`). "Done" means validated, or past
+  with sets — otherwise no logbook from before validation would benefit
+  (`seanceFaite`).
+- On an empty day, `↺ REFAIRE CELLE DE LUNDI DERNIER` (same weekday, the week
+  before) and `↺ REFAIRE MA DERNIÈRE SÉANCE` when it is a different one, with
+  their title; everything is copied by `selectionnerSeance`.
+
+**What went with it last week.** Under `+ AJOUTER UN EXERCICE`, as soon as an
+exercise of the day has a name: the exercises of the same session last week
+(same matching as the recap, one exercise in common is enough) that are not in
+today's yet, four at most. A tap adds it empty, with as many sets as that day —
+the last-time column and `↺ DERNIÈRE FOIS` do the rest. Nothing on a session
+already done (`suggestionsExo`).
+
+**Tools under the planning.** The 1RM calculator, the RPE table and the
+spreadsheet template: three links at the bottom of the planning screen, on top
+of the Learn tab.
+
 **Rest per set**, not per exercise, and carried over when a set is duplicated.
 
 **A comment per set.** For what the numbers don't say: « assisted », « with
@@ -214,12 +264,16 @@ in the service worker's shell, so they work offline too.
 
 **The end of a session.** At the bottom of the planning screen, once anything
 is logged, `✓ TERMINER MA SÉANCE` asks for confirmation — pointing out sets
-that are logged but unchecked, which still count — then shows a **recap**: the
-day's volume counting up from zero, sets, exercises, records broken, the **top
-set of the day** (highest estimated 1RM, not the heaviest raw load), the
-exercises that beat **last time** (estimated 1RM against estimated 1RM,
-duration against duration for holds), the **week** against the one before, and
-one line drawn from the date — the same all day, another one tomorrow.
+that are logged but unchecked, which still count — then shows a **recap**. First
+**the same session last week**, recognised by its exercises (of the 14 days
+before, the one sharing the most, ties going to the one closest to 7 days back,
+at least half of them in common): how many exercises went up, counting from
+zero, then one line per exercise with its badge ▲ / ▼ / = (estimated 1RM of the
+top set, reps without load, total time for cardio, best hold for a plank). Then
+sets, exercises, records broken, the **top set of the day** (highest estimated
+1RM, not the heaviest raw load), the other exercises that beat **last time**,
+and one line drawn from the date — the same all day, another one tomorrow. No
+tonnage any more: the kilos lifted said nothing about progress.
 Everything comes from the logged sets: no line appears without the numbers to
 compute it.
 
@@ -745,9 +799,9 @@ img/ambiance/            ambient images for the empty banner and welcome screen 
 supabase.umd.js          supabase-js 2.115.0, loaded on demand
 supabase-config.js       project URL + public anon key (see Accounts)
 supabase/schema.sql      tables, RLS policies and sync functions
-supabase/test/           the schema tested on a real Postgres (PGlite): RLS (254),
+supabase/test/           the schema tested on a real Postgres (PGlite): RLS (259),
                          upgrade from every past version, wrong-project guard (17)
-test/                    business logic (162), hardening guards (207), links (119), content templates (15)
+test/                    business logic (167), hardening guards (212), links (119), content templates (15)
 LICENSE  SECURITY.md  CONTRIBUTING.md  CHANGELOG.md
 .github/                 issue templates, CI workflow
 .vercelignore            what the site does not publish: docs, schema, tests, content sources

@@ -470,6 +470,15 @@ titre('Les modeles de carnet publies sur /outils se reimportent');
     const entete = lire(f).replace(/^﻿/, '').split(/\r?\n/)[0];
     egal(f + ' a les colonnes de l export, dans l ordre', entete, colonnes.join(';'));
   }
+  const cardio = TS.lireCsvCarnet('Date;Exercice;Serie;Poids (kg);Repetitions;Fait;Commentaire;Vitesse (km/h);Inclinaison (%)\r\n'
+    + '2026-09-14;Tapis de course;1;;1500 s;oui;;10,5;6\r\n2026-09-14;Tapis de course;2;;600 s;oui;;;\r\n');
+  const sc = cardio.sessions['2026-09-14'].exercises[0].series;
+  egal('le cardio relit sa duree', sc[0].reps, '1500 s');
+  egal('la vitesse moyenne est relue, virgule comprise', sc[0].vitesse, 10.5);
+  egal('l inclinaison moyenne est relue', sc[0].inclinaison, 6);
+  ok('une serie sans vitesse n en porte pas', !('vitesse' in sc[1]) && !('inclinaison' in sc[1]));
+  egal('le tableur d exemple garde ses dix-neuf series avec les colonnes du cardio',
+       TS.lireCsvCarnet(lire('exemple-carnet-musculation.csv')).series, 19);
   const vierge = TS.lireCsvCarnet(lire('modele-carnet-musculation.csv'));
   ok('le modele vierge a les colonnes attendues (vide, donc refuse avec une raison)',
      typeof vierge.erreur === 'string' && /vide/i.test(vierge.erreur), vierge.erreur);

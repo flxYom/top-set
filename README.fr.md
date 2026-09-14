@@ -191,6 +191,59 @@ réinterpréterait des séances déjà notées, et ce n'est pas à l'app de déc
 après coup qu'une série de pompes était un gainage. Une durée ne compte ni dans le
 volume, ni dans le 1RM estimé, ni dans les records par reps.
 
+**Le chrono du gainage.** Sur un exercice au temps, `▶ CHRONO` à côté de
+`+ SÉRIE` lance le temps ; un appui de plus met en pause, et la durée tenue
+remplit la première série encore vide (un lest déjà noté reste), qui est cochée.
+Le chrono repart de zéro au prochain appui : une pause, une série. L'heure de
+départ est gardée dans `localStorage` (`topset_chrono`) — une app que l'iPhone a
+fermée pendant la planche retrouve son chrono — et l'écran reste allumé tant
+qu'il tourne (Wake Lock, quand le navigateur le permet). Un seul chrono à la fois :
+en lancer un autre note d'abord celui qui tournait.
+
+**Le cardio : minutes, vitesse, inclinaison.** Tapis, course, marche, vélo,
+rameur… s'ouvrent en cardio : une série est une durée **en minutes** (`25`,
+`12,5`), plus la vitesse (km/h) et l'inclinaison (%) moyennes, toutes deux
+facultatives ; `−1′` et `+1′` remplacent les pas. La durée vit dans le champ des
+reps comme pour une planche, donc records, courbe et récap la lisent déjà. La
+vitesse et l'inclinaison sont deux nouveaux champs de série, absents quand ils
+sont vides, bornés (0–99,9 km/h, −30–99,9 %) et arrondis à un chiffre ; en base,
+les colonnes `series.vitesse` et `series.inclinaison`, dont `pousser_jour` écarte
+une valeur illisible ou hors bornes plutôt que de refuser la journée. Tant que
+`schema.sql` n'a pas été relancé, une base qui ne rend pas ces clés ne les efface
+pas du téléphone (`jourDistant`, comme pour les commentaires). Le tableur gagne
+deux colonnes à droite, `Vitesse (km/h)` et `Inclinaison (%)` ; un ancien tableur
+se réimporte tel quel. Un tapis déjà noté en répétitions le reste : l'historique
+passe avant le nom.
+
+**Refaire la dernière fois.** Trois gestes, jamais depuis la colonne de la
+dernière fois, qui se lit et ne recopie rien :
+- `↺ DERNIÈRE FOIS`, à côté de `+ SÉRIE`, tant qu'aucune série n'est remplie :
+  les séries de la dernière séance sur cet exercice, la 3e en face de la 3e
+  (poids, reps, type, repos, vitesse et inclinaison). Rien n'est coché, le RPE
+  reste à dire, une série déjà remplie n'est pas touchée (`repriseSerie`).
+- `+ AJOUTER À MA SÉANCE DU JOUR`, sous chaque exercice d'une séance passée et
+  faite — dans sa fiche, ou dans le planning quand on l'ouvre par la date de la
+  dernière fois : l'exercice arrive dans la séance d'aujourd'hui avec ses séries,
+  RPE compris, rien de coché. Le même exercice déjà posé et encore vide reçoit
+  les séries au lieu d'un doublon (`ajouterAuJour`). « Faite » : validée, ou
+  passée avec des séries — sans quoi aucun carnet d'avant la validation n'en
+  profiterait (`seanceFaite`).
+- Sur un jour vide, `↺ REFAIRE CELLE DE LUNDI DERNIER` (le même jour, la
+  semaine d'avant) et `↺ REFAIRE MA DERNIÈRE SÉANCE` si ce n'est pas la même,
+  avec leur titre ; tout se recopie par `selectionnerSeance`.
+
+**Ce qui allait avec, la semaine d'avant.** Sous `+ AJOUTER UN EXERCICE`, dès
+qu'un exercice du jour a un nom : les exercices de la même séance la semaine
+d'avant (même reconnaissance que le bilan, un exercice en commun suffit) qui ne
+sont pas encore dans celle du jour, quatre au plus. Un appui l'ajoute vide, avec
+autant de séries que ce jour-là — la colonne de la dernière fois et
+`↺ DERNIÈRE FOIS` font le reste. Rien sur une séance déjà faite
+(`suggestionsExo`).
+
+**Les outils sous le planning.** Le calculateur de 1RM, le tableau RPE et le
+modèle de tableur : trois liens en bas du planning, en plus de l'onglet
+Apprendre.
+
 **RPE par série.** Échelle des répétitions en réserve, de 10 à 6 par demi-points :
 10 c'est l'échec, 9 il t'en restait une, 8 il t'en restait deux. Facultatif —
 laisse vide, rien ne casse. La cellule n'a la place que du chiffre : la phrase
@@ -227,13 +280,17 @@ disques. Ils sont dans la coquille du service worker : hors ligne aussi.
 
 **La fin de séance.** En bas du planning, une fois quelque chose de noté,
 `✓ TERMINER MA SÉANCE` pose la question — en signalant les séries notées mais
-pas cochées, qui comptent quand même — puis affiche un **bilan** : le volume du
-jour qui monte de 0 à son total, les séries, les exercices, les records battus,
-le **top set du jour** (celui dont le 1RM estimé est le plus haut, pas le plus
-lourd en valeur brute), les exercices **meilleurs que la dernière fois** (1RM
-estimé contre 1RM estimé, durée contre durée pour un exercice tenu), la
-**semaine** comparée à la précédente, et une phrase tirée de la date du jour —
-la même toute la journée, une autre demain. Tout vient des séries saisies :
+pas cochées, qui comptent quand même — puis affiche un **bilan**. D'abord
+**la même séance la semaine d'avant**, reconnue à ses exercices (parmi les 14
+jours précédents, celui qui en partage le plus, à égalité le plus proche de
+7 jours, et au moins la moitié en commun) : combien d'exercices sont en hausse,
+compté depuis 0, puis une ligne par exercice avec sa pastille ▲ / ▼ / = (1RM
+estimé du top set, reps sans charge, durée totale en cardio, meilleure tenue en
+gainage). Ensuite les séries, les exercices, les records battus, le **top set
+du jour** (celui dont le 1RM estimé est le plus haut, pas le plus lourd en
+valeur brute), les autres exercices **meilleurs que la dernière fois**, et une
+phrase tirée de la date du jour — la même toute la journée, une autre demain.
+Plus de tonnage : les kilos soulevés ne disaient rien de la progression. Tout vient des séries saisies :
 aucune ligne n'apparaît sans de quoi la calculer.
 
 La validation est un **horodatage** sur la journée (`termine`), pas un booléen :
@@ -883,9 +940,9 @@ img/ambiance/            images d'ambiance du bandeau vide et de l'accueil (WebP
 supabase.umd.js          supabase-js 2.115.0, chargé à la demande
 supabase-config.js       URL du projet + clé publique (voir Comptes)
 supabase/schema.sql      tables, politiques RLS et fonctions de synchro
-supabase/test/           le schéma testé sur un vrai Postgres (PGlite) : RLS (254),
+supabase/test/           le schéma testé sur un vrai Postgres (PGlite) : RLS (259),
                          montée depuis chaque version passée, garde-fou du projet (17)
-test/                    logique métier (162), gardes de sécurité (207), liens (119), gabarits de contenu (15)
+test/                    logique métier (167), gardes de sécurité (212), liens (119), gabarits de contenu (15)
 LICENSE  SECURITY.md  CONTRIBUTING.md  CHANGELOG.md
 .github/                 modèles d'issues, workflow de CI
 .vercelignore            ce que le site ne publie pas : docs, schéma, tests, source du contenu
@@ -1211,11 +1268,9 @@ administrateur.
 **Livré depuis :** le lien coach ↔ coaché (code d'invitation, accord des deux
 côtés, consentement, révocation, lecture du carnet), la messagerie de support —
 où chaque retour ouvre une conversation — et la conversation coach ↔ coaché,
-réunies dans une seule boîte avec sa pastille ; les exercices au temps ; l'import
-qui ajoute sans remplacer, JSON comme tableur ; le profil et les données
-séparés.
-
-**Plus tard :** un chronomètre intégré aux séries au temps.
+réunies dans une seule boîte avec sa pastille ; les exercices au temps et leur
+chrono ; le cardio (minutes, vitesse, inclinaison) ; l'import qui ajoute sans
+remplacer, JSON comme tableur ; le profil et les données séparés.
 
 **En cours :** des modèles de séance rangés en dossiers, assignables dans le
 carnet d'un coaché, et un retour de séance. `profils` est le socle de tout ça —

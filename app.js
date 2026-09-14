@@ -264,6 +264,21 @@
     return v.slice(0, NOTE_MAX);
   }
 
+  // Le cardio : vitesse en km/h et inclinaison en %, en moyenne sur la serie,
+  // un chiffre apres la virgule. Hors bornes, la valeur est perdue plutot que
+  // gardee : la base la refuserait, et la journee entiere ne partirait plus.
+  function nombreBorne(v, min, max){
+    if (typeof v === 'string'){
+      if (!v.trim()) return undefined;
+      v = Number(v.trim().replace(',', '.'));
+    }
+    if (typeof v !== 'number' || !isFinite(v)) return undefined;
+    v = Math.round(v * 10) / 10;
+    return (v < min || v > max) ? undefined : v;
+  }
+  function vitesseSure(v){ return nombreBorne(v, 0, 99.9); }
+  function inclinaisonSure(v){ return nombreBorne(v, -30, 99.9); }
+
   // Migration silencieuse : d'anciennes entrées ({poids,reps} directement sur
   // l'exercice) deviennent une série unique. Ne perd aucune donnée existante.
   function normalizeSerie(s, reposHerite){
@@ -288,6 +303,12 @@
     // d'avant n'ont rien a porter.
     var note = noteSure(s && s.note);
     if (note) sortie.note = note;
+    // Absentes quand elles sont vides, comme le commentaire : une serie de
+    // muscu n'a ni vitesse ni inclinaison.
+    var vitesse = vitesseSure(s && s.vitesse);
+    if (vitesse !== undefined) sortie.vitesse = vitesse;
+    var inclinaison = inclinaisonSure(s && s.inclinaison);
+    if (inclinaison !== undefined) sortie.inclinaison = inclinaison;
     return sortie;
   }
 
@@ -297,7 +318,7 @@
     var bloc = (ex && ex.bloc) ? String(ex.bloc) : undefined;
     // Au temps ou en repetitions, quand l'utilisateur l'a dit lui-meme.
     // Absent sinon : le nom et les valeurs saisies suffisent a le deduire.
-    var mesure = (ex && (ex.mesure === 'temps' || ex.mesure === 'reps')) ? ex.mesure : undefined;
+    var mesure = (ex && (ex.mesure === 'temps' || ex.mesure === 'reps' || ex.mesure === 'cardio')) ? ex.mesure : undefined;
     var series = [];
     if (ex && Array.isArray(ex.series)){
       series = ex.series.map(function(s){ return normalizeSerie(s, ex.repos); });
@@ -378,12 +399,28 @@
   var AU_TEMPS_NOM = /(^|[\s'’-])(gainage|planche|chaise(?!\s+romaine)|hollow|l-sit|dead hang|wall sit|isom[ée]tri|suspension)/i;
   function nomAuTemps(nom){ return AU_TEMPS_NOM.test(String(nom || '')); }
 
+  // ---------- cardio ----------
+  // Le cardio se note au temps, comme une planche : la duree vit dans le
+  // champ des reps, et les records, la courbe et le recap la lisent deja. Il
+  // y ajoute deux chiffres facultatifs, la vitesse et l'inclinaison moyennes :
+  // ce qu'affiche un tapis en fin de course. Le champ de la duree est en
+  // minutes — personne ne tape « 1800 » pour une demi-heure.
+  // Pas de « rowing » : c'est un tirage pour le dos. « Marche » seul, pas
+  // « fentes marchées ».
+  var CARDIO_NOM = /(^|[\s'’-])(tapis|course|jogging|footing|running|marche|v[ée]lo|rameur|elliptique|stepper|natation|corde [àa] sauter|cardio)(?![a-zà-ü])/i;
+  function cardioParDefaut(ex){
+    return !!ex && !nomAuTemps(ex.nom) && CARDIO_NOM.test(String(ex.nom || ''));
+  }
+  function aDuCardio(s){
+    return !!s && (typeof s.vitesse === 'number' || typeof s.inclinaison === 'number');
+  }
+
   // La derniere fois que ce nom a ete fait, etait-ce au temps ? C'est ce qui
   // rouvre « Gainage leste » en secondes la semaine suivante, sans rien
   // retenir nulle part : la reponse est deja dans le carnet.
   function historiqueAuTemps(nom){
     var norm = nom && String(nom).trim() ? cleCanonique(nom) : null;
-    if (!norm) return false;
+    if (!norm) return null;
     var dates = Object.keys(state.sessions).sort().reverse();
     for (var i = 0; i < dates.length; i++){
       var exos = state.sessions[dates[i]].exercises || [];
@@ -394,7 +431,8 @@
         if (remplies.length) return remplies.some(TS.serieAuTemps);
       }
     }
-    return false;
+    // null : jamais fait. Ce n'est pas « fait en repetitions ».
+    return null;
   }
 
   // L'ordre des questions compte : ce que l'utilisateur a choisi, puis ce
@@ -402,12 +440,26 @@
   // n'est jamais reinterpretee — « 45 » sans unite reste 45 repetitions.
   function estAuTemps(ex){
     if (!ex) return false;
-    if (ex.mesure === 'temps') return true;
+    if (ex.mesure === 'temps' || ex.mesure === 'cardio') return true;
     if (ex.mesure === 'reps') return false;
     var remplies = (ex.series || []).filter(serieRemplie);
     if (remplies.length) return remplies.some(TS.serieAuTemps);
-    return nomAuTemps(ex.nom) || historiqueAuTemps(ex.nom);
+    var h = historiqueAuTemps(ex.nom);
+    // Un tapis deja note en repetitions le reste : l'historique passe avant
+    // le nom.
+    return nomAuTemps(ex.nom) || h === true || (h === null && cardioParDefaut(ex));
   }
+  // Le cardio est une facon d'etre au temps : minutes, vitesse, inclinaison
+  // au lieu de secondes et difficulte.
+  function estCardio(ex){
+    if (!ex || ex.mesure === 'reps' || ex.mesure === 'temps') return false;
+    if (ex.mesure === 'cardio') return true;
+    var remplies = (ex.series || []).filter(serieRemplie);
+    if (remplies.some(aDuCardio)) return true;
+    if (remplies.length && !remplies.some(TS.serieAuTemps)) return false;
+    return estAuTemps(ex) && cardioParDefaut(ex);
+  }
+  function modeCarte(ex, auTemps){ return auTemps ? (estCardio(ex) ? 'cardio' : 'temps') : 'reps'; }
 
   // Ce que montre le champ des secondes : la duree lue, ou un nombre nu
   // quand la serie a ete notee avant que le champ existe.
@@ -420,6 +472,22 @@
   function secondesDe(s){
     var v = secondesAffichees(s);
     return v === '' ? 0 : Number(v);
+  }
+  // Le champ du cardio est en minutes : « 30 », « 12,5 », ou « 25:30 » au
+  // clavier d'un ordinateur.
+  function minutesAffichees(s){
+    var d = TS.dureeSecondes(s && s.reps);
+    if (d === null) return '';
+    if (d % 6 === 0) return String(d / 60).replace('.', ',');
+    return Math.floor(d / 60) + ':' + ('0' + (d % 60)).slice(-2);
+  }
+  // null : une saisie a moitie tapee, qui ne remplace pas la derniere valeur.
+  function minutesLues(v){
+    var t = String(v || '').trim().replace(',', '.');
+    if (t === '') return 0;
+    if (/^\d{1,4}(\.\d*)?$/.test(t)) return Math.round(Number(t) * 60);
+    var m = t.match(/^(\d{1,3}):([0-5]\d)$/);
+    return m ? Number(m[1]) * 60 + Number(m[2]) : null;
   }
 
   // Au temps, le record est la serie la plus longue jamais tenue sur ce nom.
@@ -1051,11 +1119,15 @@
     return null;
   }
 
+  function cardioTexte(s){
+    return (typeof s.vitesse === 'number' ? ' · ' + formatWeight(s.vitesse) + ' km/h' : '')
+      + (typeof s.inclinaison === 'number' ? ' · ' + formatWeight(s.inclinaison) + ' %' : '');
+  }
   function perfTexte(s){
     var d = TS.dureeSecondes(s && s.reps);
     if (d !== null){
       var lest = (typeof s.poids === 'number' && s.poids > 0) ? ' · ' + formatWeight(s.poids) + ' kg' : '';
-      return TS.formatDuree(d) + lest;
+      return TS.formatDuree(d) + lest + cardioTexte(s);
     }
     var p = (typeof s.poids === 'number') ? formatWeight(s.poids) + ' kg' : '';
     var r = s.reps ? String(s.reps) : '';
@@ -1088,6 +1160,7 @@
     var pr = isNewRecord(s, ex.nom);
     var num = idx + 1;
     var sid = esc(s.id);
+    var cardio = auTemps && estCardio(ex);
     var typeCourant = s.type || '';
     var typeOptions = TYPE_LABELS.map(function(p){
       return '<option value="'+p[0]+'"'+(typeCourant===p[0]?' selected':'')+'>'+p[1]+'</option>';
@@ -1110,12 +1183,19 @@
       ? '<span class="serie-prec' + (prec.topSet && ps === prec.topSet ? ' top' : '') + '" aria-hidden="true">' + esc(perfCourt(ps)) + '</span>'
       : '<span class="serie-prec vide" aria-hidden="true">—</span>';
 
-    var valeur = auTemps
+    var valeur = cardio
+      ? '<input type="text" inputmode="decimal" enterkeyhint="next" class="serie-cardio serie-minutes" placeholder="min" aria-label="Durée en minutes, série '+num+'" data-field="minutes" data-serie-id="'+ sid +'" value="'+esc(minutesAffichees(s))+'">'
+      + '<input type="text" inputmode="decimal" enterkeyhint="next" class="serie-cardio serie-vitesse" placeholder="km/h" aria-label="Vitesse moyenne en km/h, série '+num+'" data-field="vitesse" data-serie-id="'+ sid +'" value="'+esc(typeof s.vitesse === 'number' ? formatWeight(s.vitesse) : '')+'">'
+      + '<input type="text" inputmode="decimal" enterkeyhint="done" class="serie-cardio serie-incl" placeholder="%" aria-label="Inclinaison moyenne en %, série '+num+'" data-field="inclinaison" data-serie-id="'+ sid +'" value="'+esc(typeof s.inclinaison === 'number' ? formatWeight(s.inclinaison) : '')+'">'
+      : auTemps
       ? '<label class="serie-duree-champ"><input type="text" inputmode="numeric" enterkeyhint="done" class="serie-duree" placeholder="sec" aria-label="Durée en secondes, série '+num+'" data-field="duree" data-serie-id="'+ sid +'" value="'+esc(secondesAffichees(s))+'"><span class="serie-unite" aria-hidden="true">s</span></label>'
       : '<input type="text" inputmode="decimal" enterkeyhint="next" class="serie-poids" placeholder="kg" aria-label="Poids série '+num+'" data-field="poids" data-serie-id="'+ sid +'" value="'+esc(poidsAffiche(s.poids))+'">'
       + '<input type="text" inputmode="numeric" enterkeyhint="done" class="serie-reps" placeholder="reps" aria-label="Répétitions série '+num+'" data-field="reps" data-serie-id="'+ sid +'" value="'+esc(s.reps==null?'':s.reps)+'">';
 
-    var pas = auTemps
+    var pas = cardio
+      ? '<button type="button" class="step-btn" data-action="step-temps" data-delta="-60" data-serie-id="'+ sid +'" aria-label="Retirer 1 minute à la série '+num+'">−1′</button>'
+      + '<button type="button" class="step-btn" data-action="step-temps" data-delta="60" data-serie-id="'+ sid +'" aria-label="Ajouter 1 minute à la série '+num+'">+1′</button>'
+      : auTemps
       ? '<button type="button" class="step-btn" data-action="step-temps" data-delta="-5" data-serie-id="'+ sid +'" aria-label="Retirer 5 secondes à la série '+num+'">−5</button>'
       + '<button type="button" class="step-btn" data-action="step-temps" data-delta="5" data-serie-id="'+ sid +'" aria-label="Ajouter 5 secondes à la série '+num+'">+5</button>'
       : '<button type="button" class="step-btn" data-action="step" data-delta="-2.5" data-serie-id="'+ sid +'" aria-label="Retirer 2,5 kg à la série '+num+'">−</button>'
@@ -1130,7 +1210,8 @@
       +     '<select class="serie-type" data-field="type" data-serie-id="'+ sid +'" aria-label="Série '+num+', type">'+typeOptions+'</select></label>'
       +   precHTML
       +   valeur
-      +   '<select class="serie-rpe'+(s.rpe==null?' vide':'')+'" data-field="rpe"' + (auTemps ? ' data-mode="temps"' : '') + ' data-serie-id="'+ sid +'" title="'+titreEffort+'" aria-label="'+(auTemps ? 'Difficulté' : 'RPE')+' série '+num+'">'+rpeOptions+'</select>'
+      // Le cardio n'a pas de difficulte : la vitesse et l'inclinaison la disent.
+      +   (cardio ? '' : '<select class="serie-rpe'+(s.rpe==null?' vide':'')+'" data-field="rpe"' + (auTemps ? ' data-mode="temps"' : '') + ' data-serie-id="'+ sid +'" title="'+titreEffort+'" aria-label="'+(auTemps ? 'Difficulté' : 'RPE')+' série '+num+'">'+rpeOptions+'</select>')
       +   '<button type="button" class="serie-check'+(s.fait?' checked':'')+'" data-action="toggle-fait" data-serie-id="'+ sid +'" aria-pressed="'+(s.fait?'true':'false')+'" aria-label="Série '+num+' — '+(s.fait?'marquer comme non faite':'marquer comme faite')+'">'+(s.fait?'✓':'')+'</button>'
       +   (pr ? ETOILE_PR : '')
       + '</div>'
@@ -1246,14 +1327,14 @@
     // Un menu plutot que trois gros boutons en bas de chaque carte : ils
     // servent rarement, et prenaient autant de place qu'une serie.
     var menu = '<div class="ex-menu" role="group" aria-label="Actions sur l\'exercice">'
-      + (auTemps || nomAuTemps(ex.nom) || !series.some(serieRemplie)
-          ? '<button type="button" class="ex-menu-item" data-action="mesure" data-id="'+ eid +'">'+libelleMesure(auTemps)+'</button>'
+      + (auTemps || nomAuTemps(ex.nom) || cardioParDefaut(ex) || !series.some(serieRemplie)
+          ? '<button type="button" class="ex-menu-item" data-action="mesure" data-id="'+ eid +'">'+libelleMesure(auTemps, cardioParDefaut(ex))+'</button>'
           : '')
       + '<button type="button" class="ex-menu-item danger ex-del" data-id="'+ eid +'">✕ SUPPRIMER L\'EXERCICE</button>'
       + '</div>';
     // Sans historique, la colonne de la derniere fois n'aurait que des tirets :
     // elle laisse sa place aux chiffres du jour.
-    return '<div class="ex-card'+(p ? '' : ' sans-prec')+'" style="--card-color:'+color+'" data-id="'+ eid +'" data-mode="'+(auTemps ? 'temps' : 'reps')+'">'
+    return '<div class="ex-card'+(p ? '' : ' sans-prec')+'" style="--card-color:'+color+'" data-id="'+ eid +'" data-mode="'+modeCarte(ex, auTemps)+'">'
       + '<div class="ex-head">'
       +   '<input class="ex-name" type="text" list="exerciseList" placeholder="Nom de l\'exercice" value="'+esc(ex.nom||'')+'" data-field="nom" data-id="'+ eid +'">'
       // Le groupe se remplit tout seul d'apres le nom : une pastille suffit,
@@ -1269,6 +1350,11 @@
       +   '<div class="series-list">'+seriesListeHTML(ex, auTemps, p)+'</div>'
       +   '<div class="ex-actions">'
       +     '<button type="button" class="btn-add-serie" data-action="add-serie" data-id="'+ eid +'" aria-label="Ajouter une série'+(series.length?', qui reprend la précédente':'')+'">+ SÉRIE</button>'
+      // La derniere fois, en un appui, a cote de « + SERIE » : tant qu'aucune
+      // serie n'est remplie. La colonne de la derniere fois, elle, se lit.
+      +     (p && !series.some(hasData) ? '<button type="button" class="btn-comme-avant" data-action="comme-avant" data-id="'+ eid +'">↺ DERNIÈRE FOIS</button>' : '')
+      // Le chrono d'un gainage : lancer, puis pause, et la serie est notee.
+      +     (auTemps && !estCardio(ex) ? boutonChronoHTML(ex) : '')
       // A cote de « + SERIE », parce que c'est au meme moment qu'on y pense :
       // juste apres la serie. Il va sur la derniere serie faite.
       +     (series.length ? '<button type="button" class="btn-add-note" data-action="ajout-note" data-id="'+ eid +'">+ COMMENTAIRE</button>' : '')
@@ -1278,6 +1364,10 @@
       +   (ex.bloc
             ? '<button type="button" class="btn-superset" data-action="detacher" data-id="'+ eid +'">⇄ SORTIR DU SUPERSET</button>'
             : '<button type="button" class="btn-superset" data-action="superset" data-id="'+ eid +'">⇄ AJOUTER UN EXERCICE EN SUPERSET</button>')
+      // Une seance passee et faite : l'exercice se recopie dans celle d'aujourd'hui.
+      +   (seanceFaite(state.selectedDay) && series.some(serieRemplie)
+            ? '<button type="button" class="btn-ajout-jour" data-action="ajout-jour" data-id="'+ eid +'">+ AJOUTER À MA SÉANCE DU JOUR</button>'
+            : '')
       + '</div>'
       + '</div>';
   }
@@ -1298,13 +1388,15 @@
         + ' aria-label="Ouvrir la séance du ' + dPrec.getDate() + ' ' + MONTH_NAMES[dPrec.getMonth()] + '">' + esc(titrePrec) + '<i aria-hidden="true">›</i></button>'
       : '';
     return '<div class="series-tete"><span aria-hidden="true">SÉRIE</span><span class="col-prec">' + lienPrec + '</span>'
-      + (auTemps ? '<span class="col-duree" aria-hidden="true">DURÉE</span><span aria-hidden="true">DIFF.</span>'
+      + (auTemps && estCardio(ex) ? '<span aria-hidden="true">MIN</span><span aria-hidden="true">KM/H</span><span aria-hidden="true">INCL. %</span>'
+         : auTemps ? '<span class="col-duree" aria-hidden="true">DURÉE</span><span aria-hidden="true">DIFF.</span>'
                  : '<span aria-hidden="true">KG</span><span aria-hidden="true">REPS</span><span aria-hidden="true">RPE</span>')
       + '<span aria-hidden="true">✓</span></div>'
       + series.map(function(s,idx){ return serieRowHTML(s, idx, ex, auTemps, p && p.prec, s.id === ouverte); }).join('');
   }
-  function libelleMesure(auTemps){
-    return auTemps ? '⇄ PASSER EN RÉPÉTITIONS' : '◷ PASSER AU TEMPS (GAINAGE, PLANCHE…)';
+  function libelleMesure(auTemps, cardio){
+    if (auTemps) return '⇄ PASSER EN RÉPÉTITIONS';
+    return cardio ? '◷ PASSER EN CARDIO (MINUTES, VITESSE…)' : '◷ PASSER AU TEMPS (GAINAGE, PLANCHE…)';
   }
   // Taper un nom change tout ce qui en depend : la colonne PRÉC., et le
   // passage en secondes pour « Planche ». On repeint les series, pas la
@@ -1313,12 +1405,12 @@
     if (!card) return;
     var auTemps = estAuTemps(ex);
     var p = precedentDe(ex);
-    card.dataset.mode = auTemps ? 'temps' : 'reps';
+    card.dataset.mode = modeCarte(ex, auTemps);
     card.classList.toggle('sans-prec', !p);
     var liste = card.querySelector('.series-list');
     if (liste) liste.innerHTML = seriesListeHTML(ex, auTemps, p);
     var bascule = card.querySelector('[data-action="mesure"]');
-    if (bascule) bascule.textContent = libelleMesure(auTemps);
+    if (bascule) bascule.textContent = libelleMesure(auTemps, cardioParDefaut(ex));
   }
   // Une carte refaite sur place, sans toucher aux autres : cocher une serie
   // replie la ligne et ouvre la suivante.
@@ -1442,6 +1534,7 @@
         repos: ex.repos || '', bloc: bloc, mesure: ex.mesure,
         series: series.map(function(s){
           return { id:genSerieId(), poids:s.poids, reps:s.reps, rpe:s.rpe,
+                   vitesse:s.vitesse, inclinaison:s.inclinaison,
                    repos:s.repos || '', fait:false };
         })
       });
@@ -1580,12 +1673,73 @@
     return MOTS_FIN[somme % MOTS_FIN.length];
   }
 
-  // Le volume d'une semaine entiere, pour la comparaison « mieux que la
-  // semaine derniere ».
-  function volumeSemaine(depart){
-    var total = 0;
-    for (var i = 0; i < 7; i++) total += dayVolume(toDateStr(addDays(depart, i)));
-    return total;
+  // La meme seance la semaine d'avant, reconnue a ses exercices : parmi les
+  // quatorze jours precedents, celui qui en partage le plus avec ce jour, et a
+  // egalite le plus proche de sept jours. minimum : combien il en faut en
+  // commun — un gainage partage ne fait pas d'une seance jambes une seance pecs.
+  function clesDuJour(ds, remplisSeuls){
+    var day = state.sessions[ds], cles = {};
+    ((day && day.exercises) || []).forEach(function(e){
+      if (!e.nom || !e.nom.trim()) return;
+      if (remplisSeuls && !seriesRemplies(e).length) return;
+      cles[cleCanonique(e.nom)] = true;
+    });
+    return cles;
+  }
+  function seanceComparable(ds, cles, minimum){
+    var liste = Object.keys(cles);
+    if (!liste.length) return null;
+    var base = fromDateStr(ds), best = null;
+    for (var k = 1; k <= 14; k++){
+      var x = toDateStr(addDays(base, -k));
+      if (!state.sessions[x] || !compterJour(state.sessions[x])) continue;
+      var autres = clesDuJour(x, true);
+      var communs = liste.filter(function(c){ return autres[c]; }).length;
+      var ecart = Math.abs(k - 7);
+      if (communs && (!best || communs > best.communs || (communs === best.communs && ecart < best.ecart))){
+        best = { ds:x, communs:communs, ecart:ecart };
+      }
+    }
+    return best && best.communs >= (minimum || 1) ? best.ds : null;
+  }
+  function seriesDuJourPour(ds, cle){
+    var out = [];
+    ((state.sessions[ds] && state.sessions[ds].exercises) || []).forEach(function(e){
+      if (e.nom && cleCanonique(e.nom) === cle) out = out.concat(seriesRemplies(e));
+    });
+    return out;
+  }
+  // Un exercice contre lui-meme ce jour-la, sur ce qui se compare : le 1RM
+  // estime du top set, les reps d'un exercice sans charge, la duree totale
+  // d'un cardio, la meilleure tenue d'un gainage.
+  function comparerExo(e, avant){
+    var auj = seriesRemplies(e);
+    function durees(ss){ return ss.map(function(s){ return TS.dureeSecondes(s.reps); }).filter(function(d){ return d !== null; }); }
+    var dAuj = durees(auj), dAvant = durees(avant);
+    var val, valAvant, texte, texteAvant;
+    if (dAuj.length && dAvant.length){
+      var somme = function(t){ return t.reduce(function(a, b){ return a + b; }, 0); };
+      if (estCardio(e)){ val = somme(dAuj); valAvant = somme(dAvant); }
+      else { val = Math.max.apply(null, dAuj); valAvant = Math.max.apply(null, dAvant); }
+      texte = TS.formatDuree(val); texteAvant = TS.formatDuree(valAvant);
+    } else if (!dAuj.length && !dAvant.length){
+      var top = TS.calculerTopSet(auj), topAvant = TS.calculerTopSet(avant);
+      if (!top || !topAvant) return null;
+      val = TS.epleySerie(top); valAvant = TS.epleySerie(topAvant);
+      if (!val && !valAvant && !(top.poids > 0) && !(topAvant.poids > 0)){
+        val = parseInt(top.reps, 10); valAvant = parseInt(topAvant.reps, 10);
+      }
+      texte = perfTexte(top); texteAvant = perfTexte(topAvant);
+    } else return null;
+    if (!(val > 0) || !(valAvant > 0)) return null;
+    var pct = Math.round(((val - valAvant) / valAvant) * 1000) / 10;
+    var sens = (texte === texteAvant || Math.abs(pct) < 0.5) ? 'egal' : (pct > 0 ? 'hausse' : 'baisse');
+    return { nom:nomCanonique(e.nom) || e.nom, texte:texte, avant:texteAvant, pct:pct, sens:sens };
+  }
+  function sensTexte(l){
+    if (l.sens === 'egal') return '= STABLE';
+    var p = String(Math.abs(l.pct)).replace('.', ',');
+    return l.sens === 'hausse' ? '▲ +' + p + ' %' : '▼ −' + p + ' %';
   }
 
   function bilanDuJour(ds){
@@ -1597,15 +1751,37 @@
     var bilan = {
       date: ds,
       titre: titreSeance(ds),
-      volume: dayVolume(ds),
       series: compterJour(day),
       exos: exos.length,
       records: 0,
       top: null,
       progres: [],
-      semaine: null,
+      comparaison: null,
       mot: motDuJour(ds)
     };
+
+    // D'abord la meme seance la semaine d'avant : c'est la comparaison qui
+    // compte. Un exercice deja compare la ne se repete pas plus bas.
+    var cles = clesDuJour(ds, true);
+    var ref = seanceComparable(ds, cles, Math.max(1, Math.ceil(Object.keys(cles).length / 2)));
+    var compares = {};
+    if (ref){
+      var lignes = [];
+      exos.forEach(function(e){
+        var cle = cleCanonique(e.nom || '');
+        if (!e.nom || compares[cle]) return;
+        var avantRef = seriesDuJourPour(ref, cle);
+        if (!avantRef.length) return;
+        var l = comparerExo(e, avantRef);
+        if (!l) return;
+        compares[cle] = true;
+        lignes.push(l);
+      });
+      if (lignes.length){
+        bilan.comparaison = { ds:ref, lignes:lignes,
+          hausse: lignes.filter(function(l){ return l.sens === 'hausse'; }).length };
+      }
+    }
 
     exos.forEach(function(e){
       var remplies = seriesRemplies(e);
@@ -1622,6 +1798,7 @@
 
       // Mieux que la derniere fois, sur le meme exercice : on compare ce qui
       // est comparable — 1RM estime contre 1RM estime, duree contre duree.
+      if (e.nom && compares[cleCanonique(e.nom)]) return;
       var histo = seancesDeLExo(e.nom).filter(function(j){ return j.date < ds; });
       var avant = histo[histo.length - 1];
       if (!avant) return;
@@ -1646,16 +1823,6 @@
         texte: formatWeight(Math.round(rmTop)) + ' kg estimés contre ' + formatWeight(Math.round(rmAvant))
              + ' le ' + jourCourt(avant.date) + (pourcent >= 0.5 ? ' · +' + String(pourcent).replace('.', ',') + ' %' : '') });
     });
-
-    // La semaine en cours contre la precedente : seulement quand la semaine
-    // d'avant a servi, sinon la comparaison ne veut rien dire.
-    var debutSemaine = startOfWeek(fromDateStr(ds));
-    var avantSemaine = addDays(debutSemaine, -7);
-    var vSem = volumeSemaine(debutSemaine), vAvant = volumeSemaine(avantSemaine);
-    if (vAvant > 0 && vSem > 0){
-      bilan.semaine = { volume:vSem, avant:vAvant,
-                        delta: Math.round(((vSem - vAvant) / vAvant) * 100) };
-    }
     return bilan;
   }
   // « samedi » -> « Samedi » : la premiere lettre seulement, sinon le mois
@@ -1667,6 +1834,11 @@
   function jourCourt(ds){
     var d = fromDateStr(ds);
     return d.getDate() + ' ' + MONTH_ABBR[d.getMonth()];
+  }
+  // « lundi 7 sept. »
+  function jourDe(ds){
+    var d = fromDateStr(ds);
+    return DAY_NAMES[(d.getDay()+6)%7].toLowerCase() + ' ' + jourCourt(ds);
   }
 
   // ---------- la page Mes seances ----------
@@ -1837,6 +2009,7 @@
       + statTile(fois + '×', fois > 1 ? 'FOIS CETTE SÉANCE' : 'PREMIÈRE FOIS')
       + '</div>';
 
+    var faite = seanceFaite(ds);
     exos.forEach(function(e){
       var series = seriesRemplies(e);
       var pesees = series.filter(function(s){ return typeof s.poids === 'number' && s.poids > 0; });
@@ -1854,7 +2027,9 @@
         + (tenues.length
             ? ligneProgressionDuree(e.nom, ds, Math.max.apply(null, tenues))
             : ligneProgression(e.nom, ds, meilleure))
-        + '</button>';
+        + '</button>'
+        // A cote de la carte, pas dedans : la carte entiere ouvre l'exercice.
+        + (faite ? '<button type="button" class="btn-ajout-jour" data-ajout-jour="' + esc(e.id) + '">+ AJOUTER À MA SÉANCE DU JOUR</button>' : '');
     });
 
     var meme = (ds === state.selectedDay);
@@ -1933,12 +2108,13 @@
     var y = window.scrollY;
     lacherFocus(list);
     if (!exercises.length){
-      list.innerHTML = '<div class="empty-state">Aucun exercice noté pour ce jour.<br>Ajoute ta première série ci-dessous.</div>';
+      list.innerHTML = '<div class="empty-state">Aucun exercice noté pour ce jour.<br>Ajoute ta première série ci-dessous.</div>' + refaireHTML(ds);
     } else {
       list.innerHTML = exercisesHTML(exercises);
     }
     garderDefilement(y);
     majBoutonFin(ds);
+    majSuggestions();
   }
 
   // « Terminer ma séance » n'a de sens qu'une fois quelque chose de noté, et
@@ -2596,6 +2772,16 @@
         if (v === '' || sec === 0) found.serie.reps = '';
         else if (sec) found.serie.reps = TS.ecrireDuree(sec);
       }
+      else if (field==='minutes'){
+        var mn = minutesLues(t.value);
+        if (mn === 0) found.serie.reps = '';
+        else if (mn) found.serie.reps = TS.ecrireDuree(mn);
+      }
+      else if (field==='vitesse' || field==='inclinaison'){
+        // « 10, » en cours de frappe se lit 10 ; vide ou hors bornes, rien.
+        var nb = field === 'vitesse' ? vitesseSure(t.value) : inclinaisonSure(t.value);
+        if (nb === undefined) delete found.serie[field]; else found.serie[field] = nb;
+      }
       else if (field==='rpe'){
         found.serie.rpe = t.value==='' ? null : Number(t.value);
         t.classList.toggle('vide', found.serie.rpe==null);
@@ -2620,7 +2806,7 @@
       // ferait perdre le focus. Ce bloc visait « .serie-row », un sélecteur
       // qui n'existe plus depuis que les séries sont des « .serie-card » :
       // l'étoile ne bougeait donc jamais pendant la frappe.
-      if (field === 'poids' || field === 'reps' || field === 'duree'){
+      if (field === 'poids' || field === 'reps' || field === 'duree' || field === 'minutes'){
         majEtoilesRecord(t.closest('.ex-card'));
       }
 
@@ -2795,11 +2981,294 @@
     found.serie.reps = val ? TS.ecrireDuree(val) : '';
     var input = exListEl.querySelector('.serie-duree[data-serie-id="'+found.serie.id+'"]');
     if (input) input.value = val ? String(val) : '';
+    var champMin = exListEl.querySelector('.serie-minutes[data-serie-id="'+found.serie.id+'"]');
+    if (champMin) champMin.value = minutesAffichees(found.serie);
     scheduleSave(state.selectedDay, true);
     majEtoilesRecord(b.closest('.ex-card'));
     renderDayPills();
     renderWeekStats();
     e.stopPropagation();
+  });
+
+  // ---------- reprendre la derniere fois ----------
+  // « ↺ DERNIÈRE FOIS » : les series de la derniere seance sur cet exercice,
+  // la 3e en face de la 3e. Une serie deja remplie n'est pas touchee ; rien
+  // n'est coche, et le RPE reste a dire aujourd'hui.
+  function repriseSerie(s, cible){
+    cible.poids = (typeof s.poids === 'number') ? s.poids : null;
+    cible.reps = s.reps || '';
+    cible.rpe = null;
+    cible.fait = false;
+    if (s.type) cible.type = s.type; else delete cible.type;
+    if (s.repos) cible.repos = s.repos;
+    ['vitesse', 'inclinaison'].forEach(function(f){
+      if (typeof s[f] === 'number') cible[f] = s[f]; else delete cible[f];
+    });
+    return cible;
+  }
+  exListEl.addEventListener('click', function(e){
+    var b = e.target.closest('[data-action="comme-avant"]');
+    if (!b) return;
+    var day = getOrCreateDay(state.selectedDay);
+    var ex = findExercise(day, b.dataset.id);
+    var p = ex && precedentDe(ex);
+    if (!p) return;
+    if (!ex.series) ex.series = [];
+    var n = 0;
+    p.prec.series.forEach(function(s, i){
+      var cible = ex.series[i];
+      if (cible && hasData(cible)) return;
+      if (!cible){
+        cible = { id:genSerieId(), poids:null, reps:'', rpe:null, repos:'', fait:false };
+        ex.series.push(cible);
+      }
+      repriseSerie(s, cible);
+      n++;
+    });
+    delete serieOuverte[ex.id];
+    scheduleSave(state.selectedDay, true);
+    repeindreCarte(b.closest('.ex-card'), ex);
+    var d = fromDateStr(p.prec.date);
+    showToast(n + (n > 1 ? ' séries reprises du ' : ' série reprise du ') + d.getDate() + ' ' + MONTH_NAMES[d.getMonth()]);
+    renderDayPills();
+    renderWeekStats();
+  });
+
+  // ---------- ajouter a ma seance du jour ----------
+  // Depuis une seance passee et faite, un exercice se recopie dans celle
+  // d'aujourd'hui avec ses series, poids, reps et RPE compris ; « fait »
+  // repart a faux. Une seance d'avant la validation compte comme faite des
+  // qu'elle a des series : sinon aucun ancien carnet n'en profiterait.
+  function seanceFaite(ds){
+    var auj = toDateStr(new Date());
+    if (!ds || ds === auj || !state.sessions[ds]) return false;
+    return estTerminee(ds) || (ds < auj && compterJour(state.sessions[ds]) > 0);
+  }
+  function ajouterAuJour(dsSource, exId){
+    var src = state.sessions[dsSource];
+    var ex = src && findExercise(src, exId);
+    var series = ex ? seriesRemplies(ex) : [];
+    if (!series.length) return null;
+    var auj = toDateStr(new Date());
+    var jour = getOrCreateDay(auj);
+    var copies = series.map(function(s){
+      return { id:genSerieId(), poids:s.poids, reps:s.reps, rpe:s.rpe,
+               vitesse:s.vitesse, inclinaison:s.inclinaison,
+               repos:s.repos || '', type:s.type, fait:false };
+    });
+    // Le meme exercice deja pose aujourd'hui, encore vide, recoit les series
+    // au lieu d'un doublon.
+    var cle = ex.nom ? cleCanonique(ex.nom) : '';
+    var vide = cle && jour.exercises.filter(function(x){
+      return x.nom && cleCanonique(x.nom) === cle && !(x.series || []).some(hasData);
+    })[0];
+    if (vide){
+      vide.series = copies;
+      if (ex.mesure) vide.mesure = ex.mesure;
+    } else {
+      jour.exercises.push({ id:genId(), nom:ex.nom || '', groupe:ex.groupe || 'Autre',
+                            repos:ex.repos || '', mesure:ex.mesure, series:copies });
+    }
+    scheduleSave(auj, true);
+    populateDatalist();
+    if (state.selectedDay === auj) renderPlanning(true);
+    return normalizeName(ex.nom) || 'L\'exercice';
+  }
+  function marquerAjoute(bouton, nom){
+    bouton.disabled = true;
+    bouton.textContent = '✓ AJOUTÉ À TA SÉANCE DU JOUR';
+    showToast(nom + ' ajouté à ta séance du jour');
+  }
+  exListEl.addEventListener('click', function(e){
+    var b = e.target.closest('[data-action="ajout-jour"]');
+    if (!b) return;
+    var nom = ajouterAuJour(state.selectedDay, b.dataset.id);
+    if (nom) marquerAjoute(b, nom);
+  });
+
+  // ---------- refaire une seance, sur un jour vide ----------
+  // Celle du meme jour la semaine d'avant, et la toute derniere si ce n'est
+  // pas la meme. Tout se recopie, valeurs comprises (selectionnerSeance).
+  function seancesARefaire(ds){
+    var out = [];
+    var semaine = toDateStr(addDays(fromDateStr(ds), -7));
+    if (state.sessions[semaine] && compterJour(state.sessions[semaine]) > 0) out.push({ ds:semaine, semaine:true });
+    var dates = Object.keys(state.sessions).filter(function(x){
+      return x < ds && compterJour(state.sessions[x]) > 0;
+    }).sort();
+    var derniere = dates[dates.length - 1];
+    if (derniere && derniere !== semaine) out.push({ ds:derniere, semaine:false });
+    return out;
+  }
+  function refaireHTML(ds){
+    return seancesARefaire(ds).map(function(r){
+      var d = fromDateStr(r.ds);
+      var quoi = r.semaine
+        ? 'CELLE DE ' + DAY_NAMES[(d.getDay()+6)%7].toUpperCase() + ' DERNIER'
+        : 'MA DERNIÈRE SÉANCE · ' + d.getDate() + ' ' + MONTH_ABBR[d.getMonth()].toUpperCase();
+      return '<button type="button" class="btn-refaire" data-refaire="' + esc(r.ds) + '">'
+        + '<span class="btn-refaire-quoi">↺ REFAIRE ' + esc(quoi) + '</span>'
+        + '<span class="btn-refaire-titre">' + esc(titreSeance(r.ds)) + '</span></button>';
+    }).join('');
+  }
+  exListEl.addEventListener('click', function(e){
+    var b = e.target.closest('[data-refaire]');
+    if (!b) return;
+    var n = selectionnerSeance(b.dataset.refaire);
+    if (!n){ showToast('Cette séance est vide'); return; }
+    scheduleSave(state.selectedDay, true);
+    populateDatalist();
+    renderPlanning(true);
+    showToast(n + (n > 1 ? ' exercices repris' : ' exercice repris'));
+  });
+
+  // ---------- ce que tu avais fait avec ----------
+  // Sous « + AJOUTER UN EXERCICE » : les exercices de la meme seance la
+  // semaine d'avant (seanceComparable) qui ne sont pas encore dans celle-ci.
+  // Un appui pose l'exercice vide, avec autant de series que ce jour-la : la
+  // colonne de la derniere fois et ↺ DERNIÈRE FOIS font le reste. Rien sur une
+  // seance deja faite.
+  function suggestionsExo(ds){
+    if (!state.sessions[ds] || estTerminee(ds) || seanceFaite(ds)) return null;
+    var cles = clesDuJour(ds, false);
+    var ref = seanceComparable(ds, cles, 1);
+    if (!ref) return null;
+    var vus = {}, exos = [];
+    state.sessions[ref].exercises.forEach(function(e){
+      if (!e.nom || !e.nom.trim() || !seriesRemplies(e).length) return;
+      var cle = cleCanonique(e.nom);
+      if (cles[cle] || vus[cle]) return;
+      vus[cle] = true;
+      exos.push(e);
+    });
+    return exos.length ? { ds:ref, exos:exos.slice(0, 4) } : null;
+  }
+  function majSuggestions(){
+    var zone = document.getElementById('suggestExo');
+    if (!zone) return;
+    var s = state.loading ? null : suggestionsExo(state.selectedDay);
+    if (!s){ zone.hidden = true; zone.innerHTML = ''; return; }
+    zone.hidden = false;
+    zone.innerHTML = '<p class="suggest-tete">' + esc(jourDe(s.ds).toUpperCase()) + ', TU AVAIS AUSSI FAIT</p>'
+      + '<div class="suggest-liste">' + s.exos.map(function(e){
+          return '<button type="button" class="suggest-btn" data-suggestion="' + esc(e.id) + '" data-depuis="' + esc(s.ds) + '">+ '
+            + esc(nomCanonique(e.nom) || e.nom) + '</button>';
+        }).join('') + '</div>';
+  }
+  document.getElementById('suggestExo').addEventListener('click', function(e){
+    var b = e.target.closest('[data-suggestion]');
+    if (!b) return;
+    var src = state.sessions[b.dataset.depuis];
+    var ex = src && findExercise(src, b.dataset.suggestion);
+    if (!ex) return;
+    var day = getOrCreateDay(state.selectedDay);
+    var n = Math.max(1, Math.min(10, seriesRemplies(ex).length));
+    var series = [];
+    for (var i = 0; i < n; i++) series.push({ id:genSerieId(), poids:null, reps:'', rpe:null, repos:'', fait:false });
+    var nouveau = { id:genId(), nom:ex.nom, groupe:ex.groupe || 'Autre', repos:ex.repos || '', series:series };
+    if (ex.mesure) nouveau.mesure = ex.mesure;
+    day.exercises.push(nouveau);
+    scheduleSave(state.selectedDay, true);
+    renderDayPanel(true);
+    renderDayPills();
+    renderWeekStats();
+    showToast((normalizeName(ex.nom) || 'L\'exercice') + ' ajouté · ↺ DERNIÈRE FOIS reprend ses séries');
+  });
+
+  // ---------- chrono des exercices au temps ----------
+  // Un appui lance, le suivant met en pause : la duree tenue remplit la
+  // premiere serie encore vide (un lest deja note reste), la coche, et le
+  // chrono repart de zero au prochain appui. L'heure de depart est gardee
+  // dans le telephone : une app que l'iPhone a fermee pendant la planche
+  // retrouve son chrono. L'ecran reste allume tant qu'il tourne.
+  var CLE_CHRONO = 'topset_chrono';
+  var chrono = null, tickChrono = null, verrouEcran = null;
+  try { chrono = JSON.parse(localStorage.getItem(CLE_CHRONO) || 'null'); } catch (err) { chrono = null; }
+  if (!chrono || typeof chrono.debut !== 'number' || !chrono.exId || !chrono.ds) chrono = null;
+  function garderChrono(){
+    try {
+      if (chrono) localStorage.setItem(CLE_CHRONO, JSON.stringify(chrono));
+      else localStorage.removeItem(CLE_CHRONO);
+    } catch (err) {}
+  }
+  function secondesChrono(){ return chrono ? Math.max(0, Math.floor((Date.now() - chrono.debut) / 1000)) : 0; }
+  function texteChrono(sec){ return Math.floor(sec / 60) + ':' + ('0' + (sec % 60)).slice(-2); }
+  function boutonChronoHTML(ex){
+    var enCours = !!chrono && chrono.exId === ex.id && chrono.ds === state.selectedDay;
+    return '<button type="button" class="btn-chrono' + (enCours ? ' en-cours' : '') + '" data-action="chrono" data-id="' + esc(ex.id) + '"'
+      + ' aria-label="' + (enCours ? 'Mettre le chrono en pause et noter la série' : 'Lancer le chrono') + '">'
+      + (enCours ? '❚❚ <span class="chrono-temps">' + texteChrono(secondesChrono()) + '</span>' : '▶ CHRONO')
+      + '</button>';
+  }
+  function tenirEcran(oui){
+    try {
+      if (oui && !verrouEcran && navigator.wakeLock){
+        navigator.wakeLock.request('screen').then(function(v){ verrouEcran = v; }).catch(function(){});
+      } else if (!oui && verrouEcran){
+        verrouEcran.release().catch(function(){});
+        verrouEcran = null;
+      }
+    } catch (err) {}
+  }
+  function suivreChrono(){
+    clearInterval(tickChrono);
+    tickChrono = null;
+    tenirEcran(!!chrono);
+    if (!chrono) return;
+    tickChrono = setInterval(function(){
+      var txt = texteChrono(secondesChrono());
+      document.querySelectorAll('.chrono-temps').forEach(function(el){ el.textContent = txt; });
+    }, 250);
+  }
+  // Le navigateur rend le verrou de l'ecran quand l'app passe en arriere-plan.
+  document.addEventListener('visibilitychange', function(){
+    if (!document.hidden && chrono){ verrouEcran = null; tenirEcran(true); }
+  });
+  function arreterChrono(){
+    if (!chrono) return null;
+    var sec = secondesChrono(), c = chrono;
+    chrono = null;
+    garderChrono();
+    suivreChrono();
+    var day = state.sessions[c.ds];
+    var ex = day && findExercise(day, c.exId);
+    if (!ex || sec < 1) return null;
+    if (!ex.series) ex.series = [];
+    var cible = null;
+    for (var i = 0; i < ex.series.length; i++){
+      if (!ex.series[i].fait && !String(ex.series[i].reps || '').trim()){ cible = ex.series[i]; break; }
+    }
+    if (!cible){
+      var derniere = ex.series[ex.series.length - 1];
+      cible = { id:genSerieId(), poids:(derniere && derniere.poids != null) ? derniere.poids : null, reps:'', rpe:null,
+                repos:(derniere && derniere.repos) || ex.repos || '', fait:false };
+      ex.series.push(cible);
+    }
+    cible.reps = TS.ecrireDuree(sec);
+    cible.fait = true;
+    if (serieOuverte[ex.id] === cible.id) delete serieOuverte[ex.id];
+    scheduleSave(c.ds, true);
+    return { ex:ex, num:ex.series.indexOf(cible) + 1, sec:sec, ds:c.ds };
+  }
+  if (chrono) suivreChrono();
+
+  exListEl.addEventListener('click', function(e){
+    var b = e.target.closest('[data-action="chrono"]');
+    if (!b) return;
+    var enCours = !!chrono && chrono.exId === b.dataset.id && chrono.ds === state.selectedDay;
+    // Un seul chrono : en lancer un autre note d'abord celui qui tournait.
+    var notee = arreterChrono();
+    if (!enCours){
+      chrono = { exId:b.dataset.id, ds:state.selectedDay, debut:Date.now() };
+      garderChrono();
+      suivreChrono();
+    }
+    var exC = findExercise(getOrCreateDay(state.selectedDay), b.dataset.id);
+    if (notee && notee.ex !== exC) renderDayPanel(true);
+    else repeindreCarte(b.closest('.ex-card'), exC);
+    if (notee) showToast('Série ' + notee.num + ' notée : ' + TS.formatDuree(notee.sec));
+    renderDayPills();
+    renderWeekStats();
   });
 
   exListEl.addEventListener('click', function(e){
@@ -2808,10 +3277,11 @@
       var dayM = getOrCreateDay(state.selectedDay);
       var exM = findExercise(dayM, mesBtn.dataset.id);
       if (!exM) return;
-      exM.mesure = estAuTemps(exM) ? 'reps' : 'temps';
+      exM.mesure = estAuTemps(exM) ? 'reps' : (cardioParDefaut(exM) ? 'cardio' : 'temps');
       scheduleSave(state.selectedDay, true);
       renderDayPanel(true);
-      showToast(exM.mesure === 'temps' ? 'Au temps : la durée se note en secondes' : 'En répétitions');
+      showToast(exM.mesure === 'cardio' ? 'Cardio : minutes, vitesse et inclinaison moyennes'
+        : (exM.mesure === 'temps' ? 'Au temps : la durée se note en secondes' : 'En répétitions'));
       return;
     }
 
@@ -2880,7 +3350,7 @@
       // deux top sets : apres un top set la serie suivante repart neutre.
       var typeSuivant = (last && last.type && last.type !== TS.TYPES.TOP) ? last.type : undefined;
       var newSerie = last
-        ? { id:genSerieId(), poids:last.poids, reps:last.reps, rpe:last.rpe, repos:last.repos, type:typeSuivant, fait:false }
+        ? { id:genSerieId(), poids:last.poids, reps:last.reps, rpe:last.rpe, vitesse:last.vitesse, inclinaison:last.inclinaison, repos:last.repos, type:typeSuivant, fait:false }
         : { id:genSerieId(), poids:null, reps:'', rpe:null, repos:'', fait:false };
       ex2.series.push(newSerie);
       serieOuverte[ex2.id] = newSerie.id;
@@ -3013,6 +3483,7 @@
                      !!EXERCISE_DB_LOWER[String(ex.nom).trim().toLowerCase()];
     if (rememberExercise(ex.nom, ex.groupe)) populateDatalist();
     if (!etaitConnu) proposerRattachement(t.closest('.ex-card'), ex);
+    majSuggestions();
   });
 
   // Affiche la proposition dans la carte, sans re-render : re-dessiner ferait
@@ -3207,7 +3678,7 @@
     // un autre total que la tuile d'apres ferait douter des deux.
     var b = bilanDuJour(ds);
     var nSeries = b ? b.series : 0;
-    var total = b ? Math.round(b.volume) : 0;
+    var nExos = b ? b.exos : 0;
     var disques = exos.slice(0, 5).map(function(x, i){
       var h = volMax ? 46 + Math.round(54 * x.vol / volMax) : 70;
       return '<i class="disque" style="--h:' + h + 'px;--c:' + (GROUP_COLORS[x.groupe] || GROUP_COLORS.Autre) + ';--i:' + i + '"></i>';
@@ -3223,7 +3694,7 @@
       +   '<div class="barre-leve">' + cote('gauche') + '<div class="barre-tige"></div>' + cote('droite') + '</div>'
       + '</div>'
       + '<p class="barre-compteurs"><b data-vers="' + nSeries + '">0</b> ' + (nSeries > 1 ? 'séries' : 'série')
-      +   ' · <b data-vers="' + total + '">0</b> kg</p>'
+      +   ' · <b data-vers="' + nExos + '">0</b> ' + (nExos > 1 ? 'exos' : 'exo') + '</p>'
       + '<p class="barre-defile" aria-hidden="true">' + esc(exos.length ? exos[0].nom : '') + '</p>'
       + '<p class="barre-passer">Touche pour voir ton bilan</p>'
       + '</div>';
@@ -3263,40 +3734,45 @@
     var html = '<div class="bilan-fini">'
       + '<p class="bilan-tag anim" style="--i:0">SÉANCE TERMINÉE</p>'
       + '<h2 class="bilan-titre anim" id="bilanTitre" style="--i:1">' + esc(b.titre) + '</h2>'
-      + '<p class="bilan-date anim" style="--i:1">' + esc(majuscule(DAY_NAMES[(d.getDay()+6)%7]) + ' ' + d.getDate() + ' ' + MONTH_NAMES[d.getMonth()]) + '</p>'
-      + '<div class="bilan-volume anim" style="--i:2">'
-      +   '<span class="bilan-volume-num" data-compteur="' + Math.round(b.volume) + '">0</span>'
-      +   '<span class="bilan-volume-unite">kg soulevés</span>'
-      + '</div>'
-      + '<div class="bilan-tuiles anim" style="--i:3">'
+      + '<p class="bilan-date anim" style="--i:1">' + esc(majuscule(DAY_NAMES[(d.getDay()+6)%7]) + ' ' + d.getDate() + ' ' + MONTH_NAMES[d.getMonth()]) + '</p>';
+    var c = b.comparaison;
+    if (c){
+      var n = c.lignes.length;
+      html += '<div class="bilan-volume anim" style="--i:2">'
+        +   '<span class="bilan-volume-num" data-compteur="' + c.hausse + '">0</span>'
+        +   '<span class="bilan-volume-unite">sur ' + n + (n > 1 ? ' exos' : ' exo') + ' en hausse par rapport à ' + esc(jourDe(c.ds)) + '</span>'
+        + '</div>';
+    }
+    html += '<div class="bilan-tuiles anim" style="--i:3">'
       +   '<div class="bilan-tuile"><b>' + b.series + '</b><span>' + (b.series > 1 ? 'SÉRIES' : 'SÉRIE') + '</span></div>'
       +   '<div class="bilan-tuile"><b>' + b.exos + '</b><span>' + (b.exos > 1 ? 'EXOS' : 'EXO') + '</span></div>'
       +   '<div class="bilan-tuile' + (b.records ? ' or' : '') + '"><b>' + b.records + '</b><span>' + (b.records > 1 ? 'RECORDS' : 'RECORD') + '</span></div>'
       + '</div>';
 
-    if (b.top){
+    if (c){
       html += '<div class="bilan-bloc anim" style="--i:4">'
+        + '<div class="bilan-bloc-tete">PAR RAPPORT À ' + esc(jourDe(c.ds).toUpperCase()) + '</div>'
+        + c.lignes.map(function(l){
+            return '<div class="bilan-ligne bilan-compare"><b>' + esc(l.nom) + '</b>'
+              + '<span>' + esc(l.texte) + (l.texte === l.avant ? ', comme ce jour-là' : ' contre ' + esc(l.avant)) + '</span>'
+              + '<i class="bilan-sens ' + l.sens + '">' + sensTexte(l) + '</i></div>';
+          }).join('')
+        + '<div class="bilan-bloc-note">' + esc(titreSeance(c.ds)) + ' · 1RM estimé, ou durée</div>'
+        + '</div>';
+    }
+    if (b.top){
+      html += '<div class="bilan-bloc anim" style="--i:5">'
         + '<div class="bilan-bloc-tete">TOP SET DU JOUR</div>'
         + '<div class="bilan-ligne"><b>' + esc(b.top.nom) + '</b><span>' + esc(b.top.texte) + '</span></div>'
         + '<div class="bilan-bloc-note">1RM estimé : ' + esc(formatWeight(Math.round(b.top.rm))) + ' kg</div>'
         + '</div>';
     }
     if (b.progres.length){
-      html += '<div class="bilan-bloc vert anim" style="--i:5">'
+      html += '<div class="bilan-bloc vert anim" style="--i:6">'
         + '<div class="bilan-bloc-tete">MIEUX QUE LA DERNIÈRE FOIS</div>'
         + b.progres.slice(0, 4).map(function(p){
             return '<div class="bilan-ligne"><b>' + esc(p.nom) + '</b><span>' + esc(p.texte) + '</span></div>';
           }).join('')
-        + '</div>';
-    }
-    if (b.semaine){
-      var d7 = b.semaine.delta;
-      var vs = formatVolume(b.semaine.volume);
-      html += '<div class="bilan-bloc anim" style="--i:6">'
-        + '<div class="bilan-bloc-tete">CETTE SEMAINE</div>'
-        + '<div class="bilan-ligne"><b>' + esc(vs.num + ' ' + vs.unit) + '</b>'
-        +   '<span>' + (d7 > 0 ? '+' + d7 + ' % par rapport à la semaine dernière'
-                      : (d7 < 0 ? d7 + ' % par rapport à la semaine dernière' : 'autant que la semaine dernière')) + '</span></div>'
         + '</div>';
     }
     html += '<p class="bilan-mot anim" style="--i:7">« ' + esc(b.mot) + ' »</p>'
@@ -3395,6 +3871,12 @@
       modifierSeance(state.seanceOuverte);
       return;
     }
+    var ajout = e.target.closest('[data-ajout-jour]');
+    if (ajout){
+      var nomA = ajouterAuJour(state.seanceOuverte, ajout.dataset.ajoutJour);
+      if (nomA) marquerAjoute(ajout, nomA);
+      return;
+    }
     var exoBtn = e.target.closest('[data-exo]');
     if (exoBtn && exoBtn.dataset.exo){
       ouvrirExercice(exoBtn.dataset.exo, 'seance');
@@ -3474,7 +3956,8 @@
   // celui de la serie de la ligne : une ligne par serie, un commentaire par
   // serie.
   var CSV_COLONNES = ['Date','Jour','Exercice','Groupe','Serie','Poids (kg)',
-                      'Repetitions','RPE','Repos (s)','Volume (kg)','Fait','Commentaire'];
+                      'Repetitions','RPE','Repos (s)','Volume (kg)','Fait','Commentaire',
+                      'Vitesse (km/h)','Inclinaison (%)'];
   function csvChamp(v){
     var t = (v == null) ? '' : String(v);
     return /[";\r\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t;
@@ -3519,7 +4002,8 @@
             csvChamp(csvNombre(s.rpe)),
             csvTexte(s.repos || ''), csvChamp(csvNombre(serieVolume(s))),
             csvChamp(s.fait ? 'oui' : 'non'),
-            csvTexte((s.note || '').trim())
+            csvTexte((s.note || '').trim()),
+            csvChamp(csvNombre(s.vitesse)), csvChamp(csvNombre(s.inclinaison))
           ].join(';'));
         });
       });
@@ -4991,6 +5475,8 @@
       // Meme regle pour le commentaire d'une serie : une base sans la
       // colonne series.note rend des series sans la cle, et celui d'ici
       // reste — retrouve par identifiant, sinon par sa place.
+      // Meme regle pour la vitesse et l'inclinaison du cardio.
+      var CHAMPS_SERIE_RECENTS = ['note', 'vitesse', 'inclinaison'];
       var locaux = (state.sessions[ds] || {}).exercises || [];
       function copie(o){ var c = {}; Object.keys(o).forEach(function(k){ c[k] = o[k]; }); return c; }
       var distants = (d && d.exercises || []).map(function(e, i){
@@ -5001,15 +5487,18 @@
         var c = e;
         if (!('note' in e) && l.note){ c = copie(e); c.note = l.note; }
         var ls = l.series || [];
-        if (Array.isArray(e.series) && e.series.some(function(s, k){
-              return s && !('note' in s) && (ls.filter(function(x){ return x.id === s.id; })[0] || ls[k] || {}).note;
-            })){
+        function locale(s, k){ return ls.filter(function(x){ return x.id === s.id; })[0] || ls[k]; }
+        function manquants(s, k){
+          var lse = s && locale(s, k);
+          return lse ? CHAMPS_SERIE_RECENTS.filter(function(f){ return !(f in s) && lse[f] != null && lse[f] !== ''; }) : [];
+        }
+        if (Array.isArray(e.series) && e.series.some(function(s, k){ return manquants(s, k).length; })){
           if (c === e) c = copie(e);
           c.series = e.series.map(function(s, k){
-            if (!s || ('note' in s)) return s;
-            var lse = ls.filter(function(x){ return x.id === s.id; })[0] || ls[k];
-            if (!lse || !lse.note) return s;
-            var cs = copie(s); cs.note = lse.note;
+            var m = manquants(s, k);
+            if (!m.length) return s;
+            var lse = locale(s, k), cs = copie(s);
+            m.forEach(function(f){ cs[f] = lse[f]; });
             return cs;
           });
         }

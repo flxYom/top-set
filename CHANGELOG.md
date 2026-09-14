@@ -9,8 +9,35 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ## [Unreleased]
 
+### Added
+
+- **Stopwatch for timed exercises.** `▶ CHRONO` starts it, a second tap pauses
+  it and logs the time held as a ticked set; the next tap starts a new set from
+  zero. It survives the app being closed and keeps the screen on while running.
+- **Cardio sets: minutes, speed, incline.** Treadmill, running, bike, rower…
+  log a duration in minutes plus optional average speed (km/h) and incline (%).
+  New `series.vitesse` / `series.inclinaison` columns (re-run `schema.sql`),
+  two new CSV columns on the right; older files still import. Service worker
+  `topset-v28`.
+- **Redo last time.** `↺ DERNIÈRE FOIS` next to `+ SÉRIE` fills the exercise
+  with last session's sets; `+ AJOUTER À MA SÉANCE DU JOUR` under each exercise
+  of a past, done session copies it into today's session; an empty day offers
+  to redo the same weekday of last week, or the last session.
+- **Exercises from last week's session.** Under `+ AJOUTER UN EXERCICE`, the
+  exercises that went with today's ones in the same session last week, one tap
+  to add each.
+- **Tools on the planning screen.** 1RM calculator, RPE table and spreadsheet
+  template, linked at the bottom of the planning.
+
 ### Changed
 
+- **The session recap compares with the same session last week.** Matched by
+  its exercises, one line per exercise going up, down or steady; the kilos
+  lifted and the week's tonnage are gone.
+- **The tab bubble looks like Tinder's.** Clear glass the colour of the bar, a
+  hairline rim with a white highlight, the rainbow only on the rounded ends,
+  and a sharp cut between the magnified centre and the edge instead of blurry
+  doubled letters.
 - **iOS 26 style bottom bar on phones.** A floating grey capsule with a grey
   pill under the active tab and lowercase labels. On touch, while dragging or
   switching tabs, the pill becomes a glass bubble that magnifies a copy of the

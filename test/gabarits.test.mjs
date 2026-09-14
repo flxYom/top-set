@@ -319,7 +319,7 @@ ok('une serie deja notee n est jamais reinterpretee',
 ok('la chaise romaine n est pas un gainage', SRC.indexOf('chaise(?!\\s+romaine)') > -1);
 ok('le record au temps est la serie la plus longue', SRC.indexOf('function recordDuree(') > -1);
 ok('la bascule n encombre pas un exercice deja note en kilos',
-   SRC.indexOf('auTemps || nomAuTemps(ex.nom) || !series.some(serieRemplie)') > -1);
+   SRC.indexOf('auTemps || nomAuTemps(ex.nom) || cardioParDefaut(ex) || !series.some(serieRemplie)') > -1);
 ok('le mode choisi survit a la normalisation',
    (SRC.match(/mesure:mesure/g) || []).length === 1);
 
@@ -558,6 +558,36 @@ ok('sur telephone, la bulle grossit une copie des onglets qui suit sa position d
    /\.bulle-ancre\.cyan\{scale:/.test(HTML) && /loupe\.innerHTML = '<span class="bulle-coeur">/.test(SRC)
    && /function suivreBulle\(duree\)\{/.test(SRC) && /suivreBulle\(anime \? 520 : 0\);/.test(SRC)
    && /@media \(max-width:899px\) and \(prefers-reduced-motion:reduce\)\{\s*\.onglet-loupe,/.test(HTML));
+
+ok('le cardio note minutes, vitesse et inclinaison, sans perdre ce qu une base plus ancienne ne renvoie pas',
+   /data-field="minutes"/.test(SRC) && /data-field="vitesse"/.test(SRC) && /data-field="inclinaison"/.test(SRC)
+   && /var CHAMPS_SERIE_RECENTS = \['note', 'vitesse', 'inclinaison'\];/.test(SRC)
+   && /\.ex-card\[data-mode="cardio"\] \.serie-main\{/.test(HTML)
+   && /'Vitesse \(km\/h\)','Inclinaison \(%\)'\]/.test(SRC));
+ok('le chrono du gainage note une serie faite a chaque pause et survit a une app fermee',
+   /function arreterChrono\(\)\{/.test(SRC) && /cible\.fait = true;/.test(SRC)
+   && /localStorage\.setItem\(CLE_CHRONO/.test(SRC) && /data-action="chrono"/.test(SRC)
+   && /\(auTemps && !estCardio\(ex\) \? boutonChronoHTML\(ex\) : ''\)/.test(SRC));
+
+ok('la derniere fois se reprend d un bouton a cote de + SERIE, pas depuis la colonne',
+   /data-action="comme-avant"/.test(SRC) && /function repriseSerie\(s, cible\)\{/.test(SRC)
+   && !/class="serie-prec[^>]*data-action/.test(SRC));
+ok('un exercice d une seance faite s ajoute a la seance du jour, series comprises',
+   /function ajouterAuJour\(dsSource, exId\)\{/.test(SRC) && /data-ajout-jour="/.test(SRC)
+   && /data-action="ajout-jour"/.test(SRC) && /function seanceFaite\(ds\)\{/.test(SRC));
+ok('un jour vide propose de refaire la seance de la semaine d avant ou la derniere',
+   /function seancesARefaire\(ds\)\{/.test(SRC) && /data-refaire="/.test(SRC) && /\+ refaireHTML\(ds\);/.test(SRC));
+
+ok('le bilan compare a la meme seance la semaine d avant, sans tonnage',
+   /function seanceComparable\(ds, cles, minimum\)\{/.test(SRC) && /function comparerExo\(e, avant\)\{/.test(SRC)
+   && /PAR RAPPORT À /.test(SRC) && !/kg soulevés/.test(SRC) && !/CETTE SEMAINE/.test(SRC)
+   && !/function volumeSemaine/.test(SRC) && !/b\.volume/.test(SRC));
+ok('sous + AJOUTER UN EXERCICE, les exercices faits avec ceux-la la semaine d avant',
+   /id="addExerciseBtn">\+ AJOUTER UN EXERCICE<\/button>\s*<div class="suggest-exo" id="suggestExo" hidden><\/div>/.test(HTML)
+   && /function suggestionsExo\(ds\)\{/.test(SRC) && /data-suggestion="/.test(SRC) && /majBoutonFin\(ds\);\n    majSuggestions\(\);/.test(SRC));
+ok('les outils ont leur rubrique sous le planning',
+   (() => { const v = HTML.slice(HTML.indexOf('id="view-planning"'), HTML.indexOf('id="view-seances"'));
+            return ['/outils/calculateur-1rm', '/outils/tableau-rpe', '/outils/modele-carnet-musculation'].every(h => v.includes('href="' + h + '"')); })());
 
 console.log(`\n${pass} reussis, ${fail} echoues`);
 process.exit(fail ? 1 : 0);

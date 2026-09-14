@@ -276,6 +276,29 @@ ok('l ordre des series est garde avec leurs commentaires', sn.map(s => s.note &&
 await refuse('la base refuse un commentaire de serie de plus de 500 caracteres', () =>
   db.query(`update public.series set note = repeat('x', 501) where user_id = $1`, [A]));
 
+console.log('\n== 13 ter bis. Le cardio fait l aller-retour, et un chiffre douteux ne bloque rien ==');
+await as(A, "select public.pousser_jour('2026-09-08'::date, $1::jsonb)", [JSON.stringify([
+  { id: 'c1', nom: 'Tapis de course', groupe: 'Cardio', series: [
+    { reps: '1500 s', vitesse: 10.46, inclinaison: 6 },
+    { reps: '600 s', vitesse: 250, inclinaison: -45 },
+    { reps: '600 s', vitesse: 'vite', inclinaison: '1;drop table series' },
+    { reps: '600 s', inclinaison: -2.5 },
+    { reps: '600 s' }
+  ] }
+])]);
+r = await as(A, "select public.tirer_jours(null) as j");
+const sc = r.rows[0].j['2026-09-08'].exercises[0].series;
+ok('vitesse et inclinaison reviennent, arrondies a un chiffre', Number(sc[0].vitesse) === 10.5 && Number(sc[0].inclinaison) === 6,
+   JSON.stringify([sc[0].vitesse, sc[0].inclinaison]));
+ok('hors bornes ou illisible : null, et la journee passe quand meme',
+   sc.length === 5 && sc[1].vitesse === null && sc[1].inclinaison === null && sc[2].vitesse === null && sc[2].inclinaison === null,
+   JSON.stringify(sc.map(s => [s.vitesse, s.inclinaison])));
+ok('une descente (inclinaison negative) est gardee', Number(sc[3].inclinaison) === -2.5, JSON.stringify(sc[3].inclinaison));
+ok('les cles vitesse et inclinaison sont rendues sur chaque serie', sc.every(s => 'vitesse' in s && 'inclinaison' in s),
+   JSON.stringify(sc.map(s => Object.keys(s))));
+await refuse('la base refuse une vitesse au-dela de 100 km/h', () =>
+  db.query("update public.series set vitesse = 150 where user_id = $1", [A]));
+
 // On remet la journee telle que les sections suivantes l'attendent.
 await as(A, `select public.pousser_jour('2026-09-08'::date, $1::jsonb)`, [JSON.stringify([
   { id: 'b1', nom: 'Bench', groupe: 'Pectoraux', series: [{ poids: 80, reps: '5' }] }
