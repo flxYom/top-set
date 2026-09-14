@@ -350,11 +350,11 @@ console.log('\n== 18. Ce que le site publie ==');
 // Vercel publie tout le depot, sauf ce que .vercelignore ecarte. Le schema,
 // les tests et le journal y etaient lisibles : rien de secret, rien a servir.
 const IGN = readFileSync(new URL('../.vercelignore', import.meta.url), 'utf8').split(/\r?\n/).map(l => l.trim());
-for (const x of ['supabase/', 'test/', 'docs/', '.github/', 'screenshots/', 'CHANGELOG.md', 'README.md', 'contenu/', 'scripts/'])
+for (const x of ['supabase/', 'test/', 'docs/', '.github/', 'CHANGELOG.md', 'README.md', 'README.fr.md', 'contenu/', 'scripts/'])
   ok('pas publie : ' + x, IGN.includes(x));
 // L'inverse compte autant : les pages generees et ce qu'elles chargent doivent
 // etre servis. Un « outils/ » ecarte par megarde casserait le calculateur.
-for (const x of ['documentation/', 'entrainement/', 'exercices/', 'outils/', 'img/', 'contenu.css', 'intelligence.js', 'apprendre.html'])
+for (const x of ['documentation/', 'entrainement/', 'exercices/', 'outils/', 'img/', 'css/contenu.css', 'intelligence.js', 'apprendre.html'])
   ok('publie : ' + x, !IGN.includes(x) && !IGN.includes(x.replace(/\/$/, '')));
 const PRECHARGE = (SW.match(/A_PRECHARGER = \[([\s\S]*?)\]/) || [])[1] || '';
 ok('et rien de ce que le service worker precharge n en fait partie',
@@ -403,7 +403,7 @@ const ico = readFileSync(new URL('favicon.ico', RACINE));
 ok('favicon.ico existe, pour les navigateurs qui le demandent d office',
    ico.readUInt16LE(2) === 1 && ico.readUInt16LE(4) >= 1);
 ok('un favicon d au moins 48 px est annonce, la taille que Google demande',
-   HTML.indexOf('sizes="48x48" href="favicon-48.png"') > -1);
+   HTML.indexOf('sizes="48x48" href="icons/favicon-48.png"') > -1);
 const PLAN = readFileSync(new URL('sitemap.xml', RACINE), 'utf8');
 for (const p of ['/', '/guide', '/confidentialite', '/cgu', '/mentions-legales'])
   ok('le plan du site liste ' + p, PLAN.indexOf('<loc>https://www.top-set.fr' + p + '</loc>') > -1);
@@ -600,6 +600,8 @@ ok('le planning est un calendrier jour, semaine, mois ; un jour touche montre sa
    && /function calSemaineHTML\(debut\)\{/.test(SRC) && /function calJourHTML\(ds\)\{/.test(SRC)
    && /seancesOnglet = 'jour';\n    montrerVue\('seances'\);/.test(SRC) && /if \(etatJour\(ds\)\) ouvrirSeance\(ds, 'planning'\); else allerAuJour\(ds\);/.test(SRC)
    && /if \(depuis === 'planning'\) seancesOnglet = 'mes';/.test(SRC) && /montrerVue\(state\.ficheRetour \|\| 'seances'\)/.test(SRC));
+ok('TERMINER MA SEANCE apparait des la premiere serie notee, sans attendre un rendu complet',
+   corps('function renderBandeau(', 'var d = fromDateStr(ds);').indexOf('majBoutonFin(ds);') > -1);
 ok('SEANCES : du jour, mes seances, historique ; l app s ouvre sur la seance du jour',
    /data-onglet="jour">DU JOUR</.test(HTML) && /view:'seances',/.test(SRC) && /var seancesOnglet = 'jour';/.test(SRC)
    && /<section class="view" id="view-seances">\s*<div class="segmented sub" id="seancesTabs">/.test(HTML)

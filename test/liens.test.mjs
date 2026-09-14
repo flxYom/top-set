@@ -123,6 +123,7 @@ for (const c of contenus){
 for (const c of pages.filter(f => f.includes('/') || ['apprendre.html', 'carnet-de-musculation.html', 'methode-editoriale.html'].includes(f))){
   const t = readFileSync(join(RACINE, c), 'utf8');
   ok(c + ' : barre des rubriques', t.includes('<nav class="rubriques" aria-label="Apprendre">'));
+  ok(c + ' : et elle reste collee en haut', /<div class="entete">\s*<header class="barre">[\s\S]*?<nav class="rubriques"[\s\S]*?<\/nav>\s*<\/div>/.test(t));
 }
 
 console.log(`\n${pass} reussis, ${fail} echoues`);

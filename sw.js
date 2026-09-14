@@ -10,7 +10,7 @@
 // depuis un cache reviendrait a afficher des seances perimees en croyant
 // etre a jour. Le hors-ligne des donnees, c'est localStorage, pas ici.
 
-var VERSION = 'topset-v31';
+var VERSION = 'topset-v32';
 var COQUILLE = VERSION + '-coquille';
 var COURANT  = VERSION + '-courant';
 
@@ -19,11 +19,11 @@ var A_PRECHARGER = [
   './',
   'index.html',
   'manifest.webmanifest',
-  'icon.svg',
-  'icon-192.png',
-  'icon-512.png',
-  'favicon-32.png',
-  'favicon-48.png',
+  'icons/icon.svg',
+  'icons/icon-192.png',
+  'icons/icon-512.png',
+  'icons/favicon-32.png',
+  'icons/favicon-48.png',
   // Les dessins du bandeau : hors ligne, un bandeau sans son dessin n'aurait
   // plus que la couleur du groupe.
   'img/hero/pectoraux.svg',
@@ -38,11 +38,11 @@ var A_PRECHARGER = [
   'img/ambiance/accueil.webp',
   'fonts/bricolage-latin.woff2',
   'fonts/bricolage-latin-ext.woff2',
-  'chart.umd.js',
+  'vendor/chart.umd.js',
   'supabase-config.js',
   'intelligence.js',
   'app.js',
-  'legal.css',
+  'css/legal.css',
   'guide.html',
   'confidentialite.html',
   'cgu.html',

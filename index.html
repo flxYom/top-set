@@ -15,17 +15,17 @@
 <meta property="og:title" content="Top Set — carnet de musculation">
 <meta property="og:description" content="Note tes séances, tes séries et tes charges. Rien à installer, et ça marche sans compte : tout reste sur ton téléphone tant que tu n'en crées pas.">
 <meta property="og:url" content="https://www.top-set.fr/">
-<meta property="og:image" content="https://www.top-set.fr/og-image.png">
+<meta property="og:image" content="https://www.top-set.fr/img/og-image.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Top Set — carnet de musculation">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="canonical" href="https://www.top-set.fr/">
-<link rel="icon" type="image/svg+xml" href="icon.svg">
-<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
-<link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png">
-<link rel="icon" type="image/png" sizes="48x48" href="favicon-48.png">
-<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/svg+xml" href="icons/icon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
+<link rel="icon" type="image/png" sizes="48x48" href="icons/favicon-48.png">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
 <link rel="manifest" href="manifest.webmanifest">
 <!-- La police arrive avant le premier rendu : sans ça, le texte s'affiche
      d'abord dans la police du système, puis se recompose et fait bouger la page. -->
@@ -35,6 +35,9 @@
      de donnees n'est pas execute, la CSP (script-src 'self') ne le bloque pas. -->
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"WebSite","name":"Top Set","alternateName":["Top Set app","top-set.fr"],"url":"https://www.top-set.fr/","inLanguage":"fr"}
+</script>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"Organization","name":"Top Set","url":"https://www.top-set.fr/","logo":"https://www.top-set.fr/icons/icon-512.png"}
 </script>
 <style>
   /* Police servie depuis notre propre domaine : aucun appel a un tiers,
@@ -3018,10 +3021,10 @@
 </button>
 <div class="toast" id="toast"></div>
 
-<script src="intelligence.js"></script>
+<script src="intelligence.js" defer></script>
 <!-- Coordonnees publiques du projet Supabase. Absent ou vide : l'app reste
      en mode 100 % local, sans bouton mort ni erreur. -->
-<script src="supabase-config.js"></script>
-<script src="app.js"></script>
+<script src="supabase-config.js" defer></script>
+<script src="app.js" defer></script>
 </body>
 </html>

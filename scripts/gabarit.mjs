@@ -73,7 +73,7 @@ function tete(p, ctx){
     '<meta charset="utf-8">',
     '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">',
     '<meta name="theme-color" content="#0d0c0a">',
-    `<meta name="robots" content="${p.indexable ? 'index,follow' : 'noindex,follow'}">`,
+    `<meta name="robots" content="${p.indexable ? 'index,follow,max-image-preview:large' : 'noindex,follow'}">`,
     `<meta name="description" content="${descr}">`,
     `<title>${titre}</title>`,
     `<meta property="og:type" content="${p.jsonldArticle ? 'article' : 'website'}">`,
@@ -82,16 +82,19 @@ function tete(p, ctx){
     `<meta property="og:title" content="${titre}">`,
     `<meta property="og:description" content="${descr}">`,
     `<meta property="og:url" content="${url}">`,
-    `<meta property="og:image" content="${SITE}/og-image.png">`,
+    `<meta property="og:image" content="${SITE}/img/og-image.png">`,
     '<meta property="og:image:width" content="1200">',
     '<meta property="og:image:height" content="630">',
     '<meta property="og:image:alt" content="Top Set — carnet de musculation">',
     '<meta name="twitter:card" content="summary_large_image">',
     p.url === '/404' ? '' : `<link rel="canonical" href="${url}">`,
-    '<link rel="icon" type="image/svg+xml" href="/icon.svg">',
-    '<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">',
-    '<link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png">',
-    '<link rel="stylesheet" href="/contenu.css">',
+    '<link rel="icon" type="image/svg+xml" href="/icons/icon.svg">',
+    '<link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">',
+    '<link rel="icon" type="image/png" sizes="48x48" href="/icons/favicon-48.png">',
+    // La police part avec la page : sans ce preload, le texte s'affiche
+    // d'abord dans la police systeme, puis saute.
+    '<link rel="preload" href="/fonts/bricolage-latin.woff2" as="font" type="font/woff2" crossorigin>',
+    '<link rel="stylesheet" href="/css/contenu.css">',
     ...p.jsonld.map(ld),
     '</head>'
   ];
@@ -103,12 +106,16 @@ function tete(p, ctx){
 // page. Celle ou l'on se trouve est allumee.
 function barre(p, ctx){
   const liens = ctx.rubriques.map(r => `<a href="${r.url}"${r.url === p.rubriqueUrl ? ' aria-current="page"' : ''}>${esc(r.nav)}</a>`).join('');
+  // L'en-tete reste colle en haut : on change de rubrique sans remonter
+  // toute la page.
   return `<a class="lien-evitement" href="#contenu">Aller au contenu</a>
+<div class="entete">
 <header class="barre">
   <a class="marque" href="/">TOP<span>SET</span></a>
   <a class="bouton" href="/">Ouvrir le carnet</a>
 </header>
-<nav class="rubriques" aria-label="Apprendre"><div>${liens}</div></nav>`;
+<nav class="rubriques" aria-label="Apprendre"><div>${liens}</div></nav>
+</div>`;
 }
 
 function ariane(chemin){

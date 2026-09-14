@@ -313,7 +313,11 @@ grant select, insert, update, delete
 -- garantissait deja ; le revoke l'ecrit aussi au niveau du droit de table,
 -- pour que la garantie ne repose pas sur une seule couche.
 revoke all on public.consentements from authenticated;
-grant  select, insert on public.consentements to authenticated;
+grant  select on public.consentements to authenticated;
+-- La date du consentement est posee par la base, jamais par le client : une
+-- trace qu'on pourrait antidater ne prouverait rien. Le droit d'insertion
+-- s'arrete donc aux colonnes que l'app remplit.
+grant  insert (user_id, type, version_politique) on public.consentements to authenticated;
 
 
 -- ============================================================================
@@ -840,7 +844,11 @@ create policy "Chacun relit ses retours"
 
 revoke all   on public.retours from anon;
 revoke all   on public.retours from authenticated;
-grant  select, insert on public.retours to authenticated;
+grant  select on public.retours to authenticated;
+-- Le statut et la date appartiennent a la base : avec un droit d'insertion
+-- sur toute la table, un membre pouvait envoyer un retour deja « traite »
+-- (invisible dans la file de l'administrateur) ou antidate.
+grant  insert (user_id, type, corps, contexte) on public.retours to authenticated;
 
 
 -- ============================================================================
@@ -1174,6 +1182,7 @@ as $$
 declare
   v_user uuid := auth.uid();
   v_code text;
+  v_octets bytea;
   v_essais int := 0;
 begin
   if v_user is null then raise exception 'Aucune session : connexion requise.'; end if;
@@ -1186,12 +1195,20 @@ begin
 
   -- Alphabet sans O/0 ni I/1 : ce code se lit à voix haute et se recopie à la
   -- main, c'est là qu'on perd les gens.
+  --
+  -- Le code ouvre une demande d'acces a un carnet : il doit etre imprevisible.
+  -- La fonction random de Postgres ne l'est pas (pseudo-aleatoire, pas
+  -- cryptographique).
+  -- gen_random_uuid() l'est : ses six premiers octets sont entierement
+  -- aleatoires, et un octet modulo 32 reste uniforme (256 = 8 x 32).
   loop
     v_essais := v_essais + 1;
+    v_octets := substring(uuid_send(gen_random_uuid()) from 1 for 6)
+             || substring(uuid_send(gen_random_uuid()) from 1 for 6);
     v_code := (
       select string_agg(substr('ABCDEFGHJKLMNPQRSTUVWXYZ23456789',
-                               (floor(random() * 32) + 1)::int, 1), '')
-      from generate_series(1, 8)
+                               (get_byte(v_octets, k) % 32) + 1, 1), '' order by k)
+      from generate_series(0, 7) k
     );
     exit when not exists (select 1 from public.profils where code_coach = v_code);
     if v_essais > 20 then raise exception 'Impossible de generer un code.'; end if;
@@ -1516,11 +1533,15 @@ create policy "Chacun ecrit dans son fil"
     or (public.est_admin() and auteur = 'admin')
   );
 
+-- On marque lu ce que l'AUTRE a ecrit, jamais le sien : un membre qui
+-- marquait ses propres messages lus les retirait des non-lus de l'equipe.
+-- Le membre lit ce que dit l'equipe (admin, accuse automatique) ;
+-- l'administrateur lit ce qu'ecrivent les membres.
 drop policy if exists "Marquer les messages comme lus" on public.messages_support;
 create policy "Marquer les messages comme lus"
   on public.messages_support for update
-  using (auth.uid() = user_id or public.est_admin())
-  with check (auth.uid() = user_id or public.est_admin());
+  using      ((auth.uid() = user_id and auteur <> 'membre') or (public.est_admin() and auteur = 'membre'))
+  with check ((auth.uid() = user_id and auteur <> 'membre') or (public.est_admin() and auteur = 'membre'));
 
 -- RLS filtre des lignes, pas des colonnes : sans droit restreint à « lu », la
 -- policy ci-dessus laisserait réécrire le corps d'un message déjà envoyé. Le
@@ -1799,18 +1820,21 @@ create policy "Les deux ecrivent dans leur fil"
     or (auth.uid() = coach_id and auteur = 'coach' and public.coach_de(client_id))
   );
 
+-- Meme regle que le support : chacun marque lu ce que l'autre a ecrit.
 drop policy if exists "Marquer le fil du coach comme lu" on public.messages_coach;
 create policy "Marquer le fil du coach comme lu"
   on public.messages_coach for update
-  using      (auth.uid() = client_id or public.coach_de(client_id))
-  with check (auth.uid() = client_id or public.coach_de(client_id));
+  using      ((auth.uid() = client_id and auteur = 'coach') or (public.coach_de(client_id) and auteur = 'client'))
+  with check ((auth.uid() = client_id and auteur = 'coach') or (public.coach_de(client_id) and auteur = 'client'));
 
 -- Encore la même leçon : RLS filtre des lignes, pas des colonnes. Sans droit
 -- restreint à « lu », la policy ci-dessus laisserait réécrire le corps d'un
 -- message déjà envoyé.
 revoke all on public.messages_coach from anon;
 revoke all on public.messages_coach from authenticated;
-grant  select, insert on public.messages_coach to authenticated;
+grant  select on public.messages_coach to authenticated;
+-- Comme pour le support : un message part non lu et date par la base.
+grant  insert (coach_id, client_id, auteur, corps) on public.messages_coach to authenticated;
 grant  update (lu)   on public.messages_coach to authenticated;
 
 

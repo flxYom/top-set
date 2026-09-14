@@ -35,7 +35,7 @@ Fichiers liés :
 | Pages | 5 : `/` (l'app), `/guide`, `/confidentialite`, `/cgu`, `/mentions-legales` |
 | Métadonnées | écrites à la main dans chaque `<head>` : title, description, canonical, Open Graph, Twitter |
 | Données structurées | `WebSite` sur l'accueil uniquement |
-| Assets | police auto-hébergée, icônes générées par script, `legal.css` partagé par les 4 pages annexes |
+| Assets | police auto-hébergée, icônes générées par script, `css/legal.css` partagé par les 4 pages annexes |
 | PWA | `sw.js` : réseau d'abord pour les pages, chaque page visitée est mise en cache (hors ligne ensuite) |
 | CSP | `script-src 'self'` : aucun script en ligne possible, seulement des fichiers servis par le site |
 | Publication | `.vercelignore` exclut docs, schéma, tests |
@@ -243,7 +243,7 @@ scripts/contenu.mjs               ← générateur + vérifications (non publié
 scripts/gabarit.mjs               ← le rendu : une fonction pour les pages, une pour les hubs
 documentation/top-set-musculation.html   ← généré, commité, servi à /documentation/top-set-musculation
 documentation/index.html          ← hub généré, servi à /documentation
-contenu.css                       ← styles des pages de contenu, mêmes jetons que legal.css
+css/contenu.css                       ← styles des pages de contenu, mêmes jetons que css/legal.css
 outils/outils.js                  ← JS des calculateurs (fichier externe : CSP)
 outils/tableau-rpe.js             ← JS du tableau RPE (même formule, TS.epley)
 img/                              ← captures de l'app (WebP) pour la page produit
@@ -348,7 +348,7 @@ produit. Pour chaque image : objectif pédagogique, texte alternatif, dimensions
 | B. Recherche | fait | `recherche/` | — |
 | C. Notation | fait | `sujets.json`, `matrice.md` | `matrice.mjs --verifier` |
 | D. Architecture | fait, validé le 11/09 | sections C et F ci-dessus | — |
-| E. Infrastructure | fait le 11/09 : générateur, gabarit, `contenu.css`, hubs, 404, méthode éditoriale, lien « Apprendre », CI | pages hub en ligne | tests + Lighthouse + app intacte (tous les tests existants) |
+| E. Infrastructure | fait le 11/09 : générateur, gabarit, `css/contenu.css`, hubs, 404, méthode éditoriale, lien « Apprendre », CI | pages hub en ligne | tests + Lighthouse + app intacte (tous les tests existants) |
 | F. Pilote | fait le 11/09 : les 5 pages, 14 sources ouvertes une à une | 5 pages publiées | relecture par toi : en ligne, avant l'indexation (le domaine n'est pas encore indexé) ; chaque page relue reçoit son champ `relu` |
 | E bis. Gabarits | fait le 11/09 : sections obligatoires par type, termes associés, fiche d'exercice, rubrique des pages liées ; page top set complétée (séries classiques et pyramide, RPE/RIR, charge depuis le 1RM, avantages, limites, erreurs, suivi dans le temps ; 1 source de plus : Helms 2016, texte sur PMC) ; fiche de la planche | pages mises à jour | `test/contenu.test.mjs` (15), tous les tests, mobile 360 px, Lighthouse en production : top set 100/100/100/100, LCP 1,3 s (une première mesure à 98) ; planche 100, LCP 1,2 s (`recherche/lighthouse-2026-09-11-gabarits.json`) |
 | G. Validation | fait le 11/09 : mobile et ordinateur, console (CSP comprise), routes et 404, canonical, sitemap, Lighthouse en production — 100/100/100/100 sur les pages de contenu, LCP 1,2 s, CLS ≤ 0,002 (`recherche/lighthouse-2026-09-11-pilote.json`). **Reste, côté Google** : Test des résultats enrichis sur une page (JSON-LD), Inspection d'URL et demande d'indexation dans Search Console | rapport de validation | seuils du budget |

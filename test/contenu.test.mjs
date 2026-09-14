@@ -28,7 +28,7 @@ function ok(label, cond, detail = ''){
 // (leurs titres comptent dans le controle des doublons).
 function copie(){
   const d = mkdtempSync(join(tmpdir(), 'topset-contenu-'));
-  for (const x of ['scripts', 'contenu', 'contenu.css']) cpSync(join(RACINE, x), join(d, x), { recursive: true });
+  for (const x of ['scripts', 'contenu', 'css']) cpSync(join(RACINE, x), join(d, x), { recursive: true });
   mkdirSync(join(d, 'docs/seo'), { recursive: true });
   cpSync(join(RACINE, 'docs/seo/sujets.json'), join(d, 'docs/seo/sujets.json'));
   for (const s of SITECFG.statiques){

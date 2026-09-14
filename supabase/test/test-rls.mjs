@@ -825,9 +825,11 @@ await refuse('la base refuse un corps vide', () =>
 await refuse('personne ne reecrit le corps d un message', () =>
   as(B, `update public.messages_support set corps = 'reecrit' where user_id = $1`, [B]));
 await as(B, `update public.messages_support set lu = true where user_id = $1`, [B]);
+// Ce que l'equipe a ecrit se marque lu ; ce que B a ecrit reste non lu, pour
+// l'equipe : c'est a elle de le lire.
 rr = await db.query(`select count(*)::int n from public.messages_support
-                     where user_id = $1 and not lu`, [B]);
-ok('mais on peut marquer comme lu', rr.rows[0].n === 0, 'restant=' + rr.rows[0].n);
+                     where user_id = $1 and not lu and auteur <> 'membre'`, [B]);
+ok('mais on peut marquer comme lu ce que l equipe a ecrit', rr.rows[0].n === 0, 'restant=' + rr.rows[0].n);
 
 await refuse('personne n efface un message', () =>
   as(B, `delete from public.messages_support where user_id = $1`, [B]));
@@ -856,9 +858,13 @@ const filB = rr.rows.find(x => x.user_id === B);
 ok('admin_fils rend un fil par personne',
    !!filB && rr.rows.length === new Set(rr.rows.map(x => x.user_id)).size,
    JSON.stringify(rr.rows.map(x => x.user_id)));
+// Les non-lus d'un fil, cote equipe : ce que le membre a ecrit et que
+// personne de l'equipe n'a encore lu.
+const nonLusB = (await db.query(`select count(*)::int n from public.messages_support
+                                 where user_id = $1 and auteur = 'membre' and not lu`, [B])).rows[0].n;
 ok('avec le dernier message et le compte des non lus',
-   filB.dernier === 'On regarde ca, merci du signalement' && Number(filB.non_lus) === 0,
-   JSON.stringify(filB));
+   filB.dernier === 'On regarde ca, merci du signalement' && nonLusB > 0 && Number(filB.non_lus) === nonLusB,
+   JSON.stringify(filB) + ' attendu=' + nonLusB);
 // Un troisieme fil, pour verifier ce qui compte vraiment.
 await as(C, `insert into public.messages_support (user_id, auteur, corps)
              values ($1, 'membre', 'Question de Carole')`, [C]);
@@ -1036,6 +1042,72 @@ ok('mais on marque comme lu', rr.rows[0].n === 0, 'n=' + rr.rows[0].n);
 await refuse('personne n efface', () => as(D, `delete from public.messages_coach`));
 await refuse('anon ne lit rien', () => asAnon(`select * from public.messages_coach`));
 
+// Un message part non lu et date par la base : ni l'un ni l'autre ne se choisit.
+await refuse('un coache ne poste pas un message deja lu', () =>
+  as(E, `insert into public.messages_coach (coach_id, client_id, auteur, corps, lu)
+         values ($1, $2, 'client', 'discret', true)`, [D, E]));
+await refuse('ni un message antidate', () =>
+  as(E, `insert into public.messages_coach (coach_id, client_id, auteur, corps, cree_le)
+         values ($1, $2, 'client', 'vieux', '2020-01-01')`, [D, E]));
+// On marque lu ce que l'autre a ecrit, jamais le sien.
+await as(E, `insert into public.messages_coach (coach_id, client_id, auteur, corps)
+             values ($1, $2, 'client', 'Tu as vu ma video ?')`, [D, E]);
+await as(E, `update public.messages_coach set lu = true where auteur = 'client'`);
+rr = await db.query(`select count(*)::int n from public.messages_coach where corps = 'Tu as vu ma video ?' and not lu`);
+ok('le coache ne marque pas lu son propre message', rr.rows[0].n === 1, 'n=' + rr.rows[0].n);
+await as(D, `update public.messages_coach set lu = true where auteur = 'client'`);
+rr = await db.query(`select count(*)::int n from public.messages_coach where corps = 'Tu as vu ma video ?' and not lu`);
+ok('le coach, lui, le marque lu', rr.rows[0].n === 0, 'n=' + rr.rows[0].n);
+
+console.log('  -- durcissement du 14/09');
+// Le fil de support : meme regle.
+await as(B, `insert into public.messages_support (user_id, auteur, corps)
+             values ($1, 'membre', 'Relance discrete')`, [B]);
+await as(B, `update public.messages_support set lu = true where user_id = $1`, [B]);
+rr = await db.query(`select count(*)::int n from public.messages_support where corps = 'Relance discrete' and not lu`);
+ok('un membre ne retire pas son message des non-lus de l equipe', rr.rows[0].n === 1, 'n=' + rr.rows[0].n);
+await as(C, `update public.messages_support set lu = true where corps = 'Relance discrete'`);
+rr = await db.query(`select count(*)::int n from public.messages_support where corps = 'Relance discrete' and not lu`);
+ok('l administrateur le marque lu', rr.rows[0].n === 0, 'n=' + rr.rows[0].n);
+await refuse('un membre ne poste pas un message de support deja lu', () =>
+  as(B, `insert into public.messages_support (user_id, auteur, corps, lu)
+         values ($1, 'membre', 'deja lu', true)`, [B]));
+// Un retour ne naît ni traite ni antidate.
+await refuse('un membre n envoie pas un retour deja traite', () =>
+  as(B, `insert into public.retours (user_id, type, corps, statut)
+         values ($1, 'bug', 'cache', 'traite')`, [B]));
+await refuse('ni un retour antidate', () =>
+  as(B, `insert into public.retours (user_id, type, corps, cree_le)
+         values ($1, 'bug', 'vieux', '2020-01-01')`, [B]));
+// Un consentement est une trace datee par la base.
+await refuse('un consentement ne s antidate pas', () =>
+  as(B, `insert into public.consentements (user_id, type, version_politique, date_consentement)
+         values ($1, 'coaching', '1', '2020-01-01')`, [B]));
+await as(B, `insert into public.consentements (user_id, type, version_politique)
+             values ($1, 'compte-et-synchronisation', '1')`, [B]);
+ok('mais il s enregistre normalement', true);
+// Le code de coach vient d'un generateur cryptographique.
+rr = await db.query(`select prosrc from pg_proc where proname = 'devenir_coach'`);
+ok('le code de coach ne vient plus de random()',
+   rr.rows[0].prosrc.indexOf('random()') === -1 && rr.rows[0].prosrc.indexOf('gen_random_uuid()') > -1);
+{
+  const vus = new Set();
+  for (let i = 0; i < 12; i++){
+    await as(D, `select public.cesser_coach()`);
+    const c = (await as(D, `select public.devenir_coach() code`)).rows[0].code;
+    vus.add(c);
+  }
+  ok('douze codes tires, douze codes differents, tous lisibles',
+     vus.size === 12 && [...vus].every(c => /^[A-HJ-NP-Z2-9]{8}$/.test(c)), [...vus].join(','));
+}
+
+{
+  const code = (await db.query(`select code_coach from public.profils where user_id = $1`, [D])).rows[0].code_coach;
+  await as(E, `select public.demander_coach($1, 'oui')`, [code]);
+  const l = (await db.query(`select id from public.liens_coach where client_id = $1 and statut = 'en_attente'`, [E])).rows[0].id;
+  await as(D, `select public.repondre_demande($1, true)`, [l]);
+}
+
 // Couper le suivi ferme la porte au coach — et seulement a lui. La
 // conversation reste celle du coache : c'est son historique, pas celui du
 // coach.
@@ -1044,7 +1116,7 @@ await as(E, `select public.revoquer_lien($1)`, [rr.rows[0].id]);
 rr = await as(D, `select count(*)::int n from public.messages_coach`);
 ok('le coach ne lit plus rien apres la rupture', rr.rows[0].n === 0, 'n=' + rr.rows[0].n);
 rr = await as(E, `select count(*)::int n from public.messages_coach`);
-ok('le coache garde son historique', rr.rows[0].n === 2, 'n=' + rr.rows[0].n);
+ok('le coache garde son historique', rr.rows[0].n === 3, 'n=' + rr.rows[0].n);
 await refuse('et le coach n ecrit plus', () =>
   as(D, `insert into public.messages_coach (coach_id, client_id, auteur, corps)
          values ($1, $2, 'coach', 'je reviens')`, [D, E]));
