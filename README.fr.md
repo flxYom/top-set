@@ -107,10 +107,23 @@ chargement. Les choix, les sources et ce qui a été écarté (Pinterest, Canva)
 
 **La loupe des onglets, les couleurs des groupes, les attentes (septembre
 2026).** Sous l'onglet actif, une pièce de verre (`#ongletLoupe`, placée par
-`placerLoupe()` à chaque `montrerVue`) : un reflet en haut, un liseré irisé à
+`placerLoupe()` à chaque `montrerVue`) : un reflet en haut, un liseré clair à
 peine visible. Quand on change d'onglet, elle glisse, s'étire dans le sens du
-mouvement et son liseré s'allume en arc-en-ciel le temps du trajet (0,46 s) ;
-le libellé reste au-dessus, net. C'est la seule pièce de verre assumée de
+mouvement et un seul reflet chaud fait le tour du liseré le temps du trajet
+(0,46 s) ; le libellé reste au-dessus, net. Elle se fait aussi **glisser du
+doigt** : passé 8 px de déplacement horizontal, elle se soulève et suit le
+doigt, l'onglet survolé s'allume, et le plus proche s'ouvre au lâcher ; un
+simple appui reste un clic (Pointer Events, `touch-action:none` sur la barre
+du bas). **Sur téléphone, la barre du bas reprend celle d'iOS 26** : une
+capsule grise qui flotte, une pastille grise sous l'onglet actif, des libellés
+en minuscules ; au toucher, pendant un glisser ou un changement d'onglet, la
+pastille devient une bulle de verre qui grossit ce qu'elle couvre, avec des
+franges de prisme (cyan, jaune, magenta) près du bord. Safari ne sait pas
+déformer ce qui est derrière un élément : la bulle porte sa propre copie des
+onglets (construite par `app.js`), agrandie, plus trois copies colorées
+légèrement plus petites ou plus grandes, visibles seulement près du bord ;
+`suivreBulle()` les recale image par image sur la position réellement
+dessinée pendant le trajet. L'ordinateur garde la barre du haut. C'est la seule pièce de verre assumée de
 l'app ; elle saute sans animation si l'appareil en demande moins. Les
 **groupes musculaires** ne reprennent plus aucune couleur de sens — l'orange
 (marque, action), le jaune (record), le vert (réussite), le bleu (information) :
@@ -119,8 +132,8 @@ Pectoraux `#ff7aa2`, Dos `#22b8a8`, Épaules `#a99bff`, Bras `#d45fc4`, Jambes
 `node scripts/palette-groupes.mjs` vérifie l'écart avec les couleurs de sens,
 l'écart entre groupes pour les trois daltonismes courants et le contraste ; une
 garde refuse qu'un groupe reprenne une couleur de sens. Les **attentes** parlent
-une seule langue, la barre qu'on charge : après « OUI, C'EST PLIÉ » (1,8 s) et
-désormais aussi « REVOIR LE BILAN » (version rapide, 1,3 s), un disque par
+une seule langue, la barre qu'on charge : après « OUI, C'EST PLIÉ » (3,2 s) et
+désormais aussi « REVOIR LE BILAN » (version rapide, 2 s), un disque par
 exercice à la couleur de son groupe, les colliers orange claquent, la barre
 décolle, les disques suivent avec un temps de retard et l'ombre au sol se
 resserre ; un appui passe au bilan. Le loader du compte joue la même scène en
@@ -872,7 +885,7 @@ supabase-config.js       URL du projet + clé publique (voir Comptes)
 supabase/schema.sql      tables, politiques RLS et fonctions de synchro
 supabase/test/           le schéma testé sur un vrai Postgres (PGlite) : RLS (254),
                          montée depuis chaque version passée, garde-fou du projet (17)
-test/                    logique métier (162), gardes de sécurité (204), liens (119), gabarits de contenu (15)
+test/                    logique métier (162), gardes de sécurité (207), liens (119), gabarits de contenu (15)
 LICENSE  SECURITY.md  CONTRIBUTING.md  CHANGELOG.md
 .github/                 modèles d'issues, workflow de CI
 .vercelignore            ce que le site ne publie pas : docs, schéma, tests, source du contenu

@@ -546,6 +546,18 @@ ok('la loupe vit dans la barre d onglets et suit l onglet actif',
    && /placerLoupe\(true\);\n  \}/.test(SRC));
 ok('la loupe ne glisse pas quand l appareil demande moins d animations',
    /@media \(prefers-reduced-motion:reduce\)\{\s*\.onglet-loupe\.pose\{transition:none;\}/.test(HTML));
+const blocLisere = (HTML.match(/\.onglet-loupe::before\{[^}]*\}/) || [''])[0];
+ok('le liseré de la loupe n est plus arc-en-ciel',
+   blocLisere.indexOf('conic-gradient') > -1 && !/#2bd08a|#47c8ff|#8f7bff|#ffd23f/.test(blocLisere));
+ok('la loupe se fait glisser du doigt, et un appui reste un clic',
+   /barre\.addEventListener\('pointermove'/.test(SRC) && /setPointerCapture/.test(SRC)
+   && /barre\.addEventListener\('click', function\(e\)\{\s*if \(!sansClic\) return;/.test(SRC)
+   && /if \(loupe\.classList\.contains\('tenue'\)\) return;/.test(SRC)
+   && /@media \(max-width:899px\)\{\s*#mainTabs\{touch-action:none;\}/.test(HTML));
+ok('sur telephone, la bulle grossit une copie des onglets qui suit sa position dessinee',
+   /\.bulle-ancre\.cyan\{scale:/.test(HTML) && /loupe\.innerHTML = '<span class="bulle-coeur">/.test(SRC)
+   && /function suivreBulle\(duree\)\{/.test(SRC) && /suivreBulle\(anime \? 520 : 0\);/.test(SRC)
+   && /@media \(max-width:899px\) and \(prefers-reduced-motion:reduce\)\{\s*\.onglet-loupe,/.test(HTML));
 
 console.log(`\n${pass} reussis, ${fail} echoues`);
 process.exit(fail ? 1 : 0);

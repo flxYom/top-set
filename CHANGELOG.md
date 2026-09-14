@@ -11,6 +11,20 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ### Changed
 
+- **iOS 26 style bottom bar on phones.** A floating grey capsule with a grey
+  pill under the active tab and lowercase labels. On touch, while dragging or
+  switching tabs, the pill becomes a glass bubble that magnifies a copy of the
+  tabs, with cyan / yellow / magenta prism fringes near its edge. Desktop keeps
+  the top bar.
+- **The tab lens can be dragged, and its rim is no longer rainbow.** Drag it
+  along the tab bar with a finger or the mouse: it lifts, follows, lights the
+  tab underneath and opens the nearest one on release; a plain tap is still a
+  click. During a switch, a single warm glint runs around the rim instead of a
+  full RGB spectrum. Service worker `topset-v27`.
+- **Slower loading scene, so it reads as real loading.** End of session
+  1.8 s → 3.2 s, « REVOIR LE BILAN » 1.3 s → 2 s, account loader loop
+  2.4 s → 3.6 s; each plate now visibly slides on before the collars snap.
+
 - **A glass lens under the active tab.** It slides to the tab you pick,
   stretches in the direction of travel and lights its iridescent rim for the
   trip (0.46 s), then settles with a quiet highlight; hidden on views without a

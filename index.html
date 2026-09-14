@@ -1243,11 +1243,11 @@
      les colliers claquent, on leve, on repose, on decharge. Les disques sont
      dans les tons de la barre ; seul le collier porte l'orange de la marque. */
   .loader .barre-scene{height:110px;}
-  .loader .disque{opacity:1;animation:charger-g 2.4s cubic-bezier(.3,1.3,.5,1) infinite;animation-delay:calc(var(--i) * 90ms);}
+  .loader .disque{opacity:1;animation:charger-g 3.6s cubic-bezier(.3,1.3,.5,1) infinite;animation-delay:calc(var(--i) * 140ms);}
   .loader .barre-cote.droite .disque{animation-name:charger-d;}
-  .loader .collier{opacity:1;animation:collier-boucle 2.4s ease-out infinite;}
-  .loader .barre-leve{animation:lever 2.4s ease-in-out infinite;}
-  .loader .barre-ombre{animation:ombre 2.4s ease-in-out infinite;}
+  .loader .collier{opacity:1;animation:collier-boucle 3.6s ease-out infinite;}
+  .loader .barre-leve{animation:lever 3.6s ease-in-out infinite;}
+  .loader .barre-ombre{animation:ombre 3.6s ease-in-out infinite;}
   @keyframes charger-g{
     0%{opacity:0;transform:translateX(-50px);} 22%,80%{opacity:1;transform:none;} 100%{opacity:0;transform:translateX(-50px);}
   }
@@ -1609,7 +1609,7 @@
   .barre-ombre{
     position:absolute;left:11%;right:11%;bottom:-2px;height:10px;border-radius:50%;
     background:radial-gradient(closest-side,rgba(0,0,0,.7),rgba(0,0,0,0));
-    transition:transform .5s cubic-bezier(.3,1.45,.5,1),opacity .5s ease;
+    transition:transform .65s cubic-bezier(.3,1.45,.5,1),opacity .65s ease;
   }
   .bilan-chargement .barre-scene::after{
     content:'';position:absolute;left:6%;right:6%;bottom:2px;height:1px;background:var(--line);
@@ -1627,18 +1627,18 @@
     background:var(--c);border-radius:3px;
     box-shadow:inset -3px 0 0 rgba(0,0,0,.22);
     opacity:0;
-    animation:disque-g .46s cubic-bezier(.2,1.35,.4,1) forwards;
-    animation-delay:calc(var(--i) * 140ms);
+    animation:disque-g .7s cubic-bezier(.2,1.35,.4,1) forwards;
+    animation-delay:calc(var(--i) * 300ms);
   }
   .barre-cote.droite .disque{animation-name:disque-d;box-shadow:inset 3px 0 0 rgba(0,0,0,.22);}
   .collier{
     position:relative;flex:none;width:6px;height:20px;border-radius:2px;background:var(--orange);
     opacity:0;animation:collier .24s cubic-bezier(.2,1.6,.4,1) forwards;
-    animation-delay:calc(var(--n, 1) * 140ms + 260ms);
+    animation-delay:calc(var(--n, 1) * 300ms + 400ms);
   }
-  /* « Revoir le bilan » : la meme scene, deux fois plus vite. */
-  .bilan-chargement.rapide .disque{animation-duration:.34s;animation-delay:calc(var(--i) * 80ms);}
-  .bilan-chargement.rapide .collier{animation-delay:calc(var(--n, 1) * 80ms + 160ms);}
+  /* « Revoir le bilan » : la meme scene, plus vite. */
+  .bilan-chargement.rapide .disque{animation-duration:.46s;animation-delay:calc(var(--i) * 160ms);}
+  .bilan-chargement.rapide .collier{animation-delay:calc(var(--n, 1) * 160ms + 260ms);}
   @keyframes disque-g{ from{opacity:0;transform:translateX(-70px);} to{opacity:1;transform:none;} }
   @keyframes disque-d{ from{opacity:0;transform:translateX(70px);} to{opacity:1;transform:none;} }
   @keyframes collier{ from{opacity:0;transform:scaleY(.2);} to{opacity:1;transform:none;} }
@@ -2244,9 +2244,10 @@
 
   /* ---- La loupe des onglets ------------------------------------------------ */
   /* Une piece de verre sous l'onglet actif. Au repos : un reflet en haut et un
-     liseré irisé a peine visible. Quand on change d'onglet, elle glisse,
-     s'etire dans le sens du mouvement comme une goutte, et son liseré
-     s'allume en arc-en-ciel le temps du trajet. Elle passe sous le texte :
+     liseré clair a peine visible. Quand on change d'onglet, elle glisse,
+     s'etire dans le sens du mouvement comme une goutte, et un seul reflet
+     chaud fait le tour du liseré le temps du trajet (pas d'arc-en-ciel : trop
+     « effet RGB »). On peut aussi la faire glisser du doigt. Elle passe sous le texte :
      le libelle reste net. Seule exception assumee au « pas de verre » (voir
      docs/design/audit-identite-2026-09-13.md). */
   @property --loupe-angle{syntax:'<angle>';inherits:false;initial-value:210deg;}
@@ -2261,10 +2262,10 @@
     box-shadow:inset 0 1px 0 rgba(255,255,255,.24),inset 0 -1px 0 rgba(255,255,255,.07),0 8px 22px -10px rgba(0,0,0,.9);
     -webkit-backdrop-filter:saturate(1.6) brightness(1.12);backdrop-filter:saturate(1.6) brightness(1.12);
   }
-  .onglet-loupe.pose{transition:translate .46s cubic-bezier(.3,1.25,.45,1),width .46s cubic-bezier(.3,1.25,.45,1);}
+  .onglet-loupe.pose{transition:translate .46s cubic-bezier(.3,1.25,.45,1),width .46s cubic-bezier(.3,1.25,.45,1),scale .22s ease;}
   .onglet-loupe::before{
     content:'';position:absolute;inset:0;border-radius:inherit;padding:1.5px;
-    background:conic-gradient(from var(--loupe-angle),#ff5c38,#ffd23f,#2bd08a,#47c8ff,#8f7bff,#ff6fae,#ff5c38);
+    background:conic-gradient(from var(--loupe-angle),rgba(255,248,238,.12) 0deg,rgba(255,248,238,.12) 190deg,rgba(255,248,238,.9) 245deg,rgba(255,170,130,.55) 280deg,rgba(255,248,238,.12) 330deg);
     -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
     -webkit-mask-composite:xor;mask-composite:exclude;
     opacity:.2;transition:opacity .5s ease;
@@ -2275,11 +2276,21 @@
     background:linear-gradient(180deg,rgba(255,255,255,.13),rgba(255,255,255,0));
   }
   .onglet-loupe.glisse{animation:loupe-goutte .46s cubic-bezier(.3,.9,.4,1);}
-  .onglet-loupe.glisse::before{opacity:.95;animation:loupe-irise .46s ease-out;}
+  .onglet-loupe.glisse::before{opacity:.8;animation:loupe-irise .46s ease-out;}
+  /* Tenue au doigt : elle se souleve un peu, le reflet suit sa position, et
+     l'onglet qu'elle survole s'allume a la place de l'actif. */
+  #mainTabs{touch-action:pan-y;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;}
+  .onglet-loupe.tenue{transition:scale .22s cubic-bezier(.3,1.25,.45,1);scale:1.06 1.08;animation:none;}
+  .onglet-loupe.tenue::before{opacity:.7;--loupe-angle:var(--reflet,210deg);}
+  #mainTabs.tenu .topbar-tab{color:var(--dim);}
+  #mainTabs.tenu .topbar-tab .onglet-ico{color:currentColor;}
+  #mainTabs.tenu .topbar-tab.vise{color:var(--ink);}
+  #mainTabs.tenu .topbar-tab.vise .onglet-ico{color:var(--orange);}
   .onglet-loupe.glisse.gauche::before{animation-direction:reverse;}
   @keyframes loupe-goutte{0%{scale:1 1;}30%{scale:1.2 .88;}64%{scale:.96 1.04;}100%{scale:1 1;}}
   @keyframes loupe-irise{from{--loupe-angle:90deg;}to{--loupe-angle:330deg;}}
   @media (max-width:899px){
+    #mainTabs{touch-action:none;}
     .topbar-tab.active::before{content:none;}
     .onglet-loupe{top:2px;height:calc(100% - 4px);border-radius:16px;}
     .topbar-tab.active .onglet-ico{scale:1.06;}
@@ -2288,6 +2299,85 @@
     .onglet-loupe.pose{transition:none;}
     .onglet-loupe.glisse,.onglet-loupe.glisse::before{animation:none;}
     .onglet-loupe.glisse::before{opacity:.2;}
+    .onglet-loupe.tenue{transition:none;}
+  }
+
+  /* ---- La barre du bas, facon iOS (telephone) ------------------------------ */
+  /* Demande du 13/09/2026, d'apres une capture d'ecran de la barre d'iOS 26 :
+     une capsule grise qui flotte, une pastille grise sous l'onglet actif, et
+     au toucher une bulle de verre qui grossit ce qu'elle couvre, deforme ses
+     bords et y fait naitre des franges de prisme (cyan, jaune, magenta).
+     Safari ne sait pas deformer ce qui est derriere un element : la bulle
+     porte donc sa propre copie des onglets (construite par app.js), agrandie,
+     et trois copies colorees un peu plus grandes, visibles seulement pres du
+     bord. La copie blanche passe par-dessus : seules les franges depassent.
+     L'ordinateur garde la barre du haut. */
+  .bulle-coeur,.bulle-bord{display:none;}
+  @media (max-width:899px){
+    :root{--nav-h:76px;}
+    .topbar{
+      background:none;-webkit-backdrop-filter:none;backdrop-filter:none;border-top:0;
+      padding:0 max(14px, env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left));
+    }
+    .topbar::before{
+      content:'';position:absolute;left:0;right:0;top:-28px;bottom:0;z-index:-1;pointer-events:none;
+      background:linear-gradient(180deg,rgba(12,11,10,0),rgba(12,11,10,.88) 55%);
+    }
+    #mainTabs{
+      background:rgba(40,40,40,.94);border:1px solid rgba(255,255,255,.08);border-radius:999px;padding:5px;
+      -webkit-backdrop-filter:blur(20px) saturate(1.4);backdrop-filter:blur(20px) saturate(1.4);
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 12px 30px -10px rgba(0,0,0,.85);
+    }
+    .topbar-tab,.bulle-onglet{
+      display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+      min-height:54px;padding:4px 0 3px;box-sizing:border-box;
+      font-family:var(--f-ui);font-size:11px;font-weight:500;line-height:1.2;letter-spacing:0;color:#ececec;
+    }
+    .topbar-tab span,.bulle-onglet span{display:block;text-transform:lowercase;}
+    .topbar-tab span::first-letter,.bulle-onglet span::first-letter{text-transform:uppercase;}
+    .topbar-tab .onglet-ico,.bulle-onglet .onglet-ico{width:24px;height:24px;flex:none;color:currentColor;}
+    .topbar-tab.active,.bulle-onglet.active{color:#fff;font-weight:700;}
+    .topbar-tab.active .onglet-ico,.bulle-onglet.active .onglet-ico{color:#fff;scale:1;stroke-width:2.4;}
+    #mainTabs.tenu .topbar-tab,#mainTabs.tenu .topbar-tab.vise{color:#ececec;}
+    #mainTabs.tenu .topbar-tab.vise .onglet-ico{color:#fff;}
+
+    /* Au repos : une pastille grise. */
+    .onglet-loupe{
+      top:5px;height:calc(100% - 10px);border-radius:999px;overflow:hidden;
+      background:rgba(255,255,255,.12);box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none;
+      transition:scale .34s cubic-bezier(.3,1.3,.45,1),background-color .2s ease,box-shadow .2s ease,z-index 0s linear .2s;
+    }
+    .onglet-loupe.pose{transition:translate .46s cubic-bezier(.3,1.1,.45,1),width .46s cubic-bezier(.3,1.1,.45,1),scale .34s cubic-bezier(.3,1.3,.45,1),background-color .2s ease,box-shadow .2s ease,z-index 0s linear .2s;}
+    .onglet-loupe::before,.onglet-loupe::after{content:none;}
+    /* Au toucher, pendant un glisser ou un changement d'onglet : la bulle. */
+    .onglet-loupe:is(.bulle,.tenue,.glisse){
+      z-index:2;scale:1.3;animation:none;background-color:#2b2b2b;
+      box-shadow:inset 0 0 0 1px rgba(255,255,255,.3),inset 0 6px 7px -4px rgba(0,0,0,.9),inset 0 -3px 5px -3px rgba(255,255,255,.28),0 8px 18px -8px rgba(0,0,0,.8);
+      transition:scale .3s cubic-bezier(.3,1.35,.45,1),background-color .06s ease,box-shadow .06s ease,z-index 0s;
+    }
+    .onglet-loupe.pose:is(.bulle,.glisse){transition:translate .46s cubic-bezier(.3,1.1,.45,1),width .46s cubic-bezier(.3,1.1,.45,1),scale .3s cubic-bezier(.3,1.35,.45,1),background-color .06s ease,box-shadow .06s ease,z-index 0s;}
+    .bulle-coeur,.bulle-bord{display:block;position:absolute;inset:0;opacity:0;transition:opacity .18s ease;}
+    .onglet-loupe:is(.bulle,.tenue,.glisse) > :is(.bulle-coeur,.bulle-bord){opacity:1;transition:none;}
+    .bulle-coeur{-webkit-mask-image:radial-gradient(ellipse closest-side,#000 62%,transparent 100%);mask-image:radial-gradient(ellipse closest-side,#000 62%,transparent 100%);}
+    .bulle-bord{-webkit-mask-image:radial-gradient(ellipse closest-side,transparent 58%,#000 100%);mask-image:radial-gradient(ellipse closest-side,transparent 58%,#000 100%);}
+    .bulle-vue{
+      position:absolute;top:-5px;left:calc(-1 * var(--x, 0px));width:var(--barre-w, 100%);height:calc(100% + 10px);
+      display:grid;grid-template-columns:repeat(4,minmax(0,1fr));padding:5px;box-sizing:border-box;
+    }
+    .bulle-vue .bulle-onglet{color:#fff;}
+    /* Chaque copie du bord part d'une ancre au centre de la bulle : on
+       l'agrandit depuis ce point, sans origine calculee. */
+    .bulle-ancre{position:absolute;left:50%;top:50%;width:0;height:0;transform-origin:0 0;}
+    .bulle-ancre .bulle-vue{left:calc(-1 * var(--x, 0px) - var(--w, 0px) / 2);top:calc(-1 * var(--h, 54px) / 2 - 5px);height:calc(var(--h, 54px) + 10px);}
+    .bulle-ancre.cyan{scale:.975;mix-blend-mode:screen;}
+    .bulle-ancre.jaune{scale:1.012;mix-blend-mode:screen;}
+    .bulle-ancre.magenta{scale:1.028;mix-blend-mode:screen;}
+    .bulle-ancre.cyan .bulle-onglet{color:#3ee6ff;}
+    .bulle-ancre.jaune .bulle-onglet{color:#ffd84a;}
+    .bulle-ancre.magenta .bulle-onglet{color:#ff4fa8;}
+  }
+  @media (max-width:899px) and (prefers-reduced-motion:reduce){
+    .onglet-loupe,.onglet-loupe.pose,.onglet-loupe:is(.bulle,.tenue,.glisse){transition:none;}
   }
 </style>
 </head>

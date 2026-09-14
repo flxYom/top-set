@@ -106,10 +106,21 @@ ruled out (Pinterest, Canva), in French:
 
 **The tab lens, muscle-group colours, waiting states (September 2026).** Under
 the active tab sits a piece of glass (`#ongletLoupe`, placed by `placerLoupe()`
-on every `montrerVue`): a highlight on top, a barely visible iridescent rim.
-Switching tabs, it slides, stretches in the direction of travel and its rim
-lights up in rainbow colours for the trip (0.46 s); the label stays above it,
-sharp. It is the app's only deliberate piece of glass, and it jumps without
+on every `montrerVue`): a highlight on top, a barely visible light rim.
+Switching tabs, it slides, stretches in the direction of travel and a single
+warm glint runs around the rim for the trip (0.46 s); the label stays above it,
+sharp. It can also be **dragged with a finger**: past 8 px of horizontal
+movement it lifts and follows the finger, the tab underneath lights up, and the
+nearest one opens on release; a plain tap is still a click (Pointer Events,
+`touch-action:none` on the bottom bar). **On phones the bottom bar follows
+iOS 26**: a floating grey capsule, a grey pill under the active tab, lowercase
+labels; on touch, while dragging or switching tabs, the pill turns into a glass
+bubble that magnifies what it covers, with prism fringes (cyan, yellow,
+magenta) near its edge. Safari cannot distort what lies behind an element, so
+the bubble carries its own copy of the tabs (built by `app.js`), magnified,
+plus three coloured copies slightly smaller or larger, shown only near the
+edge; `suivreBulle()` re-aligns them every frame on the position actually
+drawn during the trip. Desktop keeps the top bar. It is the app's only deliberate piece of glass, and it jumps without
 animation when the device asks for reduced motion. **Muscle groups** no longer
 reuse any meaning colour — orange (brand, action), yellow (record), green
 (success), blue (information): Pectoraux `#ff7aa2`, Dos `#22b8a8`, Épaules
@@ -118,7 +129,7 @@ Autre `#8f887d`. `node scripts/palette-groupes.mjs` checks the distance to the
 meaning colours, the distance between groups under the three common colour
 vision deficiencies, and contrast; a guard refuses a group reusing a meaning
 colour. **Waiting** speaks one language, loading a barbell: after « OUI, C'EST
-PLIÉ » (1.8 s) and now also « REVOIR LE BILAN » (quick version, 1.3 s), one
+PLIÉ » (3.2 s) and now also « REVOIR LE BILAN » (quick version, 2 s), one
 plate per exercise in its group colour, orange collars snap on, the bar lifts
 off, the plates follow a beat late and the floor shadow tightens; a tap skips
 to the summary. The account loader plays the same scene in a loop with neutral
@@ -736,7 +747,7 @@ supabase-config.js       project URL + public anon key (see Accounts)
 supabase/schema.sql      tables, RLS policies and sync functions
 supabase/test/           the schema tested on a real Postgres (PGlite): RLS (254),
                          upgrade from every past version, wrong-project guard (17)
-test/                    business logic (162), hardening guards (204), links (119), content templates (15)
+test/                    business logic (162), hardening guards (207), links (119), content templates (15)
 LICENSE  SECURITY.md  CONTRIBUTING.md  CHANGELOG.md
 .github/                 issue templates, CI workflow
 .vercelignore            what the site does not publish: docs, schema, tests, content sources
