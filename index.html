@@ -2301,6 +2301,84 @@
     .onglet-loupe.glisse::before{opacity:.2;}
     .onglet-loupe.tenue{transition:none;}
   }
+
+  /* ---- La barre du bas, facon iOS (telephone) ------------------------------ */
+  /* Demande du 13/09/2026, d'apres une capture d'ecran de la barre d'iOS 26 :
+     une capsule grise qui flotte, une pastille grise sous l'onglet actif, et
+     au toucher une bulle de verre qui grossit ce qu'elle couvre, deforme ses
+     bords et y fait naitre des franges de prisme (cyan, jaune, magenta).
+     Safari ne sait pas deformer ce qui est derriere un element : la bulle
+     porte donc sa propre copie des onglets (construite par app.js), agrandie,
+     et trois copies colorees un peu plus grandes, visibles seulement pres du
+     bord. La copie blanche passe par-dessus : seules les franges depassent.
+     L'ordinateur garde la barre du haut. */
+  .bulle-coeur,.bulle-bord{display:none;}
+  @media (max-width:899px){
+    :root{--nav-h:76px;}
+    .topbar{
+      background:none;-webkit-backdrop-filter:none;backdrop-filter:none;border-top:0;
+      padding:0 max(14px, env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left));
+    }
+    .topbar::before{
+      content:'';position:absolute;left:0;right:0;top:-28px;bottom:0;z-index:-1;pointer-events:none;
+      background:linear-gradient(180deg,rgba(12,11,10,0),rgba(12,11,10,.88) 55%);
+    }
+    #mainTabs{
+      background:rgba(40,40,40,.94);border:1px solid rgba(255,255,255,.08);border-radius:999px;padding:5px;
+      -webkit-backdrop-filter:blur(20px) saturate(1.4);backdrop-filter:blur(20px) saturate(1.4);
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 12px 30px -10px rgba(0,0,0,.85);
+    }
+    .topbar-tab,.bulle-onglet{
+      display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+      min-height:54px;padding:4px 0 3px;box-sizing:border-box;
+      font-family:var(--f-ui);font-size:11px;font-weight:500;line-height:1.2;letter-spacing:0;color:#ececec;
+    }
+    .topbar-tab span,.bulle-onglet span{display:block;text-transform:lowercase;}
+    .topbar-tab span::first-letter,.bulle-onglet span::first-letter{text-transform:uppercase;}
+    .topbar-tab .onglet-ico,.bulle-onglet .onglet-ico{width:24px;height:24px;flex:none;color:currentColor;}
+    .topbar-tab.active,.bulle-onglet.active{color:#fff;font-weight:700;}
+    .topbar-tab.active .onglet-ico,.bulle-onglet.active .onglet-ico{color:#fff;scale:1;stroke-width:2.4;}
+    #mainTabs.tenu .topbar-tab,#mainTabs.tenu .topbar-tab.vise{color:#ececec;}
+    #mainTabs.tenu .topbar-tab.vise .onglet-ico{color:#fff;}
+
+    /* Au repos : une pastille grise. */
+    .onglet-loupe{
+      top:5px;height:calc(100% - 10px);border-radius:999px;overflow:hidden;
+      background:rgba(255,255,255,.12);box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none;
+      transition:scale .34s cubic-bezier(.3,1.3,.45,1),background-color .2s ease,box-shadow .2s ease,z-index 0s linear .2s;
+    }
+    .onglet-loupe.pose{transition:translate .46s cubic-bezier(.3,1.1,.45,1),width .46s cubic-bezier(.3,1.1,.45,1),scale .34s cubic-bezier(.3,1.3,.45,1),background-color .2s ease,box-shadow .2s ease,z-index 0s linear .2s;}
+    .onglet-loupe::before,.onglet-loupe::after{content:none;}
+    /* Au toucher, pendant un glisser ou un changement d'onglet : la bulle. */
+    .onglet-loupe:is(.bulle,.tenue,.glisse){
+      z-index:2;scale:1.3;animation:none;background-color:#2b2b2b;
+      box-shadow:inset 0 0 0 1px rgba(255,255,255,.3),inset 0 6px 7px -4px rgba(0,0,0,.9),inset 0 -3px 5px -3px rgba(255,255,255,.28),0 8px 18px -8px rgba(0,0,0,.8);
+      transition:scale .3s cubic-bezier(.3,1.35,.45,1),background-color .06s ease,box-shadow .06s ease,z-index 0s;
+    }
+    .onglet-loupe.pose:is(.bulle,.glisse){transition:translate .46s cubic-bezier(.3,1.1,.45,1),width .46s cubic-bezier(.3,1.1,.45,1),scale .3s cubic-bezier(.3,1.35,.45,1),background-color .06s ease,box-shadow .06s ease,z-index 0s;}
+    .bulle-coeur,.bulle-bord{display:block;position:absolute;inset:0;opacity:0;transition:opacity .18s ease;}
+    .onglet-loupe:is(.bulle,.tenue,.glisse) > :is(.bulle-coeur,.bulle-bord){opacity:1;transition:none;}
+    .bulle-coeur{-webkit-mask-image:radial-gradient(ellipse closest-side,#000 62%,transparent 100%);mask-image:radial-gradient(ellipse closest-side,#000 62%,transparent 100%);}
+    .bulle-bord{-webkit-mask-image:radial-gradient(ellipse closest-side,transparent 58%,#000 100%);mask-image:radial-gradient(ellipse closest-side,transparent 58%,#000 100%);}
+    .bulle-vue{
+      position:absolute;top:-5px;left:calc(-1 * var(--x, 0px));width:var(--barre-w, 100%);height:calc(100% + 10px);
+      display:grid;grid-template-columns:repeat(4,minmax(0,1fr));padding:5px;box-sizing:border-box;
+    }
+    .bulle-vue .bulle-onglet{color:#fff;}
+    /* Chaque copie du bord part d'une ancre au centre de la bulle : on
+       l'agrandit depuis ce point, sans origine calculee. */
+    .bulle-ancre{position:absolute;left:50%;top:50%;width:0;height:0;transform-origin:0 0;}
+    .bulle-ancre .bulle-vue{left:calc(-1 * var(--x, 0px) - var(--w, 0px) / 2);top:calc(-1 * var(--h, 54px) / 2 - 5px);height:calc(var(--h, 54px) + 10px);}
+    .bulle-ancre.cyan{scale:.975;mix-blend-mode:screen;}
+    .bulle-ancre.jaune{scale:1.012;mix-blend-mode:screen;}
+    .bulle-ancre.magenta{scale:1.028;mix-blend-mode:screen;}
+    .bulle-ancre.cyan .bulle-onglet{color:#3ee6ff;}
+    .bulle-ancre.jaune .bulle-onglet{color:#ffd84a;}
+    .bulle-ancre.magenta .bulle-onglet{color:#ff4fa8;}
+  }
+  @media (max-width:899px) and (prefers-reduced-motion:reduce){
+    .onglet-loupe,.onglet-loupe.pose,.onglet-loupe:is(.bulle,.tenue,.glisse){transition:none;}
+  }
 </style>
 </head>
 

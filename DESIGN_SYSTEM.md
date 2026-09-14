@@ -42,7 +42,7 @@ décoré, on ne le fait pas.
 
 | Couleur | Valeur | Sert à | Ne sert jamais à |
 |---|---|---|---|
-| Orange Top Set | `#ff5c38` | la marque, l'action principale, l'onglet actif, le collier du chargement | décorer, désigner un groupe musculaire |
+| Orange Top Set | `#ff5c38` | la marque, l'action principale, l'onglet actif sur ordinateur, le collier du chargement | décorer, désigner un groupe musculaire |
 | Jaune | `#ffd23f` | le record | une alerte, un groupe, un nom qui défile |
 | Vert | `#2bd08a` (`#12c07a` dans les styles d'origine) | série faite, réussite, progression | un groupe musculaire |
 | Bleu | `#4d7cff` | l'information, le commentaire | un groupe musculaire |
@@ -129,7 +129,7 @@ simple décor. Toutes s'arrêtent quand l'appareil demande moins d'animations
 
 | Élément | Comportement | Durée |
 |---|---|---|
-| Loupe des onglets (`#ongletLoupe`) | glisse sous l'onglet choisi, s'étire dans le sens du mouvement comme une goutte, un seul reflet chaud fait le tour du liseré pendant le trajet (l'arc-en-ciel a été retiré le 13/09 : « trop RGB »), reflet en haut au repos ; se fait glisser du doigt (se soulève, suit le doigt, l'onglet le plus proche s'ouvre au lâcher) ; ne bouge pas au chargement ni au redimensionnement ; cachée dans les vues sans onglet | 0,46 s |
+| Loupe des onglets (`#ongletLoupe`) | glisse sous l'onglet choisi, s'étire dans le sens du mouvement comme une goutte, un seul reflet chaud fait le tour du liseré pendant le trajet (l'arc-en-ciel a été retiré le 13/09 : « trop RGB »), reflet en haut au repos ; se fait glisser du doigt (se soulève, suit le doigt, l'onglet le plus proche s'ouvre au lâcher) ; **sur téléphone** (14/09, à la demande : « copie tout » d'après la barre d'iOS 26) : capsule grise flottante, pastille grise au repos, libellés en minuscules, icône active blanche, et au toucher une bulle de verre ×1,3 qui grossit une copie des onglets, avec franges de prisme cyan / jaune / magenta près du bord ; ne bouge pas au chargement ni au redimensionnement ; cachée dans les vues sans onglet | 0,46 s |
 | Changement de vue | la vue glisse de 6 px en apparaissant | 0,24 s |
 | Appui | le bouton s'enfonce | instantané |
 
@@ -246,5 +246,6 @@ avant de le faire.
 - **Pages de contenu** (11/09) : sans photos.
 - **Salle noire** (13/09) : on la garde, en plus sobre.
 - **Loupe Liquid Glass** (13/09) : sur les onglets uniquement.
+- **Barre du bas façon iOS 26** (14/09) : sur téléphone, capsule grise, pastille grise, bulle à franges de prisme. Écart assumé avec la charte : l'onglet actif n'y est plus orange.
 - **Palette des groupes** (13/09) : section 2.
 - **Loader** (13/09) : en code, pas en vidéo générée.

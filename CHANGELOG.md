@@ -11,6 +11,11 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ### Changed
 
+- **iOS 26 style bottom bar on phones.** A floating grey capsule with a grey
+  pill under the active tab and lowercase labels. On touch, while dragging or
+  switching tabs, the pill becomes a glass bubble that magnifies a copy of the
+  tabs, with cyan / yellow / magenta prism fringes near its edge. Desktop keeps
+  the top bar.
 - **The tab lens can be dragged, and its rim is no longer rainbow.** Drag it
   along the tab bar with a finger or the mouse: it lifts, follows, lights the
   tab underneath and opens the nearest one on release; a plain tap is still a

@@ -2347,6 +2347,39 @@
     }
     loupe.style.setProperty('--x', x + 'px');
     loupe.style.width = w + 'px';
+    loupe.style.setProperty('--w', w + 'px');
+    loupe.style.setProperty('--h', actif.offsetHeight + 'px');
+    loupe.style.setProperty('--barre-w', loupe.parentNode.clientWidth + 'px');
+    marquerCopies(actif.dataset.view);
+    suivreBulle(anime ? 520 : 0);
+  }
+  // Les copies des onglets que la bulle grossit (voir « La barre du bas, facon
+  // iOS » dans index.html) suivent l'onglet actif, ou celui qu'on survole.
+  function marquerCopies(vue){
+    var loupe = document.getElementById('ongletLoupe');
+    if (!loupe) return;
+    loupe.querySelectorAll('.bulle-onglet').forEach(function(c){ c.classList.toggle('active', c.dataset.view === vue); });
+  }
+  // La copie doit rester alignee sur la vraie barre : elle se decale de la
+  // position ou la bulle est vraiment dessinee. Pendant le trajet de 0,46 s,
+  // on relit cette position a chaque image ; sinon la bulle montrerait deja
+  // l'onglet d'arrivee pendant tout le trajet.
+  function poserCopies(loupe, x){
+    var w = loupe.offsetWidth;
+    loupe.querySelectorAll('.bulle-vue').forEach(function(v){
+      v.style.left = (v.parentNode.classList.contains('bulle-ancre') ? -(x + w / 2) : -x) + 'px';
+    });
+  }
+  var boucleBulle = 0;
+  function suivreBulle(duree){
+    var loupe = document.getElementById('ongletLoupe');
+    if (!loupe) return;
+    var fin = performance.now() + duree;
+    cancelAnimationFrame(boucleBulle);
+    (function image(){
+      poserCopies(loupe, parseFloat(getComputedStyle(loupe).translate) || 0);
+      if (performance.now() < fin) boucleBulle = requestAnimationFrame(image);
+    })();
   }
   window.addEventListener('resize', function(){ placerLoupe(false); });
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(function(){ placerLoupe(false); });
@@ -2356,9 +2389,18 @@
   (function(){
     var barre = document.getElementById('mainTabs');
     var loupe = document.getElementById('ongletLoupe');
-    if (!barre || !loupe || !window.PointerEvent) return;
-    var doigt = null, tenue = false, sansClic = false;
+    if (!barre || !loupe) return;
     function onglets(){ return barre.querySelectorAll('.topbar-tab'); }
+    // La bulle porte sa copie des onglets : une au centre, trois colorees et
+    // une blanche pour le bord. Le CSS ne les montre que sur telephone.
+    var copie = '';
+    onglets().forEach(function(b){ copie += '<span class="bulle-onglet" data-view="' + b.dataset.view + '">' + b.innerHTML + '</span>'; });
+    function vue(sorte){ return '<span class="bulle-ancre ' + sorte + '"><span class="bulle-vue">' + copie + '</span></span>'; }
+    loupe.innerHTML = '<span class="bulle-coeur"><span class="bulle-vue">' + copie + '</span></span>'
+      + '<span class="bulle-bord">' + vue('cyan') + vue('jaune') + vue('magenta') + vue('blanc') + '</span>';
+    placerLoupe(false);
+    if (!window.PointerEvent) return;
+    var doigt = null, tenue = false, sansClic = false, minuteurBulle = null;
     function plusProche(centre){
       var meilleur = null, ecart = Infinity;
       onglets().forEach(function(b){
@@ -2371,13 +2413,15 @@
       if (!e.isPrimary || e.button > 0 || loupe.hidden) return;
       doigt = { id: e.pointerId, x: e.clientX, y: e.clientY };
       tenue = false;
+      clearTimeout(minuteurBulle);
+      loupe.classList.add('bulle');
     });
     barre.addEventListener('pointermove', function(e){
       if (!doigt || e.pointerId !== doigt.id) return;
       var dx = e.clientX - doigt.x;
       if (!tenue){
         if (Math.abs(dx) < 8) return;
-        if (Math.abs(e.clientY - doigt.y) > Math.abs(dx)){ doigt = null; return; }
+        if (Math.abs(e.clientY - doigt.y) > Math.abs(dx)){ doigt = null; loupe.classList.remove('bulle'); return; }
         tenue = true;
         try { barre.setPointerCapture(e.pointerId); } catch (err) {}
         clearTimeout(minuteurLoupe);
@@ -2393,13 +2437,18 @@
       loupe.style.setProperty('--reflet', (90 + 240 * (max > min ? (x - min) / (max - min) : 0)) + 'deg');
       var vise = plusProche(x + w / 2);
       liste.forEach(function(b){ b.classList.toggle('vise', b === vise); });
+      marquerCopies(vise.dataset.view);
+      poserCopies(loupe, x);
       e.preventDefault();
     });
     function lacher(e){
       if (!doigt || e.pointerId !== doigt.id) return;
       var etaitTenue = tenue;
       doigt = null; tenue = false;
-      if (!etaitTenue) return;
+      clearTimeout(minuteurBulle);
+      // Un simple appui : la bulle retombe, ou le changement d'onglet la reprend.
+      if (!etaitTenue){ minuteurBulle = setTimeout(function(){ loupe.classList.remove('bulle'); }, 160); return; }
+      loupe.classList.remove('bulle');
       var cible = plusProche(parseFloat(loupe.style.getPropertyValue('--x')) + loupe.offsetWidth / 2);
       loupe.classList.remove('tenue');
       barre.classList.remove('tenu');

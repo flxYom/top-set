@@ -112,7 +112,15 @@ warm glint runs around the rim for the trip (0.46 s); the label stays above it,
 sharp. It can also be **dragged with a finger**: past 8 px of horizontal
 movement it lifts and follows the finger, the tab underneath lights up, and the
 nearest one opens on release; a plain tap is still a click (Pointer Events,
-`touch-action:none` on the bottom bar). It is the app's only deliberate piece of glass, and it jumps without
+`touch-action:none` on the bottom bar). **On phones the bottom bar follows
+iOS 26**: a floating grey capsule, a grey pill under the active tab, lowercase
+labels; on touch, while dragging or switching tabs, the pill turns into a glass
+bubble that magnifies what it covers, with prism fringes (cyan, yellow,
+magenta) near its edge. Safari cannot distort what lies behind an element, so
+the bubble carries its own copy of the tabs (built by `app.js`), magnified,
+plus three coloured copies slightly smaller or larger, shown only near the
+edge; `suivreBulle()` re-aligns them every frame on the position actually
+drawn during the trip. Desktop keeps the top bar. It is the app's only deliberate piece of glass, and it jumps without
 animation when the device asks for reduced motion. **Muscle groups** no longer
 reuse any meaning colour — orange (brand, action), yellow (record), green
 (success), blue (information): Pectoraux `#ff7aa2`, Dos `#22b8a8`, Épaules
@@ -739,7 +747,7 @@ supabase-config.js       project URL + public anon key (see Accounts)
 supabase/schema.sql      tables, RLS policies and sync functions
 supabase/test/           the schema tested on a real Postgres (PGlite): RLS (254),
                          upgrade from every past version, wrong-project guard (17)
-test/                    business logic (162), hardening guards (206), links (119), content templates (15)
+test/                    business logic (162), hardening guards (207), links (119), content templates (15)
 LICENSE  SECURITY.md  CONTRIBUTING.md  CHANGELOG.md
 .github/                 issue templates, CI workflow
 .vercelignore            what the site does not publish: docs, schema, tests, content sources

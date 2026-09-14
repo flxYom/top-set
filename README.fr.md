@@ -114,7 +114,16 @@ mouvement et un seul reflet chaud fait le tour du liseré le temps du trajet
 doigt** : passé 8 px de déplacement horizontal, elle se soulève et suit le
 doigt, l'onglet survolé s'allume, et le plus proche s'ouvre au lâcher ; un
 simple appui reste un clic (Pointer Events, `touch-action:none` sur la barre
-du bas). C'est la seule pièce de verre assumée de
+du bas). **Sur téléphone, la barre du bas reprend celle d'iOS 26** : une
+capsule grise qui flotte, une pastille grise sous l'onglet actif, des libellés
+en minuscules ; au toucher, pendant un glisser ou un changement d'onglet, la
+pastille devient une bulle de verre qui grossit ce qu'elle couvre, avec des
+franges de prisme (cyan, jaune, magenta) près du bord. Safari ne sait pas
+déformer ce qui est derrière un élément : la bulle porte sa propre copie des
+onglets (construite par `app.js`), agrandie, plus trois copies colorées
+légèrement plus petites ou plus grandes, visibles seulement près du bord ;
+`suivreBulle()` les recale image par image sur la position réellement
+dessinée pendant le trajet. L'ordinateur garde la barre du haut. C'est la seule pièce de verre assumée de
 l'app ; elle saute sans animation si l'appareil en demande moins. Les
 **groupes musculaires** ne reprennent plus aucune couleur de sens — l'orange
 (marque, action), le jaune (record), le vert (réussite), le bleu (information) :
@@ -876,7 +885,7 @@ supabase-config.js       URL du projet + clé publique (voir Comptes)
 supabase/schema.sql      tables, politiques RLS et fonctions de synchro
 supabase/test/           le schéma testé sur un vrai Postgres (PGlite) : RLS (254),
                          montée depuis chaque version passée, garde-fou du projet (17)
-test/                    logique métier (162), gardes de sécurité (206), liens (119), gabarits de contenu (15)
+test/                    logique métier (162), gardes de sécurité (207), liens (119), gabarits de contenu (15)
 LICENSE  SECURITY.md  CONTRIBUTING.md  CHANGELOG.md
 .github/                 modèles d'issues, workflow de CI
 .vercelignore            ce que le site ne publie pas : docs, schéma, tests, source du contenu
