@@ -200,6 +200,15 @@ fermée pendant la planche retrouve son chrono — et l'écran reste allumé tan
 qu'il tourne (Wake Lock, quand le navigateur le permet). Un seul chrono à la fois :
 en lancer un autre note d'abord celui qui tournait.
 
+**Le repos entre les séries.** Cocher une série, ou mettre le chrono en pause,
+lance le repos : il monte depuis zéro dans une pastille en bas à gauche, en face
+de « revenir en haut ». Cocher la série suivante, relancer le chrono ou toucher
+la pastille l'arrête et écrit sa durée dans le REPOS de la série qui l'a lancé.
+Moins de 10 s (des séries cochées après coup) ou plus de 20 min (un repos
+oublié) : rien n'est écrit ; décocher cette série l'annule, valider la séance
+l'abandonne. Seulement sur la séance du jour, gardé dans `localStorage`
+(`topset_repos`) comme le chrono, écran allumé.
+
 **Le cardio : minutes, vitesse, inclinaison.** Tapis, course, marche, vélo,
 rameur… s'ouvrent en cardio : une série est une durée **en minutes** (`25`,
 `12,5`), plus la vitesse (km/h) et l'inclinaison (%) moyennes, toutes deux
