@@ -1093,7 +1093,7 @@
   .heatmap-cell[data-level="2"]{background:#b8482a;}
   .heatmap-cell[data-level="3"]{background:#e05430;}
   .heatmap-cell[data-level="4"]{background:var(--orange);}
-  .heat-legend{display:flex;align-items:center;gap:4px;justify-content:flex-end;font-size:10px;font-weight:700;color:var(--dim);}
+  .heat-legend{display:flex;align-items:center;gap:4px;justify-content:flex-end;font-size:11px;font-weight:700;color:var(--dim);}
 
   .muscle-panel{
     border:2.5px solid var(--ink);
@@ -2026,7 +2026,7 @@
     --s3:#27241f;
     --trait:rgba(255,244,230,.08);
     --trait2:rgba(255,244,230,.15);
-    --ink3:#7c756b;
+    --ink3:#8d867b;
     --orange:#ff5c38;
     --ok:#2bd08a;
     --r-s:10px;
@@ -2557,6 +2557,51 @@
   @media (max-width:899px) and (prefers-reduced-motion:reduce){
     .onglet-loupe,.onglet-loupe.pose,.onglet-loupe:is(.bulle,.tenue,.glisse){transition:none;}
   }
+
+  /* ---- Ergonomie et lisibilite (audit UI/UX du 16/09/2026) ----------------- */
+  /* Mesure a 375 px : 32 commandes sous 44 px, 24 textes sous 11 px. On remonte
+     les seuils sans toucher aux tailles des champs de la garde iOS. */
+  .seg-btn{min-height:44px;}
+  .ex-name{min-height:44px;}
+  .seance-crayon{width:44px;height:44px;}
+  .fiche-titre{min-height:44px;}
+  .exo-periode{height:44px;}
+  .exo-jour{min-height:48px;}
+  .fin-revoir{min-height:44px;padding:0 4px;}
+  .col-prec-lien::after{top:-6px;bottom:-6px;}
+
+  /* 11 px au plus petit : un libelle qu'on plisse les yeux pour lire en
+     seance ne sert a rien. */
+  .brand-mark .wm-app,.ex-groupe-chip,.ex-prev-tete,.ex-cible-tag,.series-tete,
+  .col-prec-lien,.seance-creer-label,.cal-jour,.cal-entete,.cal-etat,.cal-fiche-etat,
+  .stat-label,.fiche-exo-groupe,.exo-groupe,.exo-bloc-titre,.volume-label,.heat-title,
+  .muscle-title,.muscle-note,.recap-section-title,.recap-freq,.bilan-tag,.bilan-bloc-tete,
+  .serie-repos-champ > span,.bilan-tuile span{font-size:11px;}
+  .serie-card[data-type] .serie-num{font-size:11px;}
+
+  /* Les chiffres de performance ne dansent pas d'une ligne a l'autre. */
+  .serie-prec,.recap-value,.stat-num,.exo-record-poids,.bilan-tuile b,.bilan-volume-num,
+  .fiche-serie,.cal-num,.volume-num{font-variant-numeric:tabular-nums;}
+
+  /* Recap : le nom en haut, la frequence dessous, la valeur a droite. Le
+     nom ne se casse plus en trois colonnes a 375 px. */
+  .recap-name{display:grid;grid-template-columns:auto minmax(0,1fr);column-gap:7px;align-items:baseline;min-width:0;}
+  .recap-name .chev{grid-row:1 / span 2;align-self:center;}
+  .recap-freq{grid-column:2;}
+
+  /* Signal d'un exercice : un point dessine, plus un emoji qui change de
+     forme selon le telephone. Le mot reste, la couleur n'est pas seule. */
+  .sig-point{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:7px;vertical-align:1px;background:var(--dim);}
+  .sig-vert .sig-point{background:var(--green);}
+  .sig-orange .sig-point{background:var(--yellow);}
+  .sig-rouge .sig-point{background:var(--orange);}
+  .sig-gris .sig-point{background:transparent;box-shadow:inset 0 0 0 2px var(--dim);}
+
+  /* La fiche d'une seance : des blocs espaces, plus colles les uns aux autres. */
+  #seanceDetail{display:flex;flex-direction:column;gap:10px;}
+  #seanceDetail > *{margin-top:0;margin-bottom:0;}
+  /* Sous 360 px, AUJOURD'HUI serre ses lettres pour laisser la semaine entiere. */
+  @media (max-width:359px){ .btn-today{letter-spacing:.02em;padding-left:10px;padding-right:10px;} .week-nav{gap:6px;} }
 </style>
 </head>
 

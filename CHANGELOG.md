@@ -51,6 +51,19 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ### Changed
 
+- **UI/UX audit, measured at 375 px.** Every control in the app is at least
+  44 px tall (segmented tabs, rename pencil, chart periods, history rows,
+  `REVOIR LE BILAN`); no label is smaller than 11 px (24 were, down to
+  8.5 px); tertiary text passes 4.5:1 (`--ink3` `#7c756b` → `#8d867b`);
+  performance numbers use tabular figures. The exercise signal shows a drawn
+  dot instead of an emoji; the chart reads `101,5 kg` instead of `101.5kg`
+  with fewer ticks; the estimated 1RM rounds to the half kilo. Fixed at
+  375 px: a long exercise name split into three columns in the recap, the week
+  label cut off in the planning (the current year is dropped), and the session
+  sheet's blocks touching each other (its four figures now sit in two even
+  rows). The session summary explains what it compares on, and a closing
+  `»` no longer wraps alone. Content pages: logo and `OUVRIR LE CARNET` at
+  44 px. Service worker `topset-v33`.
 - **The Apprendre header stays on screen.** On every content page, the logo,
   `OUVRIR LE CARNET` and the section bar stay stuck at the top while reading;
   anchors stop below them.

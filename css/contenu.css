@@ -34,7 +34,7 @@ body{
 a{color:var(--orange);text-underline-offset:.15em;}
 a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--yellow);outline-offset:2px;}
 .lien-evitement{position:absolute;left:-999px;}
-.lien-evitement:focus{left:12px;top:12px;z-index:11;background:var(--yellow);color:#0d0c0a;padding:8px 12px;}
+.lien-evitement:focus{left:12px;top:12px;z-index:11;background:var(--yellow);color:#0d0c0a;padding:12px 14px;}
 
 /* ------------------------------------------------------------- en-tete */
 .barre{
@@ -42,7 +42,7 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{ou
   padding:max(10px,env(safe-area-inset-top)) max(18px,env(safe-area-inset-right)) 10px max(18px,env(safe-area-inset-left));
   border-bottom:2px solid var(--line);
 }
-.marque{color:var(--ink);font-weight:800;font-size:19px;letter-spacing:.02em;text-decoration:none;}
+.marque{display:inline-flex;align-items:center;min-height:44px;color:var(--ink);font-weight:800;font-size:19px;letter-spacing:.02em;text-decoration:none;}
 .marque span{color:var(--orange);}
 .bouton{
   display:inline-flex;align-items:center;justify-content:center;gap:8px;
@@ -51,7 +51,7 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{ou
   color:#0d0c0a;font-size:14px;font-weight:800;letter-spacing:.04em;text-decoration:none;text-transform:uppercase;
 }
 .bouton:active{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--ink);}
-.barre .bouton{margin-left:auto;min-height:40px;padding:0 12px;font-size:12px;box-shadow:3px 3px 0 var(--ink);}
+.barre .bouton{margin-left:auto;min-height:44px;padding:0 12px;font-size:12px;box-shadow:3px 3px 0 var(--ink);}
 /* L'en-tete et les rubriques restent visibles pendant la lecture. Les ancres
    (sommaire, « aller au contenu ») s'arretent sous lui, pas derriere. */
 .entete{position:sticky;top:0;z-index:10;background:var(--bg);}

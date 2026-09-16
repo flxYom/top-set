@@ -36,7 +36,7 @@ décoré, on ne le fait pas.
 | `--trait` / `--trait2` | `rgba(255,244,230,.08)` / `.15` | filets et contours |
 | `--ink` | `#f5f2ec` | texte principal, blanc cassé |
 | `--dim` | `#a39b8f` | texte secondaire |
-| `--ink3` | `#7c756b` | texte tertiaire |
+| `--ink3` | `#8d867b` | texte tertiaire (4,8:1 sur `--s2` ; `#7c756b` avant le 16/09, 3,8:1) |
 
 ### Couleurs de sens — un rôle chacune
 
@@ -91,6 +91,16 @@ Historique :
 - la **police du système** pour le reste (SF Pro sur iPhone).
 
 Les chiffres des compteurs du chargement sont en `tabular-nums`.
+
+**Appliqué le 16/09/2026 (audit UI/UX mesuré à 375 px)** :
+- plancher de 11 px pour tout libellé de l'app (24 étaient en dessous,
+  jusqu'à 8,5 px) ;
+- `tabular-nums` sur les chiffres de performance (séries, récap, tuiles,
+  records, bilan, calendrier) ;
+- graphique : virgule française et espace avant l'unité (`101,5 kg`),
+  5 graduations au plus ;
+- 1RM estimé arrondi au demi-kilo ;
+- un `»` ne part plus seul à la ligne (espace insécable).
 
 **À décider (phase 2)** :
 - une échelle de six tailles au plus (il y en a 29 aujourd'hui), avec
@@ -175,7 +185,9 @@ une icône, un texte, une position ou un mouvement.
 **À décider (phase 3).**
 
 Aujourd'hui, 13 SVG sur une grille de 24 px, avec 10 épaisseurs de trait
-différentes, mêlés à des caractères (⇄ ↺ ◷ ✎ ✕) et à des emoji (🟢 🟠 🔴 ⚪).
+différentes, mêlés à des caractères (⇄ ↺ ◷ ✎ ✕). Les emoji du signal d'un
+exercice (🟢 🟠 🔴 ⚪) sont remplacés le 16/09 par un point dessiné en CSS, à
+côté du mot : la couleur n'est jamais seule.
 
 Cible :
 - un seul jeu, grille de 24 px ;
@@ -211,10 +223,14 @@ Cible :
 - **Téléphone d'abord.** Sous 900 px, les onglets sont en bas, sous le pouce.
   Ils se rangent quand le clavier sort (`body.clavier`), dans une conversation
   et sur l'écran de bilan.
-- **Cibles tactiles de 44 px** sur la carte d'exercice. Restent sous ce seuil :
-  - REVOIR LE BILAN (27 px de haut) ;
-  - la date de la dernière fois (32 px) ;
-  - les onglets semaine / mois / année (42 px).
+- **Cibles tactiles de 44 px** partout dans l'app depuis l'audit du 16/09
+  (onglets segmentés, crayon de la fiche, périodes du graphique, lignes de
+  l'historique d'un exercice, REVOIR LE BILAN). La date de la dernière fois
+  garde son cadre de 32 px, mais sa zone d'appui déborde jusqu'à 44 px.
+- **À 320 px**, la semaine du planning tient entière : l'année en cours est
+  retirée du libellé, et AUJOURD'HUI resserre ses lettres sous 360 px.
+- **Fiche d'une séance** : blocs espacés de 10 px ; les quatre chiffres
+  (exos, séries, volume, fois) en deux lignes égales.
 - **Zones sûres de l'iPhone** (`env(safe-area-inset-*)`) sur toutes les barres
   fixes.
 - **Vérifier à 320, 360, 375 et 430 px**, et dans un superset.

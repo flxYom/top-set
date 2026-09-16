@@ -602,6 +602,13 @@ ok('le planning est un calendrier jour, semaine, mois ; un jour touche montre sa
    && /if \(depuis === 'planning'\) seancesOnglet = 'mes';/.test(SRC) && /montrerVue\(state\.ficheRetour \|\| 'seances'\)/.test(SRC));
 ok('TERMINER MA SEANCE apparait des la premiere serie notee, sans attendre un rendu complet',
    corps('function renderBandeau(', 'var d = fromDateStr(ds);').indexOf('majBoutonFin(ds);') > -1);
+ok('audit UI/UX : plus d emoji dans le signal d un exercice, un point dessine a la place',
+   !/pastille:'/.test(SRC) && /<span class="sig-point" aria-hidden="true"><\/span>/.test(SRC) && /\.sig-point\{/.test(HTML));
+ok('audit UI/UX : les libelles ne descendent plus sous 11 px, les commandes segmentees font 44 px',
+   /\.recap-section-title,\.recap-freq,\.bilan-tag,\.bilan-bloc-tete,\s*\.serie-repos-champ > span,\.bilan-tuile span\{font-size:11px;\}/.test(HTML)
+   && /\.seg-btn\{min-height:44px;\}/.test(HTML) && /\.fin-revoir\{min-height:44px;/.test(HTML));
+ok('audit UI/UX : le texte tertiaire passe 4,5:1 sur les surfaces',
+   /--ink3:#8d867b;/.test(HTML));
 ok('SEANCES : du jour, mes seances, historique ; l app s ouvre sur la seance du jour',
    /data-onglet="jour">DU JOUR</.test(HTML) && /view:'seances',/.test(SRC) && /var seancesOnglet = 'jour';/.test(SRC)
    && /<section class="view" id="view-seances">\s*<div class="segmented sub" id="seancesTabs">/.test(HTML)
