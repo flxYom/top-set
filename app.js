@@ -1220,7 +1220,7 @@
       + '<div class="ex-prev-tete">DERNIÈRE FOIS · ' + esc(quand.toUpperCase())
       // La liste ne sert que la ou la colonne PRÉC. n'a pas la place.
       +   '<span class="ex-prev-liste"> · ' + esc(prec.series.map(perfCourt).join(' · ')) + '</span></div>'
-      + (notePrec ? '<div class="ex-prev-note">« ' + esc(notePrec) + ' »</div>' : '')
+      + (notePrec ? '<div class="ex-prev-note">«\u00a0' + esc(notePrec) + '\u00a0»</div>' : '')
       + '</div>';
 
     // La cible s'appuie sur tout l'historique et pas seulement sur la
@@ -1312,7 +1312,7 @@
       + '</div>'
       + menu
       + '<div class="ex-body">'
-      +   (ex.note ? '<div class="ex-prev-note">« ' + esc(ex.note) + ' »</div>' : '')
+      +   (ex.note ? '<div class="ex-prev-note">«\u00a0' + esc(ex.note) + '\u00a0»</div>' : '')
       +   '<div class="ex-prev-zone">' + blocPrecedentHTML(ex, p) + '</div>'
       +   '<div class="series-list">'+seriesListeHTML(ex, auTemps, p)+'</div>'
       +   '<div class="ex-actions">'
@@ -1975,13 +1975,10 @@
       return;
     }
 
-    html += '<div class="fiche-stats">'
+    html += '<div class="fiche-stats" style="grid-template-columns:repeat(2,minmax(0,1fr));">'
       + statTile(exos.length, exos.length > 1 ? 'EXOS' : 'EXO')
       + statTile(compterJour(day), compterJour(day) > 1 ? 'SÉRIES' : 'SÉRIE')
       + statTile(volumeTexte(dayVolume(ds)) || '—', 'VOLUME')
-      + '</div>';
-
-    html += '<div class="fiche-stats" style="grid-template-columns:1fr;">'
       + statTile(fois + '×', fois > 1 ? 'FOIS CETTE SÉANCE' : 'PREMIÈRE FOIS')
       + '</div>';
 
@@ -1999,7 +1996,7 @@
             return '<span class="fiche-serie' + (s.fait ? ' fait' : '') + '">' + esc(perfTexte(s)) + '</span>';
           }).join('')
         + '</div>'
-        + notesExo(e).map(function(n){ return '<div class="fiche-exo-note">« ' + esc(n) + ' »</div>'; }).join('')
+        + notesExo(e).map(function(n){ return '<div class="fiche-exo-note">«\u00a0' + esc(n) + '\u00a0»</div>'; }).join('')
         + (tenues.length
             ? ligneProgressionDuree(e.nom, ds, Math.max.apply(null, tenues))
             : ligneProgression(e.nom, ds, meilleure))
@@ -2172,7 +2169,10 @@
       corps.innerHTML = calJourHTML(calRef);
     } else if (calVue === 'semaine'){
       var debut = startOfWeek(ref);
-      label.textContent = formatWeekRange(debut, addDays(debut, 6));
+      // L'annee en cours ne prend plus la place de la semaine sur un petit ecran.
+      var finSem = addDays(debut, 6), an = maintenant.getFullYear();
+      label.textContent = formatWeekRange(debut, finSem);
+      if (debut.getFullYear() === an && finSem.getFullYear() === an) label.textContent = label.textContent.replace(/ \d{4}$/, '');
       loin = toDateStr(debut) !== toDateStr(startOfWeek(maintenant));
       corps.innerHTML = calSemaineHTML(debut);
     } else {
@@ -2353,11 +2353,11 @@
   }
 
   var SIGNAUX = {
-    progressing:  { pastille:'🟢', mot:'EN PROGRESSION', classe:'sig-vert' },
-    stable:       { pastille:'🟠', mot:'STABLE',         classe:'sig-orange' },
-    stagnating:   { pastille:'🟠', mot:'STAGNATION',     classe:'sig-orange' },
-    declining:    { pastille:'🔴', mot:'EN BAISSE',      classe:'sig-rouge' },
-    insufficient_data: { pastille:'⚪', mot:'PAS ASSEZ DE DONNÉES', classe:'sig-gris' }
+    progressing:  { mot:'EN PROGRESSION', classe:'sig-vert' },
+    stable:       { mot:'STABLE',         classe:'sig-orange' },
+    stagnating:   { mot:'STAGNATION',     classe:'sig-orange' },
+    declining:    { mot:'EN BAISSE',      classe:'sig-rouge' },
+    insufficient_data: { mot:'PAS ASSEZ DE DONNÉES', classe:'sig-gris' }
   };
 
   function ouvrirExercice(nom, retour){
@@ -2396,7 +2396,7 @@
     var sig = TS.detecterSignal(toutes, auTemps ? 'temps' : undefined);
     var vue = SIGNAUX[sig.signal] || SIGNAUX.insufficient_data;
     html += '<div class="exo-signal ' + vue.classe + '">'
-      + '<div class="exo-signal-tete">' + vue.pastille + ' ' + vue.mot + '</div>'
+      + '<div class="exo-signal-tete"><span class="sig-point" aria-hidden="true"></span>' + vue.mot + '</div>'
       + '<div class="exo-signal-raison">' + esc(sig.raison) + '</div>'
       + '</div>';
 
@@ -2428,7 +2428,7 @@
     } else {
     html += '<div class="exo-stats">'
       + statTile(top ? esc(perfTexte(top)) : '—', 'Top set')
-      + statTile(rm === null ? '—' : formatWeight(rm) + ' kg', '1RM estimé')
+      + statTile(rm === null ? '—' : formatWeight(Math.round(rm * 2) / 2) + ' kg', '1RM estimé')
       + statTile(meilleur === null ? '—' : formatWeight(meilleur) + ' kg', 'Meilleur poids')
       + statTile(reps || '—', 'Meilleures reps')
       + statTile(volumeTexte(volume) || '—', 'Volume total')
@@ -2478,7 +2478,7 @@
                 var estTop = jTop && s === jTop;
                 return '<span class="exo-jour-serie' + (estTop ? ' top' : '') + '">' + esc(perfTexte(s)) + '</span>';
               }).join('')
-            + (j.note ? '<span class="exo-jour-note">« ' + esc(j.note) + ' »</span>' : '')
+            + (j.note ? '<span class="exo-jour-note">«\u00a0' + esc(j.note) + '\u00a0»</span>' : '')
             + '</span>'
             + '<span class="exo-jour-fleche">›</span>'
             + '</button>';
@@ -2527,9 +2527,9 @@
           }
         } } },
         scales:{
-          x:{ grid:{display:false}, ticks:{ color:'#9a9184', font:{size:10,weight:'700'} } },
-          y:{ grid:{color:'#35312b'}, ticks:{ color:'#9a9184', font:{size:10,weight:'700'},
-              callback:function(v){ return v + (auTemps ? ' s' : 'kg'); } } }
+          x:{ grid:{display:false}, ticks:{ color:'#a39b8f', font:{size:11,weight:'700'}, maxTicksLimit:6, maxRotation:0 } },
+          y:{ grid:{color:'#35312b'}, ticks:{ color:'#a39b8f', font:{size:11,weight:'700'}, maxTicksLimit:5,
+              callback:function(v){ return auTemps ? TS.formatDuree(v) : formatWeight(v) + ' kg'; } } }
         }
       }
     });
@@ -3907,7 +3907,7 @@
               + '<span>' + esc(l.texte) + (l.texte === l.avant ? ', comme ce jour-là' : ' contre ' + esc(l.avant)) + '</span>'
               + '<i class="bilan-sens ' + l.sens + '">' + sensTexte(l) + '</i></div>';
           }).join('')
-        + '<div class="bilan-bloc-note">' + esc(titreSeance(c.ds)) + ' · 1RM estimé, ou durée</div>'
+        + '<div class="bilan-bloc-note">Séance « ' + esc(titreSeance(c.ds)) + ' », comparée sur le 1RM estimé (ou la durée tenue)</div>'
         + '</div>';
     }
     if (b.top){
@@ -3925,7 +3925,7 @@
           }).join('')
         + '</div>';
     }
-    html += '<p class="bilan-mot anim" style="--i:7">« ' + esc(b.mot) + ' »</p>'
+    html += '<p class="bilan-mot anim" style="--i:7">«\u00a0' + esc(b.mot) + '\u00a0»</p>'
       + '<button type="button" class="btn-sheet primary anim" style="--i:8" id="finFiche">VOIR LA FICHE DE LA SÉANCE</button>'
       + '<button type="button" class="btn-sheet anim" style="--i:8" id="finFermer">FERMER</button>'
       + '</div>';
@@ -5144,7 +5144,7 @@
             return '<div class="lect-exo">'
               + '<div class="lect-nom">' + esc(ex.nom || 'Sans nom') + '</div>'
               + '<div class="lect-series">' + (series || '<span class="lect-serie">aucune série</span>') + '</div>'
-              + notesExo(ex).map(function(n){ return '<div class="lect-note">« ' + esc(n) + ' »</div>'; }).join('')
+              + notesExo(ex).map(function(n){ return '<div class="lect-note">«\u00a0' + esc(n) + '\u00a0»</div>'; }).join('')
               + '</div>';
           }).join('');
           return '<div class="lect-jour">'
