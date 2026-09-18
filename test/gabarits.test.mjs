@@ -634,6 +634,24 @@ ok('iPhone : le grand titre du jour, deja dans le bandeau, reste pour les lecteu
   ok('mesure d audience : annoncee par la politique 3.2, et l app enregistre cette version',
      CONF.indexOf('Version 3.2') > -1 && CONF.indexOf('Vercel Web Analytics') > -1 && SRC.indexOf("var VERSION_POLITIQUE = '3.2';") > -1);
 }
+ok('sous-groupes : liste fermee, le nom tranche, et un choix a la main gagne',
+   SRC.indexOf("'Bras':['Biceps','Triceps','Avant-bras'],") > -1
+   && SRC.indexOf("'Jambes':['Quadriceps','Ischios','Fessiers','Mollets','Adducteurs','Abducteurs']") > -1
+   && SRC.indexOf("if (info && typeof info.sousGroupe === 'string'){") > -1
+   && SRC.split(String.fromCharCode(8)).length === 1);
+ok('sous-groupes : « leg curl » est range avant « curl »',
+   SRC.indexOf("'Ischios'],") > -1 && SRC.indexOf("'Ischios'],") < SRC.indexOf("[/curl|biceps/, 'Biceps'],"));
+ok('sous-groupes : recap, schema et titre passent par classement()',
+   corps('function groupCountsIn(', 'function sousCountsIn(').indexOf('classement(e).groupe') > -1
+   && corps('function groupesPrincipaux(', 'compte[g]').indexOf('classement(e).groupe') > -1
+   && SRC.indexOf('muscleMapSVG(sousC)') > -1);
+ok('repos : la pastille se deplace et garde sa place, un appui ouvre l ecran plein',
+   SRC.indexOf("var CLE_POS_REPOS = 'topset_repos_pos';") > -1
+   && corps("reposPastille.addEventListener('click'", 'function prochaineSerie(').indexOf('ouvrirReposPlein();') > -1
+   && HTML.indexOf('id="reposPlein" role="dialog" aria-modal="true"') > -1
+   && HTML.indexOf('.repos-pastille{touch-action:none;') > -1);
+ok('repos : cocher lance toujours le repos',
+   corps("var faitBtn = e.target.closest('[data-action=\"toggle-fait\"]');", 'var menuBtn').indexOf('lancerRepos(state.selectedDay, serieId2);') > -1);
 ok('barre du bas : elle ne reste jamais rangee (vrai clavier seulement, etat recalcule au retour et a chaque vue)',
    SRC.indexOf("document.body.classList.toggle('clavier', ouvreClavier(document.activeElement) && clavierVisible());") > -1
    && SRC.indexOf("window.addEventListener('pageshow', remettreBarre);") > -1

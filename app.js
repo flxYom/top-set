@@ -26,7 +26,7 @@
     'Développé couché Smith machine':'Pectoraux','Cable crossover':'Pectoraux','Pull-over':'Pectoraux',
     'Écarté à la poulie':'Pectoraux','Larsen':'Pectoraux','Spoto press':'Pectoraux',
 
-    'Soulevé de terre':'Dos','Soulevé de terre roumain':'Dos','Soulevé de terre sumo':'Dos','Tractions':'Dos',
+    'Soulevé de terre':'Dos','Soulevé de terre roumain':'Jambes','Soulevé de terre sumo':'Dos','Tractions':'Dos',
     'Tractions lestées':'Dos','Rowing barre':'Dos','Rowing haltère':'Dos','Rowing Yates':'Dos',
     'Tirage horizontal poulie basse':'Dos','Tirage vertical':'Dos','Tirage nuque':'Dos','T-bar row':'Dos',
     'Rowing Pendlay':'Dos','Good morning':'Dos','Hyperextensions':'Dos','Shrugs':'Dos','Rack pulls':'Dos',
@@ -44,6 +44,8 @@
     'Fentes marchées':'Jambes','Soulevé de terre jambes tendues':'Jambes','Leg curl':'Jambes','Leg extension':'Jambes',
     'Hip thrust':'Jambes','Mollets debout':'Jambes','Mollets assis':'Jambes','Hack squat':'Jambes',
     'Goblet squat':'Jambes','Sissy squat':'Jambes','Step-up':'Jambes',
+    'Adducteurs à la machine':'Jambes','Abducteurs à la machine':'Jambes','Pont fessier':'Jambes',
+    'Kickback fessier à la poulie':'Jambes','Nordic curl':'Jambes','Curl poignet':'Bras',
 
     'Crunch':'Abdos','Relevé de jambes':'Abdos','Planche':'Abdos','Russian twist':'Abdos','Ab wheel':'Abdos',
     'Crunch à la poulie':'Abdos','Gainage latéral':'Abdos','Mountain climber':'Abdos','Sit-up':'Abdos',
@@ -53,6 +55,99 @@
     'Course à pied':'Cardio','Rameur':'Cardio','Vélo elliptique':'Cardio','Vélo':'Cardio','Corde à sauter':'Cardio',
     'Tapis de course':'Cardio','Burpees':'Cardio','Marche rapide':'Cardio','Natation':'Cardio'
   };
+  // Sous-groupes (18/09/2026, demande : « curl biceps haltère : groupe bras,
+  // sous-groupe biceps »). Les huit grandes rubriques restent ; certaines se
+  // precisent. Trapezes et lombaires vont avec le Dos : anatomiquement, ce
+  // sont des muscles du dos, et les shrugs y etaient deja ranges. Le souleve
+  // de terre roumain passe en Jambes › Ischios, qui y travaillent le plus en
+  // EMG (PLOS One 2020, revue sur le souleve de terre et ses variantes).
+  var SOUS_GROUPES = {
+    'Dos':['Dorsaux','Trapèzes','Lombaires'],
+    'Bras':['Biceps','Triceps','Avant-bras'],
+    'Jambes':['Quadriceps','Ischios','Fessiers','Mollets','Adducteurs','Abducteurs']
+  };
+  var PARENT_SOUS = {};
+  Object.keys(SOUS_GROUPES).forEach(function(g){ SOUS_GROUPES[g].forEach(function(s){ PARENT_SOUS[s] = g; }); });
+  var SOUS_GROUPE_DB = {
+    'Soulevé de terre':'Lombaires','Soulevé de terre sumo':'Lombaires','Rack pulls':'Lombaires',
+    'Good morning':'Lombaires','Hyperextensions':'Lombaires','Shrugs':'Trapèzes',
+    'Tractions':'Dorsaux','Tractions lestées':'Dorsaux','Rowing barre':'Dorsaux','Rowing haltère':'Dorsaux',
+    'Rowing Yates':'Dorsaux','Tirage horizontal poulie basse':'Dorsaux','Tirage vertical':'Dorsaux',
+    'Tirage nuque':'Dorsaux','T-bar row':'Dorsaux','Rowing Pendlay':'Dorsaux','Suspension à la barre':'Dorsaux',
+    'Curl biceps barre':'Biceps','Curl biceps haltères':'Biceps','Curl marteau':'Biceps','Curl pupitre':'Biceps',
+    'Curl concentré':'Biceps','Curl à la poulie':'Biceps','Curl inversé':'Avant-bras','Curl poignet':'Avant-bras',
+    'Extension triceps poulie haute':'Triceps','Extension triceps nuque':'Triceps','Dips':'Triceps',
+    'Barre au front':'Triceps','Kickback triceps':'Triceps','Extension triceps unilatérale':'Triceps',
+    'Squat':'Quadriceps','Squat avant':'Quadriceps','Fentes bulgares':'Quadriceps','Presse à cuisses':'Quadriceps',
+    'Fentes':'Quadriceps','Fentes marchées':'Quadriceps','Leg extension':'Quadriceps','Hack squat':'Quadriceps',
+    'Goblet squat':'Quadriceps','Sissy squat':'Quadriceps','Step-up':'Quadriceps','Chaise':'Quadriceps',
+    'Soulevé de terre roumain':'Ischios','Soulevé de terre jambes tendues':'Ischios','Leg curl':'Ischios',
+    'Nordic curl':'Ischios','Hip thrust':'Fessiers','Pont fessier':'Fessiers','Kickback fessier à la poulie':'Fessiers',
+    'Mollets debout':'Mollets','Mollets assis':'Mollets',
+    'Adducteurs à la machine':'Adducteurs','Abducteurs à la machine':'Abducteurs'
+  };
+  // Un nom tape a la main (« curl biceps haltère ») n'est pas dans la base :
+  // des mots-cles le rangent. L'ordre compte — « leg curl » avant « curl »,
+  // « rowing menton » (epaules) avant « rowing ».
+  var REGLES_SOUS = [
+    [/mollet|calf|calves/, 'Mollets'],
+    [/adduct/, 'Adducteurs'],
+    [/abduct/, 'Abducteurs'],
+    [/leg curl|curl (allonge|assis|couche|jambe)|ischio|nordic|jambes tendues|roumain|\brdl\b|hamstring/, 'Ischios'],
+    [/hip thrust|fessier|glute|\bpont\b/, 'Fessiers'],
+    [/poignet|avant.bras|wrist|curl inverse|reverse curl|farmer/, 'Avant-bras'],
+    [/triceps|barre au front|skull|\bdips\b|pushdown|french press|extension (a la )?poulie|extension nuque/, 'Triceps'],
+    [/curl|biceps/, 'Biceps'],
+    [/shrug|trapeze|haussement/, 'Trapèzes'],
+    [/lombaire|hyperextension|extension (du |lombaire|dos)|back extension|souleve de terre|deadlift|good morning|rack pull/, 'Lombaires'],
+    [/menton|upright/, null],
+    [/traction|tirage|rowing|\brow\b|pull.?down|pull.?up|chin.?up|dorsa|\blats?\b/, 'Dorsaux'],
+    [/squat|presse|leg press|leg extension|fente|lunge|step.?up|quadri|chaise/, 'Quadriceps']
+  ];
+  var REGLES_GROUPE = [
+    [/developpe (couche|incline|decline)|\bpecs?\b|pectora|ecarte|pompe|bench|chest|pec deck|butterfly/, 'Pectoraux'],
+    [/militaire|elevation|epaule|arnold|oiseau|face pull|shoulder|lateral|menton|upright|deltoid/, 'Épaules'],
+    [/crunch|abdo|gainage|planche|obliq|sit.?up|relevé de jambes|releve de jambes|hollow|ab wheel/, 'Abdos'],
+    [/course|rameur|velo|elliptique|corde a sauter|tapis|natation|marche|burpee|cardio/, 'Cardio']
+  ];
+  // Ce que le nom dit tout seul, sans memoire : { groupe, sous } ou null.
+  function detecterMuscle(nom){
+    var net = normalizeName(nom);
+    if (!net) return null;
+    var dansBase = Object.keys(EXERCISE_DB).filter(function(n){ return n.toLowerCase() === net.toLowerCase(); })[0];
+    if (dansBase && SOUS_GROUPE_DB[dansBase]) return { groupe:PARENT_SOUS[SOUS_GROUPE_DB[dansBase]], sous:SOUS_GROUPE_DB[dansBase] };
+    if (dansBase) return { groupe:EXERCISE_DB[dansBase], sous:null };
+    var t = sansAccents(net);
+    for (var i = 0; i < REGLES_SOUS.length; i++){
+      if (REGLES_SOUS[i][0].test(t)){
+        var s = REGLES_SOUS[i][1];
+        if (s) return { groupe:PARENT_SOUS[s], sous:s };
+        break;
+      }
+    }
+    for (var j = 0; j < REGLES_GROUPE.length; j++){
+      if (REGLES_GROUPE[j][0].test(t)) return { groupe:REGLES_GROUPE[j][1], sous:null };
+    }
+    return null;
+  }
+  // Le classement qui compte, pour une carte, le recap et le schema. Un choix
+  // fait a la main (la pastille du groupe) gagne toujours, y compris « sans
+  // precision » ; sinon le nom tranche ; sinon le groupe enregistre.
+  function classement(ex){
+    var g = (ex && ex.groupe) || 'Autre';
+    var nom = ex && ex.nom;
+    if (!nom || !String(nom).trim()) return { groupe:g, sous:null };
+    var info = CUSTOM_PAR_CLE[cleCanonique(nom)];
+    if (info && typeof info.sousGroupe === 'string'){
+      if (PARENT_SOUS[info.sousGroupe]) return { groupe:PARENT_SOUS[info.sousGroupe], sous:info.sousGroupe };
+      return { groupe:info.groupe || g, sous:null };
+    }
+    var d = detecterMuscle(nomCanonique(nom));
+    if (d && d.sous) return d;
+    if (g === 'Autre' && d && d.groupe) return { groupe:d.groupe, sous:null };
+    return { groupe:g, sous:null };
+  }
+
   // Les abreviations et les noms anglais qu'on tape en salle. Ce ne sont pas
   // des exercices : chacune pointe vers un nom de la base, et l'app se
   // contente de PROPOSER — le nom retenu reste celui que l'utilisateur
@@ -120,10 +215,15 @@
   // exportee l'an dernier doit se relire telle quelle.
   function infoExo(valeur, nom){
     if (typeof valeur === 'string') return { nom:nom, groupe:valeur, alias:null };
-    return { nom:(valeur && valeur.nom) || nom,
-             groupe:(valeur && valeur.groupe) || 'Autre',
-             alias:(valeur && valeur.alias) || null };
+    var info = { nom:(valeur && valeur.nom) || nom,
+                 groupe:(valeur && valeur.groupe) || 'Autre',
+                 alias:(valeur && valeur.alias) || null };
+    // Le sous-groupe n'existe que s'il a ete choisi a la main : '' veut dire
+    // « le groupe seul, sans precision », absent veut dire « deduit du nom ».
+    if (valeur && typeof valeur.sousGroupe === 'string') info.sousGroupe = sousGroupeSur(valeur.sousGroupe);
+    return info;
   }
+  function sousGroupeSur(s){ return PARENT_SOUS[s] ? s : ''; }
 
   var EXERCISE_DB_LOWER = {};
   var CUSTOM_PAR_CLE = {};
@@ -134,7 +234,7 @@
     Object.keys(customExercises).forEach(function(k){
       var info = infoExo(customExercises[k], k);
       EXERCISE_DB_LOWER[k.toLowerCase()] = info.groupe;
-      CUSTOM_PAR_CLE[cleExo(k)] = { nom:info.nom || k, groupe:info.groupe, alias:info.alias };
+      CUSTOM_PAR_CLE[cleExo(k)] = { nom:info.nom || k, groupe:info.groupe, alias:info.alias, sousGroupe:info.sousGroupe };
     });
   }
   rebuildLower();
@@ -154,6 +254,7 @@
     // Changer le groupe d'un exercice ne doit pas effacer son rattachement.
     customExercises[clean] = { nom:clean, groupe:groupe || 'Autre',
                                alias:(ancien && ancien.alias) || null };
+    if (ancien && typeof ancien.sousGroupe === 'string') customExercises[clean].sousGroupe = ancien.sousGroupe;
     saveCustom();
     rebuildLower();
     if (typeof Sync !== 'undefined' && Sync.marquerExos) Sync.marquerExos();
@@ -175,6 +276,24 @@
       if (g) groupe = g;
     }
     customExercises[clean] = { nom:clean, groupe:groupe, alias:cleCible || null };
+    if (ancien && typeof ancien.sousGroupe === 'string') customExercises[clean].sousGroupe = ancien.sousGroupe;
+    saveCustom();
+    rebuildLower();
+    if (typeof Sync !== 'undefined' && Sync.marquerExos) Sync.marquerExos();
+  }
+
+  // Le choix de la pastille : le groupe, et un sous-groupe ou « sans
+  // precision ». Il vaut pour ce nom d'exercice partout, historique compris,
+  // meme pour un nom de la base.
+  function choisirMuscle(nom, groupe, sous){
+    var clean = String(nom || '').trim();
+    if (clean.length < 2) return;
+    var ancien = CUSTOM_PAR_CLE[cleExo(clean)];
+    Object.keys(customExercises).forEach(function(k){
+      if (k !== clean && k.toLowerCase() === clean.toLowerCase()) delete customExercises[k];
+    });
+    customExercises[clean] = { nom:clean, groupe:groupe || 'Autre',
+                               alias:(ancien && ancien.alias) || null, sousGroupe:sousGroupeSur(sous) };
     saveCustom();
     rebuildLower();
     if (typeof Sync !== 'undefined' && Sync.marquerExos) Sync.marquerExos();
@@ -370,7 +489,9 @@
   }
   function findExerciseMatch(name){
     var key = (name||'').trim().toLowerCase();
-    return EXERCISE_DB_LOWER[key] || null;
+    if (EXERCISE_DB_LOWER[key]) return EXERCISE_DB_LOWER[key];
+    var d = detecterMuscle(name);
+    return d ? d.groupe : null;
   }
   function findExercise(day, id){
     for (var i=0;i<day.exercises.length;i++){ if (day.exercises[i].id===id) return day.exercises[i]; }
@@ -850,7 +971,8 @@
         if (!byNorm[norm]) byNorm[norm] = [];
         if (!byJour[norm]) byJour[norm] = {};
         byJour[norm][d] = 1;
-        validSeries.forEach(function(s){ byNorm[norm].push({ poids:s.poids, reps:s.reps, groupe:ex.groupe, duree:TS.dureeSecondes(s.reps) }); });
+        var cl = classement(ex);
+        validSeries.forEach(function(s){ byNorm[norm].push({ poids:s.poids, reps:s.reps, groupe:cl.groupe, sous:cl.sous, duree:TS.dureeSecondes(s.reps) }); });
       });
     });
 
@@ -869,9 +991,10 @@
         repsAtMax = repsNums2.length ? Math.max.apply(null,repsNums2) : '?';
       }
       var groupe = mostCommon(entries.map(function(e){return e.groupe;})) || 'Autre';
+      var sous = mostCommon(entries.filter(function(e){ return e.groupe === groupe; }).map(function(e){ return e.sous || ''; })) || null;
       // Au temps, le meilleur temps : « PDC × ? » ne voudrait rien dire.
       var durees = entries.map(function(e){ return e.duree; }).filter(function(d){ return d !== null; });
-      return { nom:norm, groupe:groupe, maxPoids:maxPoids, repsAtMax:repsAtMax,
+      return { nom:norm, groupe:groupe, sous:sous, maxPoids:maxPoids, repsAtMax:repsAtMax,
                bodyweight:bodyweight,
                maxDuree: durees.length ? Math.max.apply(null, durees) : null,
                fois:Object.keys(byJour[norm] || {}).length,
@@ -921,43 +1044,96 @@
       state.sessions[ds].exercises.forEach(function(e){
         var n = (e.series||[]).filter(hasData).length;
         if (!n) return;
-        var g = e.groupe || 'Autre';
+        var g = classement(e).groupe;
         counts[g] = (counts[g]||0) + n;
       });
     });
     return counts;
   }
+  // Les memes series, par sous-groupe. « Jambes » seul = sans precision.
+  function sousCountsIn(startStr, endStr){
+    var counts = {};
+    Object.keys(state.sessions).forEach(function(ds){
+      if (ds < startStr || ds > endStr) return;
+      state.sessions[ds].exercises.forEach(function(e){
+        var n = (e.series||[]).filter(hasData).length;
+        if (!n) return;
+        var cl = classement(e);
+        var k = cl.sous || cl.groupe;
+        counts[k] = (counts[k]||0) + n;
+      });
+    });
+    return counts;
+  }
 
-  // Silhouette : les groupes travailles prennent leur couleur, les autres restent eteints.
-  function muscleMapSVG(counts){
-    function f(g){ return (counts[g]||0) > 0 ? (GROUP_COLORS[g] || '#8a8275') : '#2f2b26'; }
-    var base = '#262320', stroke = '#f0ece2';
-    return '<svg width="106" height="178" viewBox="0 0 130 210" fill="none" role="img" aria-label="Groupes musculaires travailles sur la periode">'
-      + '<ellipse cx="65" cy="19" rx="12" ry="13" fill="'+base+'" stroke="'+stroke+'" stroke-width="1.6"></ellipse>'
-      + '<path d="M52 34 h26 v8 h-26 z" fill="'+base+'" stroke="'+stroke+'" stroke-width="1.6"></path>'
-      + '<path d="M40 42 h50 l6 62 -10 18 h-42 l-10 -18 z" fill="'+base+'" stroke="'+stroke+'" stroke-width="1.6"></path>'
-      + '<path d="M40 44 l-14 8 -6 52 10 4 14 -50 z" fill="'+base+'" stroke="'+stroke+'" stroke-width="1.6"></path>'
-      + '<path d="M90 44 l14 8 6 52 -10 4 -14 -50 z" fill="'+base+'" stroke="'+stroke+'" stroke-width="1.6"></path>'
-      + '<path d="M48 122 l-4 78 h16 l6 -60 z" fill="'+base+'" stroke="'+stroke+'" stroke-width="1.6"></path>'
-      + '<path d="M82 122 l4 78 h-16 l-6 -60 z" fill="'+base+'" stroke="'+stroke+'" stroke-width="1.6"></path>'
-      + '<path d="M42 66 h9 v30 l-9 -6 z" fill="'+f('Dos')+'" stroke="#0d0c0a" stroke-width="1.3"></path>'
-      + '<path d="M88 66 h-9 v30 l9 -6 z" fill="'+f('Dos')+'" stroke="#0d0c0a" stroke-width="1.3"></path>'
-      + '<ellipse cx="43" cy="50" rx="11" ry="9" fill="'+f('Épaules')+'" stroke="#0d0c0a" stroke-width="1.4"></ellipse>'
-      + '<ellipse cx="87" cy="50" rx="11" ry="9" fill="'+f('Épaules')+'" stroke="#0d0c0a" stroke-width="1.4"></ellipse>'
-      + '<path d="M47 58 h16 v16 h-11 z" fill="'+f('Pectoraux')+'" stroke="#0d0c0a" stroke-width="1.4"></path>'
-      + '<path d="M67 58 h16 v16 h-5 z" fill="'+f('Pectoraux')+'" stroke="#0d0c0a" stroke-width="1.4"></path>'
-      + '<ellipse cx="30" cy="76" rx="7" ry="13" fill="'+f('Bras')+'" stroke="#0d0c0a" stroke-width="1.4"></ellipse>'
-      + '<ellipse cx="100" cy="76" rx="7" ry="13" fill="'+f('Bras')+'" stroke="#0d0c0a" stroke-width="1.4"></ellipse>'
-      + '<path d="M55 80 h20 v28 h-20 z" fill="'+f('Abdos')+'" stroke="#0d0c0a" stroke-width="1.4"></path>'
-      + '<path d="M55 89 h20 M55 98 h20 M65 80 v28" stroke="#0d0c0a" stroke-width="1.2"></path>'
-      + '<path d="M52 128 h13 l-3 40 h-13 z" fill="'+f('Jambes')+'" stroke="#0d0c0a" stroke-width="1.4"></path>'
-      + '<path d="M78 128 h-13 l3 40 h13 z" fill="'+f('Jambes')+'" stroke="#0d0c0a" stroke-width="1.4"></path>'
+  // Silhouette de face et de dos (18/09/2026) : chaque sous-groupe a sa
+  // zone. Un muscle travaille prend la couleur de son groupe ; un groupe note
+  // « sans precision » allume toutes ses zones, plus pales. Geometrique,
+  // comme le reste de la marque : pas un planche d'anatomie.
+  function muscleMapSVG(sous){
+    function zone(nom){
+      var g = PARENT_SOUS[nom] || nom;
+      var c = GROUP_COLORS[g] || '#8a8275';
+      if ((sous[nom]||0) > 0) return 'fill="' + c + '"';
+      if ((sous[g]||0) > 0) return 'fill="' + c + '" fill-opacity=".45"';
+      return 'fill="#2f2b26"';
+    }
+    var trait = ' stroke="#0d0c0a" stroke-width="1.3"';
+    var corps = ' fill="#262320" stroke="#f0ece2" stroke-width="1.5"';
+    function silhouette(x){
+      return '<g transform="translate(' + x + ' 0)">'
+        + '<ellipse cx="45" cy="16" rx="10" ry="11"' + corps + '></ellipse>'
+        + '<path d="M26 32 h38 l6 58 -8 16 h-34 l-8 -16 z"' + corps + '></path>'
+        + '<path d="M26 34 l-12 8 -6 50 9 3 12 -46 z"' + corps + '></path>'
+        + '<path d="M64 34 l12 8 6 50 -9 3 -12 -46 z"' + corps + '></path>'
+        + '<path d="M30 106 l-4 84 h14 l5 -66 z"' + corps + '></path>'
+        + '<path d="M60 106 l4 84 h-14 l-5 -66 z"' + corps + '></path>'
+        + '</g>';
+    }
+    var face = silhouette(0)
+      + '<ellipse cx="27" cy="39" rx="9" ry="7" ' + zone('Épaules') + trait + '></ellipse>'
+      + '<ellipse cx="63" cy="39" rx="9" ry="7" ' + zone('Épaules') + trait + '></ellipse>'
+      + '<path d="M31 44 h13 v14 h-9 z" ' + zone('Pectoraux') + trait + '></path>'
+      + '<path d="M46 44 h13 l-4 14 h-9 z" ' + zone('Pectoraux') + trait + '></path>'
+      + '<ellipse cx="17" cy="56" rx="5" ry="10" ' + zone('Biceps') + trait + '></ellipse>'
+      + '<ellipse cx="73" cy="56" rx="5" ry="10" ' + zone('Biceps') + trait + '></ellipse>'
+      + '<path d="M9 72 l8 2 -4 18 -6 -2 z" ' + zone('Avant-bras') + trait + '></path>'
+      + '<path d="M81 72 l-8 2 4 18 6 -2 z" ' + zone('Avant-bras') + trait + '></path>'
+      + '<path d="M37 62 h16 v26 h-16 z" ' + zone('Abdos') + trait + '></path>'
+      + '<path d="M37 70 h16 M37 79 h16 M45 62 v26" stroke="#0d0c0a" stroke-width="1.1"></path>'
+      + '<path d="M28 94 l6 10 -3 8 -6 -8 z" ' + zone('Abducteurs') + trait + '></path>'
+      + '<path d="M62 94 l-6 10 3 8 6 -8 z" ' + zone('Abducteurs') + trait + '></path>'
+      + '<path d="M30 112 h10 l-1 38 h-11 z" ' + zone('Quadriceps') + trait + '></path>'
+      + '<path d="M60 112 h-10 l1 38 h11 z" ' + zone('Quadriceps') + trait + '></path>'
+      + '<path d="M41 110 h3 l-2 26 h-3 z" ' + zone('Adducteurs') + trait + '></path>'
+      + '<path d="M49 110 h-3 l2 26 h3 z" ' + zone('Adducteurs') + trait + '></path>';
+    var dos = silhouette(100)
+      + '<path d="M133 30 h24 l-4 18 -8 6 -8 -6 z" ' + zone('Trapèzes') + trait + '></path>'
+      + '<ellipse cx="127" cy="39" rx="9" ry="7" ' + zone('Épaules') + trait + '></ellipse>'
+      + '<ellipse cx="163" cy="39" rx="9" ry="7" ' + zone('Épaules') + trait + '></ellipse>'
+      + '<path d="M130 50 l12 8 v22 l-10 -6 z" ' + zone('Dorsaux') + trait + '></path>'
+      + '<path d="M160 50 l-12 8 v22 l10 -6 z" ' + zone('Dorsaux') + trait + '></path>'
+      + '<path d="M138 82 h14 v14 h-14 z" ' + zone('Lombaires') + trait + '></path>'
+      + '<ellipse cx="117" cy="56" rx="5" ry="10" ' + zone('Triceps') + trait + '></ellipse>'
+      + '<ellipse cx="173" cy="56" rx="5" ry="10" ' + zone('Triceps') + trait + '></ellipse>'
+      + '<path d="M109 72 l8 2 -4 18 -6 -2 z" ' + zone('Avant-bras') + trait + '></path>'
+      + '<path d="M181 72 l-8 2 4 18 6 -2 z" ' + zone('Avant-bras') + trait + '></path>'
+      + '<path d="M130 98 h14 v14 h-16 z" ' + zone('Fessiers') + trait + '></path>'
+      + '<path d="M160 98 h-14 v14 h16 z" ' + zone('Fessiers') + trait + '></path>'
+      + '<path d="M130 116 h10 l-1 32 h-10 z" ' + zone('Ischios') + trait + '></path>'
+      + '<path d="M160 116 h-10 l1 32 h10 z" ' + zone('Ischios') + trait + '></path>'
+      + '<path d="M129 156 h9 l-1 22 h-7 z" ' + zone('Mollets') + trait + '></path>'
+      + '<path d="M161 156 h-9 l1 22 h7 z" ' + zone('Mollets') + trait + '></path>';
+    return '<svg class="muscle-svg" width="150" height="161" viewBox="0 0 190 206" fill="none" role="img" aria-label="Muscles travaillés sur la période, de face et de dos">'
+      + face + dos
+      + '<text x="45" y="204" text-anchor="middle" fill="#a39b8f" font-size="9" font-weight="700" letter-spacing="1">FACE</text>'
+      + '<text x="145" y="204" text-anchor="middle" fill="#a39b8f" font-size="9" font-weight="700" letter-spacing="1">DOS</text>'
       + '</svg>';
   }
 
   function dominantGroup(exercises){
     var counts={};
-    exercises.forEach(function(e){ var g=e.groupe||'Autre'; counts[g]=(counts[g]||0)+1; });
+    exercises.forEach(function(e){ var g=classement(e).groupe; counts[g]=(counts[g]||0)+1; });
     var best=null,bestCount=0;
     GROUPS.forEach(function(g){ if((counts[g]||0)>bestCount){ bestCount=counts[g]; best=g; } });
     return best;
@@ -1283,10 +1459,9 @@
   }
 
   function exerciseCardHTML(ex){
-    var color = GROUP_COLORS[ex.groupe] || GROUP_COLORS['Autre'];
-    var groupOptions = GROUPS.map(function(g){
-      return '<option value="'+g+'"'+(g===ex.groupe?' selected':'')+'>'+g+'</option>';
-    }).join('');
+    var cl = classement(ex);
+    var color = GROUP_COLORS[cl.groupe] || GROUP_COLORS['Autre'];
+    var groupOptions = optionsMuscle(cl);
     var series = ex.series || [];
     var auTemps = estAuTemps(ex);
     var p = precedentDe(ex);
@@ -1306,7 +1481,7 @@
       +   '<input class="ex-name" type="text" list="exerciseList" placeholder="Nom de l\'exercice" value="'+esc(ex.nom||'')+'" data-field="nom" data-id="'+ eid +'">'
       // Le groupe se remplit tout seul d'apres le nom : une pastille suffit,
       // qu'on touche pour le corriger.
-      +   '<label class="ex-groupe-chip"><span class="ex-groupe-txt">'+esc(groupeCourt(ex.groupe))+'</span>'
+      +   '<label class="ex-groupe-chip"><span class="ex-groupe-txt">'+esc(libelleMuscle(cl))+'</span>'
       +     '<select class="ex-groupe" data-field="groupe" data-id="'+ eid +'" aria-label="Groupe musculaire">'+groupOptions+'</select></label>'
       +   '<button type="button" class="ex-menu-btn" data-action="menu-exo" data-id="'+ eid +'" aria-expanded="false" aria-label="Plus d\'actions sur l\'exercice">⋯</button>'
       + '</div>'
@@ -1402,13 +1577,30 @@
   }
   // La pastille laisse la place au nom : « PECS » plutot que « PECTORAUX ».
   // Le menu, lui, garde les noms entiers.
-  var GROUPE_COURT = { 'Pectoraux':'PECS' };
+  var GROUPE_COURT = { 'Pectoraux':'PECS', 'Quadriceps':'QUADRI', 'Adducteurs':'ADDUCT.', 'Abducteurs':'ABDUCT.', 'Avant-bras':'AV.-BRAS' };
   function groupeCourt(g){ g = g || 'Autre'; return GROUPE_COURT[g] || g.toUpperCase(); }
-  function majPastilleGroupe(card, groupe){
+  // La pastille dit le plus precis : BICEPS plutot que BRAS. Le menu natif
+  // range les sous-groupes sous leur groupe ; choisir le groupe seul veut
+  // dire « sans precision ». Une valeur « groupe|sous ».
+  function libelleMuscle(cl){ return groupeCourt(cl.sous || cl.groupe); }
+  function optionsMuscle(cl){
+    return GROUPS.map(function(g){
+      var sous = SOUS_GROUPES[g];
+      var choisi = function(s){ return cl.groupe === g && (cl.sous || '') === s ? ' selected' : ''; };
+      if (!sous) return '<option value="' + g + '|"' + choisi('') + '>' + g + '</option>';
+      return '<optgroup label="' + g + '"><option value="' + g + '|"' + choisi('') + '>' + g + ' (sans précision)</option>'
+        + sous.map(function(s){ return '<option value="' + g + '|' + s + '"' + choisi(s) + '>' + s + '</option>'; }).join('')
+        + '</optgroup>';
+    }).join('');
+  }
+  function majPastilleGroupe(card, groupe, ex){
     if (!card) return;
-    card.style.setProperty('--card-color', GROUP_COLORS[groupe] || GROUP_COLORS['Autre']);
+    var cl = ex ? classement(ex) : { groupe:groupe, sous:null };
+    card.style.setProperty('--card-color', GROUP_COLORS[cl.groupe] || GROUP_COLORS['Autre']);
     var txt = card.querySelector('.ex-groupe-txt');
-    if (txt) txt.textContent = groupeCourt(groupe);
+    if (txt) txt.textContent = libelleMuscle(cl);
+    var sel = card.querySelector('select.ex-groupe');
+    if (sel) sel.value = cl.groupe + '|' + (cl.sous || '');
   }
   function ouvrirSerie(card, serieId){
     if (!card || !serieId) return;
@@ -1536,7 +1728,7 @@
     (day.exercises || []).forEach(function(e){
       var n = faite ? seriesRemplies(e).length : 1;
       if (!n) return;
-      var g = e.groupe || 'Autre';
+      var g = classement(e).groupe;
       if (g === 'Autre') return;
       compte[g] = (compte[g] || 0) + n;
     });
@@ -1988,9 +2180,10 @@
       var pesees = series.filter(function(s){ return typeof s.poids === 'number' && s.poids > 0; });
       var meilleure = pesees.length ? Math.max.apply(null, pesees.map(function(s){ return s.poids; })) : null;
       var tenues = series.map(function(s){ return TS.dureeSecondes(s.reps); }).filter(function(d){ return d !== null; });
-      html += '<button type="button" class="fiche-exo" data-exo="' + esc(e.nom || '') + '" style="--exo-color:' + (GROUP_COLORS[e.groupe] || GROUP_COLORS['Autre']) + '">'
+      var clE = classement(e);
+      html += '<button type="button" class="fiche-exo" data-exo="' + esc(e.nom || '') + '" style="--exo-color:' + (GROUP_COLORS[clE.groupe] || GROUP_COLORS['Autre']) + '">'
         + '<div class="fiche-exo-nom">' + esc(normalizeName(e.nom) || 'Sans nom') + '<span class="fiche-exo-fleche">›</span></div>'
-        + '<div class="fiche-exo-groupe">' + esc(e.groupe || 'Autre') + '</div>'
+        + '<div class="fiche-exo-groupe">' + esc(clE.groupe + (clE.sous ? ' · ' + clE.sous : '')) + '</div>'
         + '<div class="fiche-series">'
         + series.map(function(s){
             return '<span class="fiche-serie' + (s.fait ? ' fait' : '') + '">' + esc(perfTexte(s)) + '</span>';
@@ -2282,19 +2475,27 @@
     document.getElementById('recapHeatmap').innerHTML = renderHeatmap(data.startStr, data.endStr);
 
     var counts = groupCountsIn(data.startStr, data.endStr);
+    var sousC = sousCountsIn(data.startStr, data.endStr);
     var worked = GROUPS.filter(function(g){ return counts[g]; });
     var idle = GROUPS.filter(function(g){ return !counts[g] && g !== 'Autre' && g !== 'Cardio'; });
+    // Sous chaque groupe, le detail de ses muscles.
     var legend = worked.map(function(g){
+      var detail = (SOUS_GROUPES[g] || []).filter(function(s){ return sousC[s]; }).map(function(s){
+        return '<span>' + s + ' <b>' + sousC[s] + '</b></span>';
+      });
+      if (sousC[g] && detail.length) detail.push('<span>sans précision <b>' + sousC[g] + '</b></span>');
       return '<div class="muscle-row"><span class="muscle-sw" style="background:'+GROUP_COLORS[g]+'"></span>'
-        + '<span class="muscle-name">'+g+'</span><span class="muscle-val">'+counts[g]+'</span></div>';
+        + '<span class="muscle-name">'+g+'</span><span class="muscle-val">'+counts[g]+'</span></div>'
+        + (detail.length ? '<div class="muscle-sous">' + detail.join('') + '</div>' : '');
     }).join('');
     if (!worked.length) legend = '<div class="muscle-name" style="color:var(--dim)">Rien sur cette période.</div>';
-    var note = idle.length
-      ? '<div class="muscle-note">Pas touché : '+idle.join(', ').toLowerCase()+'.</div>'
+    var pasTouche = idle.map(function(g){ return g.toLowerCase(); });
+    var note = pasTouche.length && worked.length
+      ? '<div class="muscle-note">Pas touché : '+pasTouche.join(', ')+'.</div>'
       : '';
     muscleEl.innerHTML = '<div class="muscle-panel">'
       + '<div class="muscle-title">CE QUE TU AS TRAVAILLÉ</div>'
-      + '<div class="muscle-body">'+muscleMapSVG(counts)+'<div class="muscle-legend">'+legend+note+'</div></div>'
+      + '<div class="muscle-body">'+muscleMapSVG(sousC)+'<div class="muscle-legend">'+legend+note+'</div></div>'
       + '</div>';
 
     if (!data.items.length){
@@ -2316,7 +2517,7 @@
             var valueTxt = it.maxDuree !== null
               ? TS.formatDuree(it.maxDuree)
               : (it.bodyweight ? 'PDC' : formatWeight(it.maxPoids)+' kg') + ' × ' + it.repsAtMax;
-            var freq = it.fois + (it.fois > 1 ? ' séances' : ' séance') + ' · ' +
+            var freq = (it.sous ? it.sous + ' · ' : '') + it.fois + (it.fois > 1 ? ' séances' : ' séance') + ' · ' +
                        it.series + (it.series > 1 ? ' séries' : ' série');
             return '<button type="button" class="recap-row" data-recap-name="'+esc(it.nom)+'">'
               +   '<span class="recap-name"><span class="chev" aria-hidden="true">›</span>'+esc(it.nom)
@@ -2374,12 +2575,13 @@
 
     var toutes = seancesDeLExo(nom);
     var affiche = nomCanonique(nom) || nom;
-    var groupe = groupeCanonique(nom) || 'Autre';
+    var clX = classement({ nom:nom, groupe:groupeCanonique(nom) || 'Autre' });
+    var groupe = clX.groupe;
     var couleur = GROUP_COLORS[groupe] || GROUP_COLORS['Autre'];
 
     var html = '<div class="exo-tete" style="--card-color:' + couleur + '">'
       + '<div class="exo-nom">' + esc(affiche) + '</div>'
-      + '<div class="exo-groupe">' + esc(groupe) + '</div>'
+      + '<div class="exo-groupe">' + esc(groupe + (clX.sous ? ' · ' + clX.sous : '')) + '</div>'
       + '</div>';
 
     if (!toutes.length){
@@ -2965,10 +3167,8 @@
       var card = t.closest('.ex-card');
       if (match && match!==ex.groupe){
         ex.groupe = match;
-        var sel = exListEl.querySelector('select.ex-groupe[data-id="'+id+'"]');
-        if (sel) sel.value = match;
-        majPastilleGroupe(card, match);
       }
+      majPastilleGroupe(card, ex.groupe, ex);
       // Le bloc « dernière fois » ne se recalculait qu'au rendu complet —
       // jamais pendant la saisie du nom, qui est justement le moment où il
       // devient utile. Mis à jour ici, sans reconstruire la carte.
@@ -3019,9 +3219,13 @@
     var ex = null;
     for (var i=0;i<day.exercises.length;i++){ if (day.exercises[i].id===id){ ex=day.exercises[i]; break; } }
     if (!ex) return;
-    ex.groupe = t.value;
-    if (ex.nom && rememberExercise(ex.nom, ex.groupe)) populateDatalist();
-    majPastilleGroupe(t.closest('.ex-card'), ex.groupe);
+    var choix = String(t.value).split('|');
+    ex.groupe = groupeSur(choix[0]);
+    if (ex.nom && String(ex.nom).trim().length >= 2){
+      choisirMuscle(ex.nom, ex.groupe, choix[1] || '');
+      populateDatalist();
+    }
+    majPastilleGroupe(t.closest('.ex-card'), ex.groupe, ex);
     scheduleSave(state.selectedDay,true);
     renderBandeau();
   });
@@ -3432,21 +3636,247 @@
     document.body.classList.toggle('en-repos', !!repos);
     reposPastille.hidden = !repos;
     tenirEcran(!!(chrono || repos));
-    if (!repos) return;
+    if (!repos){ fermerReposPlein(); return; }
+    poserPastille();
     var temps = reposPastille.querySelector('.repos-temps');
     function pas(){
       var sec = secondesRepos();
       if (sec > REPOS_MAX){ finirRepos(false); return; }
       temps.textContent = texteChrono(sec);
+      if (!reposPlein.hidden) reposPleinTemps.textContent = texteChrono(sec);
       reposPastille.setAttribute('aria-label', 'Repos ' + texteChrono(sec) + ' : toucher pour l\'arrêter');
     }
     pas();
     if (repos) tickRepos = setInterval(pas, 500);
   }
-  reposPastille.addEventListener('click', function(){
-    var sec = finirRepos(true);
-    showToast(sec ? 'Repos ' + texteChrono(sec) + ' noté' : 'Repos arrêté');
+  // ---- la pastille se deplace, et s'ouvre en grand (demande du 18/09) -----
+  // « Je coche ma serie, ca enclenche le chrono » reste tel quel. En plus :
+  // on pose la pastille ou on veut (du doigt, elle reste a sa place d'une
+  // seance a l'autre), et un appui ouvre un ecran plein : le repos en grand,
+  // la prochaine serie et ses champs, pour la preparer sans chercher sa ligne.
+  var CLE_POS_REPOS = 'topset_repos_pos';
+  var reposPlein = document.getElementById('reposPlein');
+  var reposPleinTemps = document.getElementById('reposPleinTemps');
+  var reposSuite = document.getElementById('reposSuite');
+  var sansClicRepos = false;
+  function bornerPastille(x, y){
+    var w = reposPastille.offsetWidth || 130, h = reposPastille.offsetHeight || 52;
+    return { x:Math.min(Math.max(8, x), innerWidth - w - 8), y:Math.min(Math.max(8, y), innerHeight - h - 8) };
+  }
+  function placerPastilleA(x, y){
+    var p = bornerPastille(x, y);
+    reposPastille.style.left = p.x + 'px';
+    reposPastille.style.top = p.y + 'px';
+    reposPastille.classList.add('deplacee');
+  }
+  function poserPastille(){
+    var pos = null;
+    try { pos = JSON.parse(localStorage.getItem(CLE_POS_REPOS) || 'null'); } catch (err) { pos = null; }
+    if (!pos || typeof pos.x !== 'number' || typeof pos.y !== 'number'){
+      reposPastille.style.left = ''; reposPastille.style.top = '';
+      reposPastille.classList.remove('deplacee');
+      return;
+    }
+    placerPastilleA(pos.x * innerWidth, pos.y * innerHeight);
+  }
+  window.addEventListener('resize', function(){ if (repos) poserPastille(); });
+  (function glisserPastille(){
+    var depart = null, bouge = false;
+    reposPastille.addEventListener('pointerdown', function(e){
+      var r = reposPastille.getBoundingClientRect();
+      depart = { x:e.clientX, y:e.clientY, l:r.left, t:r.top, id:e.pointerId };
+      bouge = false;
+    });
+    reposPastille.addEventListener('pointermove', function(e){
+      if (!depart || e.pointerId !== depart.id) return;
+      var dx = e.clientX - depart.x, dy = e.clientY - depart.y;
+      // Huit pixels avant de parler de glisser : un appui qui tremble reste un appui.
+      if (!bouge && Math.abs(dx) + Math.abs(dy) < 8) return;
+      if (!bouge){
+        bouge = true;
+        try { reposPastille.setPointerCapture(e.pointerId); } catch (err) {}
+        reposPastille.classList.add('tenue');
+      }
+      placerPastilleA(depart.l + dx, depart.t + dy);
+      e.preventDefault();
+    });
+    function lacher(){
+      if (!depart) return;
+      if (bouge){
+        // La position posee, pas celle du rectangle grossi pendant qu'on la tient.
+        reposPastille.classList.remove('tenue');
+        var x = parseFloat(reposPastille.style.left) || 0, y = parseFloat(reposPastille.style.top) || 0;
+        try { localStorage.setItem(CLE_POS_REPOS, JSON.stringify({ x:x / innerWidth, y:y / innerHeight })); } catch (err) {}
+        sansClicRepos = true;
+        setTimeout(function(){ sansClicRepos = false; }, 350);
+      }
+      depart = null;
+    }
+    reposPastille.addEventListener('pointerup', lacher);
+    reposPastille.addEventListener('pointercancel', lacher);
+  })();
+  reposPastille.addEventListener('click', function(e){
+    if (sansClicRepos){ sansClicRepos = false; e.preventDefault(); return; }
+    ouvrirReposPlein();
   });
+
+  // La prochaine serie a faire apres celle qui a lance le repos. Dans un
+  // superset, c'est l'exercice suivant du bloc, a tour de role ; sinon la
+  // suivante du meme exercice, puis le premier exercice qui en attend une.
+  function prochaineSerie(){
+    if (!repos) return null;
+    var day = state.sessions[repos.ds];
+    var f = day && findSerie(day, repos.serieId);
+    if (!f) return null;
+    var exs = day.exercises;
+    function premiereLibre(ex){
+      var ss = ex.series || [];
+      for (var j = 0; j < ss.length; j++) if (!ss[j].fait) return { exercise:ex, serie:ss[j], num:j + 1 };
+      return null;
+    }
+    var i = exs.indexOf(f.exercise), trouve = null;
+    if (f.exercise.bloc){
+      var bloc = exs.filter(function(e){ return e.bloc === f.exercise.bloc; });
+      var k = bloc.indexOf(f.exercise);
+      for (var n = 1; n <= bloc.length && !trouve; n++) trouve = premiereLibre(bloc[(k + n) % bloc.length]);
+    }
+    if (!trouve) trouve = premiereLibre(f.exercise);
+    for (var a = i + 1; a < exs.length && !trouve; a++) trouve = premiereLibre(exs[a]);
+    for (var b = 0; b < i && !trouve; b++) trouve = premiereLibre(exs[b]);
+    return trouve || { exercise:f.exercise, serie:null, num:(f.exercise.series || []).length + 1 };
+  }
+
+  function rendreReposSuite(){
+    var p = prochaineSerie();
+    if (!p){ reposSuite.innerHTML = ''; return; }
+    var ex = p.exercise, s = p.serie;
+    var cl = classement(ex);
+    var couleur = GROUP_COLORS[cl.groupe] || GROUP_COLORS['Autre'];
+    var pr = precedentDe(ex);
+    var ps = pr && pr.prec && pr.prec.series[p.num - 1];
+    var html = '<p class="repos-suite-kicker">PROCHAINE SÉRIE</p>'
+      + '<p class="repos-suite-nom" style="--c:' + couleur + '">' + esc(normalizeName(ex.nom) || 'Exercice sans nom') + '</p>'
+      + '<p class="repos-suite-quoi">Série ' + p.num + (ps ? ' · la dernière fois <b>' + esc(perfCourt(ps)) + '</b>' : '') + '</p>';
+    if (!s){
+      html += '<p class="repos-suite-vide">Toutes les séries prévues sont faites.</p>'
+        + '<button type="button" class="btn-sheet" data-repos="ajouter">+ AJOUTER UNE SÉRIE</button>';
+      reposSuite.innerHTML = html;
+      document.getElementById('reposSerieFaite').disabled = true;
+      return;
+    }
+    document.getElementById('reposSerieFaite').disabled = false;
+    var sid = esc(s.id);
+    if (estCardio(ex)){
+      html += '<p class="repos-suite-vide">Les minutes, la vitesse et l\'inclinaison se notent sur la carte.</p>';
+    } else if (estAuTemps(ex)){
+      html += '<div class="repos-champs"><label class="repos-champ"><span>SECONDES</span>'
+        + '<input type="text" inputmode="numeric" data-repos-champ="duree" data-serie-id="' + sid + '" value="' + esc(secondesAffichees(s)) + '" placeholder="—" aria-label="Durée en secondes"></label></div>';
+    } else {
+      var rpe = '<option value="">—</option>' + RPE_VALUES.map(function(v){
+        return '<option value="' + v + '"' + (s.rpe === v ? ' selected' : '') + '>' + String(v).replace('.', ',') + '</option>';
+      }).join('');
+      html += '<div class="repos-champs">'
+        + '<label class="repos-champ"><span>KG</span><input type="text" inputmode="decimal" data-repos-champ="poids" data-serie-id="' + sid + '" value="' + esc(poidsAffiche(s.poids)) + '" placeholder="—" aria-label="Poids"></label>'
+        + '<label class="repos-champ"><span>REPS</span><input type="text" inputmode="numeric" data-repos-champ="reps" data-serie-id="' + sid + '" value="' + esc(s.reps == null ? '' : s.reps) + '" placeholder="—" aria-label="Répétitions"></label>'
+        + '<label class="repos-champ"><span>RPE</span><select data-repos-champ="rpe" data-serie-id="' + sid + '" aria-label="RPE">' + rpe + '</select></label>'
+        + '</div>'
+        + '<div class="repos-pas">'
+        + '<button type="button" class="step-btn" data-repos="kg" data-delta="-2.5" aria-label="Retirer 2,5 kg">−2,5</button>'
+        + '<button type="button" class="step-btn" data-repos="kg" data-delta="2.5" aria-label="Ajouter 2,5 kg">+2,5</button>'
+        + '<button type="button" class="step-btn" data-repos="reps" data-delta="-1" aria-label="Une répétition de moins">−1 rep</button>'
+        + '<button type="button" class="step-btn" data-repos="reps" data-delta="1" aria-label="Une répétition de plus">+1 rep</button>'
+        + '</div>';
+    }
+    reposSuite.innerHTML = html;
+  }
+
+  function ouvrirReposPlein(){
+    if (!repos) return;
+    rendreReposSuite();
+    reposPleinTemps.textContent = texteChrono(secondesRepos());
+    reposPlein.hidden = false;
+    document.body.classList.add('en-repos-plein');
+    var fermer = document.getElementById('reposReduire');
+    if (fermer) fermer.focus({ preventScroll:true });
+  }
+  function fermerReposPlein(){
+    if (!reposPlein || reposPlein.hidden) return;
+    var champ = document.activeElement;
+    if (champ && reposPlein.contains(champ) && champ.blur) champ.blur();
+    reposPlein.hidden = true;
+    document.body.classList.remove('en-repos-plein');
+    if (state.selectedDay === (repos && repos.ds || toDateStr(new Date())) && state.view === 'seances') renderDayPanel(true);
+  }
+  // Ecrire dans la serie comme le ferait sa ligne : meme lecture, meme sauvegarde.
+  function ecrireReposChamp(el){
+    if (!repos) return;
+    var day = state.sessions[repos.ds];
+    var f = day && findSerie(day, el.dataset.serieId);
+    if (!f) return;
+    var champ = el.dataset.reposChamp;
+    if (champ === 'poids') f.serie.poids = poidsLu(el.value);
+    else if (champ === 'reps') f.serie.reps = String(el.value || '').replace(/[^0-9]/g, '');
+    else if (champ === 'rpe') f.serie.rpe = el.value === '' ? null : Number(el.value);
+    else if (champ === 'duree'){
+      var sec = Number(String(el.value || '').replace(/[^0-9]/g, ''));
+      f.serie.reps = sec ? TS.ecrireDuree(sec) : '';
+    }
+    scheduleSave(repos.ds);
+  }
+  if (reposPlein){
+    reposPlein.addEventListener('input', function(e){ if (e.target.dataset.reposChamp) ecrireReposChamp(e.target); });
+    reposPlein.addEventListener('change', function(e){ if (e.target.dataset.reposChamp) ecrireReposChamp(e.target); });
+    reposPlein.addEventListener('click', function(e){
+      var b = e.target.closest('button');
+      if (!b) { if (e.target === reposPlein) fermerReposPlein(); return; }
+      if (b.id === 'reposReduire'){ fermerReposPlein(); return; }
+      if (b.id === 'reposArreter'){
+        var sec = finirRepos(true);
+        showToast(sec ? 'Repos ' + texteChrono(sec) + ' noté' : 'Repos arrêté');
+        return;
+      }
+      var p = prochaineSerie();
+      if (b.dataset.repos === 'kg' || b.dataset.repos === 'reps'){
+        if (!p || !p.serie) return;
+        var d = Number(b.dataset.delta);
+        if (b.dataset.repos === 'kg'){
+          var base = typeof p.serie.poids === 'number' ? p.serie.poids : 0;
+          p.serie.poids = Math.max(0, Math.round((base + d) * 100) / 100);
+        } else {
+          var r = parseInt(p.serie.reps, 10);
+          p.serie.reps = String(Math.max(0, (isNaN(r) ? 0 : r) + d));
+        }
+        scheduleSave(repos.ds);
+        rendreReposSuite();
+        return;
+      }
+      if (b.dataset.repos === 'ajouter'){
+        if (!p) return;
+        var ss = p.exercise.series || (p.exercise.series = []);
+        var der = ss[ss.length - 1];
+        ss.push({ id:genSerieId(), poids:der ? der.poids : null, reps:der ? der.reps : '', rpe:null, repos:'', fait:false });
+        scheduleSave(repos.ds, true);
+        rendreReposSuite();
+        return;
+      }
+      if (b.id === 'reposSerieFaite'){
+        if (!p || !p.serie) return;
+        // Cochee d'ici comme de sa ligne : le repos d'avant est note, le sien
+        // commence, et l'ecran passe a la suivante.
+        var ds = repos.ds;
+        p.serie.fait = true;
+        if (serieOuverte[p.exercise.id] === p.serie.id) delete serieOuverte[p.exercise.id];
+        scheduleSave(ds, true);
+        var noteSec = finirRepos(true);
+        lancerRepos(ds, p.serie.id);
+        if (state.selectedDay === ds && state.view === 'seances') renderDayPanel(true);
+        renderBandeau();
+        ouvrirReposPlein();
+        showToast('Série ' + p.num + ' notée' + (noteSec ? ' · repos ' + texteChrono(noteSec) : ''));
+      }
+    });
+    document.addEventListener('keydown', function(e){ if (e.key === 'Escape' && !reposPlein.hidden) fermerReposPlein(); });
+  }
   if (repos) suivreRepos();
 
   exListEl.addEventListener('click', function(e){
@@ -4265,6 +4695,7 @@
         groupe: groupeSur(info.groupe),
         alias:  info.alias ? String(info.alias).slice(0, 200) : null
       };
+      if (typeof info.sousGroupe === 'string') sortie[nom].sousGroupe = info.sousGroupe;
     });
     return sortie;
   }
@@ -5809,7 +6240,9 @@
     function exosLocaux(){
       return Object.keys(customExercises).map(function(nom){
         var info = infoExo(customExercises[nom], nom);
-        return { cle:cleExo(nom), nom:info.nom || nom, groupe:info.groupe, alias:info.alias };
+        var e = { cle:cleExo(nom), nom:info.nom || nom, groupe:info.groupe, alias:info.alias };
+        if (typeof info.sousGroupe === 'string') e.sous = info.sousGroupe;
+        return e;
       }).filter(function(e){ return e.cle; });
     }
 
@@ -5840,10 +6273,15 @@
           // un choix explicite ne doit pas etre efface par un appareil qui ne
           // l'a jamais vu.
           if (local && local.alias && !d.alias) return;
+          // Un serveur sans la colonne sous_groupe (SQL pas encore relance) ne
+          // renvoie pas la cle : le choix local reste.
+          var sousDistant = Object.prototype.hasOwnProperty.call(d, 'sous') && d.sous !== null
+            ? sousGroupeSur(d.sous) : (local ? local.sousGroupe : undefined);
           if (local && local.nom === d.nom && local.groupe === d.groupe &&
-              (local.alias || null) === (d.alias || null)) return;
+              (local.alias || null) === (d.alias || null) && local.sousGroupe === sousDistant) return;
           if (local && local.nom !== d.nom) delete customExercises[local.nom];
           customExercises[d.nom] = { nom:d.nom, groupe:d.groupe || 'Autre', alias:d.alias || null };
+          if (typeof sousDistant === 'string') customExercises[d.nom].sousGroupe = sousDistant;
           nouveaux++;
         });
         if (nouveaux){

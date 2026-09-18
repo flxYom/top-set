@@ -104,7 +104,18 @@ between press and release, and the tap landed elsewhere. It is screen state,
 kept in memory, never saved.
 
 **The card.** The muscle group is a chip in the header (`PECS`, `DOS`…) with the
-native menu laid over it. The superset button stays under `+ SÉRIE` — it is a
+native menu laid over it. **Since 18 September, down to the muscle** where it
+makes sense: Back › lats, traps, lower back; Arms › biceps, triceps, forearms;
+Legs › quads, hamstrings, glutes, calves, adductors, abductors (chest, shoulders
+and abs stay whole). The sub-group comes from the name (catalogue, then
+keywords: "leg curl" before "curl", "upright row" stays with the shoulders) and
+**overrides a misfiled group**: a curl logged under Shoulders counts as
+Arms › Biceps. The menu lists sub-groups under their group, plus "no detail";
+the choice applies to that name everywhere, history included
+(`exercices_perso.sous_groupe` for accounts). Decided from anatomy and EMG:
+traps and lower back under Back, Romanian deadlift under Legs › Hamstrings, hip
+thrust under Glutes, hammer curl under Biceps, face pull and upright row under
+Shoulders, pull-over under Chest. The superset button stays under `+ SÉRIE` — it is a
 logging action, not a setting; timed mode and delete live in the `⋯` menu. The card is a container
 (`container-type: inline-size`): under 310 px of usable width — small phone,
 superset on a 360 px screen — the last-time column gives way to today's numbers, and
@@ -155,6 +166,17 @@ writes its length into the REST field of the set that started it. Under 10 s
 written; unticking that set cancels it, validating the session drops it. Only
 on today's session, kept in `localStorage` (`topset_repos`) like the
 stopwatch, with the screen kept on.
+
+**The rest pill moves, and opens full screen** (18 September 2026). Drag it
+anywhere (8 px before a touch counts as a drag); it keeps its place
+(`topset_repos_pos`, as a fraction of the screen). A tap opens a full-screen
+view: the rest counting up, very large, then **the next set** — the next one of
+the same exercise, or the next exercise of the superset in turn, otherwise the
+first exercise still waiting for one — with last time and its fields (kg, reps,
+RPE, ±2.5 kg and ±1 rep steps; seconds for a timed exercise). `✓ SÉRIE FAITE`
+ticks it exactly like its row: the previous rest is written, its own starts, the
+view moves on. No set left: `+ AJOUTER UNE SÉRIE` copies the last one.
+`ARRÊTER LE REPOS` does what tapping the pill used to.
 
 **Cardio: minutes, speed, incline.** Treadmill, running, walking, bike,
 rower… open as cardio: a set is a duration **in minutes** (`25`, `12,5`), plus
@@ -261,6 +283,10 @@ roumain » share no letter. While typing, the card offers the full name;
 accepting **renames** the exercise and keeps the abbreviation **linked** to the
 real name for next time. Nothing is decided without the user: the table only
 suggests.
+
+**Recap body map** (18 September 2026): front and back, one zone per muscle; a
+group logged with no detail lights all its zones, paler. Under each group in the
+legend, the per-muscle breakdown; each exercise row carries its sub-group.
 
 **Recap.** Total volume (weight × reps, summed), a training calendar, per-exercise
 records and a muscle-group split — over a week, a month or a year.

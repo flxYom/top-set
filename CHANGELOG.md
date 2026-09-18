@@ -9,6 +9,21 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ## [Unreleased]
 
+### Added
+
+- **The rest timer moves and opens full screen.** Drag the pill anywhere; it
+  stays there. Tap it for a full-screen view: the rest counting up, the next set
+  (superset order respected) with last time and its kg / reps / RPE fields, and
+  `✓ SÉRIE FAITE`, which ticks it and restarts the rest. Ticking a set still
+  starts the rest, as before.
+- **Muscle sub-groups.** Back › lats, traps, lower back; Arms › biceps,
+  triceps, forearms; Legs › quads, hamstrings, glutes, calves, adductors,
+  abductors. Deduced from the exercise name, overriding a misfiled group (a
+  curl under Shoulders now counts as Biceps), editable from the group chip
+  without taking more room, and remembered per exercise name. The recap body
+  map shows front and back, one zone per muscle. Re-run `schema.sql`
+  (`exercices_perso.sous_groupe`). Service worker `topset-v37`.
+
 ### Fixed
 
 - **The bottom bar could vanish for good on iPhone.** A field could keep the

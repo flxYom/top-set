@@ -228,6 +228,15 @@ Cible :
   (onglets segmentés, crayon de la fiche, périodes du graphique, lignes de
   l'historique d'un exercice, REVOIR LE BILAN). La date de la dernière fois
   garde son cadre de 32 px, mais sa zone d'appui déborde jusqu'à 44 px.
+- **Repos déplaçable et en grand** (18/09) : la pastille se glisse où l'on
+  veut et y reste ; un appui ouvre un plein écran — le temps en vert, très grand,
+  à chasse fixe (le vert = on récupère), puis la prochaine série en carte
+  (liseré de la couleur du groupe) avec des champs de 60 px, et une seule action
+  orange, `✓ SÉRIE FAITE`. Cocher lance toujours le repos (« ça tue sa mère »).
+- **Sous-groupes** (18/09) : la pastille du groupe affiche le muscle
+  (`BICEPS`, `QUADRI`) sans prendre plus de place ; les sous-groupes gardent la
+  couleur de leur groupe, la silhouette du récap (face et dos) les distingue par
+  la position, pas par une nouvelle couleur.
 - **Barre du bas toujours récupérable** (18/09, demande : « il faut qu'elle
   soit toujours là ») : elle ne se range que pendant qu'un clavier est
   réellement à l'écran ; tout état périmé est effacé au changement de vue et

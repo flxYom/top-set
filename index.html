@@ -2618,6 +2618,53 @@
   .brand-lien{display:inline-flex;align-items:center;min-height:44px;color:inherit;text-decoration:none;border-radius:10px;}
   .brand-lien:active{opacity:.7;}
 
+  /* ---- Chrono de repos : deplacable, et en grand (18/09/2026) ------------- */
+  .repos-pastille{touch-action:none;-webkit-user-select:none;user-select:none;}
+  .repos-pastille.deplacee{right:auto !important;bottom:auto !important;}
+  .repos-pastille.tenue{transform:scale(1.06);box-shadow:0 18px 40px -12px rgba(0,0,0,.9),0 0 0 4px rgba(43,208,138,.18);transition:none;}
+  .repos-ouvrir{display:flex;color:var(--dim);}
+  .repos-plein{
+    position:fixed;inset:0;z-index:75;display:flex;justify-content:center;align-items:flex-start;overflow-y:auto;
+    background:var(--bg);
+    padding:max(18px, calc(env(safe-area-inset-top) + 10px)) 16px calc(24px + env(safe-area-inset-bottom));
+  }
+  body.en-repos-plein{overflow:hidden;}
+  body.en-repos-plein .repos-pastille{display:none;}
+  .repos-plein-carte{width:100%;max-width:460px;display:flex;flex-direction:column;gap:14px;}
+  .repos-plein-haut{display:flex;align-items:center;justify-content:space-between;}
+  .repos-plein-mot{margin:0;font-size:12px;font-weight:700;letter-spacing:.16em;color:var(--ok);}
+  .repos-plein-reduire{width:44px;height:44px;display:flex;align-items:center;justify-content:center;border-radius:50%;border:1px solid var(--trait);background:var(--s1);color:var(--ink);}
+  .repos-plein-temps{
+    margin:0;text-align:center;font-family:var(--f-titre);font-weight:800;letter-spacing:-.04em;line-height:1;
+    font-size:clamp(76px, 26vw, 120px);color:var(--ok);font-variant-numeric:tabular-nums;
+  }
+  .repos-suite{display:flex;flex-direction:column;gap:8px;border:1px solid var(--trait);border-radius:var(--r-xl);background:var(--s1);padding:16px;}
+  .repos-suite:empty{display:none;}
+  .repos-suite-kicker{margin:0;font-size:11px;font-weight:700;letter-spacing:.14em;color:var(--dim);}
+  .repos-suite-nom{margin:0;font-family:var(--f-titre);font-size:22px;font-weight:800;letter-spacing:-.02em;padding-left:10px;border-left:3px solid var(--c, var(--orange));}
+  .repos-suite-quoi{margin:0;font-size:14px;color:var(--dim);}
+  .repos-suite-quoi b{color:var(--ink);font-variant-numeric:tabular-nums;}
+  .repos-suite-vide{margin:0;font-size:14px;color:var(--dim);}
+  .repos-champs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:4px;}
+  .repos-champ{display:flex;flex-direction:column;gap:4px;font-size:11px;font-weight:700;letter-spacing:.1em;color:var(--dim);}
+  .repos-champ input,.repos-champ select{
+    width:100%;height:60px;box-sizing:border-box;text-align:center;border-radius:var(--r-m);
+    border:1px solid var(--trait2);background:var(--s2);color:var(--ink);
+    font-family:var(--f-titre);font-size:28px;font-weight:800;font-variant-numeric:tabular-nums;
+    -webkit-appearance:none;appearance:none;
+  }
+  .repos-champ input:focus,.repos-champ select:focus{outline:none;border-color:var(--orange);box-shadow:0 0 0 3px rgba(255,92,56,.2);}
+  .repos-pas{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;}
+  .repos-pas .step-btn{width:100%;min-height:44px;font-size:13px;}
+  .repos-plein-actions{display:flex;flex-direction:column;gap:10px;}
+  .repos-plein-actions .btn-add:disabled{opacity:.4;}
+
+  /* Le schema du recap : de face et de dos, et le detail sous chaque groupe. */
+  .muscle-svg{flex:none;}
+  .muscle-sous{display:flex;flex-wrap:wrap;gap:2px 10px;margin:-4px 0 2px 22px;font-size:12px;color:var(--dim);}
+  .muscle-sous b{color:var(--ink);font-weight:700;font-variant-numeric:tabular-nums;}
+  @media (max-width:380px){ .muscle-body{flex-direction:column;align-items:stretch;} .muscle-svg{align-self:center;} }
+
   /* ---- iPhone, de 320 a 430 px (18/09/2026) ------------------------------ */
   @media (max-width:899px){
     /* Le bandeau dit deja le jour : le grand titre qui le repetait juste
@@ -3095,9 +3142,24 @@
   <span>RETOUR À MA SÉANCE</span>
   <span class="retour-quand"></span>
 </button>
-<button type="button" class="repos-pastille" id="reposPastille" aria-label="Arrêter le repos" hidden>
-  <span class="repos-mot">REPOS</span><span class="repos-temps">0:00</span><span class="repos-stop" aria-hidden="true">■</span>
+<button type="button" class="repos-pastille" id="reposPastille" aria-label="Repos : ouvrir le chrono en grand" hidden>
+  <span class="repos-mot">REPOS</span><span class="repos-temps">0:00</span><span class="repos-ouvrir" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/></svg></span>
 </button>
+<!-- Le repos en grand : le temps qui monte, la prochaine serie et ses champs. -->
+<div class="repos-plein" id="reposPlein" role="dialog" aria-modal="true" aria-labelledby="reposPleinTitre" hidden>
+  <div class="repos-plein-carte">
+    <div class="repos-plein-haut">
+      <p class="repos-plein-mot" id="reposPleinTitre">REPOS</p>
+      <button type="button" class="repos-plein-reduire" id="reposReduire" aria-label="Réduire le chrono"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+    </div>
+    <p class="repos-plein-temps" id="reposPleinTemps" aria-live="off">0:00</p>
+    <div class="repos-suite" id="reposSuite"></div>
+    <div class="repos-plein-actions">
+      <button type="button" class="btn-add" id="reposSerieFaite">✓ SÉRIE FAITE</button>
+      <button type="button" class="btn-sheet" id="reposArreter">ARRÊTER LE REPOS</button>
+    </div>
+  </div>
+</div>
 <div class="toast" id="toast"></div>
 
 <script src="intelligence.js" defer></script>
