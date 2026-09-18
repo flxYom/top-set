@@ -25,7 +25,7 @@ const SORTIE = join(RACINE, 'dist');
 const ESBUILD = 'esbuild@0.28.2';
 // Seuls les scripts de l'app. Pas sw.js : sa VERSION doit rester lisible en ligne.
 // Pas vendor/ : deja minifie par ses auteurs.
-const A_MINIFIER = ['app.js', 'intelligence.js', 'mesure.js', 'supabase-config.js'];
+const A_MINIFIER = ['app.js', 'braise.js', 'intelligence.js', 'mesure.js', 'supabase-config.js'];
 
 function motifs(fichier) {
   const chemin = join(RACINE, fichier);

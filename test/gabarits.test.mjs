@@ -23,6 +23,7 @@ const lireLF = f => readFileSync(new URL(f, import.meta.url), 'utf8').replace(/\
 const SRC  = lireLF('../app.js');
 const HTML = lireLF('../index.html');
 const SW   = lireLF('../sw.js');
+const BRAISE = lireLF('../braise.js');
 const CFG  = lireLF('../vercel.json');
 
 let pass = 0, fail = 0;
@@ -610,9 +611,16 @@ ok('audit UI/UX : les libelles ne descendent plus sous 11 px, les commandes segm
 ok('audit UI/UX : le texte tertiaire passe 4,5:1 sur les surfaces',
    /--ink3:#8d867b;/.test(HTML));
 ok('braise : le fond anime ne vit que sur l accueil et le bilan, s arrete cache, et respecte reduire les animations',
-   SRC.indexOf("['bilanEcran', 'accueil']") > -1 && SRC.indexOf('if (document.hidden) arreter()') > -1
-   && SRC.indexOf('prefers-reduced-motion: reduce') > -1 && SRC.indexOf('if (calme.matches){ image(performance.now()); return; }') > -1
+   SRC.indexOf("['bilanEcran', 'accueil']") > -1 && SRC.indexOf("peintre.postMessage({ type:'actif', actif:visible() })") > -1
+   && SRC.indexOf('return !hote.hidden && !document.hidden;') > -1
+   && SRC.indexOf('prefers-reduced-motion: reduce') > -1 && BRAISE.indexOf('if (calme){ image(performance.now()); return; }') > -1
    && HTML.indexOf('.braise{position:fixed;inset:0;') > -1);
+// Mesure du 18/09/2026 : preparee sur le fil principal, la braise figeait l ouverture.
+ok('braise : tout le WebGL vit dans le Web Worker, jamais sur le fil principal',
+   SRC.indexOf("getContext('webgl'") === -1 && SRC.indexOf("new Worker('braise.js')") > -1
+   && SRC.indexOf('transferControlToOffscreen') > -1 && BRAISE.indexOf('failIfMajorPerformanceCaveat:true') > -1);
+ok('braise : le worker est precache (hors ligne) et minifie au deploiement',
+   SW.indexOf("'braise.js'") > -1 && lireLF('../build.mjs').indexOf("'braise.js'") > -1);
 ok('iPhone : le grand titre du jour, deja dans le bandeau, reste pour les lecteurs d ecran seulement',
    HTML.indexOf('.day-panel-header h2{position:absolute;width:1px;height:1px;') > -1 && HTML.indexOf('<h2 id="dayTitle">') > -1);
 {

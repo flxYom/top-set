@@ -6917,16 +6917,13 @@
   // « reduire les animations », une seule image fixe. Sans WebGL, le degrade
   // CSS d'origine reste en place.
   //
-  // Elle ne doit jamais ralentir l'ouverture (mesure du 18/09/2026 : une tache
-  // bloquante de 500 a 900 ms, TBT 10 -> 800 ms, Lighthouse 98 -> 75). D'ou :
-  // - demarrage apres le chargement, quand le navigateur est libre, en fondu ;
-  // - failIfMajorPerformanceCaveat : sans vrai GPU (rendu logiciel), le
-  //   navigateur refuse le contexte et le degrade CSS reste — le calcul du
-  //   bruit sur le processeur couterait plus que l'effet ne rapporte ;
-  // - compilation du shader en tache de fond quand KHR_parallel_shader_compile
-  //   existe, au lieu d'attendre le pilote ;
-  // - si les premieres images coutent plus de 20 ms, l'animation s'arrete sur
-  //   la derniere image : un fond fige vaut mieux qu'une saisie qui rame.
+  // Elle ne doit jamais ralentir l'app (mesure du 18/09/2026 : sur le fil
+  // principal, sa preparation bloquait l'ouverture de 200 a 900 ms, Lighthouse
+  // mobile 98 -> 75). Tout le WebGL vit donc dans braise.js, un Web Worker qui
+  // dessine sur un OffscreenCanvas : ici, on ne fait que creer le canvas, lui
+  // donner sa taille et lui dire quand l'ecran est affiche. Demarrage apres le
+  // chargement, en fondu. Navigateur sans OffscreenCanvas (Safari avant 17) :
+  // le degrade CSS reste, comme sans WebGL.
   (function braise(){
     var VS = 'attribute vec2 p;void main(){gl_Position=vec4(p,0.,1.);}';
     var FS = 'precision mediump float;uniform vec2 r;uniform float t;'
@@ -6942,7 +6939,8 @@
       + 'vec3 c=mix(fond,braise,g);c=mix(c,orange,pow(g,3.)*.55);'
       + 'c+=(h(gl_FragCoord.xy+t)-.5)/255.;gl_FragColor=vec4(c,1.);}';
     var hotes = ['bilanEcran', 'accueil'].map(function(id){ return document.getElementById(id); }).filter(Boolean);
-    if (!hotes.length || !window.WebGLRenderingContext) return;
+    if (!hotes.length || !window.Worker || !window.OffscreenCanvas
+        || !HTMLCanvasElement.prototype.transferControlToOffscreen) return;
     var calme = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : { matches:false };
 
     hotes.forEach(function(hote){
@@ -6950,72 +6948,39 @@
       cv.className = 'braise';
       cv.setAttribute('aria-hidden', 'true');
       hote.insertBefore(cv, hote.firstChild);
-      // etat : '' pas commence, 'prep' en compilation, 'pret', 'echec' (degrade CSS)
-      var gl = null, prog, uR, uT, anim = 0, dernier = 0, debut = 0, etat = '', images = 0;
+      var peintre = null, echec = false;
 
-      function echouer(){ etat = 'echec'; arreter(); cv.remove(); }
-      function preparer(){
-        etat = 'prep';
-        gl = cv.getContext('webgl', { alpha:false, antialias:false, depth:false, powerPreference:'low-power', failIfMajorPerformanceCaveat:true });
-        if (!gl){ echouer(); return; }
-        var v = gl.createShader(gl.VERTEX_SHADER), f = gl.createShader(gl.FRAGMENT_SHADER);
-        gl.shaderSource(v, VS); gl.compileShader(v);
-        gl.shaderSource(f, FS); gl.compileShader(f);
-        prog = gl.createProgram(); gl.attachShader(prog, v); gl.attachShader(prog, f); gl.linkProgram(prog);
-        // Interroger LINK_STATUS tout de suite bloque jusqu'a la fin de la
-        // compilation. Avec l'extension, on attend qu'elle soit finie.
-        var parallele = gl.getExtension('KHR_parallel_shader_compile');
-        (function attendre(){
-          if (parallele && !gl.getProgramParameter(prog, parallele.COMPLETION_STATUS_KHR)){ requestAnimationFrame(attendre); return; }
-          if (!gl.getProgramParameter(prog, gl.LINK_STATUS)){ echouer(); return; }
-          finir();
-          etat = 'pret';
-          demarrer();
-        })();
+      // Demi-resolution : un degrade flou n'a pas besoin de chaque pixel.
+      function taille(){
+        return { w: Math.max(1, Math.round(hote.clientWidth / 2)), h: Math.max(1, Math.round(hote.clientHeight / 2)) };
       }
-      function finir(){
-        gl.useProgram(prog);
-        gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 3,-1, -1,3]), gl.STATIC_DRAW);
-        var a = gl.getAttribLocation(prog, 'p');
-        gl.enableVertexAttribArray(a); gl.vertexAttribPointer(a, 2, gl.FLOAT, false, 0, 0);
-        uR = gl.getUniformLocation(prog, 'r'); uT = gl.getUniformLocation(prog, 't');
+      function visible(){ return !hote.hidden && !document.hidden; }
+      function abandonner(){
+        echec = true;
+        if (peintre) peintre.terminate();
+        cv.remove(); hote.classList.remove('avec-braise');
       }
-      function dimensionner(){
-        // Demi-resolution : un degrade flou n'a pas besoin de chaque pixel.
-        var w = Math.max(1, Math.round(hote.clientWidth / 2)), hh = Math.max(1, Math.round(hote.clientHeight / 2));
-        if (cv.width !== w || cv.height !== hh){ cv.width = w; cv.height = hh; }
-        gl.viewport(0, 0, w, hh); gl.uniform2f(uR, w, hh);
+      function creer(){
+        var t = taille(), toile = cv.transferControlToOffscreen();
+        peintre = new Worker('braise.js');
+        peintre.onmessage = function(e){
+          if (e.data === 'prete'){ cv.classList.add('prete'); hote.classList.add('avec-braise'); }
+          else if (e.data === 'echec') abandonner();
+        };
+        peintre.onerror = abandonner;
+        peintre.postMessage({ type:'init', canvas:toile, w:t.w, h:t.h, calme:calme.matches, vs:VS, fs:FS }, [toile]);
       }
-      function image(ms){
-        var t0 = performance.now();
-        dimensionner();
-        gl.uniform1f(uT, (ms - debut) / 1000 + 40);
-        gl.drawArrays(gl.TRIANGLES, 0, 3);
-        if (!images++) cv.classList.add('prete');
-        // Avec un GPU, drawArrays rend la main tout de suite ; s'il bloque,
-        // c'est le processeur qui dessine.
-        if (images <= 3 && performance.now() - t0 > 20){ arreter(); calme = { matches:true }; }
+      function suivre(){
+        if (echec) return;
+        if (!peintre){ if (visible()) creer(); return; }
+        peintre.postMessage({ type:'actif', actif:visible() });
       }
-      function boucle(ms){
-        anim = requestAnimationFrame(boucle);
-        if (ms - dernier < 33) return;
-        dernier = ms; image(ms);
-      }
-      function demarrer(){
-        if (hote.hidden || document.hidden || etat === 'echec' || etat === 'prep') return;
-        if (etat === ''){ preparer(); return; }
-        hote.classList.add('avec-braise');
-        if (!debut) debut = performance.now();
-        if (calme.matches){ image(performance.now()); return; }
-        if (!anim) anim = requestAnimationFrame(boucle);
-      }
-      function arreter(){ if (anim){ cancelAnimationFrame(anim); anim = 0; } }
-      new MutationObserver(function(){ if (hote.hidden) arreter(); else demarrer(); })
-        .observe(hote, { attributes:true, attributeFilter:['hidden'] });
-      document.addEventListener('visibilitychange', function(){ if (document.hidden) arreter(); else demarrer(); });
-      window.addEventListener('resize', function(){ if (!hote.hidden && etat === 'pret' && calme.matches) image(performance.now()); });
-      quandLibre(demarrer);
+      new MutationObserver(suivre).observe(hote, { attributes:true, attributeFilter:['hidden'] });
+      document.addEventListener('visibilitychange', suivre);
+      window.addEventListener('resize', function(){
+        if (peintre && !echec){ var t = taille(); peintre.postMessage({ type:'taille', w:t.w, h:t.h }); }
+      });
+      quandLibre(suivre);
     });
 
     // Apres le chargement complet, puis au premier moment libre (2 s au plus).

@@ -14,10 +14,13 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 - **The ember background no longer slows the opening.** Since it shipped, the
   home screen spent 500 to 900 ms compiling and drawing it before anything could
   be tapped (Lighthouse mobile 98 → 73–77, Total Blocking Time 10 → 800 ms). It
-  now starts once the page has loaded and the browser is idle, fades in, compiles
-  its shader in the background where the browser allows it, is refused outright
-  on devices without a real GPU (the CSS gradient stays), and freezes on its last
-  frame if a frame costs more than 20 ms. Unchanged on a phone with a GPU.
+  is now drawn entirely in a Web Worker (`braise.js`, on an OffscreenCanvas):
+  creating the WebGL context, compiling the shader and every frame happen off
+  the main thread, so the app never freezes for it (Total Blocking Time back to
+  0 ms, Lighthouse mobile 98). It starts once the page has loaded, fades in, is
+  refused on devices without a real GPU, and freezes on its last frame if a frame
+  costs more than 20 ms. Browsers without OffscreenCanvas (Safari before 17) keep
+  the CSS gradient. Unchanged on a phone with a GPU.
 - **Minified JavaScript online.** A single deploy-time step, `build.mjs`, copies
   the served files into `dist/` and minifies the app's scripts: `app.js` goes
   from 92 to 51 KB gzipped, the home page from 297 to 243 KB. The source in the

@@ -10,7 +10,7 @@
 // depuis un cache reviendrait a afficher des seances perimees en croyant
 // etre a jour. Le hors-ligne des donnees, c'est localStorage, pas ici.
 
-var VERSION = 'topset-v37';
+var VERSION = 'topset-v38';
 var COQUILLE = VERSION + '-coquille';
 var COURANT  = VERSION + '-courant';
 
@@ -42,6 +42,8 @@ var A_PRECHARGER = [
   'supabase-config.js',
   'intelligence.js',
   'app.js',
+  // Le peintre de la braise (Web Worker) : sans lui hors ligne, le degrade CSS.
+  'braise.js',
   'css/legal.css',
   'guide.html',
   'confidentialite.html',
