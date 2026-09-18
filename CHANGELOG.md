@@ -9,6 +9,20 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ## [Unreleased]
 
+### Fixed
+
+- **The bottom bar could vanish for good on iPhone.** A field could keep the
+  focus without a keyboard on screen (keyboard dismissed, back from an
+  Apprendre page), and `body.clavier` stayed set with no way to get the tabs
+  back. The bar now hides only while the visible area has really shrunk, and
+  every view change, `pageshow` and return to the foreground recomputes it.
+  Service worker `topset-v36`.
+
+### Changed
+
+- **The TOPSET logo goes back to today's session.** A real link to `/`, 44 px
+  tall; with JavaScript it switches to SÉANCES › DU JOUR without reloading.
+
 ### Security
 
 - **Anti-spam, held by the database.** A `before insert` trigger caps what a

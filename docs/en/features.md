@@ -281,7 +281,11 @@ Account and files used to share one sheet, which had become a catch-all.
 
 **Built for the phone.** Below 900 px the tabs live **at the bottom**, under
 the thumb, with icons; they tuck away while a field has the keyboard
-(`body.clavier`) and make room for the composer in a conversation. On a
+(`body.clavier`) and make room for the composer in a conversation. They
+always come back: the bar only tucks away when the visible area has actually
+shrunk (`visualViewport`), and switching views, coming back to the page or
+bringing the app to the foreground clears any stale state. Tapping the
+**TOPSET** logo goes back to today's session. On a
 desktop they stay a segmented bar at the top. A
 back-to-top arrow appears once you are a screen down. Double-tapping `+` adds
 5 kg instead of zooming (`touch-action: manipulation`), and focusing a field no

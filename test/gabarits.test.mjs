@@ -634,6 +634,13 @@ ok('iPhone : le grand titre du jour, deja dans le bandeau, reste pour les lecteu
   ok('mesure d audience : annoncee par la politique 3.2, et l app enregistre cette version',
      CONF.indexOf('Version 3.2') > -1 && CONF.indexOf('Vercel Web Analytics') > -1 && SRC.indexOf("var VERSION_POLITIQUE = '3.2';") > -1);
 }
+ok('barre du bas : elle ne reste jamais rangee (vrai clavier seulement, etat recalcule au retour et a chaque vue)',
+   SRC.indexOf("document.body.classList.toggle('clavier', ouvreClavier(document.activeElement) && clavierVisible());") > -1
+   && SRC.indexOf("window.addEventListener('pageshow', remettreBarre);") > -1
+   && corps('function montrerVue(', 'renderAll();').indexOf("document.body.classList.remove('clavier');") > -1);
+ok('le logo ramene a la seance du jour',
+   HTML.indexOf('<a href="/" class="brand-lien" id="marqueAccueil"') > -1
+   && corps("getElementById('marqueAccueil')", 'jourAuj').indexOf('allerAuJour(toDateStr(new Date()));') > -1);
 ok('SEANCES : du jour, mes seances, historique ; l app s ouvre sur la seance du jour',
    /data-onglet="jour">DU JOUR</.test(HTML) && /view:'seances',/.test(SRC) && /var seancesOnglet = 'jour';/.test(SRC)
    && /<section class="view" id="view-seances">\s*<div class="segmented sub" id="seancesTabs">/.test(HTML)
