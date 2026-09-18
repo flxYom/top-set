@@ -84,6 +84,13 @@ Les bornes sont dans la base, pas dans le formulaire : `check` sur le type, sur
 le statut, sur la longueur du corps et sur la taille du contexte. On ne défend pas
 une table avec du JavaScript.
 
+**Anti-spam** (18/09/2026). Chaque envoi peut déclencher un email ; un script
+avec un compte valide pourrait donc inonder la file et la boîte mail. Un
+trigger `before insert` (`plafond_envois`) plafonne par heure : 10 retours
+par compte, 30 messages d'un membre vers l'équipe, 60 messages par sens dans
+un fil coach ↔ coaché. L'équipe n'est pas plafonnée. Au-delà, la base refuse
+et l'app affiche « trop d'envois en peu de temps — réessaie dans une heure ».
+
 ### La messagerie
 
 Un fil par personne, le même des deux côtés : un message écrit par

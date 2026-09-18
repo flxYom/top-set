@@ -92,6 +92,14 @@ or any function without a pinned `search_path`.
 
 ## Hardening log
 
+**18 September 2026.** Added: a per-hour cap on inserts into `retours`,
+`messages_support` (member side) and `messages_coach`, enforced by a
+`security definer` trigger (`plafond_envois`, not callable through the API).
+Checked: only the `anon` key ships to the browser (JWT role `anon`), HTTPS
+is forced (308 + HSTS), every external link resolves (47 DOIs checked through
+the DOI handle API). Not verifiable from the repository: the Supabase Auth
+rate limits and CAPTCHA settings in the dashboard.
+
 **14 September 2026 audit.** Found and fixed:
 
 - `retours`, `consentements` and `messages_coach` granted `insert` on every

@@ -625,6 +625,9 @@ ok('la liste des fonctions SECURITY DEFINER est celle attendue',
      // Le declencheur des notifications : il ecrit dans une table ou personne
      // n'a de policy insert, c'est tout l'interet.
      'notifier_admin',
+     // L'anti-spam : il compte les envois de l'heure, y compris ceux que le
+     // RLS cache a l'appelant.
+     'plafond_envois',
      'repondre_demande', 'revoquer_lien',
      'toucher_profil'
    ].join(','),
@@ -1163,6 +1166,47 @@ ok('les notifications de A partent avec lui', notifsA > 0 && r.rows[0].orph === 
    'avant=' + notifsA + ' orphelines=' + r.rows[0].orph);
 ok('et celles des autres restent', r.rows[0].total === notifsAutres,
    r.rows[0].total + ' vs ' + notifsAutres);
+
+// ---------------------------------------------------------------- anti-spam
+// Le plafond est dans la base : on le teste en ecrivant comme le navigateur,
+// jusqu'au refus, puis on compte ce qui est passe.
+async function jusquAuRefus(uid, sql, params, max) {
+  let passes = 0, erreur = null;
+  for (let i = 0; i < max; i++) {
+    try { await as(uid, sql, params); passes++; }
+    catch (e) { erreur = e; break; }
+  }
+  return { passes, erreur };
+}
+r = await db.query(`select count(*)::int n from public.retours where user_id = $1 and cree_le > now() - interval '1 hour'`, [B]);
+let deja = r.rows[0].n;
+let essai = await jusquAuRefus(B, `insert into public.retours (user_id, type, corps) values ($1, 'idee', 'encore une idee')`, [B], 20);
+ok('anti-spam : 10 retours par heure, pas un de plus',
+   deja + essai.passes === 10 && essai.erreur && /Trop d envois/.test(essai.erreur.message),
+   'deja=' + deja + ' passes=' + essai.passes + ' ' + (essai.erreur && essai.erreur.message));
+r = await db.query(`select count(*)::int n from public.messages_support where user_id = $1 and auteur = 'membre' and cree_le > now() - interval '1 hour'`, [B]);
+deja = r.rows[0].n;
+essai = await jusquAuRefus(B, `insert into public.messages_support (user_id, auteur, corps) values ($1, 'membre', 'message')`, [B], 40);
+ok('anti-spam : 30 messages par heure d un membre vers l equipe',
+   deja + essai.passes === 30 && essai.erreur && /Trop d envois/.test(essai.erreur.message),
+   'deja=' + deja + ' passes=' + essai.passes);
+// Le lien D ↔ E a ete coupe plus haut : on le renoue pour ecrire dans le fil.
+{
+  const code = (await db.query(`select code_coach from public.profils where user_id = $1`, [D])).rows[0].code_coach;
+  await as(E, `select public.demander_coach($1, 'oui')`, [code]);
+  const l = (await db.query(`select id from public.liens_coach where client_id = $1 and statut = 'en_attente'`, [E])).rows[0].id;
+  await as(D, `select public.repondre_demande($1, true)`, [l]);
+}
+r = await db.query(`select count(*)::int n from public.messages_coach where coach_id = $1 and client_id = $2 and auteur = 'client' and cree_le > now() - interval '1 hour'`, [D, E]);
+deja = r.rows[0].n;
+essai = await jusquAuRefus(E, `insert into public.messages_coach (coach_id, client_id, auteur, corps) values ($1, $2, 'client', 'question')`, [D, E], 70);
+ok('anti-spam : 60 messages par heure et par sens dans un fil coach',
+   deja + essai.passes === 60 && essai.erreur && /Trop d envois/.test(essai.erreur.message),
+   'deja=' + deja + ' passes=' + essai.passes);
+await as(D, `insert into public.messages_coach (coach_id, client_id, auteur, corps) values ($1, $2, 'coach', 'je reponds')`, [D, E]);
+ok('anti-spam : le plafond du coache ne bloque pas la reponse du coach', true);
+await refuse('anti-spam : la fonction du plafond ne s appelle pas depuis l API',
+  () => as(B, `select public.plafond_envois()`));
 
 console.log(`\n${pass} reussis, ${fail} echoues`);
 process.exit(fail ? 1 : 0);

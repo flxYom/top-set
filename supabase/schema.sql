@@ -1861,3 +1861,67 @@ alter table public.notifications_admin
   add constraint notifications_admin_user_id_fkey
   foreign key (user_id) references auth.users (id) on delete cascade;
 delete from public.notifications_admin where user_id is null;
+
+-- ============================================================================
+-- 14. ANTI-SPAM : UN PLAFOND PAR HEURE, TENU PAR LA BASE
+-- ============================================================================
+-- Un compte connecte peut ecrire dans trois tables : les retours, le fil avec
+-- l'equipe et le fil avec son coach. Chaque envoi peut declencher un email
+-- (notification a l'administrateur, accuse de reception). Sans plafond, un
+-- script avec un compte valide inonderait la file et la boite mail.
+-- Le plafond est ici, dans un trigger, pas dans le navigateur : un compteur en
+-- JavaScript se contourne en appelant l'API directement.
+-- Les seuils laissent de la marge a un usage normal :
+--   · 10 retours par heure et par compte ;
+--   · 30 messages par heure d'un membre vers l'equipe (l'equipe n'est pas
+--     plafonnee : elle repond a tout le monde) ;
+--   · 60 messages par heure et par sens dans un fil coach ↔ coache.
+-- « security definer » : le compte doit se faire sur toutes les lignes, meme
+-- celles que le RLS cache a l'appelant.
+create index if not exists retours_auteur_idx on public.retours (user_id, cree_le);
+
+create or replace function public.plafond_envois()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  n int;
+  plafond int;
+begin
+  if tg_table_name = 'retours' then
+    plafond := 10;
+    select count(*) into n from public.retours
+     where user_id = new.user_id and cree_le > now() - interval '1 hour';
+  elsif tg_table_name = 'messages_support' then
+    if new.auteur <> 'membre' then return new; end if;
+    plafond := 30;
+    select count(*) into n from public.messages_support
+     where user_id = new.user_id and auteur = 'membre' and cree_le > now() - interval '1 hour';
+  elsif tg_table_name = 'messages_coach' then
+    plafond := 60;
+    select count(*) into n from public.messages_coach
+     where coach_id = new.coach_id and client_id = new.client_id and auteur = new.auteur
+       and cree_le > now() - interval '1 hour';
+  else
+    return new;
+  end if;
+  if n >= plafond then
+    raise exception 'Trop d envois en peu de temps. Reessaie dans une heure.'
+      using errcode = 'P0001', hint = 'plafond_envois';
+  end if;
+  return new;
+end;
+$$;
+revoke all on function public.plafond_envois() from public, anon, authenticated;
+
+drop trigger if exists plafond_retours on public.retours;
+create trigger plafond_retours before insert on public.retours
+  for each row execute function public.plafond_envois();
+drop trigger if exists plafond_messages on public.messages_support;
+create trigger plafond_messages before insert on public.messages_support
+  for each row execute function public.plafond_envois();
+drop trigger if exists plafond_mcoach on public.messages_coach;
+create trigger plafond_mcoach before insert on public.messages_coach
+  for each row execute function public.plafond_envois();

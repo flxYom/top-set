@@ -71,6 +71,13 @@ Sent along with the message: the current view, the screen size, the user agent
 truncated to 160 characters, and a "running as a PWA" flag. Enough to reproduce a
 bug, nothing from the logbook. The screen says so before you send.
 
+**Anti-spam** (18 September 2026). Every send can trigger an email, so a script
+with a valid account could flood the queue and the inbox. A `before insert`
+trigger (`plafond_envois`) caps it per hour: 10 feedbacks per account, 30
+messages from a member to the team, 60 messages per direction in a coach thread.
+The team is not capped. Past the cap the database refuses, and the app shows
+"too many sends in a short time — try again in an hour".
+
 The bounds live in the database, not in the form — `check` constraints on the
 kind, the status, the body length and the context size. You do not defend a table
 with JavaScript.

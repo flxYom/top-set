@@ -2602,6 +2602,36 @@
   #seanceDetail > *{margin-top:0;margin-bottom:0;}
   /* Sous 360 px, AUJOURD'HUI serre ses lettres pour laisser la semaine entiere. */
   @media (max-width:359px){ .btn-today{letter-spacing:.02em;padding-left:10px;padding-right:10px;} .week-nav{gap:6px;} }
+
+  /* ---- Braise : le fond anime de l accueil et du bilan (18/09/2026) -------- */
+  /* Un canvas WebGL pose sous la carte. Sur le bilan il remplace le voile
+     sombre ; sur l accueil il s ajoute a la photo en mode « screen », pour
+     que seules les lueurs eclairent. Sans WebGL, rien ne change. */
+  .braise{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;display:block;}
+  .accueil .braise{mix-blend-mode:screen;opacity:.7;}
+  .bilan.avec-braise{background:var(--bg);}
+  .bilan > .bilan-carte,.accueil > .accueil-carte{position:relative;z-index:1;}
+  /* Un champ refuse se designe lui-meme, pas seulement le message en bas. */
+  .sheet-input[aria-invalid="true"]{border-color:var(--orange);box-shadow:0 0 0 3px rgba(255,92,56,.2);}
+
+  /* ---- iPhone, de 320 a 430 px (18/09/2026) ------------------------------ */
+  @media (max-width:899px){
+    /* Le bandeau dit deja le jour : le grand titre qui le repetait juste
+       dessous reste pour les lecteurs d ecran, plus a l ecran. Le bouton
+       AUJOURD HUI, lui, reste visible quand on regarde un autre jour. */
+    .day-panel-header h2{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0;}
+    .day-panel-header:not(:has(#jourAuj:not([hidden]))){margin-bottom:-12px;}
+    .day-panel-header{justify-content:flex-end;}
+  }
+  /* Sous 360 px : MES SEANCES tient sur une ligne, MOUVEMENTS dans sa tuile. */
+  @media (max-width:359px){
+    .seg-btn{white-space:nowrap;letter-spacing:.01em;padding-left:2px;padding-right:2px;}
+    .stat-tile{padding-left:10px;padding-right:8px;}
+    .stat-label{letter-spacing:.02em;}
+    .stats-row{gap:5px;}
+    .stat-tile{min-width:0;padding-left:8px;padding-right:4px;}
+    .stats-row .stat-label{letter-spacing:0;}
+  }
 </style>
 </head>
 

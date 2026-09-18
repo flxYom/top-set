@@ -11,6 +11,15 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ### Security
 
+- **Anti-spam, held by the database.** A `before insert` trigger caps what a
+  signed-in account can send per hour: 10 feedbacks, 30 messages to the team,
+  60 messages per direction in a coach thread. Every send can trigger an email,
+  so a script with a valid account could otherwise flood the queue and the
+  inbox. The team's replies are not capped. Re-run `schema.sql`.
+- **Email checked before the request.** Sign-in, sign-up and forgotten
+  password now say, next to the field, when an address is incomplete; the
+  field is outlined and focused. Supabase still has the final word.
+
 - **Writes stop at the columns the app fills.** A member could insert a
   feedback already marked `traite` (hidden from the admin queue) or backdated,
   a backdated consent, or a coach message already read. `retours`,
@@ -51,6 +60,16 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ### Changed
 
+- **Ember background on the welcome screen and the session summary.** A
+  WebGL canvas, rendered at half resolution and at most 30 frames per second,
+  paused when the screen is hidden or the tab is in the background, a single
+  still frame with "reduce motion", and nothing at all without WebGL. Never
+  while logging a session.
+- **iPhone, 320 to 430 px.** The big date under the day banner, which repeated
+  it, stays for screen readers only; `MES SÉANCES` fits on one line and
+  `MOUVEMENTS` in its tile at 320 px. Service worker `topset-v34`.
+- **`docs/design/DESIGN.md`**: the interface described for recreating or
+  extending it (palette, type, components, layout), extracted from the code.
 - **UI/UX audit, measured at 375 px.** Every control in the app is at least
   44 px tall (segmented tabs, rename pencil, chart periods, history rows,
   `REVOIR LE BILAN`); no label is smaller than 11 px (24 were, down to
