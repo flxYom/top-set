@@ -313,7 +313,10 @@ feuille, qui était devenue un fourre-tout.
 **Pensé pour le téléphone.** Sur un écran de moins de 900 px, les onglets
 vivent **en bas**, sous le pouce, avec leurs icônes ; ils se rangent le temps
 qu'un champ a le clavier (`body.clavier`), et laissent la place à la saisie
-dans une conversation. Sur un ordinateur, ils restent une barre segmentée en haut. Une flèche « revenir en haut » apparaît dès qu'on est descendu d'un
+dans une conversation. Ils reviennent toujours : la barre ne se range que si
+la zone visible a vraiment rétréci (`visualViewport`), et un changement de vue,
+un retour sur la page ou l'app remise au premier plan effacent tout état
+périmé. Toucher le logo **TOPSET** ramène à la séance du jour. Sur un ordinateur, ils restent une barre segmentée en haut. Une flèche « revenir en haut » apparaît dès qu'on est descendu d'un
 écran. Deux appuis rapides sur `+` ajoutent 5 kg au lieu de zoomer
 (`touch-action: manipulation`), et toucher un champ ne fait plus zoomer
 Safari : sous iOS, tous les champs sont écrits en 16 px au moins, la taille en

@@ -2593,6 +2593,11 @@
       clearInterval(minuteurMessages);
       minuteurMessages = null;
     }
+    // Un champ de l'ancienne vue ne doit pas garder la barre rangee.
+    var champ = document.activeElement;
+    if (champ && champ.blur && /^(INPUT|TEXTAREA|SELECT)$/.test(champ.tagName)
+        && !document.getElementById('view-' + vue).contains(champ)) champ.blur();
+    document.body.classList.remove('clavier');
     renderAll();
     majBoutonHaut();
     majRetour();
@@ -2752,14 +2757,51 @@
   function ouvreClavier(el){
     return !!el && /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName) && el.type !== 'checkbox' && el.type !== 'file';
   }
+  //
+  // Elle ne doit JAMAIS rester rangee (retour du 18/09 : « le bandeau
+  // disparait et j'ai pas de moyen de le recuperer »). Sur iPhone, un champ
+  // peut garder le focus sans clavier a l'ecran (clavier ferme d'un geste,
+  // retour depuis une page d'Apprendre), et « clavier » restait colle au body.
+  // On ne se fie donc plus seulement au focus : le clavier est la quand la
+  // zone visible a reellement retreci, et tout ce qui peut laisser un etat
+  // perime (changement de vue, retour sur la page) recalcule la barre.
+  var hauteurPleine = window.visualViewport ? window.visualViewport.height : 0;
+  function clavierVisible(){
+    var vv = window.visualViewport;
+    if (!vv) return true;
+    return vv.height < hauteurPleine - 120;
+  }
+  function majClavier(){
+    var vv = window.visualViewport;
+    if (vv && !ouvreClavier(document.activeElement)) hauteurPleine = vv.height;
+    else if (vv && vv.height > hauteurPleine) hauteurPleine = vv.height;
+    document.body.classList.toggle('clavier', ouvreClavier(document.activeElement) && clavierVisible());
+  }
   document.addEventListener('focusin', function(e){
-    if (ouvreClavier(e.target)) document.body.classList.add('clavier');
+    if (!ouvreClavier(e.target)) return;
+    // Tout de suite, pour que la barre parte avec le clavier qui monte ; puis
+    // on verifie qu'il est vraiment sorti.
+    document.body.classList.add('clavier');
+    setTimeout(majClavier, 700);
   });
   document.addEventListener('focusout', function(){
-    setTimeout(function(){
-      if (!ouvreClavier(document.activeElement)) document.body.classList.remove('clavier');
-    }, 80);
+    setTimeout(majClavier, 80);
   });
+  if (window.visualViewport){
+    window.visualViewport.addEventListener('resize', function(){ setTimeout(majClavier, 60); });
+  }
+  // Retour sur la page (depuis Apprendre, ou l'app remise au premier plan) :
+  // plus aucun etat de la page precedente ne tient la barre cachee.
+  function remettreBarre(){
+    var champ = document.activeElement;
+    if (ouvreClavier(champ) && !clavierVisible() && champ.blur) champ.blur();
+    majClavier();
+    if (state.view !== 'messages') document.body.classList.remove('en-conv');
+    var ecran = document.getElementById('bilanEcran');
+    if (!ecran || ecran.hidden) document.body.classList.remove('en-bilan');
+  }
+  window.addEventListener('pageshow', remettreBarre);
+  document.addEventListener('visibilitychange', function(){ if (!document.hidden) remettreBarre(); });
 
   // Revenir en haut : des qu'on a descendu d'un ecran, un bouton apparait en
   // bas a droite. C'est la ou les sites le mettent sur telephone, sous le
@@ -2803,6 +2845,15 @@
     // passage.
     document.querySelectorAll('#subTabs .seg-btn').forEach(function(b){ b.classList.toggle('active', b===btn); });
     renderRecap();
+  });
+
+  // Le logo ramene a la seance du jour, comme sur tout site (demande du
+  // 18/09). C'est un vrai lien vers « / » : sans JavaScript, il recharge
+  // simplement l'app, qui s'ouvre deja la.
+  document.getElementById('marqueAccueil').addEventListener('click', function(e){
+    e.preventDefault();
+    if (typeof fermerFeuilles === 'function') fermerFeuilles();
+    allerAuJour(toDateStr(new Date()));
   });
 
   // Sur un autre jour qu'aujourd'hui, la seance du jour propose d'y revenir.

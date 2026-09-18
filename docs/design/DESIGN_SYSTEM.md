@@ -228,6 +228,11 @@ Cible :
   (onglets segmentés, crayon de la fiche, périodes du graphique, lignes de
   l'historique d'un exercice, REVOIR LE BILAN). La date de la dernière fois
   garde son cadre de 32 px, mais sa zone d'appui déborde jusqu'à 44 px.
+- **Barre du bas toujours récupérable** (18/09, demande : « il faut qu'elle
+  soit toujours là ») : elle ne se range que pendant qu'un clavier est
+  réellement à l'écran ; tout état périmé est effacé au changement de vue et
+  au retour sur la page.
+- **Logo** (18/09) : toucher TOPSET ramène à SÉANCES › DU JOUR.
 - **À 320 px**, la semaine du planning tient entière : l'année en cours est
   retirée du libellé, et AUJOURD'HUI resserre ses lettres sous 360 px.
 - **Fiche d'une séance** : blocs espacés de 10 px ; les quatre chiffres
