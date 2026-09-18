@@ -9,6 +9,33 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ## [Unreleased]
 
+### Performance
+
+- **The ember background no longer slows the opening.** Since it shipped, the
+  home screen spent 500 to 900 ms compiling and drawing it before anything could
+  be tapped (Lighthouse mobile 98 → 73–77, Total Blocking Time 10 → 800 ms). It
+  now starts once the page has loaded and the browser is idle, fades in, compiles
+  its shader in the background where the browser allows it, is refused outright
+  on devices without a real GPU (the CSS gradient stays), and freezes on its last
+  frame if a frame costs more than 20 ms. Unchanged on a phone with a GPU.
+- **Minified JavaScript online.** A single deploy-time step, `build.mjs`, copies
+  the served files into `dist/` and minifies the app's scripts: `app.js` goes
+  from 92 to 51 KB gzipped, the home page from 297 to 243 KB. The source in the
+  repository is unchanged and still runs as is.
+- **The banner photo is requested with the page.** It is the largest element of
+  the first screen but is declared in CSS, so the browser only found it after
+  `app.js` ran. It is now preloaded — at no extra cost, the service worker
+  downloads it anyway for offline use.
+- **The footer no longer jumps.** It was drawn at the top, then pushed down once
+  the app filled the screen (layout shift 0.028). It now stays invisible, in
+  place, until the screen is filled — and shows after 3 s regardless.
+
+### Accessibility
+
+- **A main landmark on the fixed pages.** The guide, terms, privacy and legal
+  pages had no `<main>`, so a screen reader could not jump to the content
+  (Lighthouse accessibility 97 → 100).
+
 ### Fixed
 
 - **The bottom bar could vanish for good on iPhone.** A field could keep the

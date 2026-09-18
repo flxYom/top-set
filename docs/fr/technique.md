@@ -6,8 +6,9 @@ Une partie de la [documentation de Top Set](../../README.fr.md#documentation).
 
 ## La pile technique
 
-Aucun framework. Aucune étape de build. Aucun bundler. Aucune dépendance à
-installer.
+Aucun framework. Aucun bundler. Aucune dépendance à installer. Rien à compiler
+pour travailler : la source est servie telle quelle en local. Une seule étape au
+déploiement, la minification (voir [Déployer](#déployer)).
 
 Un fichier HTML avec le CSS en ligne, plus des fichiers statiques.
 `index.html` pèse environ 204 Ko, dont à peu près 119 Ko de texture en base64 ;
@@ -46,7 +47,8 @@ intelligence.js          logique métier pure : top set, records, 1RM, signaux
 sw.js                    service worker — coquille en cache, hors-ligne
 supabase-config.js       URL du projet + clé publique (voir Comptes et Supabase)
 manifest.webmanifest     manifeste PWA
-vercel.json              en-têtes de sécurité, cache, redirection des anciennes adresses
+vercel.json              en-têtes de sécurité, cache, redirections, étape de build (build.mjs → dist/)
+build.mjs                construit dist/ : copie des fichiers servis, JS de l'app minifié
 robots.txt  sitemap.xml  indexation ; le plan du site est produit par scripts/contenu.mjs
 favicon.ico              16 + 32 + 48 px, à la racine où les navigateurs le cherchent
 
@@ -95,7 +97,8 @@ Les comptes sont **facultatifs**. Sans `supabase-config.js` — ou avec
 disponibles, la bulle des messages disparaît, et l'app est un carnet purement
 local. Rien ne casse, aucun bouton mort.
 
-Il n'y a **ni étape de build ni variable d'environnement à l'exécution** : un site
+Il n'y a **aucune variable d'environnement** (l'étape de build ne fait que
+minifier) : un site
 statique n'a pas de serveur pour les lire. Les deux valeurs vivent dans
 `supabase-config.js`, versionné dans ce dépôt, et c'est correct — les deux sont
 publiques par conception :
@@ -160,7 +163,9 @@ transaction, donc rien n'y est écrit, et l'autre projet repart intact.
 
 ## Le lancer en local
 
-N'importe quel serveur de fichiers statiques. Il n'y a rien à compiler.
+N'importe quel serveur de fichiers statiques. Il n'y a rien à compiler : la
+source se sert telle quelle. Pour voir le site exactement comme en ligne
+(JavaScript minifié), `node build.mjs` puis `npx serve dist`.
 
 ```bash
 npx serve .
@@ -176,6 +181,17 @@ Ouvrir `index.html` directement fonctionne aussi — la seule chose qui casse en
 Conçu pour de l'hébergement statique. Sur Vercel : importer le dépôt, choisir
 **Other** comme framework, déployer. `vercel.json` s'occupe des en-têtes et du
 cache, `.vercelignore` de ce qui ne doit pas être publié.
+
+**L'étape de build (18/09/2026).** Vercel lance `node build.mjs` et sert
+`dist/` (`buildCommand` et `outputDirectory` dans `vercel.json`). Le script
+copie exactement les fichiers servis — le dépôt moins `.vercelignore` et la
+configuration — puis minifie `app.js`, `intelligence.js`, `mesure.js` et
+`supabase-config.js` avec esbuild (version épinglée dans le script). `app.js`
+passe de 92 à 51 Ko compressés. Rien d'autre n'est réécrit : pas de bundle, pas
+de transpilation, les noms globaux partagés entre les fichiers restent intacts,
+et `sw.js` n'est pas touché (sa `VERSION` reste lisible en ligne). Si le build
+échoue, Vercel garde la version précédente en ligne. Pour tester avant de
+pousser : `node build.mjs && npx serve dist`.
 
 Le site vit sur `top-set.fr`, qui redirige vers `www.top-set.fr`. Le domaine est
 écrit en dur dans les balises Open Graph, les liens canoniques, `robots.txt` et

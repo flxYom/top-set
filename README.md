@@ -88,11 +88,16 @@ File-by-file details are in [Technical](docs/en/technical.md#project-structure).
 
 ## Running it locally
 
-No build step, no dependencies to install:
+Nothing to compile, no dependencies to install:
 
 ```bash
 npx serve .
 ```
+
+The only build is at deploy time: `node build.mjs` copies the served files into
+`dist/` and minifies the app's JavaScript (see
+[Technical](docs/en/technical.md#deploying)). `npx serve dist` shows the site
+exactly as it goes online.
 
 The tests, as CI runs them:
 

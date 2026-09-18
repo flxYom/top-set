@@ -61,7 +61,8 @@ students keep for PE (EPS) was published, then withdrawn: they are not Top Set's
 audience. Its address now redirects permanently to `/carnet-de-musculation`
 (`redirects` in `vercel.json`), and its topic is `RETIRED` in the matrix.
 
-Still no framework and no build step on Vercel. Each page's source lives in
+Still no framework, and the content pages are not built on Vercel (the only
+deploy-time step minifies the app's JavaScript). Each page's source lives in
 `contenu/`: an HTML file whose first comment holds JSON metadata.
 `node scripts/contenu.mjs` turns them into the published pages, section hubs,
 the 404 and `sitemap.xml`; generated pages are committed. In the body,

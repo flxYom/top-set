@@ -17,3 +17,6 @@ Thumbs.db
 
 # Dependances de test du schema
 node_modules/
+
+# Site construit par build.mjs (Vercel le produit lui-meme)
+dist/

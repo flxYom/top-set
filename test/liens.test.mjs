@@ -27,7 +27,7 @@ function ok(label, cond, detail = ''){
 const reels = new Set();
 (function marcher(d){
   for (const e of readdirSync(d)){
-    if (e === '.git' || e === 'node_modules' || e === '.github' || e === '.claude') continue;
+    if (e === '.git' || e === 'node_modules' || e === '.github' || e === '.claude' || e === 'dist') continue;
     const p = join(d, e);
     if (statSync(p).isDirectory()) marcher(p);
     else reels.add(relative(RACINE, p).split('\\').join('/'));

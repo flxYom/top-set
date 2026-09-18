@@ -30,6 +30,11 @@
 <!-- La police arrive avant le premier rendu : sans ça, le texte s'affiche
      d'abord dans la police du système, puis se recompose et fait bouger la page. -->
 <link rel="preload" href="fonts/bricolage-latin.woff2" as="font" type="font/woff2" crossorigin>
+<!-- La photo du bandeau est le plus grand element du premier ecran (LCP), mais
+     elle est declaree en CSS : sans ce lien, le navigateur ne la decouvre qu'une
+     fois app.js execute. Aucun octet de plus : le service worker la telecharge
+     de toute facon pour le hors-ligne. -->
+<link rel="preload" href="img/ambiance/bandeau.webp" as="image" type="image/webp" fetchpriority="high">
 <title>Top Set — carnet de musculation gratuit</title>
 <!-- Pour Google : le nom du site a afficher au-dessus du resultat. Un bloc
      de donnees n'est pas execute, la CSP (script-src 'self') ne le bloque pas. -->
@@ -2608,6 +2613,17 @@
      sombre ; sur l accueil il s ajoute a la photo en mode « screen », pour
      que seules les lueurs eclairent. Sans WebGL, rien ne change. */
   .braise{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;display:block;}
+  /* ---- Pied de page sans decalage (18/09/2026) --------------------------- */
+  /* Les vues sont remplies par app.js apres le premier rendu : le pied de page
+     s'affichait d'abord en haut, puis etait repousse (CLS 0,028). Il reste
+     invisible — mais a sa place — jusqu'a ce que l'ecran soit rempli. Filet de
+     securite : il apparait de toute facon apres 3 s (mentions legales). */
+  html:not(.app-prete) .legal-footer{visibility:hidden;animation:pied-visible 0s 3s forwards;}
+  @keyframes pied-visible{ to{ visibility:visible; } }
+
+  /* Elle arrive apres le chargement : un fondu plutot qu'une apparition seche. */
+  .braise{transition:opacity .8s ease;}
+  .braise:not(.prete){opacity:0 !important;}
   .accueil .braise{mix-blend-mode:screen;opacity:.7;}
   .bilan.avec-braise{background:var(--bg);}
   .bilan > .bilan-carte,.accueil > .accueil-carte{position:relative;z-index:1;}
