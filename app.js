@@ -2575,7 +2575,15 @@
   var seancesOnglet = 'jour';
 
   var VUES = ['planning','seances','seance','exercice','recap','apprendre','coach','admin','messages'];
+  // Chaque onglet de la barre garde sa position de defilement (demande du
+  // 18/09/2026, d'apres react-native-scrollable-tab-view) : revenir sur le
+  // RECAP apres un tour au PLANNING rend le recap la ou on l'avait laisse.
+  // En memoire seulement : a l'ouverture de l'app, chaque onglet part du haut.
+  var ONGLETS = ['planning','seances','recap','apprendre'];
+  var defilement = {};
   function montrerVue(vue){
+    var avant = state.view;
+    if (ONGLETS.indexOf(avant) > -1) defilement[avant] = window.scrollY;
     state.view = vue;
     // La fiche n'a pas d'onglet : c'est une page ou l'on entre depuis la
     // liste, et l'onglet SEANCES reste allume pendant qu'on y est.
@@ -2599,6 +2607,10 @@
         && !document.getElementById('view-' + vue).contains(champ)) champ.blur();
     document.body.classList.remove('clavier');
     renderAll();
+    // Apres le rendu : la page a sa hauteur, la position peut etre reprise.
+    // Un appelant qui veut le haut de page (entree dans une fiche) le demande
+    // apres coup, comme avant.
+    if (vue !== avant && ONGLETS.indexOf(vue) > -1) window.scrollTo(0, defilement[vue] || 0);
     majBoutonHaut();
     majRetour();
     placerLoupe(true);

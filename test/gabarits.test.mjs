@@ -619,6 +619,10 @@ ok('braise : le fond anime ne vit que sur l accueil et le bilan, s arrete cache,
 ok('braise : tout le WebGL vit dans le Web Worker, jamais sur le fil principal',
    SRC.indexOf("getContext('webgl'") === -1 && SRC.indexOf("new Worker('braise.js')") > -1
    && SRC.indexOf('transferControlToOffscreen') > -1 && BRAISE.indexOf('failIfMajorPerformanceCaveat:true') > -1);
+ok('onglets : chacun garde sa position de defilement (planning, seances, recap, apprendre)',
+   SRC.indexOf("var ONGLETS = ['planning','seances','recap','apprendre'];") > -1
+   && SRC.indexOf('if (ONGLETS.indexOf(avant) > -1) defilement[avant] = window.scrollY;') > -1
+   && SRC.indexOf('window.scrollTo(0, defilement[vue] || 0)') > -1);
 ok('braise : le worker est precache (hors ligne) et minifie au deploiement',
    SW.indexOf("'braise.js'") > -1 && lireLF('../build.mjs').indexOf("'braise.js'") > -1);
 ok('iPhone : le grand titre du jour, deja dans le bandeau, reste pour les lecteurs d ecran seulement',

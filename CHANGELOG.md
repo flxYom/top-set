@@ -9,6 +9,14 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ## [Unreleased]
 
+### Changed
+
+- **Each tab keeps your place.** Planning, Sessions, Recap and Learn now come
+  back at the height where you left them, instead of wherever the previous tab
+  was scrolled; Sessions too when you come back from a session sheet. Dragging
+  along the bottom bar still switches tabs; swiping across the whole page was
+  ruled out, as it would switch tabs by mistake while logging a set.
+
 ### Performance
 
 - **The ember background no longer slows the opening.** Since it shipped, the
