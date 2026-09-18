@@ -65,7 +65,13 @@ warm glint runs around the rim for the trip (0.46 s); the label stays above it,
 sharp. It can also be **dragged with a finger**: past 8 px of horizontal
 movement it lifts and follows the finger, the tab underneath lights up, and the
 nearest one opens on release; a plain tap is still a click (Pointer Events,
-`touch-action:none` on the bottom bar). **On phones the bottom bar follows
+`touch-action:none` on the bottom bar). **Each tab keeps its scroll position**
+(2026-09-18): PLANNING, SESSIONS, RECAP and LEARN come back at the height where
+you left them, SESSIONS included when returning from a session sheet
+(`montrerVue`, in memory only: on opening, every tab starts at the top).
+Swiping across the whole page to switch tabs was ruled out: it would switch tabs
+by mistake while logging a set and clash with the heat map, which scrolls
+horizontally. **On phones the bottom bar follows
 iOS 26**: a floating grey capsule, a grey pill under the active tab, lowercase
 labels; on touch, while dragging or switching tabs, the pill turns into a glass
 bubble that magnifies what it covers, with prism fringes (cyan, yellow,

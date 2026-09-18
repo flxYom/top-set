@@ -70,7 +70,13 @@ mouvement et un seul reflet chaud fait le tour du liseré le temps du trajet
 doigt** : passé 8 px de déplacement horizontal, elle se soulève et suit le
 doigt, l'onglet survolé s'allume, et le plus proche s'ouvre au lâcher ; un
 simple appui reste un clic (Pointer Events, `touch-action:none` sur la barre
-du bas). **Sur téléphone, la barre du bas reprend celle d'iOS 26** : une
+du bas). **Chaque onglet garde sa position de défilement** (18/09/2026) :
+PLANNING, SÉANCES, RÉCAP et APPRENDRE retrouvent la hauteur où on les avait
+quittés, y compris SÉANCES au retour d'une fiche (`montrerVue`, en mémoire
+seulement : à l'ouverture, chaque onglet part du haut). Le balayage de toute
+la page pour changer d'onglet a été écarté : il changerait d'onglet par erreur
+pendant la saisie et entrerait en conflit avec la carte de chaleur, qui défile
+horizontalement. **Sur téléphone, la barre du bas reprend celle d'iOS 26** : une
 capsule grise qui flotte, une pastille grise sous l'onglet actif, des libellés
 en minuscules ; au toucher, pendant un glisser ou un changement d'onglet, la
 pastille devient une bulle de verre qui grossit ce qu'elle couvre, avec des
