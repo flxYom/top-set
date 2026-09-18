@@ -176,7 +176,10 @@ error".
 What the privacy policy states is enforced technically, not just written:
 
 **No third-party requests.** Bricolage Grotesque, Chart.js and supabase-js are all
-served from the site itself. Loading them from a CDN would send every visitor's IP
+served from the site itself. So is audience measurement (since 18 September
+2026): `mesure.js` loads Vercel Web Analytics from `/_vercel/insights/`, on
+top-set.fr only, with no cookie and nothing from the logbook; the service worker
+never caches those requests. Loading them from a CDN would send every visitor's IP
 address to Google or Cloudflare on each page load, whether or not they have an
 account.
 

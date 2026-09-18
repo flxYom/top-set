@@ -189,7 +189,10 @@ Ce que la politique de confidentialité affirme est **appliqué techniquement**,
 seulement écrit :
 
 **Aucune requête vers un tiers.** Bricolage Grotesque, Chart.js et supabase-js
-sont tous servis depuis le site lui-même. Les charger depuis un CDN enverrait
+sont tous servis depuis le site lui-même. La mesure d'audience aussi (depuis le
+18/09/2026) : `mesure.js` charge Vercel Web Analytics depuis
+`/_vercel/insights/`, sur top-set.fr seulement, sans cookie et sans rien du
+carnet ; le service worker ne met jamais ces requêtes en cache. Les charger depuis un CDN enverrait
 l'adresse IP de chaque visiteur à Google ou Cloudflare à chaque ouverture, qu'il
 ait un compte ou non.
 

@@ -179,7 +179,8 @@ export function pageContenu(p, ctx){
     bas.push(`<section class="sources" aria-labelledby="sources-titre"><h2 id="sources-titre">Sources</h2><ol>${p.sourcesHtml}</ol>`
       + `<p>Chaque source indique ce qui en a été lu. Une erreur ? <a href="mailto:g.benint@gmail.com?subject=${encodeURIComponent('Erreur sur ' + p.url)}">Écris-nous</a>.</p></section>`);
   }
-  const scripts = (p.scripts || []).map(s => `<script src="${s}" defer></script>`).join('\n');
+  // La mesure d'audience part sur chaque page, apres les scripts propres a la page.
+  const scripts = [...(p.scripts || []), '/mesure.js'].map(s => `<script src="${s}" defer></script>`).join('\n');
   return [
     tete(p, ctx),
     '<body>',

@@ -60,6 +60,11 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ### Changed
 
+- **Audience measurement: Vercel Web Analytics, cookie-free.** `mesure.js`
+  on every page, active on top-set.fr only, served from the site itself
+  (`/_vercel/insights/`, CSP unchanged), never cached by the service worker.
+  Privacy policy 3.2 says so. It counts once Web Analytics is enabled in the
+  Vercel project. Service worker `topset-v35`.
 - **Ember background on the welcome screen and the session summary.** A
   WebGL canvas, rendered at half resolution and at most 30 frames per second,
   paused when the screen is hidden or the tab is in the background, a single

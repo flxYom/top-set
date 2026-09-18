@@ -11,7 +11,7 @@
 //
 //   node test/gabarits.test.mjs
 
-import { readFileSync, existsSync } from 'fs';
+import { readFileSync, existsSync, readdirSync } from 'fs';
 
 // Le JS de l'app vit dans app.js depuis qu'on a retire 'unsafe-inline' de la
 // CSP : sans etape de build, un script externe est le seul moyen de se passer
@@ -615,6 +615,25 @@ ok('braise : le fond anime ne vit que sur l accueil et le bilan, s arrete cache,
    && HTML.indexOf('.braise{position:fixed;inset:0;') > -1);
 ok('iPhone : le grand titre du jour, deja dans le bandeau, reste pour les lecteurs d ecran seulement',
    HTML.indexOf('.day-panel-header h2{position:absolute;width:1px;height:1px;') > -1 && HTML.indexOf('<h2 id="dayTitle">') > -1);
+{
+  // La mesure d'audience : sur chaque page, seulement sur top-set.fr, jamais
+  // en cache, et annoncee par la politique de confidentialite.
+  const racine = new URL('../', import.meta.url);
+  const pages = [];
+  for (const d of ['', 'documentation/', 'entrainement/', 'exercices/', 'outils/']) {
+    for (const f of readdirSync(new URL(d, racine))) if (f.endsWith('.html')) pages.push(d + f);
+  }
+  const sans = pages.filter(f => (readFileSync(new URL(f, racine), 'utf8').match(/<script src="\/?mesure\.js" defer><\/script>/g) || []).length !== 1);
+  ok('mesure d audience : un seul mesure.js sur chacune des ' + pages.length + ' pages', pages.length > 25 && !sans.length, sans.join(', '));
+  const MES = readFileSync(new URL('mesure.js', racine), 'utf8');
+  ok('mesure d audience : active sur top-set.fr seulement, servie par le site',
+     MES.indexOf("if (!/(^|\\.)top-set\\.fr$/.test(location.hostname)) return;") > -1 && MES.indexOf("s.src = '/_vercel/insights/script.js';") > -1);
+  ok('mesure d audience : le service worker ne la met jamais en cache',
+     SW.indexOf("if (url.pathname.indexOf('/_vercel/') === 0) return;") > -1);
+  const CONF = readFileSync(new URL('confidentialite.html', racine), 'utf8');
+  ok('mesure d audience : annoncee par la politique 3.2, et l app enregistre cette version',
+     CONF.indexOf('Version 3.2') > -1 && CONF.indexOf('Vercel Web Analytics') > -1 && SRC.indexOf("var VERSION_POLITIQUE = '3.2';") > -1);
+}
 ok('SEANCES : du jour, mes seances, historique ; l app s ouvre sur la seance du jour',
    /data-onglet="jour">DU JOUR</.test(HTML) && /view:'seances',/.test(SRC) && /var seancesOnglet = 'jour';/.test(SRC)
    && /<section class="view" id="view-seances">\s*<div class="segmented sub" id="seancesTabs">/.test(HTML)

@@ -10,7 +10,7 @@
 // depuis un cache reviendrait a afficher des seances perimees en croyant
 // etre a jour. Le hors-ligne des donnees, c'est localStorage, pas ici.
 
-var VERSION = 'topset-v34';
+var VERSION = 'topset-v35';
 var COQUILLE = VERSION + '-coquille';
 var COURANT  = VERSION + '-courant';
 
@@ -86,6 +86,8 @@ self.addEventListener('fetch', function(e){
   // Tout ce qui n'est pas ce site passe sans etre touche : Supabase en
   // premier lieu.
   if (url.origin !== self.location.origin) return;
+  // La mesure d'audience : jamais en cache, jamais servie hors ligne.
+  if (url.pathname.indexOf('/_vercel/') === 0) return;
 
   if (estNavigation(req)){
     // Le reseau d'abord pour la page : une version en cache pourrait etre

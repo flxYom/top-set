@@ -5525,7 +5525,7 @@
   // (l'editeur, Resend, OVH, et Claude qui n'a acces a rien). Elle retire la
   // promesse « aucune mesure d'audience » sans en ajouter une : le jour ou il
   // y en aura une, la page le dira avant, et la question se reposera ici.
-  var VERSION_POLITIQUE = '3.1';
+  var VERSION_POLITIQUE = '3.2';
   var SYNC_KEY      = 'topset_sync';
   var CONFLITS_KEY  = 'topset_conflits';
 

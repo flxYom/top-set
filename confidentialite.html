@@ -33,7 +33,7 @@
     ACCUEIL
   </a>
   <h1>Politique de confidentialité</h1>
-  <p class="maj">Version 3.1 — 11 septembre 2026</p>
+  <p class="maj">Version 3.2 — 18 septembre 2026</p>
 
   <section>
     <h2>En une phrase</h2>
@@ -48,8 +48,10 @@
       décision, et elle se prend en une fois, explicitement.
     </p>
     <p class="dim">
-      Si un traitement nouveau apparaît — une mesure d'audience du site, par
-      exemple —, cette page le dira avant qu'il commence, et sa version changera.
+      Depuis la version 3.2, le site compte ses pages vues (voir « Mesure
+      d'audience » plus bas) : sans cookie, et sans rien de ton carnet. Si un
+      autre traitement apparaît, cette page le dira avant qu'il commence, et sa
+      version changera.
     </p>
   </section>
 
@@ -173,12 +175,22 @@
       <strong>Vercel Inc.</strong> héberge le site. Pour que la page s'affiche, ton
       navigateur doit la lui demander, et il conserve à cette occasion des journaux
       techniques contenant notamment ton adresse IP, la page demandée et la date.
-      C'est le fonctionnement normal de tout site web, et c'est le seul traitement
-      qui concerne aussi les visiteurs sans compte.
+      C'est le fonctionnement normal de tout site web.
+    </p>
+    <p>
+      <strong>Mesure d'audience.</strong> Vercel Web Analytics compte les pages
+      vues : la page, le pays, le type d'appareil et de navigateur, et le site
+      d'où tu viens. Il ne dépose <strong>aucun cookie</strong> et n'écrit rien sur
+      ton appareil. Pour compter les visiteurs distincts, Vercel calcule une
+      empreinte à partir de la requête, qu'il indique jeter au bout de 24 heures.
+      Aucune donnée de ton carnet, aucun email, aucun contenu de message n'en fait
+      partie. Le script est servi par le site lui-même et ne tourne que sur
+      top-set.fr. Avec la journalisation ci-dessus, ce sont les deux seuls
+      traitements qui concernent aussi les visiteurs sans compte.
     </p>
     <p class="dim">
-      Base légale : intérêt légitime (article 6.1.f du RGPD) — servir le site et
-      assurer sa sécurité. Vercel est une société américaine ; les transferts sont
+      Base légale : intérêt légitime (article 6.1.f du RGPD) — servir le site,
+      assurer sa sécurité et savoir quelles pages servent. Vercel est une société américaine ; les transferts sont
       encadrés par les clauses contractuelles types et le
       <em>EU-U.S. Data Privacy Framework</em>. Détails :
       <a href="https://vercel.com/legal/privacy-policy" rel="noopener noreferrer" target="_blank">politique de confidentialité de Vercel</a>.
@@ -294,5 +306,6 @@
   </div>
 
 </div>
+<script src="/mesure.js" defer></script>
 </body>
 </html>
