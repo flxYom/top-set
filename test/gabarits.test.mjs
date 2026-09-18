@@ -609,6 +609,12 @@ ok('audit UI/UX : les libelles ne descendent plus sous 11 px, les commandes segm
    && /\.seg-btn\{min-height:44px;\}/.test(HTML) && /\.fin-revoir\{min-height:44px;/.test(HTML));
 ok('audit UI/UX : le texte tertiaire passe 4,5:1 sur les surfaces',
    /--ink3:#8d867b;/.test(HTML));
+ok('braise : le fond anime ne vit que sur l accueil et le bilan, s arrete cache, et respecte reduire les animations',
+   SRC.indexOf("['bilanEcran', 'accueil']") > -1 && SRC.indexOf('if (document.hidden) arreter()') > -1
+   && SRC.indexOf('prefers-reduced-motion: reduce') > -1 && SRC.indexOf('if (calme.matches){ image(performance.now()); return; }') > -1
+   && HTML.indexOf('.braise{position:fixed;inset:0;') > -1);
+ok('iPhone : le grand titre du jour, deja dans le bandeau, reste pour les lecteurs d ecran seulement',
+   HTML.indexOf('.day-panel-header h2{position:absolute;width:1px;height:1px;') > -1 && HTML.indexOf('<h2 id="dayTitle">') > -1);
 ok('SEANCES : du jour, mes seances, historique ; l app s ouvre sur la seance du jour',
    /data-onglet="jour">DU JOUR</.test(HTML) && /view:'seances',/.test(SRC) && /var seancesOnglet = 'jour';/.test(SRC)
    && /<section class="view" id="view-seances">\s*<div class="segmented sub" id="seancesTabs">/.test(HTML)

@@ -140,6 +140,7 @@ simple décor. Toutes s'arrêtent quand l'appareil demande moins d'animations
 | Élément | Comportement | Durée |
 |---|---|---|
 | Loupe des onglets (`#ongletLoupe`) | glisse sous l'onglet choisi, s'étire dans le sens du mouvement comme une goutte, un seul reflet chaud fait le tour du liseré pendant le trajet (l'arc-en-ciel a été retiré le 13/09 : « trop RGB »), reflet en haut au repos ; se fait glisser du doigt (se soulève, suit le doigt, l'onglet le plus proche s'ouvre au lâcher) ; **sur téléphone** (14/09, à la demande : « copie tout » d'après la barre d'iOS 26) : capsule grise flottante, pastille grise au repos, libellés en minuscules, icône active blanche, et au toucher une bulle de verre ×1,3 qui grossit une copie des onglets, avec franges de prisme cyan / jaune / magenta près du bord ; ne bouge pas au chargement ni au redimensionnement ; cachée dans les vues sans onglet | 0,46 s |
+| Braise (`.braise`, 18/09) | fond WebGL de l'accueil et du bilan seulement : noir chaud, une lueur braise → orange qui dérive lentement depuis le haut ; demi-résolution, 30 images/s au plus, arrêtée quand l'écran se cache ; une image fixe avec « réduire les animations » ; sans WebGL, le dégradé CSS d'origine | boucle lente |
 | Changement de vue | la vue glisse de 6 px en apparaissant | 0,24 s |
 | Appui | le bouton s'enfonce | instantané |
 
@@ -294,3 +295,9 @@ avant de le faire.
 - **En-tête d'Apprendre** (14/09) : le logo, OUVRIR LE CARNET et la barre des
   rubriques restent collés en haut des pages de contenu ; les ancres s'arrêtent
   dessous.
+- **Pas de React** (18/09) : la question a été reposée, la réponse reste non ;
+  le fond animé se fait en WebGL dans le code actuel.
+- **Braise** (18/09) : un fond animé aux moments forts seulement (accueil,
+  bilan), jamais pendant la saisie.
+- **Description de l'interface** : [`DESIGN.md`](DESIGN.md), extrait du code le
+  18/09. Ce fichier-ci garde les décisions et fait foi en cas d'écart.

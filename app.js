@@ -6048,6 +6048,7 @@
       if (/Email not confirmed/i.test(m))            return 'confirme d abord ton adresse par email';
       if (/Error sending/i.test(m))
         return 'le mail n a pas pu partir — l envoyeur n est pas encore configure';
+      if (/Trop d envois/i.test(m))                 return 'trop d envois en peu de temps — reessaie dans une heure';
       if (/For security purposes|rate limit|Too many requests|over_email_send_rate/i.test(m))
         return 'trop de tentatives — reessaie dans quelques minutes';
       if (/same as the old password|should be different/i.test(m))
@@ -6750,6 +6751,25 @@
         mdp:   document.getElementById('compteMdp').value || ''
       };
     }
+    // L'adresse est verifiee avant d'appeler le serveur : une faute de frappe
+    // se corrige sur place, pres du champ, au lieu d'un refus generique. Le
+    // serveur reste seul juge (Supabase refuse aussi une adresse invalide).
+    function emailValide(id){
+      var champ = document.getElementById(id);
+      var v = (champ.value || '').trim();
+      var ok = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v);
+      if (ok) champ.removeAttribute('aria-invalid');
+      else {
+        champ.setAttribute('aria-invalid', 'true');
+        Sync.msgCompte('err', v ? 'Cette adresse email ne semble pas complète (exemple : prenom@mail.fr).' : 'Donne ton adresse email.');
+        champ.focus();
+      }
+      return ok;
+    }
+    ['compteEmail', 'oubliEmail'].forEach(function(id){
+      var champ = document.getElementById(id);
+      if (champ) champ.addEventListener('input', function(){ this.removeAttribute('aria-invalid'); });
+    });
     function occupe(btn, texte, fn){
       var avant = btn.textContent;
       btn.disabled = true; btn.textContent = texte;
@@ -6758,7 +6778,8 @@
     }
     document.getElementById('compteConnexion').addEventListener('click', function(){
       var v = lire();
-      if (!v.email || !v.mdp){ Sync.msgCompte('err', 'Email et mot de passe requis.'); return; }
+      if (!emailValide('compteEmail')) return;
+      if (!v.mdp){ Sync.msgCompte('err', 'Donne ton mot de passe.'); document.getElementById('compteMdp').focus(); return; }
       occupe(this, 'CONNEXION…', function(){ return Sync.connecter(v.email, v.mdp); });
     });
     // Dire « coche la case » sans montrer laquelle, c'est la moitie du travail :
@@ -6783,7 +6804,7 @@
 
     document.getElementById('compteInscription').addEventListener('click', function(){
       var v = lire();
-      if (!v.email || !v.mdp){ Sync.msgCompte('err', 'Email et mot de passe requis.'); return; }
+      if (!emailValide('compteEmail')) return;
       if (v.mdp.length < 8){ Sync.msgCompte('err', 'Choisis un mot de passe d\'au moins 8 caractères.'); return; }
       if (!document.getElementById('compteConsent').checked){
         Sync.msgCompte('err', 'Il faut accepter la politique de confidentialité et les CGU pour créer un compte — la case est juste au-dessus du bouton.');
@@ -6805,7 +6826,7 @@
     });
     document.getElementById('oubliEnvoyer').addEventListener('click', function(){
       var mail = document.getElementById('oubliEmail').value.trim();
-      if (!mail){ Sync.msgCompte('err', 'Donne l\'adresse de ton compte.'); return; }
+      if (!emailValide('oubliEmail')) return;
       occupe(this, 'ENVOI…', function(){ return Sync.envoyerLienMdp(mail); });
     });
     document.getElementById('nouveauValider').addEventListener('click', function(){
@@ -6834,6 +6855,86 @@
   })();
 
   init();
+
+  // ---------- braise : un fond anime pour les moments forts ----------
+  // L'accueil et le bilan seulement (decision du 18/09/2026). Jamais pendant
+  // la saisie. Rendu a demi-resolution et a 30 images/s au plus, arrete des
+  // que l'ecran se cache ou que l'onglet passe en arriere-plan. Avec
+  // « reduire les animations », une seule image fixe. Sans WebGL, le degrade
+  // CSS d'origine reste en place.
+  (function braise(){
+    var VS = 'attribute vec2 p;void main(){gl_Position=vec4(p,0.,1.);}';
+    var FS = 'precision mediump float;uniform vec2 r;uniform float t;'
+      + 'float h(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}'
+      + 'float n(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);'
+      + 'return mix(mix(h(i),h(i+vec2(1,0)),f.x),mix(h(i+vec2(0,1)),h(i+vec2(1,1)),f.x),f.y);}'
+      + 'float fbm(vec2 p){float v=0.,a=.5;for(int i=0;i<4;i++){v+=a*n(p);p=p*2.03+vec2(1.7,9.2);a*=.5;}return v;}'
+      + 'void main(){vec2 uv=gl_FragCoord.xy/r;vec2 q=vec2(uv.x*r.x/r.y,uv.y)*1.6;float s=t*.045;'
+      + 'vec2 w=vec2(fbm(q+vec2(0.,s)),fbm(q+vec2(5.2,-s)));float f=fbm(q+2.2*w+vec2(s*.6,0.));'
+      // La lueur vient du haut, comme la lampe au-dessus d'un banc.
+      + 'float haut=smoothstep(.15,1.05,uv.y);float g=smoothstep(.35,.95,f)*(.35+.65*haut);'
+      + 'vec3 fond=vec3(.047,.043,.039);vec3 braise=vec3(.42,.12,.05);vec3 orange=vec3(1.,.36,.22);'
+      + 'vec3 c=mix(fond,braise,g);c=mix(c,orange,pow(g,3.)*.55);'
+      + 'c+=(h(gl_FragCoord.xy+t)-.5)/255.;gl_FragColor=vec4(c,1.);}';
+    var hotes = ['bilanEcran', 'accueil'].map(function(id){ return document.getElementById(id); }).filter(Boolean);
+    if (!hotes.length || !window.WebGLRenderingContext) return;
+    var calme = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : { matches:false };
+
+    hotes.forEach(function(hote){
+      var cv = document.createElement('canvas');
+      cv.className = 'braise';
+      cv.setAttribute('aria-hidden', 'true');
+      hote.insertBefore(cv, hote.firstChild);
+      var gl = null, prog, uR, uT, anim = 0, dernier = 0, debut = 0;
+
+      function preparer(){
+        gl = cv.getContext('webgl', { alpha:false, antialias:false, depth:false, powerPreference:'low-power' });
+        if (!gl) return false;
+        function sh(type, src){ var s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); return gl.getShaderParameter(s, gl.COMPILE_STATUS) ? s : null; }
+        var v = sh(gl.VERTEX_SHADER, VS), f = sh(gl.FRAGMENT_SHADER, FS);
+        if (!v || !f) return false;
+        prog = gl.createProgram(); gl.attachShader(prog, v); gl.attachShader(prog, f); gl.linkProgram(prog);
+        if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) return false;
+        gl.useProgram(prog);
+        gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 3,-1, -1,3]), gl.STATIC_DRAW);
+        var a = gl.getAttribLocation(prog, 'p');
+        gl.enableVertexAttribArray(a); gl.vertexAttribPointer(a, 2, gl.FLOAT, false, 0, 0);
+        uR = gl.getUniformLocation(prog, 'r'); uT = gl.getUniformLocation(prog, 't');
+        return true;
+      }
+      function dimensionner(){
+        // Demi-resolution : un degrade flou n'a pas besoin de chaque pixel.
+        var w = Math.max(1, Math.round(hote.clientWidth / 2)), hh = Math.max(1, Math.round(hote.clientHeight / 2));
+        if (cv.width !== w || cv.height !== hh){ cv.width = w; cv.height = hh; }
+        gl.viewport(0, 0, w, hh); gl.uniform2f(uR, w, hh);
+      }
+      function image(ms){
+        dimensionner();
+        gl.uniform1f(uT, (ms - debut) / 1000 + 40);
+        gl.drawArrays(gl.TRIANGLES, 0, 3);
+      }
+      function boucle(ms){
+        anim = requestAnimationFrame(boucle);
+        if (ms - dernier < 33) return;
+        dernier = ms; image(ms);
+      }
+      function demarrer(){
+        if (hote.hidden || document.hidden) return;
+        if (!gl && !preparer()){ cv.remove(); return; }
+        hote.classList.add('avec-braise');
+        if (!debut) debut = performance.now();
+        if (calme.matches){ image(performance.now()); return; }
+        if (!anim) anim = requestAnimationFrame(boucle);
+      }
+      function arreter(){ if (anim){ cancelAnimationFrame(anim); anim = 0; } }
+      new MutationObserver(function(){ if (hote.hidden) arreter(); else demarrer(); })
+        .observe(hote, { attributes:true, attributeFilter:['hidden'] });
+      document.addEventListener('visibilitychange', function(){ if (document.hidden) arreter(); else demarrer(); });
+      window.addEventListener('resize', function(){ if (!hote.hidden && gl && calme.matches) image(performance.now()); });
+      demarrer();
+    });
+  })();
 
   // Le service worker rend l'app ouvrable dans une salle sans reseau. Il
   // exige un contexte securise : en http, il n'y a rien a enregistrer, et
