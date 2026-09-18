@@ -41,6 +41,7 @@ version drift, and the whole thing can be opened, read and edited in one file.
 ```
 index.html               app markup and styles
 app.js                   all the app logic (kept out of the HTML for the CSP)
+braise.js                Web Worker drawing the animated background (WebGL, OffscreenCanvas) off the main thread
 intelligence.js          pure business logic: top set, records, 1RM, signals
 sw.js                    service worker — cached shell, offline
 supabase-config.js       project URL + public key (see Accounts and Supabase)
