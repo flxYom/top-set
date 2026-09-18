@@ -28,7 +28,8 @@ spending time on a PR that doesn't fit the project's direction (see
 
 ## Running the project locally
 
-No build step, no dependencies to install:
+Nothing to compile, no dependencies to install (the deploy-time minification in
+`build.mjs` is not needed to work on the app):
 
 ```bash
 npx serve .

@@ -6906,6 +6906,9 @@
   })();
 
   init();
+  // L'ecran est rempli : le pied de page peut apparaitre a sa place definitive
+  // (voir .legal-footer dans index.html — evite le decalage de mise en page).
+  document.documentElement.classList.add('app-prete');
 
   // ---------- braise : un fond anime pour les moments forts ----------
   // L'accueil et le bilan seulement (decision du 18/09/2026). Jamais pendant
@@ -6913,6 +6916,17 @@
   // que l'ecran se cache ou que l'onglet passe en arriere-plan. Avec
   // « reduire les animations », une seule image fixe. Sans WebGL, le degrade
   // CSS d'origine reste en place.
+  //
+  // Elle ne doit jamais ralentir l'ouverture (mesure du 18/09/2026 : une tache
+  // bloquante de 500 a 900 ms, TBT 10 -> 800 ms, Lighthouse 98 -> 75). D'ou :
+  // - demarrage apres le chargement, quand le navigateur est libre, en fondu ;
+  // - failIfMajorPerformanceCaveat : sans vrai GPU (rendu logiciel), le
+  //   navigateur refuse le contexte et le degrade CSS reste — le calcul du
+  //   bruit sur le processeur couterait plus que l'effet ne rapporte ;
+  // - compilation du shader en tache de fond quand KHR_parallel_shader_compile
+  //   existe, au lieu d'attendre le pilote ;
+  // - si les premieres images coutent plus de 20 ms, l'animation s'arrete sur
+  //   la derniere image : un fond fige vaut mieux qu'une saisie qui rame.
   (function braise(){
     var VS = 'attribute vec2 p;void main(){gl_Position=vec4(p,0.,1.);}';
     var FS = 'precision mediump float;uniform vec2 r;uniform float t;'
@@ -6936,23 +6950,36 @@
       cv.className = 'braise';
       cv.setAttribute('aria-hidden', 'true');
       hote.insertBefore(cv, hote.firstChild);
-      var gl = null, prog, uR, uT, anim = 0, dernier = 0, debut = 0;
+      // etat : '' pas commence, 'prep' en compilation, 'pret', 'echec' (degrade CSS)
+      var gl = null, prog, uR, uT, anim = 0, dernier = 0, debut = 0, etat = '', images = 0;
 
+      function echouer(){ etat = 'echec'; arreter(); cv.remove(); }
       function preparer(){
-        gl = cv.getContext('webgl', { alpha:false, antialias:false, depth:false, powerPreference:'low-power' });
-        if (!gl) return false;
-        function sh(type, src){ var s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); return gl.getShaderParameter(s, gl.COMPILE_STATUS) ? s : null; }
-        var v = sh(gl.VERTEX_SHADER, VS), f = sh(gl.FRAGMENT_SHADER, FS);
-        if (!v || !f) return false;
+        etat = 'prep';
+        gl = cv.getContext('webgl', { alpha:false, antialias:false, depth:false, powerPreference:'low-power', failIfMajorPerformanceCaveat:true });
+        if (!gl){ echouer(); return; }
+        var v = gl.createShader(gl.VERTEX_SHADER), f = gl.createShader(gl.FRAGMENT_SHADER);
+        gl.shaderSource(v, VS); gl.compileShader(v);
+        gl.shaderSource(f, FS); gl.compileShader(f);
         prog = gl.createProgram(); gl.attachShader(prog, v); gl.attachShader(prog, f); gl.linkProgram(prog);
-        if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) return false;
+        // Interroger LINK_STATUS tout de suite bloque jusqu'a la fin de la
+        // compilation. Avec l'extension, on attend qu'elle soit finie.
+        var parallele = gl.getExtension('KHR_parallel_shader_compile');
+        (function attendre(){
+          if (parallele && !gl.getProgramParameter(prog, parallele.COMPLETION_STATUS_KHR)){ requestAnimationFrame(attendre); return; }
+          if (!gl.getProgramParameter(prog, gl.LINK_STATUS)){ echouer(); return; }
+          finir();
+          etat = 'pret';
+          demarrer();
+        })();
+      }
+      function finir(){
         gl.useProgram(prog);
         gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 3,-1, -1,3]), gl.STATIC_DRAW);
         var a = gl.getAttribLocation(prog, 'p');
         gl.enableVertexAttribArray(a); gl.vertexAttribPointer(a, 2, gl.FLOAT, false, 0, 0);
         uR = gl.getUniformLocation(prog, 'r'); uT = gl.getUniformLocation(prog, 't');
-        return true;
       }
       function dimensionner(){
         // Demi-resolution : un degrade flou n'a pas besoin de chaque pixel.
@@ -6961,9 +6988,14 @@
         gl.viewport(0, 0, w, hh); gl.uniform2f(uR, w, hh);
       }
       function image(ms){
+        var t0 = performance.now();
         dimensionner();
         gl.uniform1f(uT, (ms - debut) / 1000 + 40);
         gl.drawArrays(gl.TRIANGLES, 0, 3);
+        if (!images++) cv.classList.add('prete');
+        // Avec un GPU, drawArrays rend la main tout de suite ; s'il bloque,
+        // c'est le processeur qui dessine.
+        if (images <= 3 && performance.now() - t0 > 20){ arreter(); calme = { matches:true }; }
       }
       function boucle(ms){
         anim = requestAnimationFrame(boucle);
@@ -6971,8 +7003,8 @@
         dernier = ms; image(ms);
       }
       function demarrer(){
-        if (hote.hidden || document.hidden) return;
-        if (!gl && !preparer()){ cv.remove(); return; }
+        if (hote.hidden || document.hidden || etat === 'echec' || etat === 'prep') return;
+        if (etat === ''){ preparer(); return; }
         hote.classList.add('avec-braise');
         if (!debut) debut = performance.now();
         if (calme.matches){ image(performance.now()); return; }
@@ -6982,9 +7014,19 @@
       new MutationObserver(function(){ if (hote.hidden) arreter(); else demarrer(); })
         .observe(hote, { attributes:true, attributeFilter:['hidden'] });
       document.addEventListener('visibilitychange', function(){ if (document.hidden) arreter(); else demarrer(); });
-      window.addEventListener('resize', function(){ if (!hote.hidden && gl && calme.matches) image(performance.now()); });
-      demarrer();
+      window.addEventListener('resize', function(){ if (!hote.hidden && etat === 'pret' && calme.matches) image(performance.now()); });
+      quandLibre(demarrer);
     });
+
+    // Apres le chargement complet, puis au premier moment libre (2 s au plus).
+    function quandLibre(fn){
+      function ensuite(){
+        if (window.requestIdleCallback) requestIdleCallback(fn, { timeout:2000 });
+        else setTimeout(fn, 200);
+      }
+      if (document.readyState === 'complete') ensuite();
+      else window.addEventListener('load', ensuite, { once:true });
+    }
   })();
 
   // Le service worker rend l'app ouvrable dans une salle sans reseau. Il

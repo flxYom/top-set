@@ -6,7 +6,9 @@ Part of the [Top Set documentation](../../README.md#documentation).
 
 ## Stack
 
-No framework. No build step. No bundler. No dependencies to install.
+No framework. No bundler. No dependencies to install. Nothing to compile to work
+on it: the source is served as is locally. A single deploy-time step, minification
+(see [Deploying](#deploying)).
 
 One HTML file carrying the markup and inline CSS, plus static assets.
 `index.html` is about 204 KB, of which roughly 119 KB is a base64 texture; the
@@ -91,7 +93,8 @@ Accounts are **optional**. Without `supabase-config.js` — or with
 available, the messages bubble disappears, and the app is a pure local logbook.
 Nothing breaks, no dead buttons.
 
-There is **no build step and no runtime environment variables**: a static site has
+There are **no runtime environment variables** (the build step only minifies): a
+static site has
 no server to read them. The two values live in `supabase-config.js`, committed to
 this repository, and that is correct — both are public by design:
 
@@ -154,7 +157,9 @@ nothing is written there and the other project is left intact.
 
 ## Running it locally
 
-Any static file server. There is nothing to compile.
+Any static file server. There is nothing to compile: the source is served as is.
+To see the site exactly as it is online (minified JavaScript), run
+`node build.mjs` then `npx serve dist`.
 
 ```bash
 npx serve .
@@ -170,6 +175,16 @@ Opening `index.html` directly works too — the only thing that breaks over
 Built for static hosting. On Vercel: import the repository, pick **Other** as the
 framework preset, deploy. `vercel.json` handles headers and caching,
 `.vercelignore` what must not be published.
+
+**The build step (2026-09-18).** Vercel runs `node build.mjs` and serves
+`dist/` (`buildCommand` and `outputDirectory` in `vercel.json`). The script
+copies exactly the served files — the repository minus `.vercelignore` and the
+configuration — then minifies `app.js`, `intelligence.js`, `mesure.js` and
+`supabase-config.js` with esbuild (version pinned in the script). `app.js`
+goes from 92 to 51 KB gzipped. Nothing else is rewritten: no bundling, no
+transpiling, the global names shared between files are kept, and `sw.js` is left
+alone (its `VERSION` stays readable online). If the build fails, Vercel keeps the
+previous version live. To test before pushing: `node build.mjs && npx serve dist`.
 
 The site lives on `top-set.fr`, which redirects to `www.top-set.fr`. The domain
 is written out in the Open Graph tags, canonical links, `robots.txt` and

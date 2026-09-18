@@ -86,11 +86,16 @@ Le détail fichier par fichier est dans [Technique](docs/fr/technique.md#structu
 
 ## Le lancer en local
 
-Aucune étape de build, aucune dépendance à installer :
+Rien à compiler, aucune dépendance à installer :
 
 ```bash
 npx serve .
 ```
+
+La seule étape de build a lieu au déploiement : `node build.mjs` copie les
+fichiers servis dans `dist/` et minifie le JavaScript de l'app (voir
+[Technique](docs/fr/technique.md#déployer)). `npx serve dist` montre le site
+exactement tel qu'il part en ligne.
 
 Les tests, tels que la CI les lance :
 
