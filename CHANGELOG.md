@@ -11,11 +11,15 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ### Added
 
-- **The rest timer moves and opens full screen.** Drag the pill anywhere; it
-  stays there. Tap it for a full-screen view: the rest counting up, the next set
-  (superset order respected) with last time and its kg / reps / RPE fields, and
-  `✓ SÉRIE FAITE`, which ticks it and restarts the rest. Ticking a set still
-  starts the rest, as before.
+- **Full-screen exercise.** The orange ⤢ icon on a card opens the exercise
+  full screen with only the set to do: big −/+, a wheel picker on the number,
+  RPE chips. Validate (button or swipe right) ticks it like its row and switches
+  to the rest (time counting up in a ring, next set editable); swipe left
+  deletes it, with 5 s to undo; ✕ closes without touching anything. Supersets
+  show both exercises, A then B. The ember shader runs behind it, reacting to
+  the state. It replaces the rest full screen added earlier on this branch.
+- **The rest pill moves.** Drag it anywhere; it stays there. Tap it to reopen
+  the exercise full screen on the rest. Ticking a set still starts the rest.
 - **Muscle sub-groups.** Back › lats, traps, lower back; Arms › biceps,
   triceps, forearms; Legs › quads, hamstrings, glutes, calves, adductors,
   abductors. Deduced from the exercise name, overriding a misfiled group (a

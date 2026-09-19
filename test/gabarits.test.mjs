@@ -609,8 +609,8 @@ ok('audit UI/UX : les libelles ne descendent plus sous 11 px, les commandes segm
    && /\.seg-btn\{min-height:44px;\}/.test(HTML) && /\.fin-revoir\{min-height:44px;/.test(HTML));
 ok('audit UI/UX : le texte tertiaire passe 4,5:1 sur les surfaces',
    /--ink3:#8d867b;/.test(HTML));
-ok('braise : le fond anime ne vit que sur l accueil et le bilan, s arrete cache, et respecte reduire les animations',
-   SRC.indexOf("['bilanEcran', 'accueil']") > -1 && SRC.indexOf('if (document.hidden) arreter()') > -1
+ok('braise : le fond anime vit sur l accueil, le bilan et l exercice en plein ecran (19/09), s arrete cache, et respecte reduire les animations',
+   SRC.indexOf("['bilanEcran', 'accueil', 'focus']") > -1 && SRC.indexOf('if (document.hidden) arreter()') > -1
    && SRC.indexOf('prefers-reduced-motion: reduce') > -1 && SRC.indexOf('if (calme.matches){ image(performance.now()); return; }') > -1
    && HTML.indexOf('.braise{position:fixed;inset:0;') > -1);
 ok('iPhone : le grand titre du jour, deja dans le bandeau, reste pour les lecteurs d ecran seulement',
@@ -645,11 +645,28 @@ ok('sous-groupes : recap, schema et titre passent par classement()',
    corps('function groupCountsIn(', 'function sousCountsIn(').indexOf('classement(e).groupe') > -1
    && corps('function groupesPrincipaux(', 'compte[g]').indexOf('classement(e).groupe') > -1
    && SRC.indexOf('muscleMapSVG(sousC)') > -1);
-ok('repos : la pastille se deplace et garde sa place, un appui ouvre l ecran plein',
+ok('repos : la pastille se deplace et garde sa place, un appui ouvre le plein ecran sur le repos',
    SRC.indexOf("var CLE_POS_REPOS = 'topset_repos_pos';") > -1
-   && corps("reposPastille.addEventListener('click'", 'function prochaineSerie(').indexOf('ouvrirReposPlein();') > -1
-   && HTML.indexOf('id="reposPlein" role="dialog" aria-modal="true"') > -1
+   && corps("reposPastille.addEventListener('click'", 'function prochaineSerie(').indexOf("ouvrirFocus(repos.ds, fR.exercise.id, 'repos');") > -1
    && HTML.indexOf('.repos-pastille{touch-action:none;') > -1);
+ok('plein ecran : dialogue, icone sur la carte (pas le cardio), valider = la coche, swipe, annuler, molette',
+   HTML.indexOf('id="focus" role="dialog" aria-modal="true" aria-labelledby="focusTitre" tabindex="-1" hidden') > -1
+   && HTML.indexOf('id="focusAnnuler"') > -1 && HTML.indexOf('id="focusRoue"') > -1
+   && SRC.indexOf("(auTemps && estCardio(ex) ? '' : '<button type=\"button\" class=\"ex-focus-btn\" data-action=\"focus\"") > -1
+   && corps('function validerFocus(', 'function supprimerFocus(').indexOf('finirRepos(true);') > -1
+   && corps('function validerFocus(', 'function supprimerFocus(').indexOf('lancerRepos(ds, serieId);') > -1
+   && corps('function supprimerFocus(', 'function montrerAnnuler(').indexOf("montrerAnnuler('Série '") > -1
+   && SRC.indexOf("if (sens > 0) validerFocus(exId, sid); else supprimerFocus(sid);") > -1
+   && HTML.indexOf('scroll-snap-type:y mandatory') > -1);
+ok('plein ecran : le ✕ ferme sans valider ni supprimer',
+   corps('function fermerFocus(', 'function allerUniteSuivante(').indexOf('fait') < 0
+   && corps('function fermerFocus(', 'function allerUniteSuivante(').indexOf('splice') < 0);
+ok('plein ecran : la braise tourne dessous, reglable, et garde ses couleurs d origine ailleurs',
+   SRC.indexOf("var hotes = ['bilanEcran', 'accueil', 'focus']") > -1
+   && SRC.indexOf("vec3 braise=tn*vec3(.42,.333,.227);") > -1
+   && SRC.indexOf("var reg = { k:1, tn:[1, .36, .22] }") > -1);
+ok('plein ecran : les variables de swipe n ecrasent pas le jeton --ok',
+   HTML.indexOf('--sw-ok:0;--sw-suppr:0;') > -1 && !/\.fs-carte\{[^}]*--ok:0/.test(HTML));
 ok('repos : cocher lance toujours le repos',
    corps("var faitBtn = e.target.closest('[data-action=\"toggle-fait\"]');", 'var menuBtn').indexOf('lancerRepos(state.selectedDay, serieId2);') > -1);
 ok('barre du bas : elle ne reste jamais rangee (vrai clavier seulement, etat recalcule au retour et a chaque vue)',

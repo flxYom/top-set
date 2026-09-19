@@ -167,16 +167,35 @@ written; unticking that set cancels it, validating the session drops it. Only
 on today's session, kept in `localStorage` (`topset_repos`) like the
 stopwatch, with the screen kept on.
 
-**The rest pill moves, and opens full screen** (18 September 2026). Drag it
-anywhere (8 px before a touch counts as a drag); it keeps its place
-(`topset_repos_pos`, as a fraction of the screen). A tap opens a full-screen
-view: the rest counting up, very large, then **the next set** — the next one of
-the same exercise, or the next exercise of the superset in turn, otherwise the
-first exercise still waiting for one — with last time and its fields (kg, reps,
-RPE, ±2.5 kg and ±1 rep steps; seconds for a timed exercise). `✓ SÉRIE FAITE`
-ticks it exactly like its row: the previous rest is written, its own starts, the
-view moves on. No set left: `+ AJOUTER UNE SÉRIE` copies the last one.
-`ARRÊTER LE REPOS` does what tapping the pill used to.
+**The rest pill moves** (18 September 2026). Drag it anywhere (8 px before a
+touch counts as a drag); it keeps its place (`topset_repos_pos`, as a fraction
+of the screen). A tap opens the exercise full screen, on the rest.
+
+**Full-screen exercise** (19 September 2026). The orange ⤢ icon on each card
+(cardio excepted) opens the exercise full screen, showing **only the set to
+do**: the first one not ticked yet. Done sets stay listed small, with the same
+set last time. Big −/+ (2.5 kg, 1 rep, 5 s when timed); tapping the number
+opens a **wheel picker** (natively scrolling columns that snap to a value:
+whole kg + quarters, reps, seconds by 5). RPE chips 6 to 10 (a half RPE set on
+the card still shows).
+- **Validate** (the button, or **swiping the card right**) ticks the set exactly
+  like its row: the previous rest is written, its own starts, and the view
+  switches to the **rest**: time counting up inside a ring that fills up to the
+  target rest (the exercise's, else 90 s) then turns green, the set just logged,
+  and the next one pre-filled and editable. `PASSER À LA SÉRIE SUIVANTE` goes
+  back to it; `Terminer l'exo` moves to the next exercise.
+- **Swiping left** deletes the set; `ANNULER` puts it back in place for 5
+  seconds. A drag shorter than a third of the screen (and not flicked) springs
+  back; a tap on a button in the card stays a tap.
+- **Superset**: the block's exercises together, A then B, no rest screen in
+  between; the rest comes after the last one of the round.
+- `Exo suivant →` and the dots at the top: a superset counts as one exercise.
+- **✕** (or Escape) closes without validating or deleting anything: the values
+  are already in the set, which stays in progress; a running rest goes back to
+  the pill.
+The background is the ember shader (see below): soft during the set, strong
+during the rest, green or red under the swipe. Every write goes through
+`scheduleSave`, like the card: offline and account-free use are unchanged.
 
 **Cardio: minutes, speed, incline.** Treadmill, running, walking, bike,
 rower… open as cardio: a set is a duration **in minutes** (`25`, `12,5`), plus
