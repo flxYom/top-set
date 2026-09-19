@@ -1167,6 +1167,22 @@ ok('les notifications de A partent avec lui', notifsA > 0 && r.rows[0].orph === 
 ok('et celles des autres restent', r.rows[0].total === notifsAutres,
    r.rows[0].total + ' vs ' + notifsAutres);
 
+// ---------------------------------------------------------------- sous-groupes
+await as(B, `select public.pousser_exos_perso($1::jsonb)`, [JSON.stringify([
+  { cle:'curl maison', nom:'Curl maison', groupe:'Bras', alias:null, sous:'Biceps' },
+  { cle:'squat', nom:'Squat', groupe:'Jambes', alias:null, sous:'' }])]);
+r = await as(B, `select public.tirer_exos_perso() j`);
+let exosB = r.rows[0].j;
+ok('sous-groupe : un choix part et revient (Biceps, et « sans precision »)',
+   exosB.some(e => e.cle === 'curl maison' && e.sous === 'Biceps') && exosB.some(e => e.cle === 'squat' && e.sous === ''),
+   JSON.stringify(exosB));
+await as(B, `select public.pousser_exos_perso($1::jsonb)`, [JSON.stringify([{ cle:'curl maison', nom:'Curl maison', groupe:'Bras', alias:null }])]);
+r = await as(B, `select public.tirer_exos_perso() j`);
+ok('sous-groupe : un appareil sans la mise a jour ne l efface pas',
+   r.rows[0].j.some(e => e.cle === 'curl maison' && e.sous === 'Biceps'), JSON.stringify(r.rows[0].j));
+await refuse('sous-groupe : une valeur hors de la liste est refusee',
+  () => as(B, `select public.pousser_exos_perso($1::jsonb)`, [JSON.stringify([{ cle:'x', nom:'X', groupe:'Bras', sous:'Pouce' }])]));
+
 // ---------------------------------------------------------------- anti-spam
 // Le plafond est dans la base : on le teste en ecrivant comme le navigateur,
 // jusqu'au refus, puis on compte ce qui est passe.

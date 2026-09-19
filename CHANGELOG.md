@@ -9,6 +9,25 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ## [Unreleased]
 
+### Added
+
+- **Full-screen exercise.** The orange ⤢ icon on a card opens the exercise
+  full screen with only the set to do: big −/+, a wheel picker on the number,
+  RPE chips. Validate (button or swipe right) ticks it like its row and switches
+  to the rest (time counting up in a ring, next set editable); swipe left
+  deletes it, with 5 s to undo; ✕ closes without touching anything. Supersets
+  show both exercises, A then B. The ember shader runs behind it, reacting to
+  the state.
+- **The rest pill moves.** Drag it anywhere; it stays there. Tap it to reopen
+  the exercise full screen on the rest. Ticking a set still starts the rest.
+- **Muscle sub-groups.** Back › lats, traps, lower back; Arms › biceps,
+  triceps, forearms; Legs › quads, hamstrings, glutes, calves, adductors,
+  abductors. Deduced from the exercise name, overriding a misfiled group (a
+  curl under Shoulders now counts as Biceps), editable from the group chip
+  without taking more room, and remembered per exercise name. The recap body
+  map shows front and back, one zone per muscle. Re-run `schema.sql`
+  (`exercices_perso.sous_groupe`). Service worker `topset-v40`.
+
 ### Changed
 
 - **Each tab keeps your place.** Planning, Sessions, Recap and Learn now come

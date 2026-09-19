@@ -26,7 +26,7 @@
     'Développé couché Smith machine':'Pectoraux','Cable crossover':'Pectoraux','Pull-over':'Pectoraux',
     'Écarté à la poulie':'Pectoraux','Larsen':'Pectoraux','Spoto press':'Pectoraux',
 
-    'Soulevé de terre':'Dos','Soulevé de terre roumain':'Dos','Soulevé de terre sumo':'Dos','Tractions':'Dos',
+    'Soulevé de terre':'Dos','Soulevé de terre roumain':'Jambes','Soulevé de terre sumo':'Dos','Tractions':'Dos',
     'Tractions lestées':'Dos','Rowing barre':'Dos','Rowing haltère':'Dos','Rowing Yates':'Dos',
     'Tirage horizontal poulie basse':'Dos','Tirage vertical':'Dos','Tirage nuque':'Dos','T-bar row':'Dos',
     'Rowing Pendlay':'Dos','Good morning':'Dos','Hyperextensions':'Dos','Shrugs':'Dos','Rack pulls':'Dos',
@@ -44,6 +44,8 @@
     'Fentes marchées':'Jambes','Soulevé de terre jambes tendues':'Jambes','Leg curl':'Jambes','Leg extension':'Jambes',
     'Hip thrust':'Jambes','Mollets debout':'Jambes','Mollets assis':'Jambes','Hack squat':'Jambes',
     'Goblet squat':'Jambes','Sissy squat':'Jambes','Step-up':'Jambes',
+    'Adducteurs à la machine':'Jambes','Abducteurs à la machine':'Jambes','Pont fessier':'Jambes',
+    'Kickback fessier à la poulie':'Jambes','Nordic curl':'Jambes','Curl poignet':'Bras',
 
     'Crunch':'Abdos','Relevé de jambes':'Abdos','Planche':'Abdos','Russian twist':'Abdos','Ab wheel':'Abdos',
     'Crunch à la poulie':'Abdos','Gainage latéral':'Abdos','Mountain climber':'Abdos','Sit-up':'Abdos',
@@ -53,6 +55,99 @@
     'Course à pied':'Cardio','Rameur':'Cardio','Vélo elliptique':'Cardio','Vélo':'Cardio','Corde à sauter':'Cardio',
     'Tapis de course':'Cardio','Burpees':'Cardio','Marche rapide':'Cardio','Natation':'Cardio'
   };
+  // Sous-groupes (18/09/2026, demande : « curl biceps haltère : groupe bras,
+  // sous-groupe biceps »). Les huit grandes rubriques restent ; certaines se
+  // precisent. Trapezes et lombaires vont avec le Dos : anatomiquement, ce
+  // sont des muscles du dos, et les shrugs y etaient deja ranges. Le souleve
+  // de terre roumain passe en Jambes › Ischios, qui y travaillent le plus en
+  // EMG (PLOS One 2020, revue sur le souleve de terre et ses variantes).
+  var SOUS_GROUPES = {
+    'Dos':['Dorsaux','Trapèzes','Lombaires'],
+    'Bras':['Biceps','Triceps','Avant-bras'],
+    'Jambes':['Quadriceps','Ischios','Fessiers','Mollets','Adducteurs','Abducteurs']
+  };
+  var PARENT_SOUS = {};
+  Object.keys(SOUS_GROUPES).forEach(function(g){ SOUS_GROUPES[g].forEach(function(s){ PARENT_SOUS[s] = g; }); });
+  var SOUS_GROUPE_DB = {
+    'Soulevé de terre':'Lombaires','Soulevé de terre sumo':'Lombaires','Rack pulls':'Lombaires',
+    'Good morning':'Lombaires','Hyperextensions':'Lombaires','Shrugs':'Trapèzes',
+    'Tractions':'Dorsaux','Tractions lestées':'Dorsaux','Rowing barre':'Dorsaux','Rowing haltère':'Dorsaux',
+    'Rowing Yates':'Dorsaux','Tirage horizontal poulie basse':'Dorsaux','Tirage vertical':'Dorsaux',
+    'Tirage nuque':'Dorsaux','T-bar row':'Dorsaux','Rowing Pendlay':'Dorsaux','Suspension à la barre':'Dorsaux',
+    'Curl biceps barre':'Biceps','Curl biceps haltères':'Biceps','Curl marteau':'Biceps','Curl pupitre':'Biceps',
+    'Curl concentré':'Biceps','Curl à la poulie':'Biceps','Curl inversé':'Avant-bras','Curl poignet':'Avant-bras',
+    'Extension triceps poulie haute':'Triceps','Extension triceps nuque':'Triceps','Dips':'Triceps',
+    'Barre au front':'Triceps','Kickback triceps':'Triceps','Extension triceps unilatérale':'Triceps',
+    'Squat':'Quadriceps','Squat avant':'Quadriceps','Fentes bulgares':'Quadriceps','Presse à cuisses':'Quadriceps',
+    'Fentes':'Quadriceps','Fentes marchées':'Quadriceps','Leg extension':'Quadriceps','Hack squat':'Quadriceps',
+    'Goblet squat':'Quadriceps','Sissy squat':'Quadriceps','Step-up':'Quadriceps','Chaise':'Quadriceps',
+    'Soulevé de terre roumain':'Ischios','Soulevé de terre jambes tendues':'Ischios','Leg curl':'Ischios',
+    'Nordic curl':'Ischios','Hip thrust':'Fessiers','Pont fessier':'Fessiers','Kickback fessier à la poulie':'Fessiers',
+    'Mollets debout':'Mollets','Mollets assis':'Mollets',
+    'Adducteurs à la machine':'Adducteurs','Abducteurs à la machine':'Abducteurs'
+  };
+  // Un nom tape a la main (« curl biceps haltère ») n'est pas dans la base :
+  // des mots-cles le rangent. L'ordre compte — « leg curl » avant « curl »,
+  // « rowing menton » (epaules) avant « rowing ».
+  var REGLES_SOUS = [
+    [/mollet|calf|calves/, 'Mollets'],
+    [/adduct/, 'Adducteurs'],
+    [/abduct/, 'Abducteurs'],
+    [/leg curl|curl (allonge|assis|couche|jambe)|ischio|nordic|jambes tendues|roumain|\brdl\b|hamstring/, 'Ischios'],
+    [/hip thrust|fessier|glute|\bpont\b/, 'Fessiers'],
+    [/poignet|avant.bras|wrist|curl inverse|reverse curl|farmer/, 'Avant-bras'],
+    [/triceps|barre au front|skull|\bdips\b|pushdown|french press|extension (a la )?poulie|extension nuque/, 'Triceps'],
+    [/curl|biceps/, 'Biceps'],
+    [/shrug|trapeze|haussement/, 'Trapèzes'],
+    [/lombaire|hyperextension|extension (du |lombaire|dos)|back extension|souleve de terre|deadlift|good morning|rack pull/, 'Lombaires'],
+    [/menton|upright/, null],
+    [/traction|tirage|rowing|\brow\b|pull.?down|pull.?up|chin.?up|dorsa|\blats?\b/, 'Dorsaux'],
+    [/squat|presse|leg press|leg extension|fente|lunge|step.?up|quadri|chaise/, 'Quadriceps']
+  ];
+  var REGLES_GROUPE = [
+    [/developpe (couche|incline|decline)|\bpecs?\b|pectora|ecarte|pompe|bench|chest|pec deck|butterfly/, 'Pectoraux'],
+    [/militaire|elevation|epaule|arnold|oiseau|face pull|shoulder|lateral|menton|upright|deltoid/, 'Épaules'],
+    [/crunch|abdo|gainage|planche|obliq|sit.?up|relevé de jambes|releve de jambes|hollow|ab wheel/, 'Abdos'],
+    [/course|rameur|velo|elliptique|corde a sauter|tapis|natation|marche|burpee|cardio/, 'Cardio']
+  ];
+  // Ce que le nom dit tout seul, sans memoire : { groupe, sous } ou null.
+  function detecterMuscle(nom){
+    var net = normalizeName(nom);
+    if (!net) return null;
+    var dansBase = Object.keys(EXERCISE_DB).filter(function(n){ return n.toLowerCase() === net.toLowerCase(); })[0];
+    if (dansBase && SOUS_GROUPE_DB[dansBase]) return { groupe:PARENT_SOUS[SOUS_GROUPE_DB[dansBase]], sous:SOUS_GROUPE_DB[dansBase] };
+    if (dansBase) return { groupe:EXERCISE_DB[dansBase], sous:null };
+    var t = sansAccents(net);
+    for (var i = 0; i < REGLES_SOUS.length; i++){
+      if (REGLES_SOUS[i][0].test(t)){
+        var s = REGLES_SOUS[i][1];
+        if (s) return { groupe:PARENT_SOUS[s], sous:s };
+        break;
+      }
+    }
+    for (var j = 0; j < REGLES_GROUPE.length; j++){
+      if (REGLES_GROUPE[j][0].test(t)) return { groupe:REGLES_GROUPE[j][1], sous:null };
+    }
+    return null;
+  }
+  // Le classement qui compte, pour une carte, le recap et le schema. Un choix
+  // fait a la main (la pastille du groupe) gagne toujours, y compris « sans
+  // precision » ; sinon le nom tranche ; sinon le groupe enregistre.
+  function classement(ex){
+    var g = (ex && ex.groupe) || 'Autre';
+    var nom = ex && ex.nom;
+    if (!nom || !String(nom).trim()) return { groupe:g, sous:null };
+    var info = CUSTOM_PAR_CLE[cleCanonique(nom)];
+    if (info && typeof info.sousGroupe === 'string'){
+      if (PARENT_SOUS[info.sousGroupe]) return { groupe:PARENT_SOUS[info.sousGroupe], sous:info.sousGroupe };
+      return { groupe:info.groupe || g, sous:null };
+    }
+    var d = detecterMuscle(nomCanonique(nom));
+    if (d && d.sous) return d;
+    if (g === 'Autre' && d && d.groupe) return { groupe:d.groupe, sous:null };
+    return { groupe:g, sous:null };
+  }
+
   // Les abreviations et les noms anglais qu'on tape en salle. Ce ne sont pas
   // des exercices : chacune pointe vers un nom de la base, et l'app se
   // contente de PROPOSER — le nom retenu reste celui que l'utilisateur
@@ -120,10 +215,15 @@
   // exportee l'an dernier doit se relire telle quelle.
   function infoExo(valeur, nom){
     if (typeof valeur === 'string') return { nom:nom, groupe:valeur, alias:null };
-    return { nom:(valeur && valeur.nom) || nom,
-             groupe:(valeur && valeur.groupe) || 'Autre',
-             alias:(valeur && valeur.alias) || null };
+    var info = { nom:(valeur && valeur.nom) || nom,
+                 groupe:(valeur && valeur.groupe) || 'Autre',
+                 alias:(valeur && valeur.alias) || null };
+    // Le sous-groupe n'existe que s'il a ete choisi a la main : '' veut dire
+    // « le groupe seul, sans precision », absent veut dire « deduit du nom ».
+    if (valeur && typeof valeur.sousGroupe === 'string') info.sousGroupe = sousGroupeSur(valeur.sousGroupe);
+    return info;
   }
+  function sousGroupeSur(s){ return PARENT_SOUS[s] ? s : ''; }
 
   var EXERCISE_DB_LOWER = {};
   var CUSTOM_PAR_CLE = {};
@@ -134,7 +234,7 @@
     Object.keys(customExercises).forEach(function(k){
       var info = infoExo(customExercises[k], k);
       EXERCISE_DB_LOWER[k.toLowerCase()] = info.groupe;
-      CUSTOM_PAR_CLE[cleExo(k)] = { nom:info.nom || k, groupe:info.groupe, alias:info.alias };
+      CUSTOM_PAR_CLE[cleExo(k)] = { nom:info.nom || k, groupe:info.groupe, alias:info.alias, sousGroupe:info.sousGroupe };
     });
   }
   rebuildLower();
@@ -154,6 +254,7 @@
     // Changer le groupe d'un exercice ne doit pas effacer son rattachement.
     customExercises[clean] = { nom:clean, groupe:groupe || 'Autre',
                                alias:(ancien && ancien.alias) || null };
+    if (ancien && typeof ancien.sousGroupe === 'string') customExercises[clean].sousGroupe = ancien.sousGroupe;
     saveCustom();
     rebuildLower();
     if (typeof Sync !== 'undefined' && Sync.marquerExos) Sync.marquerExos();
@@ -175,6 +276,24 @@
       if (g) groupe = g;
     }
     customExercises[clean] = { nom:clean, groupe:groupe, alias:cleCible || null };
+    if (ancien && typeof ancien.sousGroupe === 'string') customExercises[clean].sousGroupe = ancien.sousGroupe;
+    saveCustom();
+    rebuildLower();
+    if (typeof Sync !== 'undefined' && Sync.marquerExos) Sync.marquerExos();
+  }
+
+  // Le choix de la pastille : le groupe, et un sous-groupe ou « sans
+  // precision ». Il vaut pour ce nom d'exercice partout, historique compris,
+  // meme pour un nom de la base.
+  function choisirMuscle(nom, groupe, sous){
+    var clean = String(nom || '').trim();
+    if (clean.length < 2) return;
+    var ancien = CUSTOM_PAR_CLE[cleExo(clean)];
+    Object.keys(customExercises).forEach(function(k){
+      if (k !== clean && k.toLowerCase() === clean.toLowerCase()) delete customExercises[k];
+    });
+    customExercises[clean] = { nom:clean, groupe:groupe || 'Autre',
+                               alias:(ancien && ancien.alias) || null, sousGroupe:sousGroupeSur(sous) };
     saveCustom();
     rebuildLower();
     if (typeof Sync !== 'undefined' && Sync.marquerExos) Sync.marquerExos();
@@ -370,7 +489,9 @@
   }
   function findExerciseMatch(name){
     var key = (name||'').trim().toLowerCase();
-    return EXERCISE_DB_LOWER[key] || null;
+    if (EXERCISE_DB_LOWER[key]) return EXERCISE_DB_LOWER[key];
+    var d = detecterMuscle(name);
+    return d ? d.groupe : null;
   }
   function findExercise(day, id){
     for (var i=0;i<day.exercises.length;i++){ if (day.exercises[i].id===id) return day.exercises[i]; }
@@ -850,7 +971,8 @@
         if (!byNorm[norm]) byNorm[norm] = [];
         if (!byJour[norm]) byJour[norm] = {};
         byJour[norm][d] = 1;
-        validSeries.forEach(function(s){ byNorm[norm].push({ poids:s.poids, reps:s.reps, groupe:ex.groupe, duree:TS.dureeSecondes(s.reps) }); });
+        var cl = classement(ex);
+        validSeries.forEach(function(s){ byNorm[norm].push({ poids:s.poids, reps:s.reps, groupe:cl.groupe, sous:cl.sous, duree:TS.dureeSecondes(s.reps) }); });
       });
     });
 
@@ -869,9 +991,10 @@
         repsAtMax = repsNums2.length ? Math.max.apply(null,repsNums2) : '?';
       }
       var groupe = mostCommon(entries.map(function(e){return e.groupe;})) || 'Autre';
+      var sous = mostCommon(entries.filter(function(e){ return e.groupe === groupe; }).map(function(e){ return e.sous || ''; })) || null;
       // Au temps, le meilleur temps : « PDC × ? » ne voudrait rien dire.
       var durees = entries.map(function(e){ return e.duree; }).filter(function(d){ return d !== null; });
-      return { nom:norm, groupe:groupe, maxPoids:maxPoids, repsAtMax:repsAtMax,
+      return { nom:norm, groupe:groupe, sous:sous, maxPoids:maxPoids, repsAtMax:repsAtMax,
                bodyweight:bodyweight,
                maxDuree: durees.length ? Math.max.apply(null, durees) : null,
                fois:Object.keys(byJour[norm] || {}).length,
@@ -921,43 +1044,96 @@
       state.sessions[ds].exercises.forEach(function(e){
         var n = (e.series||[]).filter(hasData).length;
         if (!n) return;
-        var g = e.groupe || 'Autre';
+        var g = classement(e).groupe;
         counts[g] = (counts[g]||0) + n;
       });
     });
     return counts;
   }
+  // Les memes series, par sous-groupe. « Jambes » seul = sans precision.
+  function sousCountsIn(startStr, endStr){
+    var counts = {};
+    Object.keys(state.sessions).forEach(function(ds){
+      if (ds < startStr || ds > endStr) return;
+      state.sessions[ds].exercises.forEach(function(e){
+        var n = (e.series||[]).filter(hasData).length;
+        if (!n) return;
+        var cl = classement(e);
+        var k = cl.sous || cl.groupe;
+        counts[k] = (counts[k]||0) + n;
+      });
+    });
+    return counts;
+  }
 
-  // Silhouette : les groupes travailles prennent leur couleur, les autres restent eteints.
-  function muscleMapSVG(counts){
-    function f(g){ return (counts[g]||0) > 0 ? (GROUP_COLORS[g] || '#8a8275') : '#2f2b26'; }
-    var base = '#262320', stroke = '#f0ece2';
-    return '<svg width="106" height="178" viewBox="0 0 130 210" fill="none" role="img" aria-label="Groupes musculaires travailles sur la periode">'
-      + '<ellipse cx="65" cy="19" rx="12" ry="13" fill="'+base+'" stroke="'+stroke+'" stroke-width="1.6"></ellipse>'
-      + '<path d="M52 34 h26 v8 h-26 z" fill="'+base+'" stroke="'+stroke+'" stroke-width="1.6"></path>'
-      + '<path d="M40 42 h50 l6 62 -10 18 h-42 l-10 -18 z" fill="'+base+'" stroke="'+stroke+'" stroke-width="1.6"></path>'
-      + '<path d="M40 44 l-14 8 -6 52 10 4 14 -50 z" fill="'+base+'" stroke="'+stroke+'" stroke-width="1.6"></path>'
-      + '<path d="M90 44 l14 8 6 52 -10 4 -14 -50 z" fill="'+base+'" stroke="'+stroke+'" stroke-width="1.6"></path>'
-      + '<path d="M48 122 l-4 78 h16 l6 -60 z" fill="'+base+'" stroke="'+stroke+'" stroke-width="1.6"></path>'
-      + '<path d="M82 122 l4 78 h-16 l-6 -60 z" fill="'+base+'" stroke="'+stroke+'" stroke-width="1.6"></path>'
-      + '<path d="M42 66 h9 v30 l-9 -6 z" fill="'+f('Dos')+'" stroke="#0d0c0a" stroke-width="1.3"></path>'
-      + '<path d="M88 66 h-9 v30 l9 -6 z" fill="'+f('Dos')+'" stroke="#0d0c0a" stroke-width="1.3"></path>'
-      + '<ellipse cx="43" cy="50" rx="11" ry="9" fill="'+f('Épaules')+'" stroke="#0d0c0a" stroke-width="1.4"></ellipse>'
-      + '<ellipse cx="87" cy="50" rx="11" ry="9" fill="'+f('Épaules')+'" stroke="#0d0c0a" stroke-width="1.4"></ellipse>'
-      + '<path d="M47 58 h16 v16 h-11 z" fill="'+f('Pectoraux')+'" stroke="#0d0c0a" stroke-width="1.4"></path>'
-      + '<path d="M67 58 h16 v16 h-5 z" fill="'+f('Pectoraux')+'" stroke="#0d0c0a" stroke-width="1.4"></path>'
-      + '<ellipse cx="30" cy="76" rx="7" ry="13" fill="'+f('Bras')+'" stroke="#0d0c0a" stroke-width="1.4"></ellipse>'
-      + '<ellipse cx="100" cy="76" rx="7" ry="13" fill="'+f('Bras')+'" stroke="#0d0c0a" stroke-width="1.4"></ellipse>'
-      + '<path d="M55 80 h20 v28 h-20 z" fill="'+f('Abdos')+'" stroke="#0d0c0a" stroke-width="1.4"></path>'
-      + '<path d="M55 89 h20 M55 98 h20 M65 80 v28" stroke="#0d0c0a" stroke-width="1.2"></path>'
-      + '<path d="M52 128 h13 l-3 40 h-13 z" fill="'+f('Jambes')+'" stroke="#0d0c0a" stroke-width="1.4"></path>'
-      + '<path d="M78 128 h-13 l3 40 h13 z" fill="'+f('Jambes')+'" stroke="#0d0c0a" stroke-width="1.4"></path>'
+  // Silhouette de face et de dos (18/09/2026) : chaque sous-groupe a sa
+  // zone. Un muscle travaille prend la couleur de son groupe ; un groupe note
+  // « sans precision » allume toutes ses zones, plus pales. Geometrique,
+  // comme le reste de la marque : pas un planche d'anatomie.
+  function muscleMapSVG(sous){
+    function zone(nom){
+      var g = PARENT_SOUS[nom] || nom;
+      var c = GROUP_COLORS[g] || '#8a8275';
+      if ((sous[nom]||0) > 0) return 'fill="' + c + '"';
+      if ((sous[g]||0) > 0) return 'fill="' + c + '" fill-opacity=".45"';
+      return 'fill="#2f2b26"';
+    }
+    var trait = ' stroke="#0d0c0a" stroke-width="1.3"';
+    var corps = ' fill="#262320" stroke="#f0ece2" stroke-width="1.5"';
+    function silhouette(x){
+      return '<g transform="translate(' + x + ' 0)">'
+        + '<ellipse cx="45" cy="16" rx="10" ry="11"' + corps + '></ellipse>'
+        + '<path d="M26 32 h38 l6 58 -8 16 h-34 l-8 -16 z"' + corps + '></path>'
+        + '<path d="M26 34 l-12 8 -6 50 9 3 12 -46 z"' + corps + '></path>'
+        + '<path d="M64 34 l12 8 6 50 -9 3 -12 -46 z"' + corps + '></path>'
+        + '<path d="M30 106 l-4 84 h14 l5 -66 z"' + corps + '></path>'
+        + '<path d="M60 106 l4 84 h-14 l-5 -66 z"' + corps + '></path>'
+        + '</g>';
+    }
+    var face = silhouette(0)
+      + '<ellipse cx="27" cy="39" rx="9" ry="7" ' + zone('Épaules') + trait + '></ellipse>'
+      + '<ellipse cx="63" cy="39" rx="9" ry="7" ' + zone('Épaules') + trait + '></ellipse>'
+      + '<path d="M31 44 h13 v14 h-9 z" ' + zone('Pectoraux') + trait + '></path>'
+      + '<path d="M46 44 h13 l-4 14 h-9 z" ' + zone('Pectoraux') + trait + '></path>'
+      + '<ellipse cx="17" cy="56" rx="5" ry="10" ' + zone('Biceps') + trait + '></ellipse>'
+      + '<ellipse cx="73" cy="56" rx="5" ry="10" ' + zone('Biceps') + trait + '></ellipse>'
+      + '<path d="M9 72 l8 2 -4 18 -6 -2 z" ' + zone('Avant-bras') + trait + '></path>'
+      + '<path d="M81 72 l-8 2 4 18 6 -2 z" ' + zone('Avant-bras') + trait + '></path>'
+      + '<path d="M37 62 h16 v26 h-16 z" ' + zone('Abdos') + trait + '></path>'
+      + '<path d="M37 70 h16 M37 79 h16 M45 62 v26" stroke="#0d0c0a" stroke-width="1.1"></path>'
+      + '<path d="M28 94 l6 10 -3 8 -6 -8 z" ' + zone('Abducteurs') + trait + '></path>'
+      + '<path d="M62 94 l-6 10 3 8 6 -8 z" ' + zone('Abducteurs') + trait + '></path>'
+      + '<path d="M30 112 h10 l-1 38 h-11 z" ' + zone('Quadriceps') + trait + '></path>'
+      + '<path d="M60 112 h-10 l1 38 h11 z" ' + zone('Quadriceps') + trait + '></path>'
+      + '<path d="M41 110 h3 l-2 26 h-3 z" ' + zone('Adducteurs') + trait + '></path>'
+      + '<path d="M49 110 h-3 l2 26 h3 z" ' + zone('Adducteurs') + trait + '></path>';
+    var dos = silhouette(100)
+      + '<path d="M133 30 h24 l-4 18 -8 6 -8 -6 z" ' + zone('Trapèzes') + trait + '></path>'
+      + '<ellipse cx="127" cy="39" rx="9" ry="7" ' + zone('Épaules') + trait + '></ellipse>'
+      + '<ellipse cx="163" cy="39" rx="9" ry="7" ' + zone('Épaules') + trait + '></ellipse>'
+      + '<path d="M130 50 l12 8 v22 l-10 -6 z" ' + zone('Dorsaux') + trait + '></path>'
+      + '<path d="M160 50 l-12 8 v22 l10 -6 z" ' + zone('Dorsaux') + trait + '></path>'
+      + '<path d="M138 82 h14 v14 h-14 z" ' + zone('Lombaires') + trait + '></path>'
+      + '<ellipse cx="117" cy="56" rx="5" ry="10" ' + zone('Triceps') + trait + '></ellipse>'
+      + '<ellipse cx="173" cy="56" rx="5" ry="10" ' + zone('Triceps') + trait + '></ellipse>'
+      + '<path d="M109 72 l8 2 -4 18 -6 -2 z" ' + zone('Avant-bras') + trait + '></path>'
+      + '<path d="M181 72 l-8 2 4 18 6 -2 z" ' + zone('Avant-bras') + trait + '></path>'
+      + '<path d="M130 98 h14 v14 h-16 z" ' + zone('Fessiers') + trait + '></path>'
+      + '<path d="M160 98 h-14 v14 h16 z" ' + zone('Fessiers') + trait + '></path>'
+      + '<path d="M130 116 h10 l-1 32 h-10 z" ' + zone('Ischios') + trait + '></path>'
+      + '<path d="M160 116 h-10 l1 32 h10 z" ' + zone('Ischios') + trait + '></path>'
+      + '<path d="M129 156 h9 l-1 22 h-7 z" ' + zone('Mollets') + trait + '></path>'
+      + '<path d="M161 156 h-9 l1 22 h7 z" ' + zone('Mollets') + trait + '></path>';
+    return '<svg class="muscle-svg" width="150" height="161" viewBox="0 0 190 206" fill="none" role="img" aria-label="Muscles travaillés sur la période, de face et de dos">'
+      + face + dos
+      + '<text x="45" y="204" text-anchor="middle" fill="#a39b8f" font-size="9" font-weight="700" letter-spacing="1">FACE</text>'
+      + '<text x="145" y="204" text-anchor="middle" fill="#a39b8f" font-size="9" font-weight="700" letter-spacing="1">DOS</text>'
       + '</svg>';
   }
 
   function dominantGroup(exercises){
     var counts={};
-    exercises.forEach(function(e){ var g=e.groupe||'Autre'; counts[g]=(counts[g]||0)+1; });
+    exercises.forEach(function(e){ var g=classement(e).groupe; counts[g]=(counts[g]||0)+1; });
     var best=null,bestCount=0;
     GROUPS.forEach(function(g){ if((counts[g]||0)>bestCount){ bestCount=counts[g]; best=g; } });
     return best;
@@ -1283,10 +1459,9 @@
   }
 
   function exerciseCardHTML(ex){
-    var color = GROUP_COLORS[ex.groupe] || GROUP_COLORS['Autre'];
-    var groupOptions = GROUPS.map(function(g){
-      return '<option value="'+g+'"'+(g===ex.groupe?' selected':'')+'>'+g+'</option>';
-    }).join('');
+    var cl = classement(ex);
+    var color = GROUP_COLORS[cl.groupe] || GROUP_COLORS['Autre'];
+    var groupOptions = optionsMuscle(cl);
     var series = ex.series || [];
     var auTemps = estAuTemps(ex);
     var p = precedentDe(ex);
@@ -1306,8 +1481,10 @@
       +   '<input class="ex-name" type="text" list="exerciseList" placeholder="Nom de l\'exercice" value="'+esc(ex.nom||'')+'" data-field="nom" data-id="'+ eid +'">'
       // Le groupe se remplit tout seul d'apres le nom : une pastille suffit,
       // qu'on touche pour le corriger.
-      +   '<label class="ex-groupe-chip"><span class="ex-groupe-txt">'+esc(groupeCourt(ex.groupe))+'</span>'
+      +   '<label class="ex-groupe-chip"><span class="ex-groupe-txt">'+esc(libelleMuscle(cl))+'</span>'
       +     '<select class="ex-groupe" data-field="groupe" data-id="'+ eid +'" aria-label="Groupe musculaire">'+groupOptions+'</select></label>'
+      // L'exercice en plein ecran : pas pour le cardio, qui n'enchaine rien.
+      +   (auTemps && estCardio(ex) ? '' : '<button type="button" class="ex-focus-btn" data-action="focus" data-id="'+ eid +'" aria-label="Ouvrir l\'exercice en plein écran"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/></svg></button>')
       +   '<button type="button" class="ex-menu-btn" data-action="menu-exo" data-id="'+ eid +'" aria-expanded="false" aria-label="Plus d\'actions sur l\'exercice">⋯</button>'
       + '</div>'
       + menu
@@ -1402,13 +1579,30 @@
   }
   // La pastille laisse la place au nom : « PECS » plutot que « PECTORAUX ».
   // Le menu, lui, garde les noms entiers.
-  var GROUPE_COURT = { 'Pectoraux':'PECS' };
+  var GROUPE_COURT = { 'Pectoraux':'PECS', 'Quadriceps':'QUADRI', 'Adducteurs':'ADDUCT.', 'Abducteurs':'ABDUCT.', 'Avant-bras':'AV.-BRAS' };
   function groupeCourt(g){ g = g || 'Autre'; return GROUPE_COURT[g] || g.toUpperCase(); }
-  function majPastilleGroupe(card, groupe){
+  // La pastille dit le plus precis : BICEPS plutot que BRAS. Le menu natif
+  // range les sous-groupes sous leur groupe ; choisir le groupe seul veut
+  // dire « sans precision ». Une valeur « groupe|sous ».
+  function libelleMuscle(cl){ return groupeCourt(cl.sous || cl.groupe); }
+  function optionsMuscle(cl){
+    return GROUPS.map(function(g){
+      var sous = SOUS_GROUPES[g];
+      var choisi = function(s){ return cl.groupe === g && (cl.sous || '') === s ? ' selected' : ''; };
+      if (!sous) return '<option value="' + g + '|"' + choisi('') + '>' + g + '</option>';
+      return '<optgroup label="' + g + '"><option value="' + g + '|"' + choisi('') + '>' + g + ' (sans précision)</option>'
+        + sous.map(function(s){ return '<option value="' + g + '|' + s + '"' + choisi(s) + '>' + s + '</option>'; }).join('')
+        + '</optgroup>';
+    }).join('');
+  }
+  function majPastilleGroupe(card, groupe, ex){
     if (!card) return;
-    card.style.setProperty('--card-color', GROUP_COLORS[groupe] || GROUP_COLORS['Autre']);
+    var cl = ex ? classement(ex) : { groupe:groupe, sous:null };
+    card.style.setProperty('--card-color', GROUP_COLORS[cl.groupe] || GROUP_COLORS['Autre']);
     var txt = card.querySelector('.ex-groupe-txt');
-    if (txt) txt.textContent = groupeCourt(groupe);
+    if (txt) txt.textContent = libelleMuscle(cl);
+    var sel = card.querySelector('select.ex-groupe');
+    if (sel) sel.value = cl.groupe + '|' + (cl.sous || '');
   }
   function ouvrirSerie(card, serieId){
     if (!card || !serieId) return;
@@ -1536,7 +1730,7 @@
     (day.exercises || []).forEach(function(e){
       var n = faite ? seriesRemplies(e).length : 1;
       if (!n) return;
-      var g = e.groupe || 'Autre';
+      var g = classement(e).groupe;
       if (g === 'Autre') return;
       compte[g] = (compte[g] || 0) + n;
     });
@@ -1988,9 +2182,10 @@
       var pesees = series.filter(function(s){ return typeof s.poids === 'number' && s.poids > 0; });
       var meilleure = pesees.length ? Math.max.apply(null, pesees.map(function(s){ return s.poids; })) : null;
       var tenues = series.map(function(s){ return TS.dureeSecondes(s.reps); }).filter(function(d){ return d !== null; });
-      html += '<button type="button" class="fiche-exo" data-exo="' + esc(e.nom || '') + '" style="--exo-color:' + (GROUP_COLORS[e.groupe] || GROUP_COLORS['Autre']) + '">'
+      var clE = classement(e);
+      html += '<button type="button" class="fiche-exo" data-exo="' + esc(e.nom || '') + '" style="--exo-color:' + (GROUP_COLORS[clE.groupe] || GROUP_COLORS['Autre']) + '">'
         + '<div class="fiche-exo-nom">' + esc(normalizeName(e.nom) || 'Sans nom') + '<span class="fiche-exo-fleche">›</span></div>'
-        + '<div class="fiche-exo-groupe">' + esc(e.groupe || 'Autre') + '</div>'
+        + '<div class="fiche-exo-groupe">' + esc(clE.groupe + (clE.sous ? ' · ' + clE.sous : '')) + '</div>'
         + '<div class="fiche-series">'
         + series.map(function(s){
             return '<span class="fiche-serie' + (s.fait ? ' fait' : '') + '">' + esc(perfTexte(s)) + '</span>';
@@ -2282,19 +2477,27 @@
     document.getElementById('recapHeatmap').innerHTML = renderHeatmap(data.startStr, data.endStr);
 
     var counts = groupCountsIn(data.startStr, data.endStr);
+    var sousC = sousCountsIn(data.startStr, data.endStr);
     var worked = GROUPS.filter(function(g){ return counts[g]; });
     var idle = GROUPS.filter(function(g){ return !counts[g] && g !== 'Autre' && g !== 'Cardio'; });
+    // Sous chaque groupe, le detail de ses muscles.
     var legend = worked.map(function(g){
+      var detail = (SOUS_GROUPES[g] || []).filter(function(s){ return sousC[s]; }).map(function(s){
+        return '<span>' + s + ' <b>' + sousC[s] + '</b></span>';
+      });
+      if (sousC[g] && detail.length) detail.push('<span>sans précision <b>' + sousC[g] + '</b></span>');
       return '<div class="muscle-row"><span class="muscle-sw" style="background:'+GROUP_COLORS[g]+'"></span>'
-        + '<span class="muscle-name">'+g+'</span><span class="muscle-val">'+counts[g]+'</span></div>';
+        + '<span class="muscle-name">'+g+'</span><span class="muscle-val">'+counts[g]+'</span></div>'
+        + (detail.length ? '<div class="muscle-sous">' + detail.join('') + '</div>' : '');
     }).join('');
     if (!worked.length) legend = '<div class="muscle-name" style="color:var(--dim)">Rien sur cette période.</div>';
-    var note = idle.length
-      ? '<div class="muscle-note">Pas touché : '+idle.join(', ').toLowerCase()+'.</div>'
+    var pasTouche = idle.map(function(g){ return g.toLowerCase(); });
+    var note = pasTouche.length && worked.length
+      ? '<div class="muscle-note">Pas touché : '+pasTouche.join(', ')+'.</div>'
       : '';
     muscleEl.innerHTML = '<div class="muscle-panel">'
       + '<div class="muscle-title">CE QUE TU AS TRAVAILLÉ</div>'
-      + '<div class="muscle-body">'+muscleMapSVG(counts)+'<div class="muscle-legend">'+legend+note+'</div></div>'
+      + '<div class="muscle-body">'+muscleMapSVG(sousC)+'<div class="muscle-legend">'+legend+note+'</div></div>'
       + '</div>';
 
     if (!data.items.length){
@@ -2316,7 +2519,7 @@
             var valueTxt = it.maxDuree !== null
               ? TS.formatDuree(it.maxDuree)
               : (it.bodyweight ? 'PDC' : formatWeight(it.maxPoids)+' kg') + ' × ' + it.repsAtMax;
-            var freq = it.fois + (it.fois > 1 ? ' séances' : ' séance') + ' · ' +
+            var freq = (it.sous ? it.sous + ' · ' : '') + it.fois + (it.fois > 1 ? ' séances' : ' séance') + ' · ' +
                        it.series + (it.series > 1 ? ' séries' : ' série');
             return '<button type="button" class="recap-row" data-recap-name="'+esc(it.nom)+'">'
               +   '<span class="recap-name"><span class="chev" aria-hidden="true">›</span>'+esc(it.nom)
@@ -2374,12 +2577,13 @@
 
     var toutes = seancesDeLExo(nom);
     var affiche = nomCanonique(nom) || nom;
-    var groupe = groupeCanonique(nom) || 'Autre';
+    var clX = classement({ nom:nom, groupe:groupeCanonique(nom) || 'Autre' });
+    var groupe = clX.groupe;
     var couleur = GROUP_COLORS[groupe] || GROUP_COLORS['Autre'];
 
     var html = '<div class="exo-tete" style="--card-color:' + couleur + '">'
       + '<div class="exo-nom">' + esc(affiche) + '</div>'
-      + '<div class="exo-groupe">' + esc(groupe) + '</div>'
+      + '<div class="exo-groupe">' + esc(groupe + (clX.sous ? ' · ' + clX.sous : '')) + '</div>'
       + '</div>';
 
     if (!toutes.length){
@@ -2977,10 +3181,8 @@
       var card = t.closest('.ex-card');
       if (match && match!==ex.groupe){
         ex.groupe = match;
-        var sel = exListEl.querySelector('select.ex-groupe[data-id="'+id+'"]');
-        if (sel) sel.value = match;
-        majPastilleGroupe(card, match);
       }
+      majPastilleGroupe(card, ex.groupe, ex);
       // Le bloc « dernière fois » ne se recalculait qu'au rendu complet —
       // jamais pendant la saisie du nom, qui est justement le moment où il
       // devient utile. Mis à jour ici, sans reconstruire la carte.
@@ -3031,9 +3233,13 @@
     var ex = null;
     for (var i=0;i<day.exercises.length;i++){ if (day.exercises[i].id===id){ ex=day.exercises[i]; break; } }
     if (!ex) return;
-    ex.groupe = t.value;
-    if (ex.nom && rememberExercise(ex.nom, ex.groupe)) populateDatalist();
-    majPastilleGroupe(t.closest('.ex-card'), ex.groupe);
+    var choix = String(t.value).split('|');
+    ex.groupe = groupeSur(choix[0]);
+    if (ex.nom && String(ex.nom).trim().length >= 2){
+      choisirMuscle(ex.nom, ex.groupe, choix[1] || '');
+      populateDatalist();
+    }
+    majPastilleGroupe(t.closest('.ex-card'), ex.groupe, ex);
     scheduleSave(state.selectedDay,true);
     renderBandeau();
   });
@@ -3444,21 +3650,639 @@
     document.body.classList.toggle('en-repos', !!repos);
     reposPastille.hidden = !repos;
     tenirEcran(!!(chrono || repos));
-    if (!repos) return;
+    // Le repos fini (ou oublie), le plein ecran revient a la saisie.
+    if (!repos){ if (focus && focus.phase === 'repos') rendreFocus(); return; }
+    poserPastille();
     var temps = reposPastille.querySelector('.repos-temps');
     function pas(){
       var sec = secondesRepos();
       if (sec > REPOS_MAX){ finirRepos(false); return; }
       temps.textContent = texteChrono(sec);
+      majTempsFocus();
       reposPastille.setAttribute('aria-label', 'Repos ' + texteChrono(sec) + ' : toucher pour l\'arrêter');
     }
     pas();
     if (repos) tickRepos = setInterval(pas, 500);
   }
-  reposPastille.addEventListener('click', function(){
-    var sec = finirRepos(true);
-    showToast(sec ? 'Repos ' + texteChrono(sec) + ' noté' : 'Repos arrêté');
+  // ---- la pastille se deplace, et s'ouvre en grand (demande du 18/09) -----
+  // « Je coche ma serie, ca enclenche le chrono » reste tel quel. En plus :
+  // on pose la pastille ou on veut (du doigt, elle reste a sa place d'une
+  // seance a l'autre), et un appui ouvre l'exercice en plein ecran, sur le
+  // repos : le temps en grand, la prochaine serie et ses champs.
+  var CLE_POS_REPOS = 'topset_repos_pos';
+  var sansClicRepos = false;
+  function bornerPastille(x, y){
+    var w = reposPastille.offsetWidth || 130, h = reposPastille.offsetHeight || 52;
+    return { x:Math.min(Math.max(8, x), innerWidth - w - 8), y:Math.min(Math.max(8, y), innerHeight - h - 8) };
+  }
+  function placerPastilleA(x, y){
+    var p = bornerPastille(x, y);
+    reposPastille.style.left = p.x + 'px';
+    reposPastille.style.top = p.y + 'px';
+    reposPastille.classList.add('deplacee');
+  }
+  function poserPastille(){
+    var pos = null;
+    try { pos = JSON.parse(localStorage.getItem(CLE_POS_REPOS) || 'null'); } catch (err) { pos = null; }
+    if (!pos || typeof pos.x !== 'number' || typeof pos.y !== 'number'){
+      reposPastille.style.left = ''; reposPastille.style.top = '';
+      reposPastille.classList.remove('deplacee');
+      return;
+    }
+    placerPastilleA(pos.x * innerWidth, pos.y * innerHeight);
+  }
+  window.addEventListener('resize', function(){ if (repos) poserPastille(); });
+  (function glisserPastille(){
+    var depart = null, bouge = false;
+    reposPastille.addEventListener('pointerdown', function(e){
+      var r = reposPastille.getBoundingClientRect();
+      depart = { x:e.clientX, y:e.clientY, l:r.left, t:r.top, id:e.pointerId };
+      bouge = false;
+    });
+    reposPastille.addEventListener('pointermove', function(e){
+      if (!depart || e.pointerId !== depart.id) return;
+      var dx = e.clientX - depart.x, dy = e.clientY - depart.y;
+      // Huit pixels avant de parler de glisser : un appui qui tremble reste un appui.
+      if (!bouge && Math.abs(dx) + Math.abs(dy) < 8) return;
+      if (!bouge){
+        bouge = true;
+        try { reposPastille.setPointerCapture(e.pointerId); } catch (err) {}
+        reposPastille.classList.add('tenue');
+      }
+      placerPastilleA(depart.l + dx, depart.t + dy);
+      e.preventDefault();
+    });
+    function lacher(){
+      if (!depart) return;
+      if (bouge){
+        // La position posee, pas celle du rectangle grossi pendant qu'on la tient.
+        reposPastille.classList.remove('tenue');
+        var x = parseFloat(reposPastille.style.left) || 0, y = parseFloat(reposPastille.style.top) || 0;
+        try { localStorage.setItem(CLE_POS_REPOS, JSON.stringify({ x:x / innerWidth, y:y / innerHeight })); } catch (err) {}
+        sansClicRepos = true;
+        setTimeout(function(){ sansClicRepos = false; }, 350);
+      }
+      depart = null;
+    }
+    reposPastille.addEventListener('pointerup', lacher);
+    reposPastille.addEventListener('pointercancel', lacher);
+  })();
+  reposPastille.addEventListener('click', function(e){
+    if (sansClicRepos){ sansClicRepos = false; e.preventDefault(); return; }
+    if (!repos) return;
+    var jourR = state.sessions[repos.ds];
+    var fR = jourR && findSerie(jourR, repos.serieId);
+    if (fR) ouvrirFocus(repos.ds, fR.exercise.id, 'repos');
   });
+
+  // La prochaine serie a faire apres celle qui a lance le repos. Dans un
+  // superset, c'est l'exercice suivant du bloc, a tour de role ; sinon la
+  // suivante du meme exercice, puis le premier exercice qui en attend une.
+  function prochaineSerie(){
+    if (!repos) return null;
+    var day = state.sessions[repos.ds];
+    var f = day && findSerie(day, repos.serieId);
+    if (!f) return null;
+    var exs = day.exercises;
+    function premiereLibre(ex){
+      var ss = ex.series || [];
+      for (var j = 0; j < ss.length; j++) if (!ss[j].fait) return { exercise:ex, serie:ss[j], num:j + 1 };
+      return null;
+    }
+    var i = exs.indexOf(f.exercise), trouve = null;
+    if (f.exercise.bloc){
+      var bloc = exs.filter(function(e){ return e.bloc === f.exercise.bloc; });
+      var k = bloc.indexOf(f.exercise);
+      for (var n = 1; n <= bloc.length && !trouve; n++) trouve = premiereLibre(bloc[(k + n) % bloc.length]);
+    }
+    if (!trouve) trouve = premiereLibre(f.exercise);
+    for (var a = i + 1; a < exs.length && !trouve; a++) trouve = premiereLibre(exs[a]);
+    for (var b = 0; b < i && !trouve; b++) trouve = premiereLibre(exs[b]);
+    return trouve || { exercise:f.exercise, serie:null, num:(f.exercise.series || []).length + 1 };
+  }
+
+  // ---------- l'exercice en plein ecran (demande du 19/09/2026) ----------
+  // Un appui sur l'icone d'une carte ouvre l'exercice en grand : seule la
+  // serie a faire s'affiche, avec de gros -/+ et une molette au toucher du
+  // chiffre. Valider (le bouton, ou un swipe vers la droite) l'ecrit dans la
+  // carte comme la coche de sa ligne, et le repos monte en plein ecran. Un
+  // swipe vers la gauche supprime la serie, avec « Annuler ». Le ✕ ferme
+  // sans rien valider ni supprimer : ce qui est regle reste dans la serie.
+  // Un superset montre ses exercices ensemble, a tour de role. Le cardio
+  // reste sur sa carte : il n'a ni serie a enchainer ni repos.
+  var focusEl = document.getElementById('focus');
+  var focusCorps = document.getElementById('focusCorps');
+  var focus = null;          // { ds, exId, phase:'saisie'|'repos' }
+  var focusAnnule = null;    // la derniere serie supprimee, le temps d'annuler
+  var focusAnnuleMinuterie = null;
+  var fondFocus = null;      // le fond anime, branche plus bas avec la braise
+  var RPE_CHIPS = [6, 7, 8, 9, 10];
+
+  function premiereAFaire(ex){
+    var ss = ex.series || [];
+    for (var i = 0; i < ss.length; i++) if (!ss[i].fait) return { serie:ss[i], num:i + 1 };
+    return null;
+  }
+  function nbFaites(ex){ return (ex.series || []).filter(function(s){ return s.fait; }).length; }
+  // Les exercices de la seance, un superset comptant pour un.
+  function unitesDuJour(day){
+    var vus = {}, out = [];
+    (day.exercises || []).forEach(function(ex){
+      if (estCardio(ex) && estAuTemps(ex)) return;
+      if (ex.bloc){ if (vus[ex.bloc]) return; vus[ex.bloc] = true; }
+      out.push(ex);
+    });
+    return out;
+  }
+  function membresDe(day, ex){
+    return ex.bloc ? day.exercises.filter(function(e){ return e.bloc === ex.bloc; }) : [ex];
+  }
+  // Dans un superset, c'est au tour de celui qui a le moins de series faites.
+  function tourDe(membres){
+    var choisi = null, min = Infinity;
+    membres.forEach(function(m){
+      if (!premiereAFaire(m)) return;
+      var n = nbFaites(m);
+      if (n < min){ min = n; choisi = m; }
+    });
+    return choisi;
+  }
+  function focusJour(){ return focus && state.sessions[focus.ds]; }
+  function focusExo(){ var d = focusJour(); return d && findExercise(d, focus.exId); }
+
+  function valeurHTML(champ, texte, unite, sid, label){
+    return '<button type="button" class="fs-val" data-fs="roue" data-champ="' + champ + '" data-serie-id="' + sid + '" aria-label="' + label + ' : ' + (texte || 'vide') + ', toucher pour choisir">'
+      + '<b>' + (texte || '—') + '</b>' + (unite ? '<small>' + unite + '</small>' : '') + '</button>';
+  }
+  function ligneHTML(champ, texte, unite, sid, label, pas, pasTexte){
+    return '<div class="fs-ligne">'
+      + '<button type="button" class="fs-pm" data-fs="pas" data-champ="' + champ + '" data-delta="-' + pas + '" data-serie-id="' + sid + '" aria-label="' + label + ' : moins ' + pasTexte + '">−</button>'
+      + valeurHTML(champ, texte, unite, sid, label)
+      + '<button type="button" class="fs-pm" data-fs="pas" data-champ="' + champ + '" data-delta="' + pas + '" data-serie-id="' + sid + '" aria-label="' + label + ' : plus ' + pasTexte + '">+</button>'
+      + '</div>';
+  }
+  function puces(s, auTemps){
+    return '<div class="fs-rpe" role="group" aria-label="' + (auTemps ? 'Difficulté' : 'RPE') + '">'
+      + RPE_CHIPS.map(function(v){
+        var demi = typeof s.rpe === 'number' && Math.floor(s.rpe) === v && s.rpe !== v;
+        var on = s.rpe === v || demi;
+        return '<button type="button" class="fs-puce' + (on ? ' on' : '') + '" data-fs="rpe" data-v="' + v + '" data-serie-id="' + esc(s.id) + '" aria-pressed="' + on + '">'
+          + (demi ? String(s.rpe).replace('.', ',') : v) + '</button>';
+      }).join('') + '</div>';
+  }
+  // Les champs d'une serie. compact : cote a cote, pour un superset ou la
+  // serie d'apres pendant le repos.
+  function champsHTML(ex, s, compact){
+    var sid = esc(s.id), auTemps = estAuTemps(ex);
+    if (auTemps){
+      var sec = secondesAffichees(s);
+      return '<div class="fs-champ"><span class="fs-label">Durée</span>'
+        + ligneHTML('duree', sec, 's', sid, 'Durée', 5, '5 secondes') + '</div>'
+        + (compact ? '' : '<div class="fs-champ"><span class="fs-label">Difficulté</span>' + puces(s, true) + '</div>');
+    }
+    var kg = poidsAffiche(s.poids), reps = s.reps == null ? '' : String(s.reps);
+    if (compact){
+      return '<div class="fs-deux">'
+        + '<div class="fs-champ">' + ligneHTML('poids', kg, 'kg', sid, 'Charge', 2.5, '2,5 kg') + '</div>'
+        + '<div class="fs-champ">' + ligneHTML('reps', reps, 'reps', sid, 'Répétitions', 1, 'une répétition') + '</div>'
+        + '</div>';
+    }
+    return '<div class="fs-champ"><span class="fs-label">Charge</span>' + ligneHTML('poids', kg, 'kg', sid, 'Charge', 2.5, '2,5 kg') + '</div>'
+      + '<div class="fs-champ"><span class="fs-label">Reps</span>' + ligneHTML('reps', reps, '', sid, 'Répétitions', 1, 'une répétition') + '</div>'
+      + '<div class="fs-champ"><span class="fs-label">RPE</span>' + puces(s, false) + '</div>';
+  }
+  function derniereFois(ex, num){
+    var pr = precedentDe(ex);
+    var ps = pr && pr.prec && pr.prec.series[num - 1];
+    return ps ? 'La dernière fois : ' + esc(perfTexte(ps)) : '';
+  }
+  function tampons(){
+    return '<span class="fs-tampon ok" aria-hidden="true">VALIDÉE</span><span class="fs-tampon suppr" aria-hidden="true">SUPPRIMER</span>';
+  }
+  function hautHTML(day, unite){
+    var unites = unitesDuJour(day), i = unites.indexOf(unite);
+    var points = unites.length > 1 ? unites.map(function(u, k){ return '<i' + (k === i ? ' class="on"' : '') + '></i>'; }).join('') : '';
+    return '<div class="fs-haut">'
+      + '<button type="button" class="fs-rond" data-fs="fermer" aria-label="Fermer, la série reste en cours"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>'
+      + '<div class="fs-points" aria-label="Exercice ' + (i + 1) + ' sur ' + unites.length + '">' + points + '</div>'
+      + '<span class="fs-rond fs-vide" aria-hidden="true"></span>'
+      + '</div>';
+  }
+
+  function rendreFocus(){
+    var day = focusJour(), ex = focusExo();
+    if (!ex){ fermerFocus(); return; }
+    var unites = unitesDuJour(day);
+    var unite = ex.bloc ? (unites.filter(function(u){ return u.bloc === ex.bloc; })[0] || ex) : ex;
+    var membres = membresDe(day, ex);
+    var numUnite = unites.indexOf(unite) + 1;
+    var dernier = numUnite >= unites.length;
+    var html = hautHTML(day, unite);
+    if (focus.phase === 'repos' && repos && repos.ds === focus.ds){
+      html += reposFocusHTML(day, membres, dernier);
+      focusCorps.innerHTML = html;
+      majTempsFocus();
+      if (fondFocus) fondFocus.regler(1.7, [1, .36, .22]);
+      return;
+    }
+    focus.phase = 'saisie';
+    var actif = tourDe(membres);
+    var cl = classement(membres[0]);
+    if (membres.length > 1){
+      var tours = Math.max.apply(null, membres.map(function(m){ return (m.series || []).length; }));
+      var tour = Math.min(tours, Math.min.apply(null, membres.map(nbFaites)) + 1);
+      html += '<div class="fs-titre"><p class="fs-eyebrow">Superset · tour ' + tour + ' sur ' + tours + '</p>'
+        + '<h2 class="fs-nom" id="focusTitre">' + esc(membres.map(function(m){ return normalizeName(m.nom) || 'Sans nom'; }).join(' + ')) + '</h2></div>';
+      html += '<div class="fs-pile">' + membres.map(function(m, k){
+        var af = premiereAFaire(m), lettre = String.fromCharCode(65 + k);
+        var clm = classement(m);
+        if (!af) return '<div class="fs-carte fs-ss fini"><div class="fs-ss-tete"><span class="fs-lettre">' + lettre + '</span><b>' + esc(normalizeName(m.nom) || 'Sans nom') + '</b><span>✓ fini</span></div></div>';
+        var estActif = m === actif;
+        return '<div class="fs-carte fs-ss' + (estActif ? ' actif' : ' en-attente') + '" data-ex-id="' + esc(m.id) + '" data-serie-id="' + esc(af.serie.id) + '">'
+          + (estActif ? tampons() : '')
+          + '<div class="fs-ss-tete"><span class="fs-lettre">' + lettre + '</span><b>' + esc(normalizeName(m.nom) || 'Sans nom') + '</b><span>' + esc(libelleMuscle(clm)) + ' · S' + af.num + '</span></div>'
+          + champsHTML(m, af.serie, true)
+          + '</div>';
+      }).join('') + '</div>';
+    } else {
+      var af1 = premiereAFaire(ex);
+      var faites = (ex.series || []).map(function(s, k){ return s.fait ? '<span>S' + (k + 1) + ' ' + esc(perfCourt(s)) + '<b aria-hidden="true">✓</b></span>' : ''; }).join('');
+      html += '<div class="fs-titre"><p class="fs-eyebrow">Exo ' + numUnite + ' sur ' + unites.length + '</p>'
+        + '<h2 class="fs-nom" id="focusTitre">' + esc(normalizeName(ex.nom) || 'Exercice sans nom') + '</h2>'
+        + '<span class="fs-chip" style="--c:' + (GROUP_COLORS[cl.groupe] || GROUP_COLORS['Autre']) + '">' + esc(libelleMuscle(cl)) + '</span></div>'
+        + (faites ? '<div class="fs-faites">' + faites + '</div>' : '');
+      if (af1){
+        var total = (ex.series || []).length;
+        html += '<div class="fs-pile"><div class="fs-carte actif" data-ex-id="' + esc(ex.id) + '" data-serie-id="' + esc(af1.serie.id) + '">' + tampons()
+          + '<div class="fs-carte-tete"><span class="fs-num">Série ' + af1.num + ' sur ' + total + '</span><span class="fs-avant">' + derniereFois(ex, af1.num) + '</span></div>'
+          + champsHTML(ex, af1.serie, false)
+          + '</div></div>';
+      }
+    }
+    if (actif){
+      var lettreA = membres.length > 1 ? String.fromCharCode(65 + membres.indexOf(actif)) : '';
+      var suivant = null;
+      if (membres.length > 1){
+        var reste = membres.filter(function(m){ return m !== actif && premiereAFaire(m) && nbFaites(m) <= nbFaites(actif); });
+        suivant = reste.length ? String.fromCharCode(65 + membres.indexOf(reste[0])) : null;
+      }
+      html += '<p class="fs-aide">Glisse la série : à droite pour la valider, à gauche pour la supprimer.</p>'
+        + '<div class="fs-bas"><button type="button" class="fs-cta" data-fs="valider">' + (lettreA ? 'VALIDER ' + lettreA + (suivant ? ' · PUIS ' + suivant : '') : 'VALIDER LA SÉRIE') + '</button>'
+        + '<button type="button" class="fs-ghost" data-fs="suivant">' + (dernier ? 'Fermer' : 'Exo suivant →') + '</button></div>';
+    } else {
+      html += '<div class="fs-fini"><p>Toutes les séries prévues sont faites.</p></div>'
+        + '<div class="fs-bas"><button type="button" class="fs-cta secondaire" data-fs="ajouter">+ AJOUTER UNE SÉRIE</button>'
+        + '<button type="button" class="fs-ghost" data-fs="suivant">' + (dernier ? 'Fermer' : 'Exo suivant →') + '</button></div>';
+    }
+    focusCorps.innerHTML = html;
+    if (fondFocus) fondFocus.regler(.6, [1, .36, .22]);
+  }
+
+  function reposFocusHTML(day, membres, dernier){
+    var f = findSerie(day, repos.serieId);
+    var p = prochaineSerie();
+    var html = '<div class="fs-titre"><p class="fs-eyebrow">Repos · ' + esc(f ? normalizeName(f.exercise.nom) || 'Exercice' : 'Exercice') + '</p></div>'
+      + '<div class="fs-anneau" id="focusAnneau"><div class="fs-temps"><b id="focusTemps">0:00</b><small>'
+      + (f ? 'depuis la série ' + ((f.exercise.series || []).indexOf(f.serie) + 1) : '') + '</small></div></div>';
+    if (f) html += '<p class="fs-note">✓ Série enregistrée : ' + esc(perfTexte(f.serie)) + (typeof f.serie.rpe === 'number' ? ' · RPE ' + String(f.serie.rpe).replace('.', ',') : '') + '</p>';
+    if (p && p.serie){
+      var autre = membres.indexOf(p.exercise) < 0;
+      html += '<div class="fs-mini"><div class="fs-mini-tete"><span>Prochaine · ' + (autre || membres.length > 1 ? esc(normalizeName(p.exercise.nom)) + ' · ' : '') + 'série ' + p.num + '</span><span>modifiable</span></div>'
+        + champsHTML(p.exercise, p.serie, true) + '</div>'
+        + '<div class="fs-bas"><button type="button" class="fs-cta" data-fs="reprendre">PASSER À LA SÉRIE SUIVANTE</button>'
+        + '<button type="button" class="fs-ghost" data-fs="suivant">' + (dernier ? 'Fermer' : 'Terminer l\'exo') + '</button></div>';
+    } else {
+      html += '<div class="fs-fini"><p>Toutes les séries prévues sont faites.</p></div>'
+        + '<div class="fs-bas"><button type="button" class="fs-cta secondaire" data-fs="ajouter">+ AJOUTER UNE SÉRIE</button>'
+        + '<button type="button" class="fs-ghost" data-fs="suivant">' + (dernier ? 'Fermer' : 'Exo suivant →') + '</button></div>';
+    }
+    return html;
+  }
+  // Le repos vise celui de la serie d'avant, ou 90 s : l'anneau se remplit
+  // jusque-la, puis passe au vert. Le temps, lui, continue de monter.
+  function majTempsFocus(){
+    if (!focus || focus.phase !== 'repos' || !repos) return;
+    var t = document.getElementById('focusTemps'), a = document.getElementById('focusAnneau');
+    if (!t || !a) return;
+    var sec = secondesRepos();
+    t.textContent = texteChrono(sec);
+    var day = state.sessions[repos.ds], f = day && findSerie(day, repos.serieId);
+    var cible = Number(f && (f.serie.repos || f.exercise.repos)) || 90;
+    if (f && f.serie.repos && String(f.serie.repos) === String(sec)) cible = 90;
+    a.style.setProperty('--p', Math.min(1, sec / cible));
+    a.classList.toggle('pret', sec >= cible);
+  }
+
+  function ouvrirFocus(ds, exId, phase){
+    var day = state.sessions[ds];
+    var ex = day && findExercise(day, exId);
+    if (!ex) return;
+    focus = { ds:ds, exId:exId, phase:phase || 'saisie' };
+    focusEl.hidden = false;
+    document.body.classList.add('en-focus');
+    rendreFocus();
+    // Le focus sur le dialogue lui-meme : un lecteur d'ecran l'annonce, et
+    // aucun bouton ne s'allume d'un contour qu'on n'a pas demande.
+    focusEl.focus({ preventScroll:true });
+  }
+  function fermerFocus(){
+    if (!focus) return;
+    focus = null;
+    fermerRoue(false);
+    focusEl.hidden = true;
+    document.body.classList.remove('en-focus');
+    if (state.view === 'seances') renderDayPanel(true);
+    renderBandeau();
+  }
+  function allerUniteSuivante(){
+    var day = focusJour(), ex = focusExo();
+    var unites = unitesDuJour(day);
+    var unite = ex.bloc ? unites.filter(function(u){ return u.bloc === ex.bloc; })[0] : ex;
+    var i = unites.indexOf(unite);
+    if (i < 0 || i + 1 >= unites.length){ fermerFocus(); return; }
+    focus.exId = unites[i + 1].id;
+    focus.phase = 'saisie';
+    rendreFocus();
+  }
+
+  // Valider : la meme chose que la coche de la ligne.
+  function validerFocus(exId, serieId){
+    var day = focusJour();
+    var f = day && findSerie(day, serieId);
+    if (!f || f.serie.fait) return;
+    var ds = focus.ds;
+    f.serie.fait = true;
+    if (serieOuverte[f.exercise.id] === serieId) delete serieOuverte[f.exercise.id];
+    scheduleSave(ds, true);
+    var noteSec = finirRepos(true);
+    lancerRepos(ds, serieId);
+    var num = f.exercise.series.indexOf(f.serie) + 1;
+    // Dans un superset, on enchaine l'autre exercice sans repos.
+    var membres = membresDe(day, f.exercise);
+    var encore = membres.length > 1 && membres.some(function(m){ return m !== f.exercise && premiereAFaire(m) && nbFaites(m) < nbFaites(f.exercise); });
+    focus.phase = (!encore && repos && repos.ds === ds) ? 'repos' : 'saisie';
+    rendreFocus();
+    renderBandeau();
+    showToast('Série ' + num + ' notée' + (noteSec ? ' · repos ' + texteChrono(noteSec) : ''));
+  }
+  function supprimerFocus(serieId){
+    var day = focusJour();
+    var f = day && findSerie(day, serieId);
+    if (!f) return;
+    var idx = f.exercise.series.indexOf(f.serie);
+    f.exercise.series.splice(idx, 1);
+    if (repos && repos.serieId === serieId) finirRepos(false);
+    scheduleSave(focus.ds, true);
+    focusAnnule = { ds:focus.ds, exId:f.exercise.id, serie:f.serie, idx:idx };
+    rendreFocus();
+    renderBandeau();
+    montrerAnnuler('Série ' + (idx + 1) + ' supprimée');
+  }
+  function montrerAnnuler(texte){
+    var barre = document.getElementById('focusAnnuler');
+    barre.querySelector('span').textContent = texte;
+    barre.hidden = false;
+    clearTimeout(focusAnnuleMinuterie);
+    focusAnnuleMinuterie = setTimeout(function(){ barre.hidden = true; focusAnnule = null; }, 5000);
+  }
+  function annulerSuppression(){
+    var a = focusAnnule;
+    document.getElementById('focusAnnuler').hidden = true;
+    clearTimeout(focusAnnuleMinuterie);
+    focusAnnule = null;
+    if (!a) return;
+    var day = state.sessions[a.ds], ex = day && findExercise(day, a.exId);
+    if (!ex) return;
+    if (!ex.series) ex.series = [];
+    ex.series.splice(Math.min(a.idx, ex.series.length), 0, a.serie);
+    scheduleSave(a.ds, true);
+    if (focus) rendreFocus();
+    renderBandeau();
+    showToast('Série remise');
+  }
+
+  // Ecrire dans la serie comme sa ligne : meme lecture, meme sauvegarde.
+  function ecrireFocus(serieId, champ, valeur){
+    var day = focusJour();
+    var f = day && findSerie(day, serieId);
+    if (!f) return;
+    var s = f.serie;
+    if (champ === 'poids') s.poids = valeur == null ? null : Math.max(0, Math.round(valeur * 100) / 100);
+    else if (champ === 'reps') s.reps = valeur == null ? '' : String(Math.max(0, Math.round(valeur)));
+    else if (champ === 'duree') s.reps = valeur ? TS.ecrireDuree(Math.max(0, Math.round(valeur))) : '';
+    else if (champ === 'rpe') s.rpe = valeur;
+    scheduleSave(focus.ds);
+  }
+  function valeurDe(s, champ){
+    if (champ === 'poids') return typeof s.poids === 'number' ? s.poids : null;
+    if (champ === 'reps'){ var r = parseInt(s.reps, 10); return isNaN(r) ? null : r; }
+    if (champ === 'duree'){ var d = secondesAffichees(s); return d === '' ? null : Number(d); }
+    return null;
+  }
+
+  // ---- la molette : un toucher sur le chiffre -----
+  // Des colonnes qui defilent et s'arretent d'elles-memes sur une valeur
+  // (scroll-snap) : le defilement natif du telephone, son elan compris.
+  var roueEl = document.getElementById('focusRoue');
+  var roue = null;           // { serieId, champ }
+  var HAUT_ITEM = 44;
+  function colonneHTML(valeurs, choisie, fmt){
+    return '<div class="roue-col" tabindex="0">' + '<div class="roue-marge"></div><div class="roue-marge"></div>'
+      + valeurs.map(function(v){ return '<div class="roue-item" data-v="' + v + '">' + fmt(v) + '</div>'; }).join('')
+      + '<div class="roue-marge"></div><div class="roue-marge"></div></div>';
+  }
+  function plage(a, b, pas){ var out = []; for (var v = a; v <= b + 1e-9; v += pas) out.push(Math.round(v * 100) / 100); return out; }
+  function ouvrirRoue(serieId, champ){
+    var day = focusJour();
+    var f = day && findSerie(day, serieId);
+    if (!f) return;
+    var v = valeurDe(f.serie, champ);
+    roue = { serieId:serieId, champ:champ };
+    var cols, choix;
+    if (champ === 'poids'){
+      var base = v == null ? 20 : v;
+      var ent = Math.floor(base), dec = Math.round((base - ent) * 100);
+      dec = [0, 25, 50, 75].reduce(function(m, d){ return Math.abs(d - dec) < Math.abs(m - dec) ? d : m; }, 0);
+      cols = [colonneHTML(plage(0, 400, 1), ent, String), colonneHTML([0, 25, 50, 75], dec, function(d){ return ',' + (d === 0 ? '0' : d === 50 ? '5' : d); })];
+      choix = [ent, dec];
+    } else if (champ === 'reps'){
+      cols = [colonneHTML(plage(0, 100, 1), v || 0, String)];
+      choix = [v == null ? 8 : v];
+    } else {
+      cols = [colonneHTML(plage(0, 900, 5), v || 0, String)];
+      choix = [v == null ? 30 : Math.round(v / 5) * 5];
+    }
+    var titre = champ === 'poids' ? 'Charge' : champ === 'reps' ? 'Répétitions' : 'Durée';
+    var unite = champ === 'poids' ? 'kg' : champ === 'reps' ? 'reps' : 's';
+    roueEl.innerHTML = '<div class="roue-feuille" role="dialog" aria-modal="true" aria-label="' + titre + '">'
+      + '<div class="roue-poignee" aria-hidden="true"></div>'
+      + '<div class="roue-tete"><b>' + titre + '</b><button type="button" class="roue-ok" data-roue="ok">OK</button></div>'
+      + '<div class="roue-cols"><div class="roue-bande" aria-hidden="true"></div>' + cols.join('') + '<span class="roue-unite">' + unite + '</span></div>'
+      + '</div>';
+    roueEl.hidden = false;
+    var colsEl = roueEl.querySelectorAll('.roue-col');
+    colsEl.forEach(function(col, k){
+      var items = col.querySelectorAll('.roue-item');
+      var idx = 0;
+      for (var i = 0; i < items.length; i++) if (Number(items[i].dataset.v) === choix[k]) { idx = i; break; }
+      col.scrollTop = idx * HAUT_ITEM;
+      marquerRoue(col);
+      var attente = null;
+      col.addEventListener('scroll', function(){ clearTimeout(attente); attente = setTimeout(function(){ marquerRoue(col); }, 60); marquerRoue(col); }, { passive:true });
+      col.addEventListener('click', function(e){
+        var it = e.target.closest('.roue-item');
+        if (!it) return;
+        var n = Array.prototype.indexOf.call(col.querySelectorAll('.roue-item'), it);
+        col.scrollTo({ top:n * HAUT_ITEM, behavior:'smooth' });
+      });
+    });
+  }
+  function marquerRoue(col){
+    var items = col.querySelectorAll('.roue-item');
+    var n = Math.max(0, Math.min(items.length - 1, Math.round(col.scrollTop / HAUT_ITEM)));
+    for (var i = 0; i < items.length; i++) items[i].classList.toggle('sel', i === n);
+    return items[n] ? Number(items[n].dataset.v) : 0;
+  }
+  function fermerRoue(garder){
+    if (!roue) return;
+    if (garder){
+      var cols = roueEl.querySelectorAll('.roue-col');
+      var v = marquerRoue(cols[0]);
+      if (roue.champ === 'poids') v = v + marquerRoue(cols[1]) / 100;
+      ecrireFocus(roue.serieId, roue.champ, v);
+    }
+    roue = null;
+    roueEl.hidden = true;
+    roueEl.innerHTML = '';
+    if (garder && focus) rendreFocus();
+  }
+  if (roueEl){
+    roueEl.addEventListener('click', function(e){
+      if (e.target.closest('[data-roue="ok"]')) fermerRoue(true);
+      else if (e.target === roueEl) fermerRoue(false);
+    });
+  }
+
+  // ---- le swipe, facon Tinder -----
+  // La carte suit le doigt en penchant. Lachee au-dela d'un tiers de
+  // l'ecran, ou lancee d'un geste vif, elle part : a droite, la serie est
+  // validee ; a gauche, supprimee. Sinon elle revient. Un appui sur un
+  // bouton reste un appui : on ne glisse qu'a partir de 10 px a l'horizontale.
+  (function swipeFocus(){
+    if (!focusEl) return;
+    var g = null;
+    focusEl.addEventListener('pointerdown', function(e){
+      var carte = e.target.closest('.fs-carte.actif');
+      if (!carte || roue || e.button > 0) return;
+      g = { carte:carte, x:e.clientX, y:e.clientY, t:performance.now(), id:e.pointerId, dx:0, parti:false, vx:0, lx:e.clientX, lt:performance.now() };
+    });
+    focusEl.addEventListener('pointermove', function(e){
+      if (!g || e.pointerId !== g.id) return;
+      var dx = e.clientX - g.x, dy = e.clientY - g.y;
+      if (!g.parti){
+        if (Math.abs(dy) > 12 && Math.abs(dy) > Math.abs(dx)){ g = null; return; }
+        if (Math.abs(dx) < 10) return;
+        g.parti = true;
+        try { g.carte.setPointerCapture(e.pointerId); } catch (err) {}
+        g.carte.classList.add('tenue');
+      }
+      var now = performance.now();
+      if (now > g.lt){ g.vx = (e.clientX - g.lx) / (now - g.lt); g.lx = e.clientX; g.lt = now; }
+      g.dx = dx;
+      g.carte.style.transform = 'translateX(' + dx + 'px) rotate(' + (dx / 18) + 'deg)';
+      var force = Math.min(1, Math.abs(dx) / 110);
+      g.carte.style.setProperty('--sw-ok', dx > 0 ? force : 0);
+      g.carte.style.setProperty('--sw-suppr', dx < 0 ? force : 0);
+      if (fondFocus) fondFocus.regler(.6 + force * .9, dx > 0 ? [.17, .82, .54] : [1, .25, .2], force);
+      e.preventDefault();
+    });
+    function lacher(e){
+      if (!g || (e && e.pointerId !== g.id)) return;
+      var c = g.carte, dx = g.dx, parti = g.parti, v = g.vx;
+      g = null;
+      if (!parti) return;
+      c.classList.remove('tenue');
+      var largeur = focusEl.clientWidth || innerWidth;
+      var sens = (dx > largeur / 3 || (v > .6 && dx > 40)) ? 1 : (dx < -largeur / 3 || (v < -.6 && dx < -40)) ? -1 : 0;
+      if (!sens){
+        c.style.transform = '';
+        c.style.setProperty('--sw-ok', 0); c.style.setProperty('--sw-suppr', 0);
+        if (fondFocus) fondFocus.regler(.6, [1, .36, .22]);
+        return;
+      }
+      c.classList.add('part');
+      c.style.transform = 'translateX(' + (sens * largeur * 1.3) + 'px) rotate(' + (sens * 24) + 'deg)';
+      var exId = c.dataset.exId, sid = c.dataset.serieId;
+      setTimeout(function(){
+        if (!focus) return;
+        if (sens > 0) validerFocus(exId, sid); else supprimerFocus(sid);
+      }, 220);
+    }
+    focusEl.addEventListener('pointerup', lacher);
+    focusEl.addEventListener('pointercancel', lacher);
+  })();
+
+  if (focusEl){
+    focusEl.addEventListener('click', function(e){
+      var b = e.target.closest('[data-fs]');
+      if (!b || !focus) return;
+      var quoi = b.dataset.fs, day = focusJour();
+      if (quoi === 'fermer'){ fermerFocus(); return; }
+      if (quoi === 'suivant'){ allerUniteSuivante(); return; }
+      if (quoi === 'valider'){
+        var c = focusCorps.querySelector('.fs-carte.actif');
+        if (c) validerFocus(c.dataset.exId, c.dataset.serieId);
+        return;
+      }
+      if (quoi === 'reprendre'){
+        var p = prochaineSerie();
+        if (p && p.exercise && membresDe(day, focusExo()).indexOf(p.exercise) < 0) focus.exId = p.exercise.id;
+        focus.phase = 'saisie';
+        rendreFocus();
+        return;
+      }
+      if (quoi === 'ajouter'){
+        var membres = membresDe(day, focusExo());
+        membres.forEach(function(m){
+          var ss = m.series || (m.series = []);
+          var der = ss[ss.length - 1];
+          ss.push({ id:genSerieId(), poids:der ? der.poids : null, reps:der ? der.reps : '', rpe:null, repos:(der && der.repos) || m.repos || '', fait:false });
+        });
+        scheduleSave(focus.ds, true);
+        focus.phase = 'saisie';
+        rendreFocus();
+        return;
+      }
+      if (quoi === 'roue'){ ouvrirRoue(b.dataset.serieId, b.dataset.champ); return; }
+      var f = day && findSerie(day, b.dataset.serieId);
+      if (!f) return;
+      if (quoi === 'pas'){
+        var champ = b.dataset.champ, d = Number(b.dataset.delta);
+        var v = valeurDe(f.serie, champ);
+        ecrireFocus(f.serie.id, champ, Math.max(0, (v == null ? 0 : v) + d));
+      } else if (quoi === 'rpe'){
+        var n = Number(b.dataset.v);
+        var avant = f.serie.rpe;
+        ecrireFocus(f.serie.id, 'rpe', (typeof avant === 'number' && Math.floor(avant) === n) ? (avant === n ? null : n) : n);
+      }
+      rendreFocus();
+    });
+    document.getElementById('focusAnnuler').addEventListener('click', function(e){
+      if (e.target.closest('button')) annulerSuppression();
+    });
+    document.addEventListener('keydown', function(e){
+      if (e.key !== 'Escape' || !focus) return;
+      if (roue) fermerRoue(false); else fermerFocus();
+    });
+  }
+
+  // L'icone de chaque carte ouvre l'exercice en grand.
+  exListEl.addEventListener('click', function(e){
+    var b = e.target.closest('[data-action="focus"]');
+    if (!b) return;
+    ouvrirFocus(state.selectedDay, b.dataset.id, 'saisie');
+  });
+
   if (repos) suivreRepos();
 
   exListEl.addEventListener('click', function(e){
@@ -4277,6 +5101,7 @@
         groupe: groupeSur(info.groupe),
         alias:  info.alias ? String(info.alias).slice(0, 200) : null
       };
+      if (typeof info.sousGroupe === 'string') sortie[nom].sousGroupe = info.sousGroupe;
     });
     return sortie;
   }
@@ -5821,7 +6646,9 @@
     function exosLocaux(){
       return Object.keys(customExercises).map(function(nom){
         var info = infoExo(customExercises[nom], nom);
-        return { cle:cleExo(nom), nom:info.nom || nom, groupe:info.groupe, alias:info.alias };
+        var e = { cle:cleExo(nom), nom:info.nom || nom, groupe:info.groupe, alias:info.alias };
+        if (typeof info.sousGroupe === 'string') e.sous = info.sousGroupe;
+        return e;
       }).filter(function(e){ return e.cle; });
     }
 
@@ -5852,10 +6679,15 @@
           // un choix explicite ne doit pas etre efface par un appareil qui ne
           // l'a jamais vu.
           if (local && local.alias && !d.alias) return;
+          // Un serveur sans la colonne sous_groupe (SQL pas encore relance) ne
+          // renvoie pas la cle : le choix local reste.
+          var sousDistant = Object.prototype.hasOwnProperty.call(d, 'sous') && d.sous !== null
+            ? sousGroupeSur(d.sous) : (local ? local.sousGroupe : undefined);
           if (local && local.nom === d.nom && local.groupe === d.groupe &&
-              (local.alias || null) === (d.alias || null)) return;
+              (local.alias || null) === (d.alias || null) && local.sousGroupe === sousDistant) return;
           if (local && local.nom !== d.nom) delete customExercises[local.nom];
           customExercises[d.nom] = { nom:d.nom, groupe:d.groupe || 'Autre', alias:d.alias || null };
+          if (typeof sousDistant === 'string') customExercises[d.nom].sousGroupe = sousDistant;
           nouveaux++;
         });
         if (nouveaux){
@@ -6923,22 +7755,25 @@
   document.documentElement.classList.add('app-prete');
 
   // ---------- braise : un fond anime pour les moments forts ----------
-  // L'accueil et le bilan seulement (decision du 18/09/2026). Jamais pendant
-  // la saisie. Rendu a demi-resolution et a 30 images/s au plus, arrete des
-  // que l'ecran se cache ou que l'onglet passe en arriere-plan. Avec
-  // « reduire les animations », une seule image fixe. Sans WebGL, le degrade
-  // CSS d'origine reste en place.
+  // L'accueil, le bilan (18/09/2026) et l'exercice en plein ecran (demande
+  // du 19/09). Sur le plein ecran, la lueur suit l'etat : douce pendant la
+  // serie, forte pendant le repos, verte ou rouge sous le swipe. Rendu a
+  // demi-resolution et a 30 images/s au plus, arrete des que l'ecran se
+  // cache ou que l'onglet passe en arriere-plan. Avec « reduire les
+  // animations », une seule image fixe. Sans WebGL, le degrade CSS d'origine
+  // (ou le fond uni du plein ecran) reste en place.
   //
   // Elle ne doit jamais ralentir l'app (mesure du 18/09/2026 : sur le fil
   // principal, sa preparation bloquait l'ouverture de 200 a 900 ms, Lighthouse
   // mobile 98 -> 75). Tout le WebGL vit donc dans braise.js, un Web Worker qui
   // dessine sur un OffscreenCanvas : ici, on ne fait que creer le canvas, lui
-  // donner sa taille et lui dire quand l'ecran est affiche. Demarrage apres le
-  // chargement, en fondu. Navigateur sans OffscreenCanvas (Safari avant 17) :
-  // le degrade CSS reste, comme sans WebGL.
+  // donner sa taille, lui dire quand l'ecran est affiche et, pour le plein
+  // ecran, quel reglage viser. Demarrage apres le chargement, en fondu.
+  // Navigateur sans OffscreenCanvas (Safari avant 17) : le degrade CSS reste,
+  // comme sans WebGL.
   (function braise(){
     var VS = 'attribute vec2 p;void main(){gl_Position=vec4(p,0.,1.);}';
-    var FS = 'precision mediump float;uniform vec2 r;uniform float t;'
+    var FS = 'precision mediump float;uniform vec2 r;uniform float t;uniform float k;uniform vec3 tn;'
       + 'float h(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}'
       + 'float n(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);'
       + 'return mix(mix(h(i),h(i+vec2(1,0)),f.x),mix(h(i+vec2(0,1)),h(i+vec2(1,1)),f.x),f.y);}'
@@ -6946,11 +7781,14 @@
       + 'void main(){vec2 uv=gl_FragCoord.xy/r;vec2 q=vec2(uv.x*r.x/r.y,uv.y)*1.6;float s=t*.045;'
       + 'vec2 w=vec2(fbm(q+vec2(0.,s)),fbm(q+vec2(5.2,-s)));float f=fbm(q+2.2*w+vec2(s*.6,0.));'
       // La lueur vient du haut, comme la lampe au-dessus d'un banc.
-      + 'float haut=smoothstep(.15,1.05,uv.y);float g=smoothstep(.35,.95,f)*(.35+.65*haut);'
-      + 'vec3 fond=vec3(.047,.043,.039);vec3 braise=vec3(.42,.12,.05);vec3 orange=vec3(1.,.36,.22);'
-      + 'vec3 c=mix(fond,braise,g);c=mix(c,orange,pow(g,3.)*.55);'
+      + 'float haut=smoothstep(.15,1.05,uv.y);float g=clamp(smoothstep(.35,.95,f)*(.35+.65*haut)*k,0.,1.);'
+      // k : l'intensite (1 ailleurs) ; tn : la teinte (orange par defaut).
+      // La braise en est une version sombre : pour l'orange, les couleurs
+      // d'origine a l'identique.
+      + 'vec3 fond=vec3(.047,.043,.039);vec3 braise=tn*vec3(.42,.333,.227);'
+      + 'vec3 c=mix(fond,braise,g);c=mix(c,tn,pow(g,3.)*.55);'
       + 'c+=(h(gl_FragCoord.xy+t)-.5)/255.;gl_FragColor=vec4(c,1.);}';
-    var hotes = ['bilanEcran', 'accueil'].map(function(id){ return document.getElementById(id); }).filter(Boolean);
+    var hotes = ['bilanEcran', 'accueil', 'focus'].map(function(id){ return document.getElementById(id); }).filter(Boolean);
     if (!hotes.length || !window.Worker || !window.OffscreenCanvas
         || !HTMLCanvasElement.prototype.transferControlToOffscreen) return;
     var calme = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : { matches:false };
@@ -6961,6 +7799,12 @@
       cv.setAttribute('aria-hidden', 'true');
       hote.insertBefore(cv, hote.firstChild);
       var peintre = null, echec = false;
+      // Le reglage vise, garde tant que le peintre n'existe pas encore.
+      var reglage = { k:1, tn:[1, .36, .22] };
+      if (hote.id === 'focus') fondFocus = { regler:function(k, tn, direct){
+        reglage = { k:k, tn:tn };
+        if (peintre && !echec) peintre.postMessage({ type:'reglage', k:k, tn:tn, direct:!!direct });
+      } };
 
       // Demi-resolution : un degrade flou n'a pas besoin de chaque pixel.
       function taille(){
@@ -6980,7 +7824,7 @@
           else if (e.data === 'echec') abandonner();
         };
         peintre.onerror = abandonner;
-        peintre.postMessage({ type:'init', canvas:toile, w:t.w, h:t.h, calme:calme.matches, vs:VS, fs:FS }, [toile]);
+        peintre.postMessage({ type:'init', canvas:toile, w:t.w, h:t.h, calme:calme.matches, vs:VS, fs:FS, k:reglage.k, tn:reglage.tn }, [toile]);
       }
       function suivre(){
         if (echec) return;

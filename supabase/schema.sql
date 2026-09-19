@@ -224,6 +224,18 @@ create table if not exists public.exercices_perso (
 
 alter table public.exercices_perso add column if not exists alias_cle text;
 
+-- Le sous-groupe choisi a la main (18/09/2026) : « Biceps » pour un curl.
+-- Null = deduit du nom par l'app ; '' = le groupe seul, sans precision.
+-- La liste est fermee : une valeur inconnue n'a rien a faire dans le recap.
+alter table public.exercices_perso add column if not exists sous_groupe text;
+alter table public.exercices_perso
+  drop constraint if exists exercices_perso_sous_connu;
+alter table public.exercices_perso
+  add  constraint exercices_perso_sous_connu
+  check (sous_groupe is null or sous_groupe in ('', 'Dorsaux', 'Trapèzes', 'Lombaires',
+         'Biceps', 'Triceps', 'Avant-bras', 'Quadriceps', 'Ischios', 'Fessiers',
+         'Mollets', 'Adducteurs', 'Abducteurs'));
+
 -- Un alias doit designer un exercice qui existe, et jamais lui-meme : sans
 -- cette contrainte, une boucle « a pointe vers b qui pointe vers a » rendrait
 -- la resolution du nom infinie cote client.
@@ -563,18 +575,23 @@ begin
     -- Un nom vide n'est pas un exercice, et une cle vide ecraserait les autres.
     continue when coalesce(trim(v_ex ->> 'cle'), '') = '';
 
-    insert into public.exercices_perso (user_id, nom_cle, nom, groupe, alias_cle, updated_at)
+    -- Un appareil qui n'a pas encore la mise a jour n'envoie pas « sous » :
+    -- son silence ne doit pas effacer le choix fait sur un autre.
+    insert into public.exercices_perso (user_id, nom_cle, nom, groupe, alias_cle, sous_groupe, updated_at)
     values (v_user,
             trim(v_ex ->> 'cle'),
             coalesce(nullif(trim(v_ex ->> 'nom'), ''), trim(v_ex ->> 'cle')),
             coalesce(nullif(v_ex ->> 'groupe', ''), 'Autre'),
             nullif(trim(coalesce(v_ex ->> 'alias', '')), ''),
+            v_ex ->> 'sous',
             now())
     on conflict (user_id, nom_cle) do update
-      set nom       = excluded.nom,
-          groupe    = excluded.groupe,
-          alias_cle = excluded.alias_cle,
-          updated_at = now();
+      set nom         = excluded.nom,
+          groupe      = excluded.groupe,
+          alias_cle   = excluded.alias_cle,
+          sous_groupe = case when v_ex ? 'sous' then excluded.sous_groupe
+                             else public.exercices_perso.sous_groupe end,
+          updated_at  = now();
   end loop;
 
   return now();
@@ -592,7 +609,8 @@ as $$
            'cle',    p.nom_cle,
            'nom',    p.nom,
            'groupe', p.groupe,
-           'alias',  p.alias_cle
+           'alias',  p.alias_cle,
+           'sous',   p.sous_groupe
          ) order by p.nom_cle), '[]'::jsonb)
   from public.exercices_perso p
   where p.user_id = auth.uid();

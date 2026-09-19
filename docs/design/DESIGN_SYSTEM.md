@@ -140,7 +140,7 @@ simple décor. Toutes s'arrêtent quand l'appareil demande moins d'animations
 | Élément | Comportement | Durée |
 |---|---|---|
 | Loupe des onglets (`#ongletLoupe`) | glisse sous l'onglet choisi, s'étire dans le sens du mouvement comme une goutte, un seul reflet chaud fait le tour du liseré pendant le trajet (l'arc-en-ciel a été retiré le 13/09 : « trop RGB »), reflet en haut au repos ; se fait glisser du doigt (se soulève, suit le doigt, l'onglet le plus proche s'ouvre au lâcher) ; **sur téléphone** (14/09, à la demande : « copie tout » d'après la barre d'iOS 26) : capsule grise flottante, pastille grise au repos, libellés en minuscules, icône active blanche, et au toucher une bulle de verre ×1,3 qui grossit une copie des onglets, avec franges de prisme cyan / jaune / magenta près du bord ; ne bouge pas au chargement ni au redimensionnement ; cachée dans les vues sans onglet | 0,46 s |
-| Braise (`.braise`, 18/09) | fond WebGL de l'accueil et du bilan seulement : noir chaud, une lueur braise → orange qui dérive lentement depuis le haut ; demi-résolution, 30 images/s au plus, arrêtée quand l'écran se cache ; une image fixe avec « réduire les animations » ; sans WebGL, le dégradé CSS d'origine. Ne ralentit jamais l'app : dessinée dans un Web Worker (`braise.js`, OffscreenCanvas), jamais sur le fil principal ; démarre après le chargement, en fondu ; refusée sans vrai GPU (`failIfMajorPerformanceCaveat`) ; figée si une image coûte plus de 20 ms ; sans OffscreenCanvas (Safari avant 17), le dégradé CSS | boucle lente |
+| Braise (`.braise`, 18/09) | fond WebGL de l'accueil, du bilan et (19/09) de l'exercice en plein écran — là, l'intensité `k` et la teinte `tn` glissent vers leur cible (douce pendant la série, forte au repos, verte/rouge sous le swipe) : noir chaud, une lueur braise → orange qui dérive lentement depuis le haut ; demi-résolution, 30 images/s au plus, arrêtée quand l'écran se cache ; une image fixe avec « réduire les animations » ; sans WebGL, le dégradé CSS d'origine. Ne ralentit jamais l'app : dessinée dans un Web Worker (`braise.js`, OffscreenCanvas), jamais sur le fil principal ; démarre après le chargement, en fondu ; refusée sans vrai GPU (`failIfMajorPerformanceCaveat`) ; figée si une image coûte plus de 20 ms ; sans OffscreenCanvas (Safari avant 17), le dégradé CSS | boucle lente |
 | Changement de vue | la vue glisse de 6 px en apparaissant | 0,24 s |
 | Appui | le bouton s'enfonce | instantané |
 
@@ -228,6 +228,24 @@ Cible :
   (onglets segmentés, crayon de la fiche, périodes du graphique, lignes de
   l'historique d'un exercice, REVOIR LE BILAN). La date de la dernière fois
   garde son cadre de 32 px, mais sa zone d'appui déborde jusqu'à 44 px.
+- **Repos déplaçable** (18/09) : la pastille se glisse où l'on veut et y
+  reste ; un appui ouvre l'exercice en plein écran, sur le repos. Cocher lance
+  toujours le repos (« ça tue sa mère »).
+- **Exercice en plein écran** (19/09, maquette validée avant le code) : la
+  seule série à faire, en cartes de **verre fumé** (`rgba(21,20,18,.62)` +
+  flou 18 px) posées sur la braise ; chiffres en Bricolage 800 à chasse fixe
+  (58 px), −/+ de 56 px, puces RPE de 44 px, une action orange par écran
+  (`VALIDER LA SÉRIE` / `PASSER À LA SÉRIE SUIVANTE`) et un bouton fantôme
+  (`Exo suivant →`). Molette en feuille du bas, bande sélectionnée `--s3`.
+  Swipe façon Tinder : la carte penche (dx/18 °), un tampon centré `VALIDÉE`
+  (vert) ou `SUPPRIMER` (orange) apparaît avec la distance, la braise vire au
+  vert ou au rouge. Repos : anneau (conic-gradient) orange jusqu'au repos visé,
+  vert au-delà. Variables de swipe nommées `--sw-ok` / `--sw-suppr` pour ne
+  pas écraser le jeton `--ok`.
+- **Sous-groupes** (18/09) : la pastille du groupe affiche le muscle
+  (`BICEPS`, `QUADRI`) sans prendre plus de place ; les sous-groupes gardent la
+  couleur de leur groupe, la silhouette du récap (face et dos) les distingue par
+  la position, pas par une nouvelle couleur.
 - **Barre du bas toujours récupérable** (18/09, demande : « il faut qu'elle
   soit toujours là ») : elle ne se range que pendant qu'un clavier est
   réellement à l'écran ; tout état périmé est effacé au changement de vue et
@@ -303,6 +321,8 @@ avant de le faire.
 - **Pas de React** (18/09) : la question a été reposée, la réponse reste non ;
   le fond animé se fait en WebGL dans le code actuel.
 - **Braise** (18/09) : un fond animé aux moments forts seulement (accueil,
-  bilan), jamais pendant la saisie.
+  bilan). **Élargie le 19/09 à la demande** à tout l'exercice en plein écran,
+  saisie comprise, avec une intensité et une teinte qui suivent l'état ;
+  toujours pas sur les listes de l'app.
 - **Description de l'interface** : [`DESIGN.md`](DESIGN.md), extrait du code le
   18/09. Ce fichier-ci garde les décisions et fait foi en cas d'écart.

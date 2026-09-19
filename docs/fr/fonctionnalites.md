@@ -119,7 +119,19 @@ focus déplaçait la barre entre l'appui et le relâchement, et l'appui tombait 
 côté. C'est un état d'écran, en mémoire, jamais enregistré.
 
 **La carte.** Le groupe musculaire est une pastille dans l'en-tête (`PECS`,
-`DOS`…), avec le menu natif posé dessus. Le superset reste sous `+ SÉRIE` —
+`DOS`…), avec le menu natif posé dessus. **Depuis le 18/09, au muscle près**
+quand c'est possible : Dos › dorsaux, trapèzes, lombaires ; Bras › biceps,
+triceps, avant-bras ; Jambes › quadriceps, ischios, fessiers, mollets,
+adducteurs, abducteurs (pectoraux, épaules et abdos restent entiers). Le
+sous-groupe vient du nom (catalogue, puis mots-clés : « leg curl » avant
+« curl », « rowing menton » reste aux épaules) et **l'emporte sur un groupe mal
+rangé** : un curl noté en Épaules compte en Bras › Biceps. Le menu propose les
+sous-groupes sous leur groupe, plus « sans précision » ; ce choix vaut pour ce
+nom partout, historique compris (`topset_custom_exercises`, colonne
+`exercices_perso.sous_groupe` côté compte). Classement tranché d'après l'anatomie
+et l'EMG : trapèzes et lombaires au Dos, soulevé de terre roumain en Jambes ›
+Ischios, hip thrust en Fessiers, curl marteau en Biceps, face pull et rowing
+menton aux Épaules, pull-over aux Pectoraux. Le superset reste sous `+ SÉRIE` —
 c'est une action de saisie, pas un réglage ; passer au temps et supprimer
 l'exercice sont dans le menu `⋯`. La carte est un conteneur (`container-type: inline-size`) : sous 310 px
 utiles — petit téléphone, superset sur un écran de 360 px — la colonne de la dernière fois
@@ -170,6 +182,36 @@ Moins de 10 s (des séries cochées après coup) ou plus de 20 min (un repos
 oublié) : rien n'est écrit ; décocher cette série l'annule, valider la séance
 l'abandonne. Seulement sur la séance du jour, gardé dans `localStorage`
 (`topset_repos`) comme le chrono, écran allumé.
+
+**Le repos se déplace** (18/09/2026). La pastille se déplace du doigt (8 px
+avant de parler de glisser : un appui qui tremble reste un appui) et garde sa
+place (`topset_repos_pos`, en fraction de l'écran). Un appui ouvre l'exercice
+en plein écran, sur le repos.
+
+**L'exercice en plein écran** (19/09/2026). L'icône orange ⤢ de chaque carte
+(sauf le cardio) ouvre l'exercice en grand, sur la **seule série à faire** : la
+première pas encore cochée. Les séries faites restent rappelées en petit, et la
+même série la dernière fois à côté. Gros −/+ (2,5 kg, 1 rep, 5 s au temps) ;
+un appui sur le chiffre ouvre une **molette** (colonnes à défilement natif qui
+s'arrêtent d'elles-mêmes sur une valeur : kg entiers + quarts, reps, secondes
+par 5). Puces de RPE 6 à 10 (un RPE en demi, noté sur la carte, reste affiché).
+- **Valider** (le bouton, ou la carte **glissée vers la droite**) coche la série
+  exactement comme sa ligne : le repos d'avant est noté, le sien commence, et
+  l'écran passe au **repos** : le temps qui monte dans un anneau qui se remplit
+  jusqu'au repos visé (celui de l'exercice, sinon 90 s) puis passe au vert, la
+  série notée, et la suivante déjà remplie et modifiable. `PASSER À LA SÉRIE
+  SUIVANTE` y revient ; `Terminer l'exo` passe au suivant.
+- **Glisser vers la gauche** supprime la série ; `ANNULER` la remet à sa place
+  pendant 5 secondes. Un glissement de moins d'un tiers de l'écran (et pas
+  lancé) revient ; un appui sur un bouton de la carte reste un appui.
+- **Superset** : les exercices du bloc ensemble, A puis B ; on enchaîne sans
+  repos à l'écran, et le repos vient après le dernier du tour.
+- `Exo suivant →` et les points en haut : un superset compte pour un exercice.
+- **✕** (ou Échap) ferme sans rien valider ni supprimer : les réglages sont déjà
+  dans la série, qui reste en cours ; si un repos tourne, la pastille reprend.
+Le fond est la braise (voir plus bas) : douce pendant la série, forte pendant le
+repos, verte ou rouge sous le swipe. Toutes les écritures passent par
+`scheduleSave`, comme la carte : hors ligne et sans compte, rien ne change.
 
 **Le cardio : minutes, vitesse, inclinaison.** Tapis, course, marche, vélo,
 rameur… s'ouvrent en cardio : une série est une durée **en minutes** (`25`,
@@ -290,7 +332,10 @@ n'est décidé sans l'utilisateur : la table ne sert qu'à proposer.
 
 **Récap.** Volume total (poids × répétitions, additionné), calendrier des séances,
 records par exercice et répartition par groupe musculaire — sur la semaine, le
-mois ou l'année.
+mois ou l'année. La silhouette est de face et de dos, une zone par muscle ; un
+groupe noté sans précision allume toutes ses zones, plus pâles. Sous chaque
+groupe de la légende, le détail par muscle ; chaque ligne d'exercice porte son
+sous-groupe.
 
 **Deux rubriques dans SÉANCES.** *Mes séances* — ce qui reste à faire : les
 séances préparées mais pas loguées, celle du jour, celles à venir, triées du plus
