@@ -596,11 +596,17 @@ ok('le repos monte apres une serie cochee ou un chrono en pause, et s ecrit dans
    && /localStorage\.setItem\(CLE_REPOS/.test(SRC) && /id="reposPastille"/.test(HTML)
    && /function validerFin\(ds\)\{\s*finirRepos\(false\);/.test(SRC));
 
-ok('le planning est un calendrier jour, semaine, mois ; un jour touche montre sa fiche sous MES SEANCES, un jour vide s ouvre dans DU JOUR',
-   /id="calVues"/.test(HTML) && /data-cal="mois"/.test(HTML) && /function calMoisHTML\(annee, mois\)\{/.test(SRC)
-   && /function calSemaineHTML\(debut\)\{/.test(SRC) && /function calJourHTML\(ds\)\{/.test(SRC)
-   && /seancesOnglet = 'jour';\n    montrerVue\('seances'\);/.test(SRC) && /if \(etatJour\(ds\)\) ouvrirSeance\(ds, 'planning'\); else allerAuJour\(ds\);/.test(SRC)
-   && /if \(depuis === 'planning'\) seancesOnglet = 'mes';/.test(SRC) && /montrerVue\(state\.ficheRetour \|\| 'seances'\)/.test(SRC));
+// Le carnet : le calendrier se replie sur la semaine ou se deplie sur le
+// mois, un jour touche ouvre sa fiche ou sa seance.
+ok('le carnet est un calendrier semaine ou mois, sans sous-onglets',
+   /id="calVueBtn"/.test(HTML) && !/id="calVues"/.test(HTML)
+   && /function calMoisHTML\(annee, mois\)\{/.test(SRC) && /function calSemaineHTML\(debut\)\{/.test(SRC)
+   // La vue « jour » montrait une seance sans pouvoir la remplir : SÉANCE
+   // fait ca mieux, et elle est partie avec son HTML.
+   && !/calJourHTML/.test(SRC) && !/data-cal="jour"/.test(HTML)
+   && /calVue = calVue === 'mois' \? 'semaine' : 'mois';/.test(SRC)
+   && /if \(etatJour\(ds\)\) ouvrirSeance\(ds, 'planning'\); else allerAuJour\(ds\);/.test(SRC)
+   && /montrerVue\(state\.ficheRetour \|\| 'seances'\)/.test(SRC));
 ok('TERMINER MA SEANCE apparait des la premiere serie notee, sans attendre un rendu complet',
    corps('function renderBandeau(', 'var d = fromDateStr(ds);').indexOf('majBoutonFin(ds);') > -1);
 ok('audit UI/UX : plus d emoji dans le signal d un exercice, un point dessine a la place',
@@ -693,6 +699,15 @@ ok('chrono libre : un bouton d en-tete, deux modes, et rien qui parte dans le ca
    && /var DUREES_LIBRE = \[60, 90, 120, 180\];/.test(SRC)
    && corps('function rendreChrono(', 'function etatLibre(').indexOf('scheduleSave') < 0
    && corps("if (clEl){", "// ---------- les reglages").indexOf('scheduleSave') < 0);
+// « Quand on clic sur le chrono y'a juste prochaine serie, ca relance le
+// chrono, tu peux sortir ou choisir de l'arreter » (20/09/2026).
+ok('chrono : pendant qu il tourne, prochaine serie, arreter, et le ✕ pour sortir',
+   /data-cl="relancer">PROCHAINE SÉRIE</.test(SRC) && /data-cl="raz">ARRÊTER</.test(SRC)
+   && /data-fs="reprendre">PROCHAINE SÉRIE</.test(SRC) && /data-fs="arreter">ARRÊTER LE CHRONO</.test(SRC)
+   // Le repos ne propose plus de remplir la serie d avance : elle se regle
+   // sur l ecran de saisie, une fois le repos fini.
+   && !/fs-mini/.test(SRC + HTML)
+   && corps('function reposFocusHTML(', 'function majTempsFocus(').indexOf('champsHTML(') < 0);
 ok('chrono libre : une heure de depart gardee, pas un compteur qui tourne',
    /libre\.ecoule \+ \(libre\.debut \? \(Date\.now\(\) - libre\.debut\) \/ 1000 : 0\)/.test(SRC)
    && /localStorage\.setItem\(CLE_CHRONO_LIBRE/.test(SRC));
@@ -737,12 +752,32 @@ ok('barre du bas : elle ne reste jamais rangee (vrai clavier seulement, etat rec
 ok('le logo ramene a la seance du jour',
    HTML.indexOf('<a href="/" class="brand-lien" id="marqueAccueil"') > -1
    && corps("getElementById('marqueAccueil')", 'jourAuj').indexOf('allerAuJour(toDateStr(new Date()));') > -1);
-ok('SEANCES : du jour, mes seances, historique ; l app s ouvre sur la seance du jour',
-   /data-onglet="jour">DU JOUR</.test(HTML) && /view:'seances',/.test(SRC) && /var seancesOnglet = 'jour';/.test(SRC)
-   && /<section class="view" id="view-seances">\s*<div class="segmented sub" id="seancesTabs">/.test(HTML)
-   && (() => { const s = HTML.slice(HTML.indexOf('id="view-seances"'), HTML.indexOf('id="view-seance"'));
-               return s.includes('id="exList"') && s.includes('id="heroBand"') && s.includes('id="seancesListe"'); })()
+// « Entre le calendrier, le recap, la seance, les seances, les seances du
+// jour c'est trop fouilli » (20/09/2026). Un ecran, un metier : sept
+// destinations deviennent quatre.
+ok('onglets : SEANCE, CARNET, PROGRES, APPRENDRE, dans cet ordre',
+   /data-view="seances">.*?<span>SÉANCE<\/span>/.test(HTML) && /data-view="planning">.*?<span>CARNET<\/span>/.test(HTML)
+   && /data-view="recap">.*?<span>PROGRÈS<\/span>/.test(HTML) && /data-view="apprendre">.*?<span>APPRENDRE<\/span>/.test(HTML)
+   && HTML.indexOf('data-view="seances"') < HTML.indexOf('data-view="planning"')
+   && HTML.indexOf('data-view="planning"') < HTML.indexOf('data-view="recap"')
+   && /view:'seances',/.test(SRC)
+   && SRC.indexOf("var ONGLETS = ['planning','seances','recap','apprendre'];") > -1);
+ok('SEANCE ne montre que le jour : ni sous-onglets, ni listes',
+   !/id="seancesTabs"/.test(HTML) && !/seancesOnglet/.test(SRC)
+   && (() => { const v = HTML.slice(HTML.indexOf('id="view-seances"'), HTML.indexOf('id="view-seance"'));
+               return v.includes('id="exList"') && v.includes('id="heroBand"')
+                   && !v.includes('id="seancesListe"') && !v.includes('seg-btn'); })()
+   && /function renderSeances\(\)\{ renderSeanceJour\(false\); \}/.test(SRC)
    && !/id="dayPills"/.test(HTML) && !/renderDayPills|renderPlanning|planningWeekStart/.test(SRC));
+ok('CARNET : le calendrier et les seances sur un seul ecran, les filtres trient la liste',
+   (() => { const v = HTML.slice(HTML.indexOf('id="view-planning"'), HTML.indexOf('id="view-seances"'));
+            return v.includes('id="calCorps"') && v.includes('id="calVueBtn"')
+                && v.includes('id="carnetFiltres"') && v.includes('id="seancesListe"'); })()
+   && /data-filtre="toutes"/.test(HTML) && /data-filtre="prevues"/.test(HTML) && /data-filtre="faites"/.test(HTML)
+   && /var carnetFiltre = 'toutes';/.test(SRC)
+   // Un filtre trie, il ne change pas d ecran : le calendrier reste au-dessus.
+   && corps("document.getElementById('carnetFiltres').addEventListener", "document.getElementById('subTabs')").indexOf('montrerVue') < 0
+   && /if \(state\.view === 'planning'\)\{ renderCalendrier\(\); renderCarnet\(\); \}/.test(SRC));
 
 console.log(`\n${pass} reussis, ${fail} echoues`);
 process.exit(fail ? 1 : 0);

@@ -36,6 +36,13 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ### Changed
 
+- **Four tabs, four jobs.** SÉANCE (what you are doing now), CARNET (finding a
+  day or a session), PROGRÈS (records and reports, the former RÉCAP) and
+  APPRENDRE. The calendar, my sessions and the history were three screens of the
+  same thing: they are now one, where the calendar folds between week and month
+  and a row of filters sorts the list below it instead of changing screen. The
+  sub-tabs of SÉANCES and of PLANNING are gone, and so is the calendar's day
+  view — it showed a session you could not fill in.
 - **Fewer things on a set line.** The RPE column and the per-set REST field are
   put away by default: a line is now the number, last time, weight, reps and
   the tick. Both come back from the settings, and nothing you already logged is

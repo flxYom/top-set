@@ -14,18 +14,29 @@ que la description du site et la page produit promettent « sans compte ». Le
 bouton se cache pendant un oubli ou un changement de mot de passe, où il
 abandonnerait l'opération à mi-chemin.
 
-**Planning et séances.** L'app s'ouvre sur **SÉANCES › DU JOUR**, le carnet où
-l'on note : le bandeau du jour, puis les exercices et les séries. Le **PLANNING**
-est un calendrier qu'on regarde : **SEMAINE** (par défaut, une ligne par jour :
-titre de la séance, exercices, séries, faite ou prévue, puis les groupes
-travaillés de la semaine), **MOIS** (la grille, une pastille à la couleur du
-groupe dominant, pleine pour une séance faite, en contour pour une séance
-prévue) et **JOUR** (le détail d'une séance). Les flèches avancent d'un jour,
-d'une semaine ou d'un mois ; `AUJOURD'HUI` passe en orange dès qu'on s'est
-éloigné. Toucher une séance montre sa fiche, rangée sous MES
-SÉANCES, et `‹ RETOUR` ramène au calendrier ; un jour vide s'ouvre dans DU JOUR,
-où `AUJOURD'HUI ›` ramène à aujourd'hui. **SÉANCES** a trois rubriques :
-DU JOUR, MES SÉANCES et HISTORIQUE.
+**Quatre onglets, quatre métiers** (20/09/2026, demande : « entre le
+calendrier, le récap, la séance, les séances, les séances du jour c'est trop
+fouilli »). Sept endroits montraient des séances — PLANNING (jour, semaine,
+mois), SÉANCES (du jour, mes séances, historique) et le RÉCAP ; quatre
+affichaient la même liste sous une autre forme. Il en reste quatre, et chacun
+fait une seule chose :
+- **SÉANCE** : ce qu'on fait maintenant. Le bandeau du jour, les exercices, les
+  séries. Plus aucun sous-onglet. C'est là que l'app s'ouvre.
+- **CARNET** : chercher un jour ou une séance. Le calendrier **et** la liste sur
+  le même écran. Il se replie sur la **semaine** (une rangée de sept, une
+  pastille à la couleur du groupe dominant) ou se déplie sur le **mois** (la
+  grille, pastille pleine pour une séance faite, en contour pour une prévue) —
+  un seul bouton, `VOIR LE MOIS` / `VOIR LA SEMAINE`. Les flèches avancent d'une
+  semaine ou d'un mois ; `AUJOURD'HUI` passe en orange dès qu'on s'est éloigné.
+  Dessous, une rangée de filtres — `TOUTES`, `PRÉVUES`, `FAITES` — **trie la
+  liste** au lieu de changer d'écran ; avec `TOUTES`, deux blocs nommés
+  « À VENIR » et « DÉJÀ FAITES ». Toucher un jour ou une séance ouvre sa fiche,
+  et `‹ RETOUR` ramène au carnet ; un jour vide s'ouvre dans SÉANCE, où
+  `AUJOURD'HUI ›` ramène à aujourd'hui.
+- **PROGRÈS** : records, volume, bilans (l'ancien RÉCAP).
+- **APPRENDRE** : les pages et les outils.
+La vue **JOUR** du calendrier a sauté avec eux : elle montrait une séance sans
+qu'on puisse la remplir, et SÉANCE fait ça mieux.
 
 **Une série, une ligne.** `SÉRIE · 8 SEPT. · KG · REPS · RPE · ✓`, la grille de
 Strong ou Hevy, reprise parce que c'est celle qu'on connaît. Avant, chaque série
@@ -37,7 +48,7 @@ comprenait pas —, et montre la même série ce jour-là (la 3e en face de la 3
 Elle se **lit**, elle ne recopie plus rien : elle recopiait d'un appui, dans une
 case posée à 4 px de celle du poids, et un appui de travers notait une série
 qu'on n'avait pas faite. La **date en tête de colonne** est un vrai bouton,
-encadré, avec sa flèche : il ouvre la séance d'avant dans DU JOUR, et une
+encadré, avec sa flèche : il ouvre la séance d'avant dans SÉANCE, et une
 barre orange en bas de l'écran, `RETOUR À MA SÉANCE`, ramène au jour de départ,
 sur l'exercice d'où l'on était parti. La barre suit un aller-retour, pas une
 chaîne : depuis la séance d'avant, sa propre date mène plus loin, mais le retour
@@ -71,8 +82,8 @@ doigt** : passé 8 px de déplacement horizontal, elle se soulève et suit le
 doigt, l'onglet survolé s'allume, et le plus proche s'ouvre au lâcher ; un
 simple appui reste un clic (Pointer Events, `touch-action:none` sur la barre
 du bas). **Chaque onglet garde sa position de défilement** (18/09/2026) :
-PLANNING, SÉANCES, RÉCAP et APPRENDRE retrouvent la hauteur où on les avait
-quittés, y compris SÉANCES au retour d'une fiche (`montrerVue`, en mémoire
+SÉANCE, CARNET, PROGRÈS et APPRENDRE retrouvent la hauteur où on les avait
+quittés, y compris SÉANCE au retour d'une fiche (`montrerVue`, en mémoire
 seulement : à l'ouverture, chaque onglet part du haut). Le balayage de toute
 la page pour changer d'onglet a été écarté : il changerait d'onglet par erreur
 pendant la saisie et entrerait en conflit avec la carte de chaleur, qui défile
@@ -268,7 +279,7 @@ dernière fois, qui se lit et ne recopie rien :
   (poids, reps, type, repos, vitesse et inclinaison). Rien n'est coché, le RPE
   reste à dire, une série déjà remplie n'est pas touchée (`repriseSerie`).
 - `+ AJOUTER À MA SÉANCE DU JOUR`, sous chaque exercice d'une séance passée et
-  faite — dans sa fiche, ou dans DU JOUR quand on l'ouvre par la date de la
+  faite — dans sa fiche, ou dans SÉANCE quand on l'ouvre par la date de la
   dernière fois : l'exercice arrive dans la séance d'aujourd'hui avec ses séries,
   RPE compris, rien de coché. Le même exercice déjà posé et encore vide reçoit
   les séries au lieu d'un doublon (`ajouterAuJour`). « Faite » : validée, ou
@@ -370,12 +381,13 @@ groupe noté sans précision allume toutes ses zones, plus pâles. Sous chaque
 groupe de la légende, le détail par muscle ; chaque ligne d'exercice porte son
 sous-groupe.
 
-**Deux rubriques dans SÉANCES.** *Mes séances* — ce qui reste à faire : les
-séances préparées mais pas loguées, celle du jour, celles à venir, triées du plus
-ancien au plus récent pour qu'une séance sautée remonte. C'est là que vit
-*Créer ma séance*. *Historique* — ce qui est fait, du plus récent au plus ancien,
-groupé par mois. La frontière est le fait de l'avoir loguée, pas la date seule :
-une séance loguée aujourd'hui reste dans *Mes séances* jusqu'au lendemain.
+**Trois filtres dans le CARNET.** *Prévues* — ce qui reste à faire : les séances
+préparées mais pas loguées, celle du jour, celles à venir, triées du plus ancien
+au plus récent pour qu'une séance sautée remonte. C'est là que vit *Créer ma
+séance*. *Faites* — ce qui est fait, du plus récent au plus ancien, groupé par
+mois. *Toutes* montre les deux, à venir d'abord, chaque bloc annoncé par son
+titre. La frontière est le fait de l'avoir loguée, pas la date seule : une séance
+loguée aujourd'hui reste dans *Prévues* jusqu'au lendemain.
 
 **Graphique de progression** par exercice, tracé depuis ton propre historique.
 

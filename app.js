@@ -2071,40 +2071,56 @@
     return { mes:mes, histo:histo };   // histo est deja du plus recent au plus ancien
   }
 
-  function renderSeances(){
+  function renderSeances(){ renderSeanceJour(false); }
+
+  // ---------- le carnet ----------
+  // Le calendrier et les seances, sur un seul ecran (20/09/2026). Les filtres
+  // trient la liste ; ils ne changent pas d'ecran, et le calendrier reste
+  // au-dessus dans tous les cas.
+  var carnetFiltre = 'toutes';
+  function renderCarnet(){
     var champ = document.getElementById('seanceDate');
     if (champ && !champ.value) champ.value = toDateStr(new Date());
     var liste = document.getElementById('seancesListe');
     var cible = document.getElementById('seancesCible');
     var bloc  = document.getElementById('seanceCreerBloc');
 
-    document.querySelectorAll('#seancesTabs .seg-btn').forEach(function(b){
-      b.classList.toggle('active', b.dataset.onglet === seancesOnglet);
+    document.querySelectorAll('#carnetFiltres .seg-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.filtre === carnetFiltre);
     });
-    var duJour = seancesOnglet === 'jour';
-    document.getElementById('seancesJour').hidden = !duJour;
-    document.getElementById('seancesListes').hidden = duJour;
-    if (duJour){ renderSeanceJour(false); return; }
-
     var groupes = trierSeances();
-    var mes = seancesOnglet === 'mes';
-    var seances = mes ? groupes.mes : groupes.histo;
+    var avecPrevues = carnetFiltre !== 'faites';
+    var avecFaites  = carnetFiltre !== 'prevues';
 
-    // Creer une seance n'a de sens que dans la rubrique ou elle atterrira.
-    bloc.hidden = !mes;
+    // Creer une seance a venir n'a de sens que la ou elle atterrira.
+    bloc.hidden = !avecPrevues;
+    cible.textContent = '';
 
-    if (!seances.length){
-      cible.textContent = '';
-      liste.innerHTML = '<div class="seances-vide">' + (mes
-        ? 'Aucune séance prévue. Crée-en une ci-dessus, ou note-la directement dans DU JOUR.'
-        : 'Rien dans l\'historique pour l\'instant. Les séances terminées viendront ici toutes seules.')
-        + '</div>';
-      return;
+    var html = '';
+    // Avec « toutes », chaque bloc dit ce qu'il montre : sans ca, une seance
+    // prevue et une seance faite se suivent sans qu'on sache laquelle est
+    // laquelle.
+    var deuxBlocs = avecPrevues && avecFaites && groupes.mes.length && groupes.histo.length;
+    if (avecPrevues && groupes.mes.length){
+      if (deuxBlocs) html += '<div class="seances-bloc">À VENIR</div>';
+      html += listeSeancesHTML(groupes.mes);
     }
-    cible.textContent = mes
-      ? 'Ouvre une séance pour la modifier, la renommer, ou la sélectionner pour un autre jour.'
-      : 'Ouvre une séance passée pour voir son récap, ou la reprendre telle quelle pour un autre jour.';
-
+    if (avecFaites && groupes.histo.length){
+      if (deuxBlocs) html += '<div class="seances-bloc">DÉJÀ FAITES</div>';
+      html += listeSeancesHTML(groupes.histo);
+    }
+    if (!html){
+      cible.textContent = '';
+      html = '<div class="seances-vide">' + (carnetFiltre === 'faites'
+        ? 'Rien de fait pour l\'instant. Les séances terminées viendront ici toutes seules.'
+        : carnetFiltre === 'prevues'
+        ? 'Aucune séance prévue. Crée-en une ci-dessus, ou note-la directement dans SÉANCE.'
+        : 'Rien encore. Crée une séance ci-dessus, ou note-la directement dans SÉANCE.')
+        + '</div>';
+    }
+    liste.innerHTML = html;
+  }
+  function listeSeancesHTML(seances){
     var moisVu = '', html = '';
     seances.forEach(function(s){
       var sd = fromDateStr(s.date);
@@ -2132,16 +2148,15 @@
         + '</span>'
         + '</button>';
     });
-    liste.innerHTML = html;
+    return html;
   }
 
   // ---------- la fiche d'une seance ----------
-  // Depuis le planning, on regarde la seance : sa fiche, rangee sous MES
-  // SÉANCES, et RETOUR ramene au calendrier.
+  // Depuis le carnet, on regarde la seance : sa fiche, et RETOUR ramene la
+  // ou l'on etait.
   function ouvrirSeance(ds, depuis){
     state.seanceOuverte = ds;
     state.ficheRetour = depuis || 'seances';
-    if (depuis === 'planning') seancesOnglet = 'mes';
     montrerVue('seance');
     window.scrollTo(0, 0);
   }
@@ -2297,7 +2312,6 @@
   // exercice ne garde pas son identifiant : on le retrouve par son nom.
   function allerAuJour(ds, cible){
     state.selectedDay = ds;
-    seancesOnglet = 'jour';
     montrerVue('seances');
     renderSeanceJour(true);
     centrerExo(cible);
@@ -2387,10 +2401,11 @@
   }
 
   // ---------- le planning : un calendrier ----------
-  // JOUR, SEMAINE ou MOIS autour d'une date de reference. On y regarde, on
-  // n'y note pas : toucher un jour l'ouvre dans SÉANCES > DU JOUR. Un jour
-  // « fait » a des series remplies ; « prevu » a des exercices ou un titre,
-  // sans series.
+  // La semaine, ou le mois deplie. On y regarde, on n'y note pas : toucher un
+  // jour l'ouvre dans SÉANCE. Un jour « fait » a des series remplies ;
+  // « prevu » a des exercices ou un titre, sans series. La vue « jour » a
+  // saute le 20/09 : elle montrait une seance sans qu'on puisse la remplir,
+  // et l'ecran SÉANCE fait ca mieux.
   var calVue = 'semaine';
   var calRef = toDateStr(new Date());
   function etatJour(ds){
@@ -2414,25 +2429,20 @@
   }
   function decalerCalendrier(sens){
     var d = fromDateStr(calRef);
-    if (calVue === 'jour') d = addDays(d, sens);
-    else if (calVue === 'semaine') d = addDays(d, 7 * sens);
+    if (calVue === 'semaine') d = addDays(d, 7 * sens);
     else d = new Date(d.getFullYear(), d.getMonth() + sens, 1);
     calRef = toDateStr(d);
     renderCalendrier();
   }
   function renderCalendrier(){
-    document.querySelectorAll('#calVues .seg-btn').forEach(function(b){
-      b.classList.toggle('active', b.dataset.cal === calVue);
-    });
+    var bouton = document.getElementById('calVueBtn');
+    bouton.textContent = calVue === 'mois' ? 'VOIR LA SEMAINE' : 'VOIR LE MOIS';
+    bouton.setAttribute('aria-expanded', calVue === 'mois' ? 'true' : 'false');
     var ref = fromDateStr(calRef), maintenant = new Date(), auj = toDateStr(maintenant);
     var label = document.getElementById('calLabel');
     var corps = document.getElementById('calCorps');
     var loin;
-    if (calVue === 'jour'){
-      label.textContent = majuscule(DAY_NAMES[(ref.getDay()+6)%7].toLowerCase()) + ' ' + ref.getDate() + ' ' + MONTH_ABBR[ref.getMonth()];
-      loin = calRef !== auj;
-      corps.innerHTML = calJourHTML(calRef);
-    } else if (calVue === 'semaine'){
+    if (calVue === 'semaine'){
       var debut = startOfWeek(ref);
       // L'annee en cours ne prend plus la place de la semaine sur un petit ecran.
       var finSem = addDays(debut, 6), an = maintenant.getFullYear();
@@ -2447,23 +2457,21 @@
     }
     document.getElementById('calAuj').classList.toggle('loin', loin);
   }
+  // Une rangee de sept, comme le mois : le detail d'une seance se lit dans la
+  // liste juste dessous, il n'a pas besoin d'etre repete ici (20/09).
   function calSemaineHTML(debut){
-    var auj = toDateStr(new Date()), html = '';
+    var auj = toDateStr(new Date()), html = '<div class="cal-semaine">';
     for (var i = 0; i < 7; i++){
       var d = addDays(debut, i), ds = toDateStr(d), etat = etatJour(ds);
-      var sous = '';
-      if (etat){
-        var n = exosDuJour(ds).length, s = compterJour(state.sessions[ds]);
-        sous = n + (n > 1 ? ' exos' : ' exo') + (etat === 'faite' ? ' · ' + s + (s > 1 ? ' séries' : ' série') : '');
-      }
-      html += '<button type="button" class="cal-ligne ' + (etat || 'vide') + (ds === auj ? ' auj' : '') + '" data-cal-jour="' + ds + '"'
-        + (etat ? ' style="--c:' + couleurJour(ds) + '"' : '') + '>'
-        + '<span class="cal-date"><span class="cal-jour">' + DAY_ABBR[i] + '</span><span class="cal-num">' + d.getDate() + '</span></span>'
-        + '<span class="cal-info"><span class="cal-titre">' + esc(etat ? titreSeance(ds) : (ds >= auj ? 'Rien de prévu' : 'Rien de noté')) + '</span>'
-        +   (sous ? '<span class="cal-sous">' + esc(sous) + '</span>' : '') + '</span>'
-        + '<span class="cal-etat">' + etatTexte(ds, false) + '</span>'
-        + '</button>';
+      var aria = DAY_NAMES[(d.getDay()+6)%7] + ' ' + d.getDate() + ' ' + MONTH_NAMES[d.getMonth()]
+        + (etat === 'faite' ? ', séance faite : ' + titreSeance(ds)
+           : (etat === 'prevue' ? ', séance prévue : ' + titreSeance(ds) : ', rien ce jour-là'));
+      html += '<button type="button" class="cal-case' + (etat ? ' ' + etat : '') + (ds === auj ? ' auj' : '') + '"'
+        + ' data-cal-jour="' + ds + '"' + (etat ? ' style="--c:' + couleurJour(ds) + '"' : '') + ' aria-label="' + esc(aria) + '">'
+        + '<span class="cal-jour">' + DAY_ABBR[i] + '</span>'
+        + '<span class="cal-num">' + d.getDate() + '</span>' + (etat ? '<i></i>' : '') + '</button>';
     }
+    html += '</div>';
     // Les groupes travailles dans la semaine, comme sous les anciennes pastilles.
     var counts = groupCountsIn(toDateStr(debut), toDateStr(addDays(debut, 6)));
     var badges = GROUPS.filter(function(g){ return counts[g]; }).map(function(g){
@@ -2495,28 +2503,6 @@
     return html + '</div><p class="cal-resume">' + resume + '</p>'
       + '<div class="cal-legende"><span class="faite"><i></i>faite</span><span class="prevue"><i></i>prévue</span></div>';
   }
-  function calJourHTML(ds){
-    var etat = etatJour(ds);
-    var html = '<div class="cal-fiche' + (etat ? ' ' + etat : '') + '"' + (etat ? ' style="--c:' + couleurJour(ds) + '"' : '') + '>'
-      + '<span class="cal-fiche-etat">' + etatTexte(ds, true) + '</span>';
-    if (etat){
-      html += '<h2 class="cal-fiche-titre">' + esc(titreSeance(ds)) + '</h2><ul class="cal-exos">'
-        + exosDuJour(ds).map(function(e){
-            var remplies = seriesRemplies(e);
-            var top = remplies.length ? TS.calculerTopSet(remplies) : null;
-            var detail = remplies.length
-              ? remplies.length + (remplies.length > 1 ? ' séries' : ' série') + (top ? ' · ' + perfTexte(top) : '')
-              : 'à faire';
-            return '<li><b>' + esc(nomCanonique(e.nom) || e.nom || 'Sans nom') + '</b><span>' + esc(detail) + '</span></li>';
-          }).join('')
-        + '</ul>';
-    } else {
-      html += '<p class="cal-vide">Aucune séance notée ni prévue.</p>';
-    }
-    return html + '</div>'
-      + '<button type="button" class="btn-add" data-cal-jour="' + ds + '">' + (etat ? 'VOIR LA SÉANCE' : 'NOTER UNE SÉANCE CE JOUR-LÀ') + '</button>';
-  }
-
   function renderRecap(){
     var data = computeRecap(state.recapPeriod);
     document.getElementById('recapLabel').textContent = data.label.toUpperCase();
@@ -2829,7 +2815,7 @@
   });
 
   function renderAll(){
-    if (state.view === 'planning') renderCalendrier();
+    if (state.view === 'planning'){ renderCalendrier(); renderCarnet(); }
     else if (state.view === 'seances') renderSeances();
     else if (state.view === 'seance') renderSeanceDetail();
     else if (state.view === 'exercice') renderExerciceDetail();
@@ -2843,11 +2829,6 @@
   }
 
   // ---------- event wiring ----------
-  // « jour », « mes » ou « histo ». L'onglet survit a un aller-retour dans une fiche :
-  // revenir d'une seance passee pour retomber sur la liste des seances a venir
-  // donnerait l'impression d'avoir perdu sa place.
-  var seancesOnglet = 'jour';
-
   var VUES = ['planning','seances','seance','exercice','recap','apprendre','coach','admin','messages'];
   // Chaque onglet de la barre garde sa position de defilement (demande du
   // 18/09/2026, d'apres react-native-scrollable-tab-view) : revenir sur le
@@ -2864,7 +2845,7 @@
     // La fiche d'un exercice n'a pas d'onglet : on garde allume celui d'ou
     // l'on vient, sinon la barre du haut clignote sans rien dire d'utile.
     var actif = vue;
-    if (vue === 'seance') actif = 'seances';
+    if (vue === 'seance') actif = (state.ficheRetour === 'seances') ? 'seances' : 'planning';
     if (vue === 'exercice') actif = (state.exoRetour === 'seance') ? 'seances' : state.exoRetour;
     document.querySelectorAll('.topbar-tab').forEach(function(b){
       b.classList.toggle('active', b.dataset.view === actif);
@@ -3116,11 +3097,10 @@
     montrerVue(btn.dataset.view);
   });
 
-  document.getElementById('seancesTabs').addEventListener('click', function(e){
+  document.getElementById('carnetFiltres').addEventListener('click', function(e){
     var btn = e.target.closest('.seg-btn'); if (!btn) return;
-    seancesOnglet = btn.dataset.onglet;
-    renderSeances();
-    window.scrollTo(0, 0);
+    carnetFiltre = btn.dataset.filtre;
+    renderCarnet();
   });
 
   document.getElementById('subTabs').addEventListener('click', function(e){
@@ -3149,9 +3129,8 @@
     window.scrollTo(0, 0);
   });
 
-  document.getElementById('calVues').addEventListener('click', function(e){
-    var b = e.target.closest('[data-cal]'); if (!b) return;
-    calVue = b.dataset.cal;
+  document.getElementById('calVueBtn').addEventListener('click', function(){
+    calVue = calVue === 'mois' ? 'semaine' : 'mois';
     renderCalendrier();
   });
   document.getElementById('calPrec').addEventListener('click', function(){ decalerCalendrier(-1); });
@@ -3343,7 +3322,7 @@
   function majRetour(){
     if (!retourBtn) return;
     if (retourSeance && state.selectedDay === retourSeance.ds) retourSeance = null;
-    var montrer = !!retourSeance && state.view === 'seances' && seancesOnglet === 'jour';
+    var montrer = !!retourSeance && state.view === 'seances';
     retourBtn.hidden = !montrer;
     document.body.classList.toggle('avec-retour', montrer);
     if (!montrer) return;
@@ -4016,10 +3995,10 @@
     if (f) html += '<p class="fs-note">✓ Série enregistrée : ' + esc(perfTexte(f.serie)) + (typeof f.serie.rpe === 'number' ? ' · RPE ' + String(f.serie.rpe).replace('.', ',') : '') + '</p>';
     if (p && p.serie){
       var autre = membres.indexOf(p.exercise) < 0;
-      html += '<div class="fs-mini"><div class="fs-mini-tete"><span>Prochaine · ' + (autre || membres.length > 1 ? esc(normalizeName(p.exercise.nom)) + ' · ' : '') + 'série ' + p.num + '</span><span>modifiable</span></div>'
-        + champsHTML(p.exercise, p.serie, true) + '</div>'
-        + '<div class="fs-bas"><button type="button" class="fs-cta" data-fs="reprendre">PASSER À LA SÉRIE SUIVANTE</button>'
-        + '<button type="button" class="fs-ghost" data-fs="suivant">' + (dernier ? 'Fermer' : 'Terminer l\'exo') + '</button></div>';
+      html += '<p class="fs-suite">Prochaine : ' + (autre || membres.length > 1 ? esc(normalizeName(p.exercise.nom)) + ' · ' : '')
+        + 'série ' + p.num + '</p>'
+        + '<div class="fs-bas"><button type="button" class="fs-cta" data-fs="reprendre">PROCHAINE SÉRIE</button>'
+        + '<button type="button" class="fs-ghost" data-fs="arreter">ARRÊTER LE CHRONO</button></div>';
     } else {
       html += '<div class="fs-fini"><p>Toutes les séries prévues sont faites.</p></div>'
         + '<div class="fs-bas"><button type="button" class="fs-cta secondaire" data-fs="ajouter">+ AJOUTER UNE SÉRIE</button>'
@@ -4124,6 +4103,15 @@
       if (!b || !focus) return;
       var quoi = b.dataset.fs, day = focusJour();
       if (quoi === 'fermer'){ fermerFocus(); return; }
+      // Arreter le chrono, c'est finir le repos sans changer de serie : on
+      // revient a la saisie, la ou l'on etait.
+      if (quoi === 'arreter'){
+        finirRepos(true);
+        focus.phase = 'saisie';
+        rendreFocus();
+        renderBandeau();
+        return;
+      }
       if (quoi === 'suivant'){ allerUniteSuivante(); return; }
       if (quoi === 'valider'){
         var c = focusCorps.querySelector('.fs-carte.actif');
@@ -4171,7 +4159,9 @@
   // « Il faut une rubrique chrono ou tu peux juste lancer un chrono »
   // (20/09/2026). Il ne connait ni exercice ni serie : il ne note rien, il
   // compte, et c'est tout. Deux modes — un minuteur pour le repos, un
-  // chronometre qui monte pour le gainage. Le temps est garde comme celui du
+  // chronometre qui monte pour le gainage. Pendant qu'il tourne, trois
+  // choses seulement (20/09) : PROCHAINE SERIE le relance a zero, ARRETER le
+  // remet au reglage, le ✕ sort en le laissant tourner. Le temps est garde comme celui du
   // repos : une heure de depart dans le telephone, jamais un compteur qu'il
   // faudrait faire tourner. Fermer l'ecran ne l'arrete pas.
   var CLE_CHRONO_LIBRE = 'topset_chrono_libre';
@@ -4224,10 +4214,16 @@
         + '<div class="cl-pas"><button type="button" data-cl="pas" data-v="-15">− 15 s</button>'
         + '<button type="button" data-cl="pas" data-v="15">+ 15 s</button></div>';
     }
+    // Pendant qu'il tourne, le seul geste utile est d'enchainer : PROCHAINE
+    // SERIE le relance a zero. Sinon on l'arrete, ou on sort par le ✕ et il
+    // continue. Trois choses, pas six.
     html += '<div class="cl-bas">'
-      + '<button type="button" class="fs-cta" data-cl="' + (enCours ? 'pause' : 'partir') + '">'
-      +   (enCours ? 'PAUSE' : fini ? 'RECOMMENCER' : libre.ecoule > 0 ? 'REPRENDRE' : 'DÉMARRER') + '</button>'
-      + '<button type="button" class="fs-ghost" data-cl="raz">REMETTRE À ZÉRO</button>'
+      + (enCours || fini
+          ? '<button type="button" class="fs-cta" data-cl="relancer">PROCHAINE SÉRIE</button>'
+            + '<button type="button" class="fs-ghost" data-cl="raz">ARRÊTER</button>'
+          : '<button type="button" class="fs-cta" data-cl="partir">'
+            + (libre.ecoule > 0 ? 'REPRENDRE' : 'DÉMARRER') + '</button>'
+            + (libre.ecoule > 0 ? '<button type="button" class="fs-ghost" data-cl="raz">ARRÊTER</button>' : ''))
       + '</div>';
     clCorps.innerHTML = html;
     majAnneauLibre();
@@ -4293,11 +4289,10 @@
         libre.duree = Math.max(15, Math.min(3600, libre.duree + Number(v)));
         libre.ecoule = 0; libre.debut = null;
       } else if (quoi === 'partir'){
-        if (libreFini()) libre.ecoule = 0;
         libre.debut = Date.now();
-      } else if (quoi === 'pause'){
-        libre.ecoule = libreEcoule();
-        libre.debut = null;
+      } else if (quoi === 'relancer'){
+        libre.ecoule = 0;
+        libre.debut = Date.now();
       } else if (quoi === 'raz'){
         libre.ecoule = 0; libre.debut = null;
       }
@@ -4943,10 +4938,11 @@
     else if (e.target.closest('.bilan-chargement')) passerAuBilan(bilanJour);
   });
 
-  // On reprend d'abord ce qu'on a deja fait : l'historique.
+  // On reprend d'abord ce qu'on a deja fait : le carnet, filtre sur les
+  // seances faites.
   document.getElementById('reprendreBtn').addEventListener('click', function(){
-    seancesOnglet = 'histo';
-    montrerVue('seances');
+    carnetFiltre = 'faites';
+    montrerVue('planning');
     window.scrollTo(0, 0);
   });
   document.getElementById('recapJourBtn').addEventListener('click', function(){
@@ -4974,7 +4970,7 @@
   });
   document.getElementById('seancesListe').addEventListener('click', function(e){
     var o = e.target.closest('[data-ouvrir]');
-    if (o) ouvrirSeance(o.dataset.ouvrir);
+    if (o) ouvrirSeance(o.dataset.ouvrir, 'planning');
   });
 
   document.getElementById('seanceCreer').addEventListener('click', function(){

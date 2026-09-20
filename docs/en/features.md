@@ -13,17 +13,27 @@ form, with the way out as a small underlined link at the very bottom, while the
 site description and the product page promise "no account". The button hides
 during a password reset or change, where it would abandon the operation halfway.
 
-**Planning and sessions.** The app opens on **SÉANCES › DU JOUR**, the log where
-you write: the day banner, then exercises and sets. **PLANNING** is a calendar
-you look at: **SEMAINE** (default, one row per day: session title, exercises,
-sets, done or planned, then the muscle groups of the week), **MOIS** (the grid,
-a dot in the colour of the main muscle group, filled for a done session,
-outlined for a planned one) and **JOUR** (one session in detail). Arrows move by
-day, week or month; `AUJOURD'HUI` turns orange once you have moved away.
-Tapping a session shows its sheet, filed under MES SÉANCES, and `‹ RETOUR`
-brings you back to the calendar; an empty day opens in DU JOUR, where
-`AUJOURD'HUI ›` brings you back to today. **SÉANCES** has three sections: DU JOUR, MES SÉANCES and
-HISTORIQUE.
+**Four tabs, four jobs** (20 September 2026, "between the calendar, the recap,
+the session, the sessions, today's session it is too cluttered"). Seven places
+showed sessions — PLANNING (day, week, month), SÉANCES (today, my sessions,
+history) and the RÉCAP; four of them showed the same list in another shape.
+Four are left, each doing one thing:
+- **SÉANCE**: what you are doing now. The day banner, the exercises, the sets.
+  No sub-tabs left. This is where the app opens.
+- **CARNET**: finding a day or a session. The calendar **and** the list on the
+  same screen. It folds down to the **week** (a row of seven, a dot in the
+  colour of the main muscle group) or opens out to the **month** (the grid,
+  filled dot for a done session, outlined for a planned one) — one button,
+  `VOIR LE MOIS` / `VOIR LA SEMAINE`. Arrows move by week or month;
+  `AUJOURD'HUI` turns orange once you have moved away. Below, a row of filters —
+  `TOUTES`, `PRÉVUES`, `FAITES` — **sorts the list** instead of changing screen;
+  with `TOUTES`, two named blocks, "À VENIR" and "DÉJÀ FAITES". Tapping a day or
+  a session opens its sheet, and `‹ RETOUR` brings you back to the carnet; an
+  empty day opens in SÉANCE, where `AUJOURD'HUI ›` brings you back to today.
+- **PROGRÈS**: records, volume, session reports (the former RÉCAP).
+- **APPRENDRE**: the pages and the tools.
+The calendar's **JOUR** view went with them: it showed a session you could not
+fill in, and SÉANCE does that better.
 
 **One set, one row.** `SÉRIE · 8 SEPT. · KG · REPS · RPE · ✓`, the grid of Strong
 or Hevy, kept because it is the one people know. Each set used to take three
@@ -34,7 +44,7 @@ the previous session's date — « PRÉC. » was not understood — and shows th
 (the 3rd facing the 3rd). It is **read**, it no longer copies anything: it used
 to copy on tap, from a cell 4 px away from the weight field, and a stray tap
 logged a set that was never lifted. The **date heading the column** is a real
-button, outlined, with an arrow: it opens the previous session in DU JOUR,
+button, outlined, with an arrow: it opens the previous session in SÉANCE,
 and an orange bar at the bottom of the screen, `RETOUR À MA SÉANCE`, brings you
 back to the day you left, on the exercise you left from. The bar tracks one
 round trip, not a chain: from the previous session its own date leads further
@@ -66,8 +76,8 @@ sharp. It can also be **dragged with a finger**: past 8 px of horizontal
 movement it lifts and follows the finger, the tab underneath lights up, and the
 nearest one opens on release; a plain tap is still a click (Pointer Events,
 `touch-action:none` on the bottom bar). **Each tab keeps its scroll position**
-(2026-09-18): PLANNING, SESSIONS, RECAP and LEARN come back at the height where
-you left them, SESSIONS included when returning from a session sheet
+(2026-09-18): SÉANCE, CARNET, PROGRÈS and APPRENDRE come back at the height
+where you left them, SÉANCE included when returning from a session sheet
 (`montrerVue`, in memory only: on opening, every tab starts at the top).
 Swiping across the whole page to switch tabs was ruled out: it would switch tabs
 by mistake while logging a set and clash with the heat map, which scrolls
@@ -254,7 +264,7 @@ read and copies nothing:
   rest, speed and incline). Nothing is ticked, RPE is left for today, a set
   already filled is not touched (`repriseSerie`).
 - `+ AJOUTER À MA SÉANCE DU JOUR`, under each exercise of a past, done session —
-  in its page, or in DU JOUR when opened from the last-time date: the
+  in its page, or in SÉANCE when opened from the last-time date: the
   exercise lands in today's session with its sets, RPE included, nothing
   ticked. The same exercise already placed and still empty receives the sets
   instead of a duplicate (`ajouterAuJour`). "Done" means validated, or past
@@ -389,14 +399,15 @@ rejects it — the field empties and the set loses its weight. That field is
 
 ---
 
-## Sessions: two tabs
+## The carnet: three filters
 
-The **SÉANCES** view is split in two. *Mes séances* holds what is left to do —
-sessions prepared but not yet logged, today's, and upcoming ones — sorted oldest
-first, so a skipped session rises to the top instead of getting buried. The
-*Créer ma séance* box lives there. *Historique* holds what is done, newest first,
-grouped by month.
+The **CARNET** list is sorted by three buttons. *Prévues* holds what is left to
+do — sessions prepared but not yet logged, today's, and upcoming ones — sorted
+oldest first, so a skipped session rises to the top instead of getting buried.
+The *Créer ma séance* box lives there. *Faites* holds what is done, newest
+first, grouped by month. *Toutes* shows both, upcoming first, each block under
+its own heading.
 
 The boundary is whether the session has been logged, not the date alone: a
-session logged today stays in *Mes séances* until tomorrow, because it is still
+session logged today stays in *Prévues* until tomorrow, because it is still
 the one being worked on.

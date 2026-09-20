@@ -250,6 +250,17 @@ Cible :
   trouvait fouillie. Il reprend l'anneau, la braise et les boutons du plein
   écran : même objet, sans carnet derrière. Deux modes (minuteur, chronomètre),
   une durée par gros boutons, rien à saisir.
+- **Quatre onglets, quatre métiers** (20/09, demande : « entre le calendrier,
+  le récap, la séance, les séances, les séances du jour c'est trop fouilli ») :
+  le problème n'était pas le nombre d'onglets mais le **recouvrement** — sept
+  destinations montraient des séances, quatre la même liste sous une autre
+  forme. SÉANCE (faire) / CARNET (chercher) / PROGRÈS (mesurer) / APPRENDRE.
+  APPRENDRE reste dans la barre : les pages de contenu amènent le public, les
+  enterrer dans un menu leur coûte des visites. Dans le CARNET, le calendrier
+  et la liste vivent **sur le même écran** : un filtre trie ce qui est déjà là
+  au lieu d'ouvrir un autre écran, et le calendrier se replie sur une rangée de
+  sept — sept lignes hautes reprenaient à elles seules la place qu'on venait de
+  libérer, et le détail d'une séance se lit dans la liste juste dessous.
 - **Réglages** (20/09, demande : « une partie réglages pour fluidifier
   l'utilisation selon la personne ») : dans la feuille du profil, avant le
   compte. Cinq teintes par groupe plutôt qu'un sélecteur de couleur — toutes
