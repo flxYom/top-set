@@ -39,8 +39,12 @@ repository is for right now.
 ## At a glance
 
 - **Log fast, mid-session.** The app opens on today's session: one row per set
-  (weight, reps, RPE, check), a stopwatch for timed exercises, cardio (duration,
-  speed, incline), and a rest timer that counts on its own.
+  (weight, reps, check), the exercise full screen with big −/+, cardio
+  (duration, speed, incline), and a rest timer that counts on its own. A
+  standalone timer (countdown or stopwatch) lives in the header.
+- **Tune it to your hand.** A colour per muscle group, and switches to put away
+  what you do not use (RPE column, REST field, CHRONO button, automatic rest
+  timer). Putting something away erases nothing.
 - **Never start from scratch.** Redo last time, last week's exercises, a
   suggested load.
 - **See where you stand.** A calendar planning (day, week, month), planned

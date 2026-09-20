@@ -177,31 +177,61 @@ stopwatch, with the screen kept on.
 touch counts as a drag); it keeps its place (`topset_repos_pos`, as a fraction
 of the screen). A tap opens the exercise full screen, on the rest.
 
-**Full-screen exercise** (19 September 2026). The orange ⤢ icon on each card
-(cardio excepted) opens the exercise full screen, showing **only the set to
-do**: the first one not ticked yet. Done sets stay listed small, with the same
-set last time. Big −/+ (2.5 kg, 1 rep, 5 s when timed); tapping the number
-opens a **wheel picker** (natively scrolling columns that snap to a value:
-whole kg + quarters, reps, seconds by 5). RPE chips 6 to 10 (a half RPE set on
-the card still shows).
-- **Validate** (the button, or **swiping the card right**) ticks the set exactly
-  like its row: the previous rest is written, its own starts, and the view
-  switches to the **rest**: time counting up inside a ring that fills up to the
-  target rest (the exercise's, else 90 s) then turns green, the set just logged,
-  and the next one pre-filled and editable. `PASSER À LA SÉRIE SUIVANTE` goes
-  back to it; `Terminer l'exo` moves to the next exercise.
-- **Swiping left** deletes the set; `ANNULER` puts it back in place for 5
-  seconds. A drag shorter than a third of the screen (and not flicked) springs
-  back; a tap on a button in the card stays a tap.
+**Landing back on your exercise** (20 September 2026). The date at the top of
+the `PRÉC.` column opens the previous session **centred on the same exercise**
+(found by name: from one day to the next, an exercise does not keep its id), and
+the back bar returns to the one you came from. Closing a full screen gives the
+page its place back instead of scrolling it to the top. With no exercise to aim
+at, or if it is gone, it is the top of the page, as before.
+
+**Full-screen exercise** (19 September 2026, simplified on the 20th). The
+orange ⤢ icon on each card (cardio excepted) opens the exercise full screen,
+showing **only the set to do**: the first one not ticked yet. Done sets stay
+listed small, with the same set last time. Big −/+ either side of the number
+(2.5 kg, 1 rep, 5 s when timed).
+- `SÉRIE SUIVANTE` ticks the set exactly like its row: the previous rest is
+  written, its own starts, and the view switches to the **rest**: time counting
+  up inside a ring that fills up to the target rest (the exercise's, else 90 s)
+  then turns green, the set just logged, and the next one pre-filled and
+  editable. `PASSER À LA SÉRIE SUIVANTE` goes back to it; `Terminer l'exo`
+  moves to the next exercise.
 - **Superset**: the block's exercises together, A then B, no rest screen in
   between; the rest comes after the last one of the round.
 - `Exo suivant →` and the dots at the top: a superset counts as one exercise.
-- **✕** (or Escape) closes without validating or deleting anything: the values
-  are already in the set, which stays in progress; a running rest goes back to
-  the pill.
+- **✕** (or Escape) closes without validating anything: the values are already
+  in the set, which stays in progress; a running rest goes back to the pill. You
+  land back on the exercise card, not at the top of the page.
+- **Deleting a set** happens on its card, where the bin is.
+The **wheel picker** and the **swipe** (right to validate, left to delete) were
+dropped on 20 September 2026: two gestures to guess for what two buttons
+already do, and a deletion within thumb's reach mid-set.
 The background is the ember shader (see below): soft during the set, strong
-during the rest, green or red under the swipe. Every write goes through
-`scheduleSave`, like the card: offline and account-free use are unchanged.
+during the rest. Every write goes through `scheduleSave`, like the card:
+offline and account-free use are unchanged.
+
+**The standalone timer** (20 September 2026). The ⏱ button in the header opens
+a timer that belongs to no exercise: it logs nothing, it counts. Two modes —
+**countdown** (1:00, 1:30, 2:00, 3:00, and ± 15 s; the ring empties, then turns
+green) and **stopwatch** counting up. `DÉMARRER` / `PAUSE` / `REMETTRE À ZÉRO`,
+and nothing else. Like the rest and the plank timer, it keeps a **start time**
+(`topset_chrono_libre`) rather than a counter: closing the screen, locking the
+phone or leaving the app does not stop it. The background is the ember shader.
+
+**Settings** (20 September 2026, "the interface is getting cluttered"). The
+profile button in the header opens `RÉGLAGES ET PROFIL`, settings first:
+- **Muscle group colours**: five shades per group, including the original one.
+  The chosen colour follows the group **everywhere** — card, planner, recap,
+  silhouette, banner, full screen. A button restores the originals.
+- **Automatic rest timer**: the pill that starts on its own when you tick a set.
+- **CHRONO button on every exercise**: otherwise it only shows for planks.
+- **REST field on each set**, **RPE column**: put away by default since 20
+  September. Putting a column away erases nothing — the value stays in the set,
+  goes into the exports, and comes back if the column is switched on again. RPE
+  feeds the suggested load: switched off, the suggestion relies on the trend of
+  the loads alone.
+- **Keep the screen awake** during a timer or a rest.
+Settings live in this phone (`topset_reglages`): they are screen state, not
+logbook data, and they never go up to the account.
 
 **Cardio: minutes, speed, incline.** Treadmill, running, walking, bike,
 rower… open as cardio: a set is a duration **in minutes** (`25`, `12,5`), plus

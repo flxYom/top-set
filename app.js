@@ -6,6 +6,50 @@
     'Pectoraux':'#ff7aa2','Dos':'#22b8a8','Épaules':'#a99bff','Bras':'#d45fc4',
     'Jambes':'#b3d236','Abdos':'#c99a6b','Cardio':'#6fd6f5','Autre':'#8f887d'
   };
+  // ---------- les reglages ----------
+  // « L'interface devient fouilli, y'a beaucoup de fonctionnalites »
+  // (20/09/2026). Chacun allume ce dont il se sert : par defaut, l'app est
+  // en mode simple — le RPE et le champ REPOS sont ranges, le bouton CHRONO
+  // ne sort que pour le gainage. Rien n'est efface : un RPE deja note reste
+  // dans la serie, part dans les exports et revient si on rallume la
+  // colonne. Un reglage est un etat d'ecran, pas une donnee du carnet : il
+  // vit dans ce telephone et ne monte pas dans le compte.
+  var CLE_REGLAGES = 'topset_reglages';
+  var REGLAGES_DEFAUT = { chronoAuto:true, btnChrono:false, champRepos:false, rpe:false, ecranAllume:true, couleurs:{} };
+  var reglages = (function(){
+    var r = {};
+    Object.keys(REGLAGES_DEFAUT).forEach(function(k){
+      r[k] = (k === 'couleurs') ? {} : REGLAGES_DEFAUT[k];
+    });
+    try {
+      var lu = JSON.parse(localStorage.getItem(CLE_REGLAGES) || 'null');
+      if (lu && typeof lu === 'object'){
+        Object.keys(REGLAGES_DEFAUT).forEach(function(k){
+          if (k === 'couleurs'){
+            if (lu.couleurs && typeof lu.couleurs === 'object'){
+              Object.keys(lu.couleurs).forEach(function(g){
+                if (/^#[0-9a-f]{6}$/i.test(String(lu.couleurs[g]))) r.couleurs[g] = String(lu.couleurs[g]);
+              });
+            }
+          } else if (typeof lu[k] === 'boolean') r[k] = lu[k];
+        });
+      }
+    } catch (err) {}
+    return r;
+  })();
+  function garderReglages(){
+    try { localStorage.setItem(CLE_REGLAGES, JSON.stringify(reglages)); } catch (err) {}
+  }
+  // La couleur d'un groupe : celle qu'on a choisie, sinon celle d'origine.
+  function couleurGroupe(g){
+    return (g && reglages.couleurs[g]) || GROUP_COLORS[g] || GROUP_COLORS['Autre'];
+  }
+  // Les classes qui rangent une colonne : le CSS fait le reste, y compris
+  // les largeurs de la grille des series.
+  function appliquerReglages(){
+    document.body.classList.toggle('sans-rpe', !reglages.rpe);
+    document.body.classList.toggle('sans-repos-champ', !reglages.champRepos);
+  }
   // Une attente courte (une liste, un graphique, un fil) : la meme barre
   // qu'on charge, en petit, pour que toutes les attentes parlent la meme
   // langue que le chargement du bilan.
@@ -1073,7 +1117,7 @@
   function muscleMapSVG(sous){
     function zone(nom){
       var g = PARENT_SOUS[nom] || nom;
-      var c = GROUP_COLORS[g] || '#8a8275';
+      var c = (g && reglages.couleurs[g]) || GROUP_COLORS[g] || '#8a8275';
       if ((sous[nom]||0) > 0) return 'fill="' + c + '"';
       if ((sous[g]||0) > 0) return 'fill="' + c + '" fill-opacity=".45"';
       return 'fill="#2f2b26"';
@@ -1156,7 +1200,7 @@
     });
     var dom = nExos ? dominantGroup(exercises) : null;
     var vol = formatVolume(dayVolume(ds));
-    var heroColor = dom ? (GROUP_COLORS[dom] || '#ff5c38') : '#8a8275';
+    var heroColor = dom ? couleurGroupe(dom) : '#8a8275';
     var kicker = DAY_NAMES[(d.getDay()+6)%7] + ' ' + d.getDate() + ' ' + MONTH_ABBR[d.getMonth()];
 
     var tags = '';
@@ -1460,7 +1504,7 @@
 
   function exerciseCardHTML(ex){
     var cl = classement(ex);
-    var color = GROUP_COLORS[cl.groupe] || GROUP_COLORS['Autre'];
+    var color = couleurGroupe(cl.groupe);
     var groupOptions = optionsMuscle(cl);
     var series = ex.series || [];
     var auTemps = estAuTemps(ex);
@@ -1498,7 +1542,7 @@
       // serie n'est remplie. La colonne de la derniere fois, elle, se lit.
       +     (p && !series.some(hasData) ? '<button type="button" class="btn-comme-avant" data-action="comme-avant" data-id="'+ eid +'">↺ DERNIÈRE FOIS</button>' : '')
       // Le chrono d'un gainage : lancer, puis pause, et la serie est notee.
-      +     (auTemps && !estCardio(ex) ? boutonChronoHTML(ex) : '')
+      +     ((auTemps || reglages.btnChrono) && !estCardio(ex) ? boutonChronoHTML(ex) : '')
       // A cote de « + SERIE », parce que c'est au meme moment qu'on y pense :
       // juste apres la serie. Il va sur la derniere serie faite.
       +     (series.length ? '<button type="button" class="btn-add-note" data-action="ajout-note" data-id="'+ eid +'">+ COMMENTAIRE</button>' : '')
@@ -1528,13 +1572,13 @@
     // La date est le seul chemin vers la seance d'avant : un vrai bouton,
     // encadre, au-dessus des lignes et loin des cases a remplir.
     var lienPrec = dPrec
-      ? '<button type="button" class="col-prec-lien" data-action="voir-prec" data-date="' + esc(p.prec.date) + '" data-ex="' + esc(ex.id) + '"'
+      ? '<button type="button" class="col-prec-lien" data-action="voir-prec" data-date="' + esc(p.prec.date) + '" data-ex="' + esc(ex.id) + '" data-nom="' + esc(ex.nom || '') + '"'
         + ' aria-label="Ouvrir la séance du ' + dPrec.getDate() + ' ' + MONTH_NAMES[dPrec.getMonth()] + '">' + esc(titrePrec) + '<i aria-hidden="true">›</i></button>'
       : '';
     return '<div class="series-tete"><span aria-hidden="true">SÉRIE</span><span class="col-prec">' + lienPrec + '</span>'
       + (auTemps && estCardio(ex) ? '<span aria-hidden="true">MIN</span><span aria-hidden="true">KM/H</span><span aria-hidden="true">INCL. %</span>'
-         : auTemps ? '<span class="col-duree" aria-hidden="true">DURÉE</span><span aria-hidden="true">DIFF.</span>'
-                 : '<span aria-hidden="true">KG</span><span aria-hidden="true">REPS</span><span aria-hidden="true">RPE</span>')
+         : auTemps ? '<span class="col-duree" aria-hidden="true">DURÉE</span><span class="col-rpe" aria-hidden="true">DIFF.</span>'
+                 : '<span aria-hidden="true">KG</span><span aria-hidden="true">REPS</span><span class="col-rpe" aria-hidden="true">RPE</span>')
       + '<span aria-hidden="true">✓</span></div>'
       + series.map(function(s,idx){ return serieRowHTML(s, idx, ex, auTemps, p && p.prec, s.id === ouverte); }).join('');
   }
@@ -1598,7 +1642,7 @@
   function majPastilleGroupe(card, groupe, ex){
     if (!card) return;
     var cl = ex ? classement(ex) : { groupe:groupe, sous:null };
-    card.style.setProperty('--card-color', GROUP_COLORS[cl.groupe] || GROUP_COLORS['Autre']);
+    card.style.setProperty('--card-color', couleurGroupe(cl.groupe));
     var txt = card.querySelector('.ex-groupe-txt');
     if (txt) txt.textContent = libelleMuscle(cl);
     var sel = card.querySelector('select.ex-groupe');
@@ -2069,7 +2113,7 @@
         moisVu = mois;
         html += '<div class="seance-mois">' + esc(mois) + '</div>';
       }
-      var couleur = GROUP_COLORS[groupesPrincipaux(s.date)[0]] || GROUP_COLORS['Autre'];
+      var couleur = couleurGroupe(groupesPrincipaux(s.date)[0]);
       var quandS = DAY_NAMES[(sd.getDay()+6)%7] + ' ' + sd.getDate() + ' ' + MONTH_ABBR[sd.getMonth()];
       var noms = s.noms.slice(0, 5).join(' · ') + (s.noms.length > 5 ? ' · +' + (s.noms.length - 5) : '');
       var vol = volumeTexte(dayVolume(s.date));
@@ -2144,7 +2188,7 @@
     var exos = day ? (day.exercises || []).filter(function(e){ return seriesRemplies(e).length; }) : [];
     var d = fromDateStr(ds);
     var quand = DAY_NAMES[(d.getDay()+6)%7] + ' ' + d.getDate() + ' ' + MONTH_NAMES[d.getMonth()] + ' ' + d.getFullYear();
-    var couleur = GROUP_COLORS[groupesPrincipaux(ds)[0]] || GROUP_COLORS['Autre'];
+    var couleur = couleurGroupe(groupesPrincipaux(ds)[0]);
     var perso = titreChoisi(ds);
     var fois = foisFaite(ds);
 
@@ -2183,7 +2227,7 @@
       var meilleure = pesees.length ? Math.max.apply(null, pesees.map(function(s){ return s.poids; })) : null;
       var tenues = series.map(function(s){ return TS.dureeSecondes(s.reps); }).filter(function(d){ return d !== null; });
       var clE = classement(e);
-      html += '<button type="button" class="fiche-exo" data-exo="' + esc(e.nom || '') + '" style="--exo-color:' + (GROUP_COLORS[clE.groupe] || GROUP_COLORS['Autre']) + '">'
+      html += '<button type="button" class="fiche-exo" data-exo="' + esc(e.nom || '') + '" style="--exo-color:' + couleurGroupe(clE.groupe) + '">'
         + '<div class="fiche-exo-nom">' + esc(normalizeName(e.nom) || 'Sans nom') + '<span class="fiche-exo-fleche">›</span></div>'
         + '<div class="fiche-exo-groupe">' + esc(clE.groupe + (clE.sous ? ' · ' + clE.sous : '')) + '</div>'
         + '<div class="fiche-series">'
@@ -2247,12 +2291,38 @@
   }
 
   // Un jour s'ouvre la ou l'on note : SÉANCES > DU JOUR.
-  function allerAuJour(ds){
+  // Ouvrir une seance sur un exercice precis (demande du 20/09/2026 : la
+  // date d'une serie « me redirige vers la page, je veux qu'elle me redirige
+  // vers l'exercice sans avoir a descendre »). D'un jour a l'autre, un
+  // exercice ne garde pas son identifiant : on le retrouve par son nom.
+  function allerAuJour(ds, cible){
     state.selectedDay = ds;
     seancesOnglet = 'jour';
     montrerVue('seances');
     renderSeanceJour(true);
-    window.scrollTo(0, 0);
+    centrerExo(cible);
+  }
+  function carteDe(cible){
+    if (!cible) return null;
+    if (cible.id){
+      var q = window.CSS && CSS.escape ? CSS.escape(cible.id) : cible.id;
+      return exListEl.querySelector('.ex-card[data-id="' + q + '"]');
+    }
+    if (!cible.nom) return null;
+    var vise = normalizeName(cible.nom).toLowerCase();
+    var cartes = exListEl.querySelectorAll('.ex-card');
+    for (var i = 0; i < cartes.length; i++){
+      var champ = cartes[i].querySelector('.ex-name');
+      if (champ && normalizeName(champ.value || '').toLowerCase() === vise) return cartes[i];
+    }
+    return null;
+  }
+  // Sans exercice a viser, ou s'il a disparu, le haut de la page : c'est ce
+  // que faisait cet ecran depuis toujours.
+  function centrerExo(cible){
+    var carte = carteDe(cible);
+    if (carte) carte.scrollIntoView({ block:'center' });
+    else window.scrollTo(0, 0);
   }
 
   function renderDayPanel(force){
@@ -2329,7 +2399,7 @@
     if (compterJour(day) > 0) return 'faite';
     return ((day.exercises || []).length || titreChoisi(ds)) ? 'prevue' : '';
   }
-  function couleurJour(ds){ return GROUP_COLORS[groupesPrincipaux(ds)[0]] || GROUP_COLORS['Autre']; }
+  function couleurJour(ds){ return couleurGroupe(groupesPrincipaux(ds)[0]); }
   function exosDuJour(ds){
     var etat = etatJour(ds);
     return ((state.sessions[ds] && state.sessions[ds].exercises) || []).filter(function(e){
@@ -2397,7 +2467,7 @@
     // Les groupes travailles dans la semaine, comme sous les anciennes pastilles.
     var counts = groupCountsIn(toDateStr(debut), toDateStr(addDays(debut, 6)));
     var badges = GROUPS.filter(function(g){ return counts[g]; }).map(function(g){
-      return '<span class="badge" style="--dot:' + GROUP_COLORS[g] + '"><i></i>' + g + ' ×' + counts[g] + '</span>';
+      return '<span class="badge" style="--dot:' + couleurGroupe(g) + '"><i></i>' + g + ' ×' + counts[g] + '</span>';
     }).join('');
     return html + (badges ? '<div class="badges-row">' + badges + '</div>' : '');
   }
@@ -2486,7 +2556,7 @@
         return '<span>' + s + ' <b>' + sousC[s] + '</b></span>';
       });
       if (sousC[g] && detail.length) detail.push('<span>sans précision <b>' + sousC[g] + '</b></span>');
-      return '<div class="muscle-row"><span class="muscle-sw" style="background:'+GROUP_COLORS[g]+'"></span>'
+      return '<div class="muscle-row"><span class="muscle-sw" style="background:'+couleurGroupe(g)+'"></span>'
         + '<span class="muscle-name">'+g+'</span><span class="muscle-val">'+counts[g]+'</span></div>'
         + (detail.length ? '<div class="muscle-sous">' + detail.join('') + '</div>' : '');
     }).join('');
@@ -2512,7 +2582,7 @@
     var html = '';
     GROUPS.forEach(function(g){
       if (!byGroup[g]) return;
-      html += '<div class="recap-section" style="--sect-color:'+GROUP_COLORS[g]+'">'
+      html += '<div class="recap-section" style="--sect-color:'+couleurGroupe(g)+'">'
         + '<div class="recap-section-title">'+g+'</div>'
         + '<div class="recap-rows">'
         + byGroup[g].map(function(it){
@@ -2579,7 +2649,7 @@
     var affiche = nomCanonique(nom) || nom;
     var clX = classement({ nom:nom, groupe:groupeCanonique(nom) || 'Autre' });
     var groupe = clX.groupe;
-    var couleur = GROUP_COLORS[groupe] || GROUP_COLORS['Autre'];
+    var couleur = couleurGroupe(groupe);
 
     var html = '<div class="exo-tete" style="--card-color:' + couleur + '">'
       + '<div class="exo-nom">' + esc(affiche) + '</div>'
@@ -3288,16 +3358,14 @@
     // Un aller-retour, pas une chaine : depuis la seance d'avant, sa propre
     // date mene plus loin, mais la barre ramene toujours au point de depart.
     if (!retourSeance) retourSeance = { ds: state.selectedDay, ex: lien.dataset.ex };
-    allerAuJour(lien.dataset.date);
+    allerAuJour(lien.dataset.date, { nom: lien.dataset.nom });
     e.stopPropagation();
   });
   if (retourBtn) retourBtn.addEventListener('click', function(){
     var r = retourSeance;
     if (!r) return;
     retourSeance = null;
-    allerAuJour(r.ds);
-    var carte = exListEl.querySelector('.ex-card[data-id="' + (window.CSS && CSS.escape ? CSS.escape(r.ex) : r.ex) + '"]');
-    if (carte) carte.scrollIntoView({ block:'center' });
+    allerAuJour(r.ds, { id: r.ex });
   });
 
   // Increments de poids : eviter d'ouvrir le clavier pour 2,5 kg.
@@ -3548,6 +3616,7 @@
       + '</button>';
   }
   function tenirEcran(oui){
+    if (!reglages.ecranAllume) oui = false;
     try {
       if (oui && !verrouEcran && navigator.wakeLock){
         navigator.wakeLock.request('screen').then(function(v){ verrouEcran = v; }).catch(function(){});
@@ -3621,6 +3690,7 @@
   }
   function secondesRepos(){ return repos ? Math.max(0, Math.floor((Date.now() - repos.debut) / 1000)) : 0; }
   function lancerRepos(ds, serieId){
+    if (!reglages.chronoAuto) return;
     if (!serieId || ds !== toDateStr(new Date())) return;
     repos = { ds:ds, serieId:serieId, debut:Date.now() };
     garderRepos();
@@ -3763,18 +3833,18 @@
 
   // ---------- l'exercice en plein ecran (demande du 19/09/2026) ----------
   // Un appui sur l'icone d'une carte ouvre l'exercice en grand : seule la
-  // serie a faire s'affiche, avec de gros -/+ et une molette au toucher du
-  // chiffre. Valider (le bouton, ou un swipe vers la droite) l'ecrit dans la
-  // carte comme la coche de sa ligne, et le repos monte en plein ecran. Un
-  // swipe vers la gauche supprime la serie, avec « Annuler ». Le ✕ ferme
-  // sans rien valider ni supprimer : ce qui est regle reste dans la serie.
+  // serie a faire s'affiche, avec de gros -/+ de chaque cote du chiffre.
+  // SERIE SUIVANTE l'ecrit dans la carte comme la coche de sa ligne, et le
+  // repos monte en plein ecran. Le ✕ ferme sans rien valider : ce qui est
+  // regle reste dans la serie. La molette et le swipe ont saute le
+  // 20/09/2026 — deux gestes de plus a apprendre pour ce que deux boutons
+  // font deja. Supprimer une serie se fait sur sa carte, ou la poubelle est.
   // Un superset montre ses exercices ensemble, a tour de role. Le cardio
   // reste sur sa carte : il n'a ni serie a enchainer ni repos.
   var focusEl = document.getElementById('focus');
   var focusCorps = document.getElementById('focusCorps');
   var focus = null;          // { ds, exId, phase:'saisie'|'repos' }
-  var focusAnnule = null;    // la derniere serie supprimee, le temps d'annuler
-  var focusAnnuleMinuterie = null;
+  var avantPlein = 0;        // ou l'on etait avant d'ouvrir un plein ecran
   var fondFocus = null;      // le fond anime, branche plus bas avec la braise
   var RPE_CHIPS = [6, 7, 8, 9, 10];
 
@@ -3810,9 +3880,12 @@
   function focusJour(){ return focus && state.sessions[focus.ds]; }
   function focusExo(){ var d = focusJour(); return d && findExercise(d, focus.exId); }
 
+  // La molette et le swipe ont saute le 20/09/2026 (« ca sert a rien, ca
+  // complexifie la chose ») : il reste les deux gros boutons, qui suffisent
+  // a corriger une charge, et le chiffre au milieu ne fait que se lire.
   function valeurHTML(champ, texte, unite, sid, label){
-    return '<button type="button" class="fs-val" data-fs="roue" data-champ="' + champ + '" data-serie-id="' + sid + '" aria-label="' + label + ' : ' + (texte || 'vide') + ', toucher pour choisir">'
-      + '<b>' + (texte || '—') + '</b>' + (unite ? '<small>' + unite + '</small>' : '') + '</button>';
+    return '<span class="fs-val" role="status" aria-label="' + label + ' : ' + (texte || 'vide') + '">'
+      + '<b>' + (texte || '—') + '</b>' + (unite ? '<small>' + unite + '</small>' : '') + '</span>';
   }
   function ligneHTML(champ, texte, unite, sid, label, pas, pasTexte){
     return '<div class="fs-ligne">'
@@ -3834,11 +3907,12 @@
   // serie d'apres pendant le repos.
   function champsHTML(ex, s, compact){
     var sid = esc(s.id), auTemps = estAuTemps(ex);
+    var avecRpe = reglages.rpe && !compact;
     if (auTemps){
       var sec = secondesAffichees(s);
       return '<div class="fs-champ"><span class="fs-label">Durée</span>'
         + ligneHTML('duree', sec, 's', sid, 'Durée', 5, '5 secondes') + '</div>'
-        + (compact ? '' : '<div class="fs-champ"><span class="fs-label">Difficulté</span>' + puces(s, true) + '</div>');
+        + (avecRpe ? '<div class="fs-champ"><span class="fs-label">Difficulté</span>' + puces(s, true) + '</div>' : '');
     }
     var kg = poidsAffiche(s.poids), reps = s.reps == null ? '' : String(s.reps);
     if (compact){
@@ -3849,15 +3923,12 @@
     }
     return '<div class="fs-champ"><span class="fs-label">Charge</span>' + ligneHTML('poids', kg, 'kg', sid, 'Charge', 2.5, '2,5 kg') + '</div>'
       + '<div class="fs-champ"><span class="fs-label">Reps</span>' + ligneHTML('reps', reps, '', sid, 'Répétitions', 1, 'une répétition') + '</div>'
-      + '<div class="fs-champ"><span class="fs-label">RPE</span>' + puces(s, false) + '</div>';
+      + (avecRpe ? '<div class="fs-champ"><span class="fs-label">RPE</span>' + puces(s, false) + '</div>' : '');
   }
   function derniereFois(ex, num){
     var pr = precedentDe(ex);
     var ps = pr && pr.prec && pr.prec.series[num - 1];
     return ps ? 'La dernière fois : ' + esc(perfTexte(ps)) : '';
-  }
-  function tampons(){
-    return '<span class="fs-tampon ok" aria-hidden="true">VALIDÉE</span><span class="fs-tampon suppr" aria-hidden="true">SUPPRIMER</span>';
   }
   function hautHTML(day, unite){
     var unites = unitesDuJour(day), i = unites.indexOf(unite);
@@ -3899,7 +3970,6 @@
         if (!af) return '<div class="fs-carte fs-ss fini"><div class="fs-ss-tete"><span class="fs-lettre">' + lettre + '</span><b>' + esc(normalizeName(m.nom) || 'Sans nom') + '</b><span>✓ fini</span></div></div>';
         var estActif = m === actif;
         return '<div class="fs-carte fs-ss' + (estActif ? ' actif' : ' en-attente') + '" data-ex-id="' + esc(m.id) + '" data-serie-id="' + esc(af.serie.id) + '">'
-          + (estActif ? tampons() : '')
           + '<div class="fs-ss-tete"><span class="fs-lettre">' + lettre + '</span><b>' + esc(normalizeName(m.nom) || 'Sans nom') + '</b><span>' + esc(libelleMuscle(clm)) + ' · S' + af.num + '</span></div>'
           + champsHTML(m, af.serie, true)
           + '</div>';
@@ -3909,11 +3979,11 @@
       var faites = (ex.series || []).map(function(s, k){ return s.fait ? '<span>S' + (k + 1) + ' ' + esc(perfCourt(s)) + '<b aria-hidden="true">✓</b></span>' : ''; }).join('');
       html += '<div class="fs-titre"><p class="fs-eyebrow">Exo ' + numUnite + ' sur ' + unites.length + '</p>'
         + '<h2 class="fs-nom" id="focusTitre">' + esc(normalizeName(ex.nom) || 'Exercice sans nom') + '</h2>'
-        + '<span class="fs-chip" style="--c:' + (GROUP_COLORS[cl.groupe] || GROUP_COLORS['Autre']) + '">' + esc(libelleMuscle(cl)) + '</span></div>'
+        + '<span class="fs-chip" style="--c:' + couleurGroupe(cl.groupe) + '">' + esc(libelleMuscle(cl)) + '</span></div>'
         + (faites ? '<div class="fs-faites">' + faites + '</div>' : '');
       if (af1){
         var total = (ex.series || []).length;
-        html += '<div class="fs-pile"><div class="fs-carte actif" data-ex-id="' + esc(ex.id) + '" data-serie-id="' + esc(af1.serie.id) + '">' + tampons()
+        html += '<div class="fs-pile"><div class="fs-carte actif" data-ex-id="' + esc(ex.id) + '" data-serie-id="' + esc(af1.serie.id) + '">'
           + '<div class="fs-carte-tete"><span class="fs-num">Série ' + af1.num + ' sur ' + total + '</span><span class="fs-avant">' + derniereFois(ex, af1.num) + '</span></div>'
           + champsHTML(ex, af1.serie, false)
           + '</div></div>';
@@ -3926,8 +3996,7 @@
         var reste = membres.filter(function(m){ return m !== actif && premiereAFaire(m) && nbFaites(m) <= nbFaites(actif); });
         suivant = reste.length ? String.fromCharCode(65 + membres.indexOf(reste[0])) : null;
       }
-      html += '<p class="fs-aide">Glisse la série : à droite pour la valider, à gauche pour la supprimer.</p>'
-        + '<div class="fs-bas"><button type="button" class="fs-cta" data-fs="valider">' + (lettreA ? 'VALIDER ' + lettreA + (suivant ? ' · PUIS ' + suivant : '') : 'VALIDER LA SÉRIE') + '</button>'
+      html += '<div class="fs-bas"><button type="button" class="fs-cta" data-fs="valider">' + (lettreA ? 'VALIDER ' + lettreA + (suivant ? ' · PUIS ' + suivant : '') : 'SÉRIE SUIVANTE') + '</button>'
         + '<button type="button" class="fs-ghost" data-fs="suivant">' + (dernier ? 'Fermer' : 'Exo suivant →') + '</button></div>';
     } else {
       html += '<div class="fs-fini"><p>Toutes les séries prévues sont faites.</p></div>'
@@ -3978,6 +4047,7 @@
     var ex = day && findExercise(day, exId);
     if (!ex) return;
     focus = { ds:ds, exId:exId, phase:phase || 'saisie' };
+    avantPlein = window.scrollY;
     focusEl.hidden = false;
     document.body.classList.add('en-focus');
     rendreFocus();
@@ -3987,12 +4057,16 @@
   }
   function fermerFocus(){
     if (!focus) return;
+    var ds = focus.ds, exId = focus.exId;
     focus = null;
-    fermerRoue(false);
     focusEl.hidden = true;
     document.body.classList.remove('en-focus');
     if (state.view === 'seances') renderDayPanel(true);
     renderBandeau();
+    // On revient a l'exercice qu'on avait sous les yeux, pas en haut de la
+    // page : c'est lui qu'on va continuer.
+    if (state.view === 'seances' && state.selectedDay === ds) centrerExo({ id: exId });
+    else window.scrollTo(0, avantPlein);
   }
   function allerUniteSuivante(){
     var day = focusJour(), ex = focusExo();
@@ -4025,42 +4099,6 @@
     renderBandeau();
     showToast('Série ' + num + ' notée' + (noteSec ? ' · repos ' + texteChrono(noteSec) : ''));
   }
-  function supprimerFocus(serieId){
-    var day = focusJour();
-    var f = day && findSerie(day, serieId);
-    if (!f) return;
-    var idx = f.exercise.series.indexOf(f.serie);
-    f.exercise.series.splice(idx, 1);
-    if (repos && repos.serieId === serieId) finirRepos(false);
-    scheduleSave(focus.ds, true);
-    focusAnnule = { ds:focus.ds, exId:f.exercise.id, serie:f.serie, idx:idx };
-    rendreFocus();
-    renderBandeau();
-    montrerAnnuler('Série ' + (idx + 1) + ' supprimée');
-  }
-  function montrerAnnuler(texte){
-    var barre = document.getElementById('focusAnnuler');
-    barre.querySelector('span').textContent = texte;
-    barre.hidden = false;
-    clearTimeout(focusAnnuleMinuterie);
-    focusAnnuleMinuterie = setTimeout(function(){ barre.hidden = true; focusAnnule = null; }, 5000);
-  }
-  function annulerSuppression(){
-    var a = focusAnnule;
-    document.getElementById('focusAnnuler').hidden = true;
-    clearTimeout(focusAnnuleMinuterie);
-    focusAnnule = null;
-    if (!a) return;
-    var day = state.sessions[a.ds], ex = day && findExercise(day, a.exId);
-    if (!ex) return;
-    if (!ex.series) ex.series = [];
-    ex.series.splice(Math.min(a.idx, ex.series.length), 0, a.serie);
-    scheduleSave(a.ds, true);
-    if (focus) rendreFocus();
-    renderBandeau();
-    showToast('Série remise');
-  }
-
   // Ecrire dans la serie comme sa ligne : meme lecture, meme sauvegarde.
   function ecrireFocus(serieId, champ, valeur){
     var day = focusJour();
@@ -4079,148 +4117,6 @@
     if (champ === 'duree'){ var d = secondesAffichees(s); return d === '' ? null : Number(d); }
     return null;
   }
-
-  // ---- la molette : un toucher sur le chiffre -----
-  // Des colonnes qui defilent et s'arretent d'elles-memes sur une valeur
-  // (scroll-snap) : le defilement natif du telephone, son elan compris.
-  var roueEl = document.getElementById('focusRoue');
-  var roue = null;           // { serieId, champ }
-  var HAUT_ITEM = 44;
-  function colonneHTML(valeurs, choisie, fmt){
-    return '<div class="roue-col" tabindex="0">' + '<div class="roue-marge"></div><div class="roue-marge"></div>'
-      + valeurs.map(function(v){ return '<div class="roue-item" data-v="' + v + '">' + fmt(v) + '</div>'; }).join('')
-      + '<div class="roue-marge"></div><div class="roue-marge"></div></div>';
-  }
-  function plage(a, b, pas){ var out = []; for (var v = a; v <= b + 1e-9; v += pas) out.push(Math.round(v * 100) / 100); return out; }
-  function ouvrirRoue(serieId, champ){
-    var day = focusJour();
-    var f = day && findSerie(day, serieId);
-    if (!f) return;
-    var v = valeurDe(f.serie, champ);
-    roue = { serieId:serieId, champ:champ };
-    var cols, choix;
-    if (champ === 'poids'){
-      var base = v == null ? 20 : v;
-      var ent = Math.floor(base), dec = Math.round((base - ent) * 100);
-      dec = [0, 25, 50, 75].reduce(function(m, d){ return Math.abs(d - dec) < Math.abs(m - dec) ? d : m; }, 0);
-      cols = [colonneHTML(plage(0, 400, 1), ent, String), colonneHTML([0, 25, 50, 75], dec, function(d){ return ',' + (d === 0 ? '0' : d === 50 ? '5' : d); })];
-      choix = [ent, dec];
-    } else if (champ === 'reps'){
-      cols = [colonneHTML(plage(0, 100, 1), v || 0, String)];
-      choix = [v == null ? 8 : v];
-    } else {
-      cols = [colonneHTML(plage(0, 900, 5), v || 0, String)];
-      choix = [v == null ? 30 : Math.round(v / 5) * 5];
-    }
-    var titre = champ === 'poids' ? 'Charge' : champ === 'reps' ? 'Répétitions' : 'Durée';
-    var unite = champ === 'poids' ? 'kg' : champ === 'reps' ? 'reps' : 's';
-    roueEl.innerHTML = '<div class="roue-feuille" role="dialog" aria-modal="true" aria-label="' + titre + '">'
-      + '<div class="roue-poignee" aria-hidden="true"></div>'
-      + '<div class="roue-tete"><b>' + titre + '</b><button type="button" class="roue-ok" data-roue="ok">OK</button></div>'
-      + '<div class="roue-cols"><div class="roue-bande" aria-hidden="true"></div>' + cols.join('') + '<span class="roue-unite">' + unite + '</span></div>'
-      + '</div>';
-    roueEl.hidden = false;
-    var colsEl = roueEl.querySelectorAll('.roue-col');
-    colsEl.forEach(function(col, k){
-      var items = col.querySelectorAll('.roue-item');
-      var idx = 0;
-      for (var i = 0; i < items.length; i++) if (Number(items[i].dataset.v) === choix[k]) { idx = i; break; }
-      col.scrollTop = idx * HAUT_ITEM;
-      marquerRoue(col);
-      var attente = null;
-      col.addEventListener('scroll', function(){ clearTimeout(attente); attente = setTimeout(function(){ marquerRoue(col); }, 60); marquerRoue(col); }, { passive:true });
-      col.addEventListener('click', function(e){
-        var it = e.target.closest('.roue-item');
-        if (!it) return;
-        var n = Array.prototype.indexOf.call(col.querySelectorAll('.roue-item'), it);
-        col.scrollTo({ top:n * HAUT_ITEM, behavior:'smooth' });
-      });
-    });
-  }
-  function marquerRoue(col){
-    var items = col.querySelectorAll('.roue-item');
-    var n = Math.max(0, Math.min(items.length - 1, Math.round(col.scrollTop / HAUT_ITEM)));
-    for (var i = 0; i < items.length; i++) items[i].classList.toggle('sel', i === n);
-    return items[n] ? Number(items[n].dataset.v) : 0;
-  }
-  function fermerRoue(garder){
-    if (!roue) return;
-    if (garder){
-      var cols = roueEl.querySelectorAll('.roue-col');
-      var v = marquerRoue(cols[0]);
-      if (roue.champ === 'poids') v = v + marquerRoue(cols[1]) / 100;
-      ecrireFocus(roue.serieId, roue.champ, v);
-    }
-    roue = null;
-    roueEl.hidden = true;
-    roueEl.innerHTML = '';
-    if (garder && focus) rendreFocus();
-  }
-  if (roueEl){
-    roueEl.addEventListener('click', function(e){
-      if (e.target.closest('[data-roue="ok"]')) fermerRoue(true);
-      else if (e.target === roueEl) fermerRoue(false);
-    });
-  }
-
-  // ---- le swipe, facon Tinder -----
-  // La carte suit le doigt en penchant. Lachee au-dela d'un tiers de
-  // l'ecran, ou lancee d'un geste vif, elle part : a droite, la serie est
-  // validee ; a gauche, supprimee. Sinon elle revient. Un appui sur un
-  // bouton reste un appui : on ne glisse qu'a partir de 10 px a l'horizontale.
-  (function swipeFocus(){
-    if (!focusEl) return;
-    var g = null;
-    focusEl.addEventListener('pointerdown', function(e){
-      var carte = e.target.closest('.fs-carte.actif');
-      if (!carte || roue || e.button > 0) return;
-      g = { carte:carte, x:e.clientX, y:e.clientY, t:performance.now(), id:e.pointerId, dx:0, parti:false, vx:0, lx:e.clientX, lt:performance.now() };
-    });
-    focusEl.addEventListener('pointermove', function(e){
-      if (!g || e.pointerId !== g.id) return;
-      var dx = e.clientX - g.x, dy = e.clientY - g.y;
-      if (!g.parti){
-        if (Math.abs(dy) > 12 && Math.abs(dy) > Math.abs(dx)){ g = null; return; }
-        if (Math.abs(dx) < 10) return;
-        g.parti = true;
-        try { g.carte.setPointerCapture(e.pointerId); } catch (err) {}
-        g.carte.classList.add('tenue');
-      }
-      var now = performance.now();
-      if (now > g.lt){ g.vx = (e.clientX - g.lx) / (now - g.lt); g.lx = e.clientX; g.lt = now; }
-      g.dx = dx;
-      g.carte.style.transform = 'translateX(' + dx + 'px) rotate(' + (dx / 18) + 'deg)';
-      var force = Math.min(1, Math.abs(dx) / 110);
-      g.carte.style.setProperty('--sw-ok', dx > 0 ? force : 0);
-      g.carte.style.setProperty('--sw-suppr', dx < 0 ? force : 0);
-      if (fondFocus) fondFocus.regler(.6 + force * .9, dx > 0 ? [.17, .82, .54] : [1, .25, .2], force);
-      e.preventDefault();
-    });
-    function lacher(e){
-      if (!g || (e && e.pointerId !== g.id)) return;
-      var c = g.carte, dx = g.dx, parti = g.parti, v = g.vx;
-      g = null;
-      if (!parti) return;
-      c.classList.remove('tenue');
-      var largeur = focusEl.clientWidth || innerWidth;
-      var sens = (dx > largeur / 3 || (v > .6 && dx > 40)) ? 1 : (dx < -largeur / 3 || (v < -.6 && dx < -40)) ? -1 : 0;
-      if (!sens){
-        c.style.transform = '';
-        c.style.setProperty('--sw-ok', 0); c.style.setProperty('--sw-suppr', 0);
-        if (fondFocus) fondFocus.regler(.6, [1, .36, .22]);
-        return;
-      }
-      c.classList.add('part');
-      c.style.transform = 'translateX(' + (sens * largeur * 1.3) + 'px) rotate(' + (sens * 24) + 'deg)';
-      var exId = c.dataset.exId, sid = c.dataset.serieId;
-      setTimeout(function(){
-        if (!focus) return;
-        if (sens > 0) validerFocus(exId, sid); else supprimerFocus(sid);
-      }, 220);
-    }
-    focusEl.addEventListener('pointerup', lacher);
-    focusEl.addEventListener('pointercancel', lacher);
-  })();
 
   if (focusEl){
     focusEl.addEventListener('click', function(e){
@@ -4253,7 +4149,6 @@
         rendreFocus();
         return;
       }
-      if (quoi === 'roue'){ ouvrirRoue(b.dataset.serieId, b.dataset.champ); return; }
       var f = day && findSerie(day, b.dataset.serieId);
       if (!f) return;
       if (quoi === 'pas'){
@@ -4267,14 +4162,207 @@
       }
       rendreFocus();
     });
-    document.getElementById('focusAnnuler').addEventListener('click', function(e){
-      if (e.target.closest('button')) annulerSuppression();
-    });
     document.addEventListener('keydown', function(e){
-      if (e.key !== 'Escape' || !focus) return;
-      if (roue) fermerRoue(false); else fermerFocus();
+      if (e.key === 'Escape' && focus) fermerFocus();
     });
   }
+
+  // ---------- le chrono libre ----------
+  // « Il faut une rubrique chrono ou tu peux juste lancer un chrono »
+  // (20/09/2026). Il ne connait ni exercice ni serie : il ne note rien, il
+  // compte, et c'est tout. Deux modes — un minuteur pour le repos, un
+  // chronometre qui monte pour le gainage. Le temps est garde comme celui du
+  // repos : une heure de depart dans le telephone, jamais un compteur qu'il
+  // faudrait faire tourner. Fermer l'ecran ne l'arrete pas.
+  var CLE_CHRONO_LIBRE = 'topset_chrono_libre';
+  var DUREES_LIBRE = [60, 90, 120, 180];
+  var clEl = document.getElementById('chronoLibre');
+  var clCorps = document.getElementById('chronoCorps');
+  var fondChrono = null;
+  var tickLibre = null;
+  var libre = { mode:'minuteur', duree:90, debut:null, ecoule:0 };
+  try {
+    var luLibre = JSON.parse(localStorage.getItem(CLE_CHRONO_LIBRE) || 'null');
+    if (luLibre && typeof luLibre === 'object'){
+      if (luLibre.mode === 'chrono' || luLibre.mode === 'minuteur') libre.mode = luLibre.mode;
+      if (typeof luLibre.duree === 'number' && luLibre.duree > 0) libre.duree = Math.min(3600, Math.round(luLibre.duree));
+      if (typeof luLibre.ecoule === 'number' && luLibre.ecoule >= 0) libre.ecoule = luLibre.ecoule;
+      if (typeof luLibre.debut === 'number' && luLibre.debut > 0) libre.debut = luLibre.debut;
+    }
+  } catch (err) {}
+  function garderLibre(){
+    try { localStorage.setItem(CLE_CHRONO_LIBRE, JSON.stringify(libre)); } catch (err) {}
+  }
+  function libreEcoule(){
+    return libre.ecoule + (libre.debut ? (Date.now() - libre.debut) / 1000 : 0);
+  }
+  // Le minuteur montre ce qu'il reste ; le chronometre, ce qui est passe.
+  function libreAffiche(){
+    var e = libreEcoule();
+    return libre.mode === 'minuteur' ? Math.max(0, Math.ceil(libre.duree - e)) : Math.floor(e);
+  }
+  function libreFini(){ return libre.mode === 'minuteur' && libreEcoule() >= libre.duree; }
+  function libreTourne(){ return !!libre.debut && !libreFini(); }
+
+  function rendreChrono(){
+    var enCours = libreTourne(), fini = libreFini();
+    var html = '<div class="cl-haut">'
+      + '<div class="cl-modes" role="group" aria-label="Mode du chrono">'
+      +   '<button type="button" class="cl-mode" data-cl="mode" data-v="minuteur" aria-pressed="' + (libre.mode === 'minuteur') + '">MINUTEUR</button>'
+      +   '<button type="button" class="cl-mode" data-cl="mode" data-v="chrono" aria-pressed="' + (libre.mode === 'chrono') + '">CHRONO</button>'
+      + '</div>'
+      + '<button type="button" class="fs-rond" data-cl="fermer" aria-label="Fermer le chrono"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>'
+      + '</div>'
+      + '<div class="fs-anneau cl-anneau' + (fini ? ' fini' : '') + '" id="clAnneau"><div class="fs-temps">'
+      +   '<b id="clTemps">' + texteChrono(libreAffiche()) + '</b>'
+      +   '<small id="clEtat">' + etatLibre() + '</small></div></div>';
+    if (libre.mode === 'minuteur' && !enCours){
+      html += '<div class="cl-choix" role="group" aria-label="Durée du minuteur">'
+        + DUREES_LIBRE.map(function(d){
+            return '<button type="button" class="cl-duree" data-cl="duree" data-v="' + d + '" aria-pressed="' + (libre.duree === d) + '">' + texteChrono(d) + '</button>';
+          }).join('') + '</div>'
+        + '<div class="cl-pas"><button type="button" data-cl="pas" data-v="-15">− 15 s</button>'
+        + '<button type="button" data-cl="pas" data-v="15">+ 15 s</button></div>';
+    }
+    html += '<div class="cl-bas">'
+      + '<button type="button" class="fs-cta" data-cl="' + (enCours ? 'pause' : 'partir') + '">'
+      +   (enCours ? 'PAUSE' : fini ? 'RECOMMENCER' : libre.ecoule > 0 ? 'REPRENDRE' : 'DÉMARRER') + '</button>'
+      + '<button type="button" class="fs-ghost" data-cl="raz">REMETTRE À ZÉRO</button>'
+      + '</div>';
+    clCorps.innerHTML = html;
+    majAnneauLibre();
+    if (fondChrono) fondChrono.regler(enCours ? 1.7 : .6, fini ? [.17, .82, .54] : [1, .36, .22]);
+  }
+  function etatLibre(){
+    if (libreFini()) return 'terminé';
+    if (libre.mode === 'minuteur') return libre.debut ? 'il reste' : 'minuteur';
+    return libre.debut ? 'en cours' : 'chronomètre';
+  }
+  // L'anneau se remplit sur la duree visee ; le chronometre, lui, tourne sur
+  // une minute — il n'a pas de fin a montrer.
+  function majAnneauLibre(){
+    var t = document.getElementById('clTemps'), a = document.getElementById('clAnneau'), e = document.getElementById('clEtat');
+    if (!t || !a) return;
+    t.textContent = texteChrono(libreAffiche());
+    if (e) e.textContent = etatLibre();
+    var ec = libreEcoule();
+    a.style.setProperty('--p', libre.mode === 'minuteur'
+      ? Math.min(1, libre.duree ? ec / libre.duree : 1)
+      : (ec % 60) / 60);
+    a.classList.toggle('fini', libreFini());
+  }
+  function suivreLibre(){
+    clearInterval(tickLibre);
+    tickLibre = null;
+    tenirEcran(!!(chrono || repos) || libreTourne());
+    if (!libreTourne() || clEl.hidden) return;
+    tickLibre = setInterval(function(){
+      if (libreFini()){ rendreChrono(); suivreLibre(); return; }
+      majAnneauLibre();
+    }, 250);
+  }
+  function ouvrirChronoLibre(){
+    fermerFeuilles();
+    avantPlein = window.scrollY;
+    clEl.hidden = false;
+    document.body.classList.add('en-chrono');
+    rendreChrono();
+    suivreLibre();
+    clEl.focus({ preventScroll:true });
+  }
+  function fermerChronoLibre(){
+    clEl.hidden = true;
+    document.body.classList.remove('en-chrono');
+    clearInterval(tickLibre);
+    tickLibre = null;
+    tenirEcran(!!(chrono || repos));
+    window.scrollTo(0, avantPlein);
+  }
+  if (clEl){
+    clEl.addEventListener('click', function(e){
+      var b = e.target.closest('[data-cl]');
+      if (!b) return;
+      var quoi = b.dataset.cl, v = b.dataset.v;
+      if (quoi === 'fermer'){ fermerChronoLibre(); return; }
+      if (quoi === 'mode'){
+        if (libre.mode === v) return;
+        libre = { mode:v, duree:libre.duree, debut:null, ecoule:0 };
+      } else if (quoi === 'duree'){
+        libre.duree = Number(v); libre.ecoule = 0; libre.debut = null;
+      } else if (quoi === 'pas'){
+        libre.duree = Math.max(15, Math.min(3600, libre.duree + Number(v)));
+        libre.ecoule = 0; libre.debut = null;
+      } else if (quoi === 'partir'){
+        if (libreFini()) libre.ecoule = 0;
+        libre.debut = Date.now();
+      } else if (quoi === 'pause'){
+        libre.ecoule = libreEcoule();
+        libre.debut = null;
+      } else if (quoi === 'raz'){
+        libre.ecoule = 0; libre.debut = null;
+      }
+      garderLibre();
+      rendreChrono();
+      suivreLibre();
+    });
+    document.addEventListener('keydown', function(e){
+      if (e.key === 'Escape' && !clEl.hidden) fermerChronoLibre();
+    });
+    document.getElementById('chronoBtn').addEventListener('click', ouvrirChronoLibre);
+  }
+
+  // ---------- les reglages, dans la feuille du profil ----------
+  // Cinq teintes par groupe plutot qu'un selecteur de couleur : elles sont
+  // toutes lisibles sur le fond sombre, et se touchent du pouce. Le reste,
+  // ce sont des interrupteurs — ce qu'on affiche, pas ce qu'on garde.
+  var TEINTES = ['#ff7aa2', '#ff5c38', '#ffd23f', '#12c07a', '#22b8a8', '#4d7cff', '#a99bff', '#b3d236'];
+  var BASCULES = [
+    { cle:'chronoAuto',  titre:'Chrono de repos automatique', note:'La pastille qui part toute seule quand tu coches une série.' },
+    { cle:'btnChrono',   titre:'Bouton CHRONO sur tous les exercices', note:'Sinon, il ne sort que pour le gainage.' },
+    { cle:'champRepos',  titre:'Champ REPOS sur chaque série', note:'Le repos est déjà mesuré tout seul par la pastille.' },
+    { cle:'rpe',         titre:'Colonne RPE (difficulté)', note:'Elle nourrit la charge suggérée. Les valeurs déjà notées sont gardées.' },
+    { cle:'ecranAllume', titre:'Garder l\'écran allumé', note:'Pendant un chrono ou un repos, pour ne pas rallumer entre deux séries.' }
+  ];
+  function rendreReglages(){
+    var zoneC = document.getElementById('regCouleurs');
+    var zoneB = document.getElementById('regBascules');
+    if (!zoneC || !zoneB) return;
+    zoneC.innerHTML = Object.keys(GROUP_COLORS).filter(function(g){ return g !== 'Autre'; }).map(function(g){
+      var c = couleurGroupe(g);
+      return '<div class="reg-groupe"><span class="reg-groupe-nom" style="--c:' + c + '"><i aria-hidden="true"></i>' + esc(g.toUpperCase()) + '</span>'
+        + '<span class="reg-nuancier" role="group" aria-label="Couleur de ' + esc(g) + '">'
+        + [GROUP_COLORS[g]].concat(TEINTES.filter(function(t){ return t.toLowerCase() !== GROUP_COLORS[g].toLowerCase(); })).slice(0, 5).map(function(t){
+            return '<button type="button" class="reg-teinte" style="--c:' + t + '" data-reg="couleur" data-groupe="' + esc(g) + '" data-v="' + t + '"'
+              + ' aria-pressed="' + (c.toLowerCase() === t.toLowerCase()) + '" aria-label="' + esc(g) + ' en ' + t + '"></button>';
+          }).join('') + '</span></div>';
+    }).join('');
+    zoneB.innerHTML = BASCULES.map(function(b){
+      return '<button type="button" class="reg-bascule" data-reg="bascule" data-cle="' + b.cle + '" aria-pressed="' + !!reglages[b.cle] + '">'
+        + '<span><b>' + esc(b.titre) + '</b><small>' + esc(b.note) + '</small></span>'
+        + '<span class="reg-temoin" aria-hidden="true"></span></button>';
+    }).join('');
+  }
+  document.getElementById('profilSheet').addEventListener('click', function(e){
+    var b = e.target.closest('[data-reg]');
+    if (!b) return;
+    if (b.dataset.reg === 'couleur'){
+      if (b.dataset.v === GROUP_COLORS[b.dataset.groupe]) delete reglages.couleurs[b.dataset.groupe];
+      else reglages.couleurs[b.dataset.groupe] = b.dataset.v;
+    } else {
+      reglages[b.dataset.cle] = !reglages[b.dataset.cle];
+      appliquerReglages();
+    }
+    garderReglages();
+    rendreReglages();
+    renderAll();
+  });
+  document.getElementById('regCouleursRaz').addEventListener('click', function(){
+    reglages.couleurs = {};
+    garderReglages();
+    rendreReglages();
+    renderAll();
+    showToast('Couleurs d\'origine');
+  });
 
   // L'icone de chaque carte ouvre l'exercice en grand.
   exListEl.addEventListener('click', function(e){
@@ -4718,7 +4806,7 @@
     var nExos = b ? b.exos : 0;
     var disques = exos.slice(0, 5).map(function(x, i){
       var h = volMax ? 46 + Math.round(54 * x.vol / volMax) : 70;
-      return '<i class="disque" style="--h:' + h + 'px;--c:' + (GROUP_COLORS[x.groupe] || GROUP_COLORS.Autre) + ';--i:' + i + '"></i>';
+      return '<i class="disque" style="--h:' + h + 'px;--c:' + couleurGroupe(x.groupe) + ';--i:' + i + '"></i>';
     }).join('');
     // Le collier claque apres le dernier disque : --n donne son tour.
     var nDisques = Math.max(1, Math.min(exos.length, 5));
@@ -4962,6 +5050,7 @@
   }
 
   function init(){
+    appliquerReglages();
     populateDatalist();
     renderSeanceJour(true);
     var local = loadLocal();
@@ -5296,6 +5385,7 @@
   // parlent de fichiers — deux questions differentes, deux portes.
   function openProfil(){
     fermerFeuilles();
+    rendreReglages();
     Sync.majUI();
     document.getElementById('profilSheet').hidden = false;
   }
@@ -7788,7 +7878,7 @@
       + 'vec3 fond=vec3(.047,.043,.039);vec3 braise=tn*vec3(.42,.333,.227);'
       + 'vec3 c=mix(fond,braise,g);c=mix(c,tn,pow(g,3.)*.55);'
       + 'c+=(h(gl_FragCoord.xy+t)-.5)/255.;gl_FragColor=vec4(c,1.);}';
-    var hotes = ['bilanEcran', 'accueil', 'focus'].map(function(id){ return document.getElementById(id); }).filter(Boolean);
+    var hotes = ['bilanEcran', 'accueil', 'focus', 'chronoLibre'].map(function(id){ return document.getElementById(id); }).filter(Boolean);
     if (!hotes.length || !window.Worker || !window.OffscreenCanvas
         || !HTMLCanvasElement.prototype.transferControlToOffscreen) return;
     var calme = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : { matches:false };
@@ -7801,10 +7891,13 @@
       var peintre = null, echec = false;
       // Le reglage vise, garde tant que le peintre n'existe pas encore.
       var reglage = { k:1, tn:[1, .36, .22] };
-      if (hote.id === 'focus') fondFocus = { regler:function(k, tn, direct){
-        reglage = { k:k, tn:tn };
-        if (peintre && !echec) peintre.postMessage({ type:'reglage', k:k, tn:tn, direct:!!direct });
-      } };
+      if (hote.id === 'focus' || hote.id === 'chronoLibre'){
+        var poignee = { regler:function(k, tn, direct){
+          reglage = { k:k, tn:tn };
+          if (peintre && !echec) peintre.postMessage({ type:'reglage', k:k, tn:tn, direct:!!direct });
+        } };
+        if (hote.id === 'focus') fondFocus = poignee; else fondChrono = poignee;
+      }
 
       // Demi-resolution : un degrade flou n'a pas besoin de chaque pixel.
       function taille(){

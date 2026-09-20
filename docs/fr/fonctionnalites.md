@@ -188,30 +188,63 @@ avant de parler de glisser : un appui qui tremble reste un appui) et garde sa
 place (`topset_repos_pos`, en fraction de l'écran). Un appui ouvre l'exercice
 en plein écran, sur le repos.
 
-**L'exercice en plein écran** (19/09/2026). L'icône orange ⤢ de chaque carte
-(sauf le cardio) ouvre l'exercice en grand, sur la **seule série à faire** : la
-première pas encore cochée. Les séries faites restent rappelées en petit, et la
-même série la dernière fois à côté. Gros −/+ (2,5 kg, 1 rep, 5 s au temps) ;
-un appui sur le chiffre ouvre une **molette** (colonnes à défilement natif qui
-s'arrêtent d'elles-mêmes sur une valeur : kg entiers + quarts, reps, secondes
-par 5). Puces de RPE 6 à 10 (un RPE en demi, noté sur la carte, reste affiché).
-- **Valider** (le bouton, ou la carte **glissée vers la droite**) coche la série
-  exactement comme sa ligne : le repos d'avant est noté, le sien commence, et
-  l'écran passe au **repos** : le temps qui monte dans un anneau qui se remplit
-  jusqu'au repos visé (celui de l'exercice, sinon 90 s) puis passe au vert, la
-  série notée, et la suivante déjà remplie et modifiable. `PASSER À LA SÉRIE
-  SUIVANTE` y revient ; `Terminer l'exo` passe au suivant.
-- **Glisser vers la gauche** supprime la série ; `ANNULER` la remet à sa place
-  pendant 5 secondes. Un glissement de moins d'un tiers de l'écran (et pas
-  lancé) revient ; un appui sur un bouton de la carte reste un appui.
+**Retomber sur son exercice** (20/09/2026). La date en tête de la colonne
+`PRÉC.` ouvre la séance d'avant **centrée sur le même exercice** (retrouvé par
+son nom : d'un jour à l'autre, un exercice ne garde pas son identifiant), et la
+barre de retour ramène à celui d'où l'on vient. Fermer un plein écran rend sa
+place à la page au lieu de la remonter en haut. Sans exercice à viser, ou s'il a
+disparu, c'est le haut de la page, comme avant.
+
+**L'exercice en plein écran** (19/09/2026, simplifié le 20/09). L'icône orange
+⤢ de chaque carte (sauf le cardio) ouvre l'exercice en grand, sur la **seule
+série à faire** : la première pas encore cochée. Les séries faites restent
+rappelées en petit, et la même série la dernière fois à côté. Gros −/+ de part
+et d'autre du chiffre (2,5 kg, 1 rep, 5 s au temps).
+- `SÉRIE SUIVANTE` coche la série exactement comme sa ligne : le repos d'avant
+  est noté, le sien commence, et l'écran passe au **repos** : le temps qui monte
+  dans un anneau qui se remplit jusqu'au repos visé (celui de l'exercice, sinon
+  90 s) puis passe au vert, la série notée, et la suivante déjà remplie et
+  modifiable. `PASSER À LA SÉRIE SUIVANTE` y revient ; `Terminer l'exo` passe au
+  suivant.
 - **Superset** : les exercices du bloc ensemble, A puis B ; on enchaîne sans
   repos à l'écran, et le repos vient après le dernier du tour.
 - `Exo suivant →` et les points en haut : un superset compte pour un exercice.
-- **✕** (ou Échap) ferme sans rien valider ni supprimer : les réglages sont déjà
-  dans la série, qui reste en cours ; si un repos tourne, la pastille reprend.
+- **✕** (ou Échap) ferme sans rien valider : les réglages sont déjà dans la
+  série, qui reste en cours ; si un repos tourne, la pastille reprend. On
+  retombe sur la carte de l'exercice, pas en haut de la page.
+- **Supprimer une série** se fait sur sa carte, où la poubelle est.
+La **molette** et le **swipe** (glisser à droite pour valider, à gauche pour
+supprimer) ont sauté le 20/09/2026 : deux gestes à deviner pour ce que deux
+boutons font déjà, et une suppression à portée de pouce pendant une série.
 Le fond est la braise (voir plus bas) : douce pendant la série, forte pendant le
-repos, verte ou rouge sous le swipe. Toutes les écritures passent par
-`scheduleSave`, comme la carte : hors ligne et sans compte, rien ne change.
+repos. Toutes les écritures passent par `scheduleSave`, comme la carte : hors
+ligne et sans compte, rien ne change.
+
+**Le chrono libre** (20/09/2026). Le bouton ⏱ de l'en-tête ouvre un chrono qui
+n'appartient à aucun exercice : il ne note rien, il compte. Deux modes —
+**minuteur** (1:00, 1:30, 2:00, 3:00, et ± 15 s ; l'anneau se vide, puis passe
+au vert) et **chronomètre** qui monte. `DÉMARRER` / `PAUSE` / `REMETTRE À ZÉRO`,
+et rien d'autre. Comme le repos et le chrono de gainage, il garde une **heure de
+départ** (`topset_chrono_libre`) et non un compteur : fermer l'écran, verrouiller
+le téléphone ou quitter l'app ne l'arrête pas. Le fond est la braise.
+
+**Les réglages** (20/09/2026, « l'interface devient fouilli »). Le bouton profil
+de l'en-tête ouvre `RÉGLAGES ET PROFIL`, réglages d'abord :
+- **Couleurs des groupes** : cinq teintes par groupe, dont celle d'origine. La
+  couleur choisie suit le groupe **partout** — carte, planning, récap,
+  silhouette, bandeau, plein écran. Un bouton remet celles d'origine.
+- **Chrono de repos automatique** : la pastille qui part toute seule quand on
+  coche une série.
+- **Bouton CHRONO sur tous les exercices** : sinon il ne sort que pour le
+  gainage.
+- **Champ REPOS sur chaque série**, **colonne RPE** : rangés par défaut depuis
+  le 20/09. Ranger une colonne n'efface rien — la valeur reste dans la série,
+  part dans les exports, et revient si on rallume la colonne. Le RPE nourrit la
+  charge suggérée : éteint, la suggestion s'appuie sur la seule tendance des
+  charges.
+- **Garder l'écran allumé** pendant un chrono ou un repos.
+Les réglages vivent dans ce téléphone (`topset_reglages`) : ce sont des états
+d'écran, pas des données du carnet, et ils ne montent pas dans le compte.
 
 **Le cardio : minutes, vitesse, inclinaison.** Tapis, course, marche, vélo,
 rameur… s'ouvrent en cardio : une série est une durée **en minutes** (`25`,
