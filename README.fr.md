@@ -37,8 +37,12 @@ c'est exactement à ça que sert ce repo pour l'instant.
 ## En bref
 
 - **Noter vite, en séance.** L'app s'ouvre sur la séance du jour : une ligne par
-  série (charge, répétitions, RPE, coche), le chrono des exercices au temps, le
-  cardio (durée, vitesse, inclinaison), et le repos qui se compte tout seul.
+  série (charge, répétitions, coche), l'exercice en plein écran avec de gros
+  −/+, le cardio (durée, vitesse, inclinaison), et le repos qui se compte tout
+  seul. Un chrono à part (minuteur ou chronomètre) vit dans l'en-tête.
+- **La régler à sa main.** Une couleur par groupe musculaire, et des
+  interrupteurs pour ranger ce qui ne sert pas (colonne RPE, champ REPOS,
+  bouton CHRONO, chrono de repos automatique). Ranger n'efface rien.
 - **Ne pas repartir de zéro.** Refaire la dernière fois, les exercices de la
   semaine d'avant, la charge suggérée.
 - **Voir où on en est.** Un planning en calendrier (jour, semaine, mois), les

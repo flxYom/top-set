@@ -46,8 +46,8 @@ page in `/documentation`, guides in `/entrainement`, exercises in
 `/exercices`, calculators in `/outils`, a product page
 (`/carnet-de-musculation`) and a page on how they are made
 (`/methode-editoriale`), all grouped under one main section, **Apprendre**
-(`/apprendre`). In the app, Apprendre is a fourth tab next to PLANNING,
-SÉANCES and RÉCAP: a static screen of six cards and a button to `/apprendre`;
+(`/apprendre`). In the app, Apprendre is a fourth tab next to SÉANCE,
+CARNET and PROGRÈS: a static screen of six cards and a button to `/apprendre`;
 it stores and computes nothing. Content pages carry a bar with the same
 sections under the header, the current one lit like an app tab, and the
 breadcrumb goes through Apprendre. The service worker is unchanged, and every

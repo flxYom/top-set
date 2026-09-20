@@ -14,18 +14,29 @@ que la description du site et la page produit promettent « sans compte ». Le
 bouton se cache pendant un oubli ou un changement de mot de passe, où il
 abandonnerait l'opération à mi-chemin.
 
-**Planning et séances.** L'app s'ouvre sur **SÉANCES › DU JOUR**, le carnet où
-l'on note : le bandeau du jour, puis les exercices et les séries. Le **PLANNING**
-est un calendrier qu'on regarde : **SEMAINE** (par défaut, une ligne par jour :
-titre de la séance, exercices, séries, faite ou prévue, puis les groupes
-travaillés de la semaine), **MOIS** (la grille, une pastille à la couleur du
-groupe dominant, pleine pour une séance faite, en contour pour une séance
-prévue) et **JOUR** (le détail d'une séance). Les flèches avancent d'un jour,
-d'une semaine ou d'un mois ; `AUJOURD'HUI` passe en orange dès qu'on s'est
-éloigné. Toucher une séance montre sa fiche, rangée sous MES
-SÉANCES, et `‹ RETOUR` ramène au calendrier ; un jour vide s'ouvre dans DU JOUR,
-où `AUJOURD'HUI ›` ramène à aujourd'hui. **SÉANCES** a trois rubriques :
-DU JOUR, MES SÉANCES et HISTORIQUE.
+**Quatre onglets, quatre métiers** (20/09/2026, demande : « entre le
+calendrier, le récap, la séance, les séances, les séances du jour c'est trop
+fouilli »). Sept endroits montraient des séances — PLANNING (jour, semaine,
+mois), SÉANCES (du jour, mes séances, historique) et le RÉCAP ; quatre
+affichaient la même liste sous une autre forme. Il en reste quatre, et chacun
+fait une seule chose :
+- **SÉANCE** : ce qu'on fait maintenant. Le bandeau du jour, les exercices, les
+  séries. Plus aucun sous-onglet. C'est là que l'app s'ouvre.
+- **CARNET** : chercher un jour ou une séance. Le calendrier **et** la liste sur
+  le même écran. Il se replie sur la **semaine** (une rangée de sept, une
+  pastille à la couleur du groupe dominant) ou se déplie sur le **mois** (la
+  grille, pastille pleine pour une séance faite, en contour pour une prévue) —
+  un seul bouton, `VOIR LE MOIS` / `VOIR LA SEMAINE`. Les flèches avancent d'une
+  semaine ou d'un mois ; `AUJOURD'HUI` passe en orange dès qu'on s'est éloigné.
+  Dessous, une rangée de filtres — `TOUTES`, `PRÉVUES`, `FAITES` — **trie la
+  liste** au lieu de changer d'écran ; avec `TOUTES`, deux blocs nommés
+  « À VENIR » et « DÉJÀ FAITES ». Toucher un jour ou une séance ouvre sa fiche,
+  et `‹ RETOUR` ramène au carnet ; un jour vide s'ouvre dans SÉANCE, où
+  `AUJOURD'HUI ›` ramène à aujourd'hui.
+- **PROGRÈS** : records, volume, bilans (l'ancien RÉCAP).
+- **APPRENDRE** : les pages et les outils.
+La vue **JOUR** du calendrier a sauté avec eux : elle montrait une séance sans
+qu'on puisse la remplir, et SÉANCE fait ça mieux.
 
 **Une série, une ligne.** `SÉRIE · 8 SEPT. · KG · REPS · RPE · ✓`, la grille de
 Strong ou Hevy, reprise parce que c'est celle qu'on connaît. Avant, chaque série
@@ -37,7 +48,7 @@ comprenait pas —, et montre la même série ce jour-là (la 3e en face de la 3
 Elle se **lit**, elle ne recopie plus rien : elle recopiait d'un appui, dans une
 case posée à 4 px de celle du poids, et un appui de travers notait une série
 qu'on n'avait pas faite. La **date en tête de colonne** est un vrai bouton,
-encadré, avec sa flèche : il ouvre la séance d'avant dans DU JOUR, et une
+encadré, avec sa flèche : il ouvre la séance d'avant dans SÉANCE, et une
 barre orange en bas de l'écran, `RETOUR À MA SÉANCE`, ramène au jour de départ,
 sur l'exercice d'où l'on était parti. La barre suit un aller-retour, pas une
 chaîne : depuis la séance d'avant, sa propre date mène plus loin, mais le retour
@@ -71,8 +82,8 @@ doigt** : passé 8 px de déplacement horizontal, elle se soulève et suit le
 doigt, l'onglet survolé s'allume, et le plus proche s'ouvre au lâcher ; un
 simple appui reste un clic (Pointer Events, `touch-action:none` sur la barre
 du bas). **Chaque onglet garde sa position de défilement** (18/09/2026) :
-PLANNING, SÉANCES, RÉCAP et APPRENDRE retrouvent la hauteur où on les avait
-quittés, y compris SÉANCES au retour d'une fiche (`montrerVue`, en mémoire
+SÉANCE, CARNET, PROGRÈS et APPRENDRE retrouvent la hauteur où on les avait
+quittés, y compris SÉANCE au retour d'une fiche (`montrerVue`, en mémoire
 seulement : à l'ouverture, chaque onglet part du haut). Le balayage de toute
 la page pour changer d'onglet a été écarté : il changerait d'onglet par erreur
 pendant la saisie et entrerait en conflit avec la carte de chaleur, qui défile
@@ -188,30 +199,63 @@ avant de parler de glisser : un appui qui tremble reste un appui) et garde sa
 place (`topset_repos_pos`, en fraction de l'écran). Un appui ouvre l'exercice
 en plein écran, sur le repos.
 
-**L'exercice en plein écran** (19/09/2026). L'icône orange ⤢ de chaque carte
-(sauf le cardio) ouvre l'exercice en grand, sur la **seule série à faire** : la
-première pas encore cochée. Les séries faites restent rappelées en petit, et la
-même série la dernière fois à côté. Gros −/+ (2,5 kg, 1 rep, 5 s au temps) ;
-un appui sur le chiffre ouvre une **molette** (colonnes à défilement natif qui
-s'arrêtent d'elles-mêmes sur une valeur : kg entiers + quarts, reps, secondes
-par 5). Puces de RPE 6 à 10 (un RPE en demi, noté sur la carte, reste affiché).
-- **Valider** (le bouton, ou la carte **glissée vers la droite**) coche la série
-  exactement comme sa ligne : le repos d'avant est noté, le sien commence, et
-  l'écran passe au **repos** : le temps qui monte dans un anneau qui se remplit
-  jusqu'au repos visé (celui de l'exercice, sinon 90 s) puis passe au vert, la
-  série notée, et la suivante déjà remplie et modifiable. `PASSER À LA SÉRIE
-  SUIVANTE` y revient ; `Terminer l'exo` passe au suivant.
-- **Glisser vers la gauche** supprime la série ; `ANNULER` la remet à sa place
-  pendant 5 secondes. Un glissement de moins d'un tiers de l'écran (et pas
-  lancé) revient ; un appui sur un bouton de la carte reste un appui.
+**Retomber sur son exercice** (20/09/2026). La date en tête de la colonne
+`PRÉC.` ouvre la séance d'avant **centrée sur le même exercice** (retrouvé par
+son nom : d'un jour à l'autre, un exercice ne garde pas son identifiant), et la
+barre de retour ramène à celui d'où l'on vient. Fermer un plein écran rend sa
+place à la page au lieu de la remonter en haut. Sans exercice à viser, ou s'il a
+disparu, c'est le haut de la page, comme avant.
+
+**L'exercice en plein écran** (19/09/2026, simplifié le 20/09). L'icône orange
+⤢ de chaque carte (sauf le cardio) ouvre l'exercice en grand, sur la **seule
+série à faire** : la première pas encore cochée. Les séries faites restent
+rappelées en petit, et la même série la dernière fois à côté. Gros −/+ de part
+et d'autre du chiffre (2,5 kg, 1 rep, 5 s au temps).
+- `SÉRIE SUIVANTE` coche la série exactement comme sa ligne : le repos d'avant
+  est noté, le sien commence, et l'écran passe au **repos** : le temps qui monte
+  dans un anneau qui se remplit jusqu'au repos visé (celui de l'exercice, sinon
+  90 s) puis passe au vert, la série notée, et la suivante déjà remplie et
+  modifiable. `PASSER À LA SÉRIE SUIVANTE` y revient ; `Terminer l'exo` passe au
+  suivant.
 - **Superset** : les exercices du bloc ensemble, A puis B ; on enchaîne sans
   repos à l'écran, et le repos vient après le dernier du tour.
 - `Exo suivant →` et les points en haut : un superset compte pour un exercice.
-- **✕** (ou Échap) ferme sans rien valider ni supprimer : les réglages sont déjà
-  dans la série, qui reste en cours ; si un repos tourne, la pastille reprend.
+- **✕** (ou Échap) ferme sans rien valider : les réglages sont déjà dans la
+  série, qui reste en cours ; si un repos tourne, la pastille reprend. On
+  retombe sur la carte de l'exercice, pas en haut de la page.
+- **Supprimer une série** se fait sur sa carte, où la poubelle est.
+La **molette** et le **swipe** (glisser à droite pour valider, à gauche pour
+supprimer) ont sauté le 20/09/2026 : deux gestes à deviner pour ce que deux
+boutons font déjà, et une suppression à portée de pouce pendant une série.
 Le fond est la braise (voir plus bas) : douce pendant la série, forte pendant le
-repos, verte ou rouge sous le swipe. Toutes les écritures passent par
-`scheduleSave`, comme la carte : hors ligne et sans compte, rien ne change.
+repos. Toutes les écritures passent par `scheduleSave`, comme la carte : hors
+ligne et sans compte, rien ne change.
+
+**Le chrono libre** (20/09/2026). Le bouton ⏱ de l'en-tête ouvre un chrono qui
+n'appartient à aucun exercice : il ne note rien, il compte. Deux modes —
+**minuteur** (1:00, 1:30, 2:00, 3:00, et ± 15 s ; l'anneau se vide, puis passe
+au vert) et **chronomètre** qui monte. `DÉMARRER` / `PAUSE` / `REMETTRE À ZÉRO`,
+et rien d'autre. Comme le repos et le chrono de gainage, il garde une **heure de
+départ** (`topset_chrono_libre`) et non un compteur : fermer l'écran, verrouiller
+le téléphone ou quitter l'app ne l'arrête pas. Le fond est la braise.
+
+**Les réglages** (20/09/2026, « l'interface devient fouilli »). Le bouton profil
+de l'en-tête ouvre `RÉGLAGES ET PROFIL`, réglages d'abord :
+- **Couleurs des groupes** : cinq teintes par groupe, dont celle d'origine. La
+  couleur choisie suit le groupe **partout** — carte, planning, récap,
+  silhouette, bandeau, plein écran. Un bouton remet celles d'origine.
+- **Chrono de repos automatique** : la pastille qui part toute seule quand on
+  coche une série.
+- **Bouton CHRONO sur tous les exercices** : sinon il ne sort que pour le
+  gainage.
+- **Champ REPOS sur chaque série**, **colonne RPE** : rangés par défaut depuis
+  le 20/09. Ranger une colonne n'efface rien — la valeur reste dans la série,
+  part dans les exports, et revient si on rallume la colonne. Le RPE nourrit la
+  charge suggérée : éteint, la suggestion s'appuie sur la seule tendance des
+  charges.
+- **Garder l'écran allumé** pendant un chrono ou un repos.
+Les réglages vivent dans ce téléphone (`topset_reglages`) : ce sont des états
+d'écran, pas des données du carnet, et ils ne montent pas dans le compte.
 
 **Le cardio : minutes, vitesse, inclinaison.** Tapis, course, marche, vélo,
 rameur… s'ouvrent en cardio : une série est une durée **en minutes** (`25`,
@@ -235,7 +279,7 @@ dernière fois, qui se lit et ne recopie rien :
   (poids, reps, type, repos, vitesse et inclinaison). Rien n'est coché, le RPE
   reste à dire, une série déjà remplie n'est pas touchée (`repriseSerie`).
 - `+ AJOUTER À MA SÉANCE DU JOUR`, sous chaque exercice d'une séance passée et
-  faite — dans sa fiche, ou dans DU JOUR quand on l'ouvre par la date de la
+  faite — dans sa fiche, ou dans SÉANCE quand on l'ouvre par la date de la
   dernière fois : l'exercice arrive dans la séance d'aujourd'hui avec ses séries,
   RPE compris, rien de coché. Le même exercice déjà posé et encore vide reçoit
   les séries au lieu d'un doublon (`ajouterAuJour`). « Faite » : validée, ou
@@ -337,12 +381,13 @@ groupe noté sans précision allume toutes ses zones, plus pâles. Sous chaque
 groupe de la légende, le détail par muscle ; chaque ligne d'exercice porte son
 sous-groupe.
 
-**Deux rubriques dans SÉANCES.** *Mes séances* — ce qui reste à faire : les
-séances préparées mais pas loguées, celle du jour, celles à venir, triées du plus
-ancien au plus récent pour qu'une séance sautée remonte. C'est là que vit
-*Créer ma séance*. *Historique* — ce qui est fait, du plus récent au plus ancien,
-groupé par mois. La frontière est le fait de l'avoir loguée, pas la date seule :
-une séance loguée aujourd'hui reste dans *Mes séances* jusqu'au lendemain.
+**Trois filtres dans le CARNET.** *Prévues* — ce qui reste à faire : les séances
+préparées mais pas loguées, celle du jour, celles à venir, triées du plus ancien
+au plus récent pour qu'une séance sautée remonte. C'est là que vit *Créer ma
+séance*. *Faites* — ce qui est fait, du plus récent au plus ancien, groupé par
+mois. *Toutes* montre les deux, à venir d'abord, chaque bloc annoncé par son
+titre. La frontière est le fait de l'avoir loguée, pas la date seule : une séance
+loguée aujourd'hui reste dans *Prévues* jusqu'au lendemain.
 
 **Graphique de progression** par exercice, tracé depuis ton propre historique.
 

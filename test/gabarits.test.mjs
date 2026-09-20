@@ -568,7 +568,7 @@ ok('le cardio note minutes, vitesse et inclinaison, sans perdre ce qu une base p
 ok('le chrono du gainage note une serie faite a chaque pause et survit a une app fermee',
    /function arreterChrono\(\)\{/.test(SRC) && /cible\.fait = true;/.test(SRC)
    && /localStorage\.setItem\(CLE_CHRONO/.test(SRC) && /data-action="chrono"/.test(SRC)
-   && /\(auTemps && !estCardio\(ex\) \? boutonChronoHTML\(ex\) : ''\)/.test(SRC));
+   && /\(\(auTemps \|\| reglages\.btnChrono\) && !estCardio\(ex\) \? boutonChronoHTML\(ex\) : ''\)/.test(SRC));
 
 ok('la derniere fois se reprend d un bouton a cote de + SERIE, pas depuis la colonne',
    /data-action="comme-avant"/.test(SRC) && /function repriseSerie\(s, cible\)\{/.test(SRC)
@@ -596,11 +596,17 @@ ok('le repos monte apres une serie cochee ou un chrono en pause, et s ecrit dans
    && /localStorage\.setItem\(CLE_REPOS/.test(SRC) && /id="reposPastille"/.test(HTML)
    && /function validerFin\(ds\)\{\s*finirRepos\(false\);/.test(SRC));
 
-ok('le planning est un calendrier jour, semaine, mois ; un jour touche montre sa fiche sous MES SEANCES, un jour vide s ouvre dans DU JOUR',
-   /id="calVues"/.test(HTML) && /data-cal="mois"/.test(HTML) && /function calMoisHTML\(annee, mois\)\{/.test(SRC)
-   && /function calSemaineHTML\(debut\)\{/.test(SRC) && /function calJourHTML\(ds\)\{/.test(SRC)
-   && /seancesOnglet = 'jour';\n    montrerVue\('seances'\);/.test(SRC) && /if \(etatJour\(ds\)\) ouvrirSeance\(ds, 'planning'\); else allerAuJour\(ds\);/.test(SRC)
-   && /if \(depuis === 'planning'\) seancesOnglet = 'mes';/.test(SRC) && /montrerVue\(state\.ficheRetour \|\| 'seances'\)/.test(SRC));
+// Le carnet : le calendrier se replie sur la semaine ou se deplie sur le
+// mois, un jour touche ouvre sa fiche ou sa seance.
+ok('le carnet est un calendrier semaine ou mois, sans sous-onglets',
+   /id="calVueBtn"/.test(HTML) && !/id="calVues"/.test(HTML)
+   && /function calMoisHTML\(annee, mois\)\{/.test(SRC) && /function calSemaineHTML\(debut\)\{/.test(SRC)
+   // La vue « jour » montrait une seance sans pouvoir la remplir : SÉANCE
+   // fait ca mieux, et elle est partie avec son HTML.
+   && !/calJourHTML/.test(SRC) && !/data-cal="jour"/.test(HTML)
+   && /calVue = calVue === 'mois' \? 'semaine' : 'mois';/.test(SRC)
+   && /if \(etatJour\(ds\)\) ouvrirSeance\(ds, 'planning'\); else allerAuJour\(ds\);/.test(SRC)
+   && /montrerVue\(state\.ficheRetour \|\| 'seances'\)/.test(SRC));
 ok('TERMINER MA SEANCE apparait des la premiere serie notee, sans attendre un rendu complet',
    corps('function renderBandeau(', 'var d = fromDateStr(ds);').indexOf('majBoutonFin(ds);') > -1);
 ok('audit UI/UX : plus d emoji dans le signal d un exercice, un point dessine a la place',
@@ -610,8 +616,8 @@ ok('audit UI/UX : les libelles ne descendent plus sous 11 px, les commandes segm
    && /\.seg-btn\{min-height:44px;\}/.test(HTML) && /\.fin-revoir\{min-height:44px;/.test(HTML));
 ok('audit UI/UX : le texte tertiaire passe 4,5:1 sur les surfaces',
    /--ink3:#8d867b;/.test(HTML));
-ok('braise : le fond anime vit sur l accueil, le bilan et l exercice en plein ecran (19/09), s arrete cache, et respecte reduire les animations',
-   SRC.indexOf("['bilanEcran', 'accueil', 'focus']") > -1 && SRC.indexOf("peintre.postMessage({ type:'actif', actif:visible() })") > -1
+ok('braise : le fond anime vit sur l accueil, le bilan, le plein ecran et le chrono, s arrete cache, et respecte reduire les animations',
+   SRC.indexOf("['bilanEcran', 'accueil', 'focus', 'chronoLibre']") > -1 && SRC.indexOf("peintre.postMessage({ type:'actif', actif:visible() })") > -1
    && SRC.indexOf('return !hote.hidden && !document.hidden;') > -1
    && SRC.indexOf('prefers-reduced-motion: reduce') > -1 && BRAISE.indexOf('if (calme){ image(performance.now()); return; }') > -1
    && HTML.indexOf('.braise{position:fixed;inset:0;') > -1);
@@ -661,26 +667,82 @@ ok('repos : la pastille se deplace et garde sa place, un appui ouvre le plein ec
    SRC.indexOf("var CLE_POS_REPOS = 'topset_repos_pos';") > -1
    && corps("reposPastille.addEventListener('click'", 'function prochaineSerie(').indexOf("ouvrirFocus(repos.ds, fR.exercise.id, 'repos');") > -1
    && HTML.indexOf('.repos-pastille{touch-action:none;') > -1);
-ok('plein ecran : dialogue, icone sur la carte (pas le cardio), valider = la coche, swipe, annuler, molette',
+ok('plein ecran : dialogue, icone sur la carte (pas le cardio), valider = la coche, et SERIE SUIVANTE',
    HTML.indexOf('id="focus" role="dialog" aria-modal="true" aria-labelledby="focusTitre" tabindex="-1" hidden') > -1
-   && HTML.indexOf('id="focusAnnuler"') > -1 && HTML.indexOf('id="focusRoue"') > -1
    && SRC.indexOf("(auTemps && estCardio(ex) ? '' : '<button type=\"button\" class=\"ex-focus-btn\" data-action=\"focus\"") > -1
-   && corps('function validerFocus(', 'function supprimerFocus(').indexOf('finirRepos(true);') > -1
-   && corps('function validerFocus(', 'function supprimerFocus(').indexOf('lancerRepos(ds, serieId);') > -1
-   && corps('function supprimerFocus(', 'function montrerAnnuler(').indexOf("montrerAnnuler('Série '") > -1
-   && SRC.indexOf("if (sens > 0) validerFocus(exId, sid); else supprimerFocus(sid);") > -1
-   && HTML.indexOf('scroll-snap-type:y mandatory') > -1);
+   && corps('function validerFocus(', 'function ecrireFocus(').indexOf('finirRepos(true);') > -1
+   && corps('function validerFocus(', 'function ecrireFocus(').indexOf('lancerRepos(ds, serieId);') > -1
+   && SRC.indexOf("'SÉRIE SUIVANTE'") > -1);
+// 20/09/2026 : « enleve le swipe et la molette, ca sert a rien, ca complexifie
+// la chose ». Deux gestes a deviner pour ce que deux boutons font deja.
+ok('plein ecran : ni swipe, ni molette, ni suppression cachee',
+   !/focusEl\.addEventListener\('pointer/.test(SRC)
+   && !/scroll-snap-type:y mandatory/.test(SRC + HTML)
+   && !/roue-|fs-tampon|--sw-ok|focusRoue|focusAnnuler/.test(SRC + HTML)
+   && !/function supprimerFocus\(/.test(SRC)
+   && /<span class="fs-val" role="status"/.test(SRC));
 ok('plein ecran : le ✕ ferme sans valider ni supprimer',
    corps('function fermerFocus(', 'function allerUniteSuivante(').indexOf('fait') < 0
    && corps('function fermerFocus(', 'function allerUniteSuivante(').indexOf('splice') < 0);
 ok('plein ecran : la braise tourne dessous, reglable, et garde ses couleurs d origine ailleurs',
-   SRC.indexOf("var hotes = ['bilanEcran', 'accueil', 'focus']") > -1
+   SRC.indexOf("var hotes = ['bilanEcran', 'accueil', 'focus', 'chronoLibre']") > -1
    && SRC.indexOf("vec3 braise=tn*vec3(.42,.333,.227);") > -1
    && SRC.indexOf("var reglage = { k:1, tn:[1, .36, .22] };") > -1
    && SRC.indexOf("peintre.postMessage({ type:'reglage', k:k, tn:tn, direct:!!direct })") > -1
    && BRAISE.indexOf("} else if (m.type === 'reglage'){") > -1 && BRAISE.indexOf("uTn = gl.getUniformLocation(prog, 'tn');") > -1);
-ok('plein ecran : les variables de swipe n ecrasent pas le jeton --ok',
-   HTML.indexOf('--sw-ok:0;--sw-suppr:0;') > -1 && !/\.fs-carte\{[^}]*--ok:0/.test(HTML));
+
+// ---- le chrono libre et les reglages (20/09/2026) ----
+// « Il faut une rubrique chrono ou tu peux juste lancer un chrono comme ca. »
+ok('chrono libre : un bouton d en-tete, deux modes, et rien qui parte dans le carnet',
+   HTML.indexOf('id="chronoBtn"') > -1 && HTML.indexOf('id="chronoLibre" role="dialog"') > -1
+   && /data-cl="mode" data-v="minuteur"/.test(SRC) && /data-cl="mode" data-v="chrono"/.test(SRC)
+   && /var DUREES_LIBRE = \[60, 90, 120, 180\];/.test(SRC)
+   && corps('function rendreChrono(', 'function etatLibre(').indexOf('scheduleSave') < 0
+   && corps("if (clEl){", "// ---------- les reglages").indexOf('scheduleSave') < 0);
+// « Quand on clic sur le chrono y'a juste prochaine serie, ca relance le
+// chrono, tu peux sortir ou choisir de l'arreter » (20/09/2026).
+ok('chrono : pendant qu il tourne, prochaine serie, arreter, et le ✕ pour sortir',
+   /data-cl="relancer">PROCHAINE SÉRIE</.test(SRC) && /data-cl="raz">ARRÊTER</.test(SRC)
+   && /data-fs="reprendre">PROCHAINE SÉRIE</.test(SRC) && /data-fs="arreter">ARRÊTER LE CHRONO</.test(SRC)
+   // Le repos ne propose plus de remplir la serie d avance : elle se regle
+   // sur l ecran de saisie, une fois le repos fini.
+   && !/fs-mini/.test(SRC + HTML)
+   && corps('function reposFocusHTML(', 'function majTempsFocus(').indexOf('champsHTML(') < 0);
+ok('chrono libre : une heure de depart gardee, pas un compteur qui tourne',
+   /libre\.ecoule \+ \(libre\.debut \? \(Date\.now\(\) - libre\.debut\) \/ 1000 : 0\)/.test(SRC)
+   && /localStorage\.setItem\(CLE_CHRONO_LIBRE/.test(SRC));
+// « Il faut une partie reglages ou tu peux regler tes propres couleurs par
+// exos, desactiver activer le chrono et personnaliser des reglages simples. »
+ok('reglages : par defaut l app est en mode simple, et rien n est efface',
+   /var REGLAGES_DEFAUT = \{ chronoAuto:true, btnChrono:false, champRepos:false, rpe:false, ecranAllume:true, couleurs:\{\} \};/.test(SRC)
+   && /document\.body\.classList\.toggle\('sans-rpe', !reglages\.rpe\);/.test(SRC)
+   && /body\.sans-rpe \.serie-rpe,/.test(HTML)
+   && /body\.sans-repos-champ \.serie-repos-champ\{display:none;\}/.test(HTML)
+   // Ranger une colonne, ce n est pas la supprimer : les champs restent
+   // ecrits, et un reglage ne touche jamais a une seance.
+   && corps('function appliquerReglages(', 'function attente(').indexOf('state.sessions') < 0
+   && corps("var b = e.target.closest('[data-reg]');", "getElementById('regCouleursRaz')").indexOf('scheduleSave') < 0
+   && /data-field="rpe"/.test(SRC) && /data-field="repos"/.test(SRC));
+// Cacher la colonne sans corriger la grille laisserait un trou a sa place.
+ok('reglages : chaque grille de series a sa jumelle sans RPE',
+   ['body.sans-rpe .series-tete,', 'body.sans-rpe .ex-card[data-mode="temps"] .series-tete,',
+    'body.sans-rpe .ex-card.sans-prec .series-tete,',
+    'body.sans-rpe .ex-card.sans-prec[data-mode="temps"] .series-tete,'].every(sel => HTML.indexOf(sel) > -1)
+   && /@container \(max-width:310px\)\{[\s\S]*?body\.sans-rpe \.series-tete,/.test(HTML));
+ok('reglages : la couleur choisie remplace celle d origine partout',
+   /function couleurGroupe\(g\)\{\s*return \(g && reglages\.couleurs\[g\]\) \|\| GROUP_COLORS\[g\]/.test(SRC)
+   && (SRC.match(/couleurGroupe\(/g) || []).length >= 14
+   && HTML.indexOf('id="regCouleursRaz"') > -1);
+// « Ca me redirige vers la page, je veux que ca me redirige vers l exercice. »
+ok('defilement : la date d une serie ouvre la seance d avant sur le meme exercice',
+   /allerAuJour\(lien\.dataset\.date, \{ nom: lien\.dataset\.nom \}\);/.test(SRC)
+   && /data-nom="' \+ esc\(ex\.nom \|\| ''\)/.test(SRC)
+   && /function centrerExo\(cible\)\{/.test(SRC)
+   && /carte\.scrollIntoView\(\{ block:'center' \}\);/.test(SRC));
+ok('defilement : fermer un plein ecran rend sa place, pas le haut de la page',
+   corps('function fermerFocus(', 'function allerUniteSuivante(').indexOf("centrerExo({ id: exId })") > -1
+   && /avantPlein = window\.scrollY;/.test(SRC)
+   && corps('function fermerChronoLibre(', 'if (clEl){').indexOf('window.scrollTo(0, avantPlein);') > -1);
 ok('repos : cocher lance toujours le repos',
    corps("var faitBtn = e.target.closest('[data-action=\"toggle-fait\"]');", 'var menuBtn').indexOf('lancerRepos(state.selectedDay, serieId2);') > -1);
 ok('barre du bas : elle ne reste jamais rangee (vrai clavier seulement, etat recalcule au retour et a chaque vue)',
@@ -690,12 +752,32 @@ ok('barre du bas : elle ne reste jamais rangee (vrai clavier seulement, etat rec
 ok('le logo ramene a la seance du jour',
    HTML.indexOf('<a href="/" class="brand-lien" id="marqueAccueil"') > -1
    && corps("getElementById('marqueAccueil')", 'jourAuj').indexOf('allerAuJour(toDateStr(new Date()));') > -1);
-ok('SEANCES : du jour, mes seances, historique ; l app s ouvre sur la seance du jour',
-   /data-onglet="jour">DU JOUR</.test(HTML) && /view:'seances',/.test(SRC) && /var seancesOnglet = 'jour';/.test(SRC)
-   && /<section class="view" id="view-seances">\s*<div class="segmented sub" id="seancesTabs">/.test(HTML)
-   && (() => { const s = HTML.slice(HTML.indexOf('id="view-seances"'), HTML.indexOf('id="view-seance"'));
-               return s.includes('id="exList"') && s.includes('id="heroBand"') && s.includes('id="seancesListe"'); })()
+// « Entre le calendrier, le recap, la seance, les seances, les seances du
+// jour c'est trop fouilli » (20/09/2026). Un ecran, un metier : sept
+// destinations deviennent quatre.
+ok('onglets : SEANCE, CARNET, PROGRES, APPRENDRE, dans cet ordre',
+   /data-view="seances">.*?<span>SÉANCE<\/span>/.test(HTML) && /data-view="planning">.*?<span>CARNET<\/span>/.test(HTML)
+   && /data-view="recap">.*?<span>PROGRÈS<\/span>/.test(HTML) && /data-view="apprendre">.*?<span>APPRENDRE<\/span>/.test(HTML)
+   && HTML.indexOf('data-view="seances"') < HTML.indexOf('data-view="planning"')
+   && HTML.indexOf('data-view="planning"') < HTML.indexOf('data-view="recap"')
+   && /view:'seances',/.test(SRC)
+   && SRC.indexOf("var ONGLETS = ['planning','seances','recap','apprendre'];") > -1);
+ok('SEANCE ne montre que le jour : ni sous-onglets, ni listes',
+   !/id="seancesTabs"/.test(HTML) && !/seancesOnglet/.test(SRC)
+   && (() => { const v = HTML.slice(HTML.indexOf('id="view-seances"'), HTML.indexOf('id="view-seance"'));
+               return v.includes('id="exList"') && v.includes('id="heroBand"')
+                   && !v.includes('id="seancesListe"') && !v.includes('seg-btn'); })()
+   && /function renderSeances\(\)\{ renderSeanceJour\(false\); \}/.test(SRC)
    && !/id="dayPills"/.test(HTML) && !/renderDayPills|renderPlanning|planningWeekStart/.test(SRC));
+ok('CARNET : le calendrier et les seances sur un seul ecran, les filtres trient la liste',
+   (() => { const v = HTML.slice(HTML.indexOf('id="view-planning"'), HTML.indexOf('id="view-seances"'));
+            return v.includes('id="calCorps"') && v.includes('id="calVueBtn"')
+                && v.includes('id="carnetFiltres"') && v.includes('id="seancesListe"'); })()
+   && /data-filtre="toutes"/.test(HTML) && /data-filtre="prevues"/.test(HTML) && /data-filtre="faites"/.test(HTML)
+   && /var carnetFiltre = 'toutes';/.test(SRC)
+   // Un filtre trie, il ne change pas d ecran : le calendrier reste au-dessus.
+   && corps("document.getElementById('carnetFiltres').addEventListener", "document.getElementById('subTabs')").indexOf('montrerVue') < 0
+   && /if \(state\.view === 'planning'\)\{ renderCalendrier\(\); renderCarnet\(\); \}/.test(SRC));
 
 console.log(`\n${pass} reussis, ${fail} echoues`);
 process.exit(fail ? 1 : 0);

@@ -63,8 +63,8 @@ et une page qui dit comment elles sont faites (`/methode-editoriale`). Tout est
 regroupé sous une rubrique principale, **Apprendre** (`/apprendre`), qui liste
 chaque rubrique et chacune de ses pages.
 
-Dans l'app, Apprendre est un **quatrième onglet**, à côté de PLANNING, SÉANCES
-et RÉCAP : un écran fixe de six cartes (documentation, entraînement, exercices,
+Dans l'app, Apprendre est un **quatrième onglet**, à côté de SÉANCE, CARNET
+et PROGRÈS : un écran fixe de six cartes (documentation, entraînement, exercices,
 outils, le carnet, la méthode) et un bouton vers `/apprendre`. Il n'enregistre
 rien et ne calcule rien — la vue courante n'est pas stockée, et le rendu
 s'arrête là au lieu de retomber sur le récap. Sur les pages, une barre reprend

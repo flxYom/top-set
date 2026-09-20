@@ -98,7 +98,7 @@
   input,select{font-family:inherit;}
 
   @media (prefers-reduced-motion:no-preference){
-    .topbar-tab,.seg-btn,.cal-ligne,.cal-case,.icon-btn,.btn-add,.btn-add-serie,.toast,.serie-check{
+    .topbar-tab,.seg-btn,.cal-case,.icon-btn,.btn-add,.btn-add-serie,.toast,.serie-check{
       transition:background-color .14s ease,border-color .14s ease,color .14s ease,transform .08s ease,opacity .2s ease;
     }
   }
@@ -262,27 +262,15 @@
   /* ---------- Planning : le calendrier ----------
      Trois vues autour d'une date. Un jour fait porte la couleur de son groupe
      en plein, un jour prevu en pointille ou en contour, aujourd'hui un bord
-     orange. On y regarde : toucher un jour l'ouvre dans SÉANCES > DU JOUR. */
+     orange. On y regarde : toucher un jour l'ouvre dans SÉANCE. */
   .cal-corps{display:flex;flex-direction:column;gap:8px;}
-  .cal-ligne{
-    display:grid;grid-template-columns:44px minmax(0,1fr) auto;align-items:center;gap:12px;
-    min-height:64px;padding:8px 12px 8px 6px;text-align:left;
-    border:2px solid var(--line);border-left:5px solid var(--line);
-    background:var(--panel);color:var(--ink);font-family:inherit;cursor:pointer;
-  }
-  .cal-ligne.auj{border-top-color:var(--orange);border-right-color:var(--orange);border-bottom-color:var(--orange);}
-  .cal-ligne.faite,.cal-ligne.prevue{border-left-color:var(--c);}
-  .cal-ligne.prevue{border-left-style:dashed;}
-  .cal-date{display:flex;flex-direction:column;align-items:center;gap:2px;}
-  .cal-jour{font-size:10px;font-weight:800;letter-spacing:.08em;color:var(--dim);text-transform:uppercase;}
+  /* La semaine du carnet : une rangee de sept, comme le mois (20/09). Le
+     detail se lit dans la liste des seances, juste dessous. */
+  .cal-semaine{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;}
+  .cal-semaine .cal-case{gap:3px;padding:8px 0;}
+  .cal-jour{font-size:9.5px;font-weight:800;letter-spacing:.06em;color:var(--dim);text-transform:uppercase;}
+  .cal-case.auj .cal-jour{color:var(--orange);}
   .cal-num{font-size:20px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums;}
-  .cal-info{display:flex;flex-direction:column;gap:3px;min-width:0;}
-  .cal-titre{font-size:15px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .cal-ligne.vide .cal-titre{color:var(--dim);font-weight:700;font-size:13.5px;}
-  .cal-sous{font-size:12px;font-weight:700;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .cal-etat{font-size:10.5px;font-weight:800;letter-spacing:.08em;color:var(--dim);white-space:nowrap;}
-  .cal-ligne.faite .cal-etat{color:var(--green);}
-  .cal-ligne.prevue .cal-etat{color:var(--yellow);}
   .cal-mois{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;}
   .cal-entete{font-size:10px;font-weight:800;letter-spacing:.08em;color:var(--dim);text-align:center;text-transform:uppercase;padding:2px 0 4px;}
   .cal-case{
@@ -300,18 +288,6 @@
   .cal-legende i{display:inline-block;width:9px;height:9px;border-radius:50%;box-sizing:border-box;margin-right:6px;vertical-align:-1px;}
   .cal-legende .faite i{background:var(--ink);}
   .cal-legende .prevue i{border:2px solid var(--ink);}
-  .cal-fiche{
-    display:flex;flex-direction:column;gap:10px;padding:14px;
-    border:2px solid var(--line);border-top:5px solid var(--c,var(--line));background:var(--panel);
-  }
-  .cal-fiche-etat{font-size:10.5px;font-weight:800;letter-spacing:.1em;color:var(--dim);}
-  .cal-fiche.faite .cal-fiche-etat{color:var(--green);}
-  .cal-fiche.prevue .cal-fiche-etat{color:var(--yellow);}
-  .cal-fiche-titre{margin:0;font-size:22px;font-weight:800;letter-spacing:-.02em;line-height:1.1;}
-  .cal-exos{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;}
-  .cal-exos li{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:8px 0;border-top:1px solid var(--line);font-size:13.5px;}
-  .cal-exos li span{font-size:12.5px;font-weight:700;color:var(--dim);text-align:right;}
-  .cal-vide{margin:0;font-size:13px;font-weight:700;color:var(--dim);}
   .seances-jour,.seances-listes{display:flex;flex-direction:column;gap:14px;}
 
   .badges-row{display:flex;flex-wrap:wrap;gap:6px;}
@@ -999,8 +975,12 @@
 
   @container (max-width:310px){
     .series-tete,.serie-main{grid-template-columns:36px minmax(56px,1.3fr) minmax(40px,1fr) 46px 44px;}
+    body.sans-rpe .series-tete,
+    body.sans-rpe .serie-main{grid-template-columns:36px minmax(56px,1.3fr) minmax(40px,1fr) 44px;}
     .ex-card[data-mode="temps"] .series-tete,
     .ex-card[data-mode="temps"] .serie-main{grid-template-columns:36px minmax(80px,1fr) 46px 44px;}
+    body.sans-rpe .ex-card[data-mode="temps"] .series-tete,
+    body.sans-rpe .ex-card[data-mode="temps"] .serie-main{grid-template-columns:36px minmax(80px,1fr) 44px;}
     .ex-card[data-mode="cardio"] .series-tete,
     .ex-card[data-mode="cardio"] .serie-main{grid-template-columns:36px minmax(46px,1fr) minmax(46px,1fr) minmax(40px,.9fr) 44px;}
     .serie-prec,.series-tete .col-prec{display:none;}
@@ -2055,7 +2035,7 @@
   }
   /* Les chiffres et les titres gardent Bricolage : c'est la voix de Top Set.
      Le texte courant passe a la police du telephone, plus lisible en petit. */
-  h1,h2,h3,.hero-title,.brand-mark,.accueil-marque,.cal-num,.cal-titre,.cal-fiche-titre,.week-label,
+  h1,h2,h3,.hero-title,.brand-mark,.accueil-marque,.cal-num,.week-label,
   .serie-poids,.serie-reps,.serie-duree,.serie-cardio,.serie-num,.ex-name,.bilan-question,.bilan-titre,
   .bilan-volume-num,.barre-compteurs b,.retour-seance,.btn-add,.btn-fin,.topbar-tab,.seg-btn,
   .btn-sheet,.ex-cible-val,.stat-tile,.volume-block,.recap-label,.seance-carte,.fiche-tete,
@@ -2065,13 +2045,13 @@
 
   /* ---- Mouvement : court, et seulement si l'appareil l'accepte ---------- */
   @media (prefers-reduced-motion:no-preference){
-    button,.cal-ligne,.cal-case,.seance-carte,.apprendre-carte,.btn-add,.serie-card,.ex-card,.brand-btn,.topbar-tab{
+    button,.cal-case,.seance-carte,.apprendre-carte,.btn-add,.serie-card,.ex-card,.brand-btn,.topbar-tab{
       transition:transform .14s ease, background-color .2s ease, border-color .2s ease, box-shadow .2s ease, color .2s ease;
     }
     .view:not([hidden]){animation:vue-entre .24s cubic-bezier(.2,.8,.2,1);}
     @keyframes vue-entre{ from{opacity:0;transform:translateY(6px);} to{opacity:1;transform:none;} }
   }
-  button:active,.cal-ligne:active,.cal-case:active,.seance-carte:active,.btn-add:active,.apprendre-carte:active{transform:scale(.975);}
+  button:active,.cal-case:active,.seance-carte:active,.btn-add:active,.apprendre-carte:active{transform:scale(.975);}
 
   /* ---- En-tete ---------------------------------------------------------- */
   .brand{align-items:center;gap:8px;padding-bottom:4px;}
@@ -2163,16 +2143,9 @@
   .icon-btn{border:1px solid var(--trait);border-radius:var(--r-m);background:var(--s1);color:var(--ink);box-shadow:none;}
   .btn-today{border:1px solid var(--trait);border-radius:999px;background:var(--s1);box-shadow:none;letter-spacing:.08em;}
   .week-label{font-size:15px;letter-spacing:-.01em;}
-  .cal-ligne{border:1px solid var(--trait);border-left:4px solid var(--trait);border-radius:var(--r-m);background:var(--s1);}
-  .cal-ligne.auj{border-top-color:rgba(255,92,56,.7);border-right-color:rgba(255,92,56,.7);border-bottom-color:rgba(255,92,56,.7);}
-  .cal-ligne.faite,.cal-ligne.prevue{border-left-color:var(--c);}
-  .cal-ligne.faite .cal-etat{color:var(--ok);}
   .cal-jour,.cal-entete{font-family:var(--f-ui);font-weight:600;color:var(--ink3);}
   .cal-case{border:1px solid var(--trait);border-radius:12px;background:var(--s1);}
   .cal-case.auj{border-color:var(--orange);box-shadow:inset 0 0 0 1px var(--orange);}
-  .cal-fiche{border:1px solid var(--trait);border-top:4px solid var(--c,var(--trait));border-radius:var(--r-l);background:var(--s1);}
-  .cal-fiche.faite .cal-fiche-etat{color:var(--ok);}
-  .cal-exos li{border-top-color:var(--trait);}
   .badge{border:1px solid var(--trait);border-radius:999px;background:var(--s1);font-family:var(--f-ui);font-weight:600;}
   .badge i{border-radius:50%;}
   .day-panel-header h2{font-size:22px;letter-spacing:-.025em;}
@@ -2578,7 +2551,7 @@
   /* 11 px au plus petit : un libelle qu'on plisse les yeux pour lire en
      seance ne sert a rien. */
   .brand-mark .wm-app,.ex-groupe-chip,.ex-prev-tete,.ex-cible-tag,.series-tete,
-  .col-prec-lien,.seance-creer-label,.cal-jour,.cal-entete,.cal-etat,.cal-fiche-etat,
+  .col-prec-lien,.seance-creer-label,.cal-jour,.cal-entete,
   .stat-label,.fiche-exo-groupe,.exo-groupe,.exo-bloc-titre,.volume-label,.heat-title,
   .muscle-title,.muscle-note,.recap-section-title,.recap-freq,.bilan-tag,.bilan-bloc-tete,
   .serie-repos-champ > span,.bilan-tuile span{font-size:11px;}
@@ -2676,21 +2649,9 @@
   .fs-faites b{color:var(--ok);margin-left:4px;}
   .fs-pile{position:relative;margin-top:16px;display:flex;flex-direction:column;gap:12px;flex:none;}
   .fs-carte{
-    --sw-ok:0;--sw-suppr:0;
     position:relative;border-radius:var(--r-xl);padding:18px 16px;border:1px solid var(--trait2);
     background:rgba(21,20,18,.62);-webkit-backdrop-filter:blur(18px) saturate(1.2);backdrop-filter:blur(18px) saturate(1.2);
-    touch-action:pan-y;transition:transform .25s cubic-bezier(.2,.8,.2,1);
-    box-shadow:0 0 0 2px rgba(43,208,138,calc(var(--sw-ok) * .9)),0 0 0 2px rgba(255,92,56,calc(var(--sw-suppr) * .9));
   }
-  .fs-carte.tenue{transition:none;box-shadow:0 30px 60px -20px rgba(0,0,0,.8),0 0 0 2px rgba(43,208,138,calc(var(--sw-ok) * .9)),0 0 0 2px rgba(255,92,56,calc(var(--sw-suppr) * .9));}
-  .fs-carte.part{transition:transform .22s ease-in,opacity .22s ease-in;opacity:0;}
-  /* Le tampon, au milieu de la carte, sur un fond : lisible par-dessus les chiffres. */
-  .fs-tampon{
-    position:absolute;left:50%;top:50%;z-index:2;padding:6px 14px;border:3px solid;border-radius:12px;
-    background:rgba(12,11,10,.82);font-weight:800;font-size:22px;letter-spacing:.1em;pointer-events:none;
-  }
-  .fs-tampon.ok{color:var(--ok);border-color:var(--ok);transform:translate(-50%,-50%) rotate(-12deg);opacity:var(--sw-ok);}
-  .fs-tampon.suppr{color:var(--orange);border-color:var(--orange);transform:translate(-50%,-50%) rotate(12deg);opacity:var(--sw-suppr);}
   .fs-carte-tete{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:4px 10px;}
   .fs-num{font-size:15px;font-weight:700;flex:none;}
   .fs-avant{font-size:12px;color:var(--ink3);white-space:nowrap;}
@@ -2703,12 +2664,11 @@
   }
   .fs-pm:active{transform:scale(.94);background:var(--s3);}
   .fs-val{
-    min-width:0;height:64px;border:0;border-radius:16px;background:transparent;color:var(--ink);
-    display:flex;align-items:baseline;justify-content:center;gap:4px;padding:0;font-family:var(--f-titre);
+    min-width:0;height:64px;color:var(--ink);
+    display:flex;align-items:baseline;justify-content:center;gap:4px;font-family:var(--f-titre);
   }
   .fs-val b{font-size:clamp(44px, 15vw, 58px);font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums;line-height:64px;}
   .fs-val small{font-size:16px;font-weight:600;color:var(--ink3);}
-  .fs-val:active{background:rgba(255,244,230,.06);}
   .fs-rpe{display:flex;gap:6px;margin-top:8px;}
   .fs-puce{flex:1;min-height:44px;border-radius:12px;border:0;background:rgba(29,27,25,.8);color:var(--dim);font-weight:600;font-size:15px;}
   .fs-puce.on{background:var(--ink);color:var(--bg);}
@@ -2729,7 +2689,6 @@
   .fs-ss.en-attente{opacity:.6;}
   .fs-ss.en-attente .fs-lettre,.fs-ss.fini .fs-lettre{background:var(--s3);color:var(--dim);}
   .fs-ss.fini{opacity:.5;padding:12px 16px;}
-  .fs-aide{margin:12px 0 0;font-size:12px;color:var(--ink3);text-align:center;}
   .fs-bas{margin-top:auto;padding-top:16px;display:flex;flex-direction:column;gap:10px;flex:none;}
   .fs-cta{
     min-height:60px;border:0;border-radius:20px;background:var(--orange);color:#140805;
@@ -2754,55 +2713,131 @@
   .fs-anneau.pret .fs-temps b{color:var(--ok);}
   .fs-temps small{display:block;margin-top:8px;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink3);font-weight:600;}
   .fs-note{margin:16px 0 0;font-size:13px;font-weight:600;color:var(--ok);text-align:center;}
-  .fs-mini{
-    margin-top:16px;border-radius:22px;padding:14px;border:1px solid var(--trait);flex:none;
-    background:rgba(21,20,18,.62);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);
-  }
-  .fs-mini-tete{display:flex;justify-content:space-between;gap:10px;font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);}
-  .fs-mini-tete span:last-child{color:var(--ink3);flex:none;}
-  .fs-mini .fs-champ{margin-top:8px;}
-  /* Annuler une suppression : cinq secondes. */
-  .focus-annuler{
-    position:fixed;left:50%;transform:translateX(-50%);bottom:calc(152px + env(safe-area-inset-bottom));z-index:3;
-    width:min(440px, calc(100% - 40px));min-height:52px;border-radius:16px;background:var(--s2);border:1px solid var(--trait2);
-    display:flex;align-items:center;justify-content:space-between;padding:0 6px 0 16px;font-size:14px;color:var(--dim);
-    box-shadow:0 18px 40px -16px rgba(0,0,0,.9);
-  }
-  .focus-annuler button{min-height:44px;padding:0 12px;border:0;background:none;color:var(--orange);font-weight:800;letter-spacing:.08em;}
-  /* La molette : des colonnes qui s arretent d elles-memes sur une valeur. */
-  .focus-roue{position:fixed;inset:0;z-index:4;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center;}
-  .roue-feuille{
-    width:100%;max-width:480px;background:var(--s1);border-radius:28px 28px 0 0;border-top:1px solid var(--trait2);
-    padding:12px 20px calc(24px + env(safe-area-inset-bottom));animation:roue-monte .22s cubic-bezier(.2,.8,.2,1);
-  }
-  @keyframes roue-monte{from{transform:translateY(40px);opacity:0;}}
-  .roue-poignee{width:40px;height:5px;border-radius:3px;background:var(--trait2);margin:0 auto 10px;}
-  .roue-tete{display:flex;justify-content:space-between;align-items:center;}
-  .roue-tete b{font-size:16px;}
-  .roue-ok{min-height:44px;min-width:64px;border:0;background:none;color:var(--orange);font-weight:800;font-size:16px;}
-  .roue-cols{position:relative;display:flex;justify-content:center;align-items:center;gap:2px;height:220px;margin-top:6px;}
-  .roue-bande{position:absolute;left:0;right:0;top:88px;height:44px;border-radius:14px;background:var(--s3);pointer-events:none;}
-  .roue-col{
-    position:relative;height:220px;min-width:72px;overflow-y:scroll;scroll-snap-type:y mandatory;overscroll-behavior:contain;
-    scrollbar-width:none;-webkit-mask:linear-gradient(transparent, #000 30%, #000 70%, transparent);mask:linear-gradient(transparent, #000 30%, #000 70%, transparent);
-  }
-  .roue-col::-webkit-scrollbar{display:none;}
-  .roue-col:focus-visible{outline:2px solid var(--orange);outline-offset:-2px;border-radius:12px;}
-  .roue-marge,.roue-item{height:44px;flex:none;}
-  .roue-item{
-    scroll-snap-align:center;display:flex;align-items:center;justify-content:center;
-    font-family:var(--f-titre);font-size:24px;font-weight:600;color:var(--ink3);font-variant-numeric:tabular-nums;
-  }
-  .roue-item.sel{color:var(--ink);font-size:30px;font-weight:800;}
-  .roue-unite{position:relative;color:var(--ink3);font-weight:600;padding-left:4px;}
+  /* Pendant un repos, la suite se lit, elle ne se remplit pas : on la reglera
+     sur l ecran de saisie, une fois le repos fini (20/09). */
+  .fs-suite{margin:14px 0 0;font-size:14px;color:var(--dim);text-align:center;}
   /* L icone de la carte qui ouvre le plein ecran. */
   .ex-focus-btn{
     flex:none;width:44px;height:44px;display:flex;align-items:center;justify-content:center;
     border:0;border-radius:12px;background:var(--orange);color:#140805;box-shadow:var(--lueur);
   }
   .ex-focus-btn:active{transform:scale(.94);}
+
+  /* ==== Ce que les reglages rangent ==================================== */
+  /* Eteindre le RPE ne suffit pas a le cacher : la grille des series compte
+     ses colonnes. Chaque variante de largeur a donc sa jumelle sans RPE, de
+     meme forme, une colonne en moins. Le cardio n en a jamais eu. */
+  body.sans-rpe .serie-rpe,
+  body.sans-rpe .series-tete .col-rpe{display:none;}
+  body.sans-rpe .series-tete,
+  body.sans-rpe .serie-main{grid-template-columns:40px minmax(46px,1fr) minmax(54px,1.25fr) minmax(40px,.85fr) 44px;}
+  body.sans-rpe .ex-card[data-mode="temps"] .series-tete,
+  body.sans-rpe .ex-card[data-mode="temps"] .serie-main{grid-template-columns:40px minmax(46px,1fr) minmax(94px,2.1fr) 44px;}
+  body.sans-rpe .ex-card.sans-prec .series-tete,
+  body.sans-rpe .ex-card.sans-prec .serie-main{grid-template-columns:40px minmax(56px,1.3fr) minmax(40px,1fr) 44px;}
+  body.sans-rpe .ex-card.sans-prec[data-mode="temps"] .series-tete,
+  body.sans-rpe .ex-card.sans-prec[data-mode="temps"] .serie-main{grid-template-columns:40px minmax(80px,1fr) 44px;}
+  body.sans-repos-champ .serie-repos-champ{display:none;}
   @media (max-width:359px){ .ex-head{gap:6px;} .ex-groupe-chip{padding:0 8px;} .fs-ligne{grid-template-columns:48px minmax(0,1fr) 48px;} .fs-pm{height:52px;} }
-  @media (prefers-reduced-motion:reduce){ .fs-carte,.fs-points i{transition:none;} .roue-feuille{animation:none;} }
+  @media (prefers-reduced-motion:reduce){ .fs-points i{transition:none;} }
+
+  /* ==== Le chrono libre ================================================ */
+  /* Un chrono qui n appartient a aucun exercice (demande du 20/09/2026 :
+     « une rubrique chrono ou tu peux juste lancer un chrono »). Il reprend
+     l anneau et le fond du plein ecran : c est le meme objet, sans carnet
+     derriere. Deux modes seulement, et rien a regler de plus. */
+  .chrono-libre{position:fixed;inset:0;z-index:79;background:var(--bg);overflow:hidden;display:flex;justify-content:center;}
+  .chrono-libre:focus{outline:none;}
+  body.en-chrono{overflow:hidden;}
+  body.en-chrono .repos-pastille{display:none;}
+  .cl-corps{
+    position:relative;z-index:1;width:100%;max-width:480px;height:100%;display:flex;flex-direction:column;
+    padding:max(14px, calc(env(safe-area-inset-top) + 8px)) 20px calc(16px + env(safe-area-inset-bottom));
+  }
+  .cl-haut{display:flex;align-items:center;gap:10px;flex:none;}
+  .cl-modes{
+    flex:1;display:flex;gap:4px;padding:4px;border-radius:16px;border:1px solid var(--trait2);
+    background:rgba(12,11,10,.6);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);
+  }
+  .cl-mode{
+    flex:1;min-height:44px;border:0;border-radius:12px;background:transparent;color:var(--dim);
+    font-family:var(--f-ui);font-weight:800;font-size:12px;letter-spacing:.1em;
+  }
+  .cl-mode[aria-pressed="true"]{background:var(--ink);color:var(--bg);}
+  .cl-anneau{margin-top:min(8vh, 52px);}
+  .cl-anneau.fini::before{background:var(--ok);}
+  .cl-anneau.fini .fs-temps b{color:var(--ok);}
+  .cl-choix{display:flex;gap:8px;justify-content:center;margin-top:28px;flex:none;}
+  .cl-duree{
+    flex:1;min-height:48px;border-radius:14px;border:1px solid var(--trait2);background:rgba(23,21,18,.7);
+    color:var(--ink);font-family:var(--f-titre);font-weight:800;font-size:16px;font-variant-numeric:tabular-nums;
+  }
+  .cl-duree[aria-pressed="true"]{border-color:var(--orange);color:var(--orange);}
+  .cl-pas{display:flex;gap:10px;justify-content:center;margin-top:10px;flex:none;}
+  .cl-pas button{
+    flex:1;min-height:46px;border-radius:14px;border:1px solid var(--trait2);background:rgba(23,21,18,.7);
+    color:var(--ink);font-family:var(--f-ui);font-weight:800;font-size:14px;
+  }
+  .cl-bas{margin-top:auto;padding-top:16px;display:flex;gap:10px;flex:none;}
+  .cl-bas .fs-cta{flex:1;}
+  .cl-bas .fs-ghost{flex:none;min-width:104px;}
+
+  /* ==== Les reglages, dans la feuille du profil ========================= */
+  .reg-groupe{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:52px;border-bottom:1px solid var(--line);}
+  .reg-groupe-nom{
+    display:flex;align-items:center;gap:10px;min-width:0;
+    font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .reg-groupe-nom i{flex:none;width:20px;height:20px;border-radius:6px;background:var(--c);}
+  .reg-nuancier{display:flex;gap:6px;flex:none;}
+  .reg-teinte{
+    width:30px;height:30px;padding:0;border-radius:9px;border:2px solid transparent;background:var(--c);
+  }
+  .reg-teinte[aria-pressed="true"]{border-color:var(--ink);}
+  .reg-bascule{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 0;border-bottom:1px solid var(--line);text-align:left;width:100%;background:none;border-left:0;border-right:0;border-top:0;color:var(--ink);font-family:var(--f-ui);}
+  .reg-bascule b{display:block;font-size:14px;font-weight:700;}
+  .reg-bascule small{display:block;margin-top:3px;font-size:11.5px;font-weight:500;color:var(--dim);line-height:1.4;}
+  .reg-temoin{
+    flex:none;position:relative;width:52px;height:31px;border-radius:16px;
+    background:var(--s3);border:1px solid var(--line);
+  }
+  .reg-temoin::after{
+    content:"";position:absolute;top:2px;left:2px;width:23px;height:23px;border-radius:50%;
+    background:var(--dim);transition:left .18s, background .18s;
+  }
+  .reg-bascule[aria-pressed="true"] .reg-temoin{background:color-mix(in srgb, var(--orange) 28%, transparent);border-color:var(--orange);}
+  .reg-bascule[aria-pressed="true"] .reg-temoin::after{left:24px;background:var(--orange);}
+  @media (prefers-reduced-motion:reduce){ .reg-temoin::after{transition:none;} }
+  /* Sous 360 px, l en-tete porte cinq elements depuis le chrono (20/09) : les
+     ronds retrecissent, le wordmark lache son etiquette APP, et les pastilles
+     de couleur se serrent pour que la ligne d un groupe tienne. */
+  @media (max-width:359px){
+    .brand{gap:6px;}
+    .brand-mark{min-width:0;font-size:20px;}
+    .brand-mark .wm-app{display:none;}
+    .brand-btn,.brand-btn.msg,.brand-btn.profil{width:40px;height:40px;}
+    .brand-btn svg{width:18px;height:18px;}
+    .reg-groupe-nom{font-size:13px;gap:8px;}
+    .reg-nuancier{gap:4px;}
+    .reg-teinte{width:26px;height:26px;}
+  }
+
+  /* Le calendrier du carnet se replie et se deplie ici, plutot que sur trois
+     sous-onglets JOUR / SEMAINE / MOIS (20/09). */
+  .btn-cal-vue{
+    display:block;width:100%;min-height:44px;margin-top:10px;
+    border:1px dashed var(--trait2);border-radius:var(--r-m);background:transparent;color:var(--dim);
+    font-family:var(--f-ui);font-weight:700;font-size:12px;letter-spacing:.1em;
+  }
+  .btn-cal-vue[aria-expanded="true"]{border-style:solid;border-color:var(--orange);color:var(--orange);}
+  .btn-cal-vue:active{transform:scale(.99);}
+  #carnetFiltres{margin-top:18px;}
+  /* Dans le carnet, chaque bloc de la liste dit ce qu'il montre. */
+  .seances-bloc{
+    margin:22px 0 8px;font-size:11px;font-weight:800;letter-spacing:.12em;color:var(--dim);
+    display:flex;align-items:center;gap:8px;
+  }
+  .seances-bloc::after{content:"";flex:1;height:1px;background:var(--trait);}
 
   /* Le schema du recap : de face et de dos, et le detail sous chaque groupe. */
   .muscle-svg{flex:none;}
@@ -2839,8 +2874,11 @@
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 4.5h17v11.5H10l-5 4v-4H3.5z"/></svg>
       <span class="brand-badge" id="messagesBadge" hidden></span>
     </button>
-    <button type="button" class="brand-btn profil" id="profilBtn" aria-label="Ton profil et ton compte">
+    <button type="button" class="brand-btn profil" id="profilBtn" aria-label="Tes réglages, ton profil et ton compte">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg>
+    </button>
+    <button type="button" class="brand-btn chrono" id="chronoBtn" aria-label="Un chrono : minuteur ou chronomètre">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13.5" r="8"/><path d="M12 13.5V9M9.5 2.5h5"/></svg>
     </button>
     <button type="button" class="brand-btn" id="dataBtn" aria-label="Tes données : sauvegarde, tableur, import">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="square" aria-hidden="true"><path d="M8 20V5M4 9l4-4 4 4M16 4v15M12 15l4 4 4-4"/></svg>
@@ -2850,19 +2888,17 @@
   <nav class="topbar">
     <div class="topbar-inner" id="mainTabs">
       <span class="onglet-loupe" id="ongletLoupe" aria-hidden="true"></span>
-      <button type="button" class="topbar-tab" data-view="planning"><svg class="onglet-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17M8.5 3v4M15.5 3v4"/></svg><span>PLANNING</span></button>
-      <button type="button" class="topbar-tab active" data-view="seances"><svg class="onglet-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 7.5v9M3.5 10v4M17.5 7.5v9M20.5 10v4M6.5 12h11"/></svg><span>SÉANCES</span></button>
-      <button type="button" class="topbar-tab" data-view="recap"><svg class="onglet-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 19.5V12M12 19.5V5M19 19.5v-5"/></svg><span>RÉCAP</span></button>
+      <button type="button" class="topbar-tab active" data-view="seances"><svg class="onglet-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 7.5v9M3.5 10v4M17.5 7.5v9M20.5 10v4M6.5 12h11"/></svg><span>SÉANCE</span></button>
+      <button type="button" class="topbar-tab" data-view="planning"><svg class="onglet-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17M8.5 3v4M15.5 3v4"/></svg><span>CARNET</span></button>
+      <button type="button" class="topbar-tab" data-view="recap"><svg class="onglet-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 19.5V12M12 19.5V5M19 19.5v-5"/></svg><span>PROGRÈS</span></button>
       <button type="button" class="topbar-tab" data-view="apprendre"><svg class="onglet-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v14.5H6.5A2.5 2.5 0 0 0 4 20z"/><path d="M4 20a2.5 2.5 0 0 0 2.5 1H20v-3.5"/></svg><span>APPRENDRE</span></button>
     </div>
   </nav>
 
+  <!-- CARNET : chercher un jour ou une seance. Le calendrier se replie sur la
+       semaine ou se deplie sur le mois, et les filtres trient la liste juste
+       dessous au lieu de changer d'ecran (20/09/2026). -->
   <section class="view" id="view-planning" hidden>
-    <div class="segmented sub" id="calVues">
-      <button type="button" class="seg-btn" data-cal="jour">JOUR</button>
-      <button type="button" class="seg-btn active" data-cal="semaine">SEMAINE</button>
-      <button type="button" class="seg-btn" data-cal="mois">MOIS</button>
-    </div>
     <div class="week-nav">
       <button type="button" class="icon-btn" id="calPrec" aria-label="Période précédente">‹</button>
       <div class="week-label" id="calLabel">—</div>
@@ -2870,6 +2906,25 @@
       <button type="button" class="btn-today" id="calAuj" aria-label="Revenir à aujourd'hui" title="Revenir à aujourd'hui">AUJOURD'HUI</button>
     </div>
     <div class="cal-corps" id="calCorps"></div>
+    <button type="button" class="btn-cal-vue" id="calVueBtn" aria-expanded="false">VOIR LE MOIS</button>
+
+    <div class="segmented sub" id="carnetFiltres">
+      <button type="button" class="seg-btn active" data-filtre="toutes">TOUTES</button>
+      <button type="button" class="seg-btn" data-filtre="prevues">PRÉVUES</button>
+      <button type="button" class="seg-btn" data-filtre="faites">FAITES</button>
+    </div>
+
+    <div class="seances-listes" id="seancesListes">
+      <div class="seances-cible" id="seancesCible"></div>
+      <div class="seance-creer" id="seanceCreerBloc">
+        <label class="seance-creer-label" for="seanceDate">CRÉER MA SÉANCE</label>
+        <div class="seance-creer-ligne">
+          <input type="date" id="seanceDate" class="seance-creer-date" aria-label="Date de la nouvelle séance">
+          <button type="button" class="btn-sheet primary" id="seanceCreer">CRÉER</button>
+        </div>
+      </div>
+      <div id="seancesListe"></div>
+    </div>
 
     <div class="outils-planning">
       <h2 class="outils-planning-tete">OUTILS</h2>
@@ -2881,13 +2936,9 @@
     </div>
   </section>
 
+  <!-- SEANCE : ce qu'on fait maintenant, et rien d'autre. Les listes et le
+       calendrier vivent dans le CARNET depuis le 20/09/2026. -->
   <section class="view" id="view-seances">
-    <div class="segmented sub" id="seancesTabs">
-      <button type="button" class="seg-btn active" data-onglet="jour">DU JOUR</button>
-      <button type="button" class="seg-btn" data-onglet="mes">MES SÉANCES</button>
-      <button type="button" class="seg-btn" data-onglet="histo">HISTORIQUE</button>
-    </div>
-
     <div class="seances-jour" id="seancesJour">
       <div class="hero" id="heroBand"></div>
       <div class="day-panel">
@@ -2899,18 +2950,6 @@
         <button type="button" class="btn-reprendre" id="reprendreBtn">⟳ SÉLECTIONNER UNE SÉANCE</button>
         <button type="button" class="btn-recap-jour" id="recapJourBtn">VOIR LE RÉCAP DE CETTE SÉANCE ›</button>
       </div>
-    </div>
-
-    <div class="seances-listes" id="seancesListes" hidden>
-      <div class="seances-cible" id="seancesCible"></div>
-      <div class="seance-creer" id="seanceCreerBloc">
-        <label class="seance-creer-label" for="seanceDate">CRÉER MA SÉANCE</label>
-        <div class="seance-creer-ligne">
-          <input type="date" id="seanceDate" class="seance-creer-date" aria-label="Date de la nouvelle séance">
-          <button type="button" class="btn-sheet primary" id="seanceCreer">CRÉER</button>
-        </div>
-      </div>
-      <div id="seancesListe"></div>
     </div>
   </section>
 
@@ -3099,8 +3138,26 @@
 <div class="sheet" id="profilSheet" hidden>
   <div class="sheet-card" role="dialog" aria-modal="true" aria-labelledby="profilTitre">
     <div class="sheet-head">
-      <h2 id="profilTitre">TON PROFIL</h2>
+      <h2 id="profilTitre">RÉGLAGES ET PROFIL</h2>
       <button type="button" class="icon-btn" id="profilClose" aria-label="Fermer">×</button>
+    </div>
+
+    <div class="sheet-section">
+      <div class="sheet-label">COULEURS DES GROUPES</div>
+      <div id="regCouleurs"></div>
+      <button type="button" class="btn-sheet" id="regCouleursRaz">REMETTRE LES COULEURS D'ORIGINE</button>
+      <p class="sheet-note">
+        La couleur d'un groupe le suit partout : la carte de l'exercice, le
+        planning, le récap et la silhouette.
+      </p>
+
+      <div class="sheet-label espace">L'APP</div>
+      <div id="regBascules"></div>
+      <p class="sheet-note">
+        Ces réglages ne changent que l'affichage, sur ce téléphone. Une
+        valeur déjà notée reste dans ta séance et dans tes exports, même
+        quand sa colonne est rangée.
+      </p>
     </div>
 
     <p class="sheet-note" id="compteIndispo" hidden>
@@ -3294,8 +3351,11 @@
      anime (braise) est pose dessous par app.js. -->
 <div class="focus" id="focus" role="dialog" aria-modal="true" aria-labelledby="focusTitre" tabindex="-1" hidden>
   <div class="focus-corps" id="focusCorps"></div>
-  <div class="focus-annuler" id="focusAnnuler" role="status" hidden><span></span><button type="button">ANNULER</button></div>
-  <div class="focus-roue" id="focusRoue" hidden></div>
+</div>
+<!-- Le chrono libre : minuteur ou chronometre, sans rapport avec le carnet.
+     Le fond anime (braise) est pose dessous par app.js. -->
+<div class="chrono-libre" id="chronoLibre" role="dialog" aria-modal="true" aria-label="Chrono" tabindex="-1" hidden>
+  <div class="cl-corps" id="chronoCorps"></div>
 </div>
 <div class="toast" id="toast"></div>
 

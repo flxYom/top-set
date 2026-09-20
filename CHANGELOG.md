@@ -12,12 +12,18 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 ### Added
 
 - **Full-screen exercise.** The orange ⤢ icon on a card opens the exercise
-  full screen with only the set to do: big −/+, a wheel picker on the number,
-  RPE chips. Validate (button or swipe right) ticks it like its row and switches
-  to the rest (time counting up in a ring, next set editable); swipe left
-  deletes it, with 5 s to undo; ✕ closes without touching anything. Supersets
-  show both exercises, A then B. The ember shader runs behind it, reacting to
-  the state.
+  full screen with only the set to do: big −/+ either side of the number.
+  `SÉRIE SUIVANTE` ticks it like its row and switches to the rest (time
+  counting up in a ring, next set editable); ✕ closes without touching
+  anything. Supersets show both exercises, A then B. The ember shader runs
+  behind it, reacting to the state.
+- **A standalone timer.** The ⏱ button in the header opens a timer that belongs
+  to no exercise and logs nothing: a countdown (1:00 to 3:00, ± 15 s) or a
+  stopwatch. It keeps a start time, so it survives closing the app.
+- **Settings.** The profile sheet opens on `RÉGLAGES ET PROFIL`: a colour per
+  muscle group (it follows the group everywhere), and switches for the automatic
+  rest timer, the CHRONO button, the REST field, the RPE column and keeping the
+  screen awake. Settings are screen state, kept in the phone.
 - **The rest pill moves.** Drag it anywhere; it stays there. Tap it to reopen
   the exercise full screen on the rest. Ticking a set still starts the rest.
 - **Muscle sub-groups.** Back › lats, traps, lower back; Arms › biceps,
@@ -26,15 +32,37 @@ while it stays below `1.0.0`, breaking changes (in particular to the
   curl under Shoulders now counts as Biceps), editable from the group chip
   without taking more room, and remembered per exercise name. The recap body
   map shows front and back, one zone per muscle. Re-run `schema.sql`
-  (`exercices_perso.sous_groupe`). Service worker `topset-v40`.
+  (`exercices_perso.sous_groupe`). Service worker `topset-v41`.
 
 ### Changed
+
+- **Four tabs, four jobs.** SÉANCE (what you are doing now), CARNET (finding a
+  day or a session), PROGRÈS (records and reports, the former RÉCAP) and
+  APPRENDRE. The calendar, my sessions and the history were three screens of the
+  same thing: they are now one, where the calendar folds between week and month
+  and a row of filters sorts the list below it instead of changing screen. The
+  sub-tabs of SÉANCES and of PLANNING are gone, and so is the calendar's day
+  view — it showed a session you could not fill in.
+- **Fewer things on a set line.** The RPE column and the per-set REST field are
+  put away by default: a line is now the number, last time, weight, reps and
+  the tick. Both come back from the settings, and nothing you already logged is
+  erased — the values stay in your sessions and in your exports.
+- **You land back on your exercise.** Tapping the date of a previous set opens
+  that session centred on the same exercise instead of at the top of the page,
+  and closing a full screen gives the page its place back.
 
 - **Each tab keeps your place.** Planning, Sessions, Recap and Learn now come
   back at the height where you left them, instead of wherever the previous tab
   was scrolled; Sessions too when you come back from a session sheet. Dragging
   along the bottom bar still switches tabs; swiping across the whole page was
   ruled out, as it would switch tabs by mistake while logging a set.
+
+### Removed
+
+- **The wheel picker and the swipe in the full-screen exercise.** Two gestures
+  to guess for what the −/+ buttons already do, and a deletion within thumb's
+  reach in the middle of a set. The number is no longer a button; deleting a set
+  happens on its card, where the bin is.
 
 ### Performance
 

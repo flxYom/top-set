@@ -140,7 +140,7 @@ simple décor. Toutes s'arrêtent quand l'appareil demande moins d'animations
 | Élément | Comportement | Durée |
 |---|---|---|
 | Loupe des onglets (`#ongletLoupe`) | glisse sous l'onglet choisi, s'étire dans le sens du mouvement comme une goutte, un seul reflet chaud fait le tour du liseré pendant le trajet (l'arc-en-ciel a été retiré le 13/09 : « trop RGB »), reflet en haut au repos ; se fait glisser du doigt (se soulève, suit le doigt, l'onglet le plus proche s'ouvre au lâcher) ; **sur téléphone** (14/09, à la demande : « copie tout » d'après la barre d'iOS 26) : capsule grise flottante, pastille grise au repos, libellés en minuscules, icône active blanche, et au toucher une bulle de verre ×1,3 qui grossit une copie des onglets, avec franges de prisme cyan / jaune / magenta près du bord ; ne bouge pas au chargement ni au redimensionnement ; cachée dans les vues sans onglet | 0,46 s |
-| Braise (`.braise`, 18/09) | fond WebGL de l'accueil, du bilan et (19/09) de l'exercice en plein écran — là, l'intensité `k` et la teinte `tn` glissent vers leur cible (douce pendant la série, forte au repos, verte/rouge sous le swipe) : noir chaud, une lueur braise → orange qui dérive lentement depuis le haut ; demi-résolution, 30 images/s au plus, arrêtée quand l'écran se cache ; une image fixe avec « réduire les animations » ; sans WebGL, le dégradé CSS d'origine. Ne ralentit jamais l'app : dessinée dans un Web Worker (`braise.js`, OffscreenCanvas), jamais sur le fil principal ; démarre après le chargement, en fondu ; refusée sans vrai GPU (`failIfMajorPerformanceCaveat`) ; figée si une image coûte plus de 20 ms ; sans OffscreenCanvas (Safari avant 17), le dégradé CSS | boucle lente |
+| Braise (`.braise`, 18/09) | fond WebGL de l'accueil, du bilan, (19/09) de l'exercice en plein écran et (20/09) du chrono libre — là, l'intensité `k` et la teinte `tn` glissent vers leur cible (douce à la saisie, forte pendant un décompte) : noir chaud, une lueur braise → orange qui dérive lentement depuis le haut ; demi-résolution, 30 images/s au plus, arrêtée quand l'écran se cache ; une image fixe avec « réduire les animations » ; sans WebGL, le dégradé CSS d'origine. Ne ralentit jamais l'app : dessinée dans un Web Worker (`braise.js`, OffscreenCanvas), jamais sur le fil principal ; démarre après le chargement, en fondu ; refusée sans vrai GPU (`failIfMajorPerformanceCaveat`) ; figée si une image coûte plus de 20 ms ; sans OffscreenCanvas (Safari avant 17), le dégradé CSS | boucle lente |
 | Changement de vue | la vue glisse de 6 px en apparaissant | 0,24 s |
 | Appui | le bouton s'enfonce | instantané |
 
@@ -234,14 +234,41 @@ Cible :
 - **Exercice en plein écran** (19/09, maquette validée avant le code) : la
   seule série à faire, en cartes de **verre fumé** (`rgba(21,20,18,.62)` +
   flou 18 px) posées sur la braise ; chiffres en Bricolage 800 à chasse fixe
-  (58 px), −/+ de 56 px, puces RPE de 44 px, une action orange par écran
-  (`VALIDER LA SÉRIE` / `PASSER À LA SÉRIE SUIVANTE`) et un bouton fantôme
-  (`Exo suivant →`). Molette en feuille du bas, bande sélectionnée `--s3`.
-  Swipe façon Tinder : la carte penche (dx/18 °), un tampon centré `VALIDÉE`
-  (vert) ou `SUPPRIMER` (orange) apparaît avec la distance, la braise vire au
-  vert ou au rouge. Repos : anneau (conic-gradient) orange jusqu'au repos visé,
-  vert au-delà. Variables de swipe nommées `--sw-ok` / `--sw-suppr` pour ne
-  pas écraser le jeton `--ok`.
+  (58 px), −/+ de 56 px, une action orange par écran (`SÉRIE SUIVANTE` /
+  `PASSER À LA SÉRIE SUIVANTE`) et un bouton fantôme (`Exo suivant →`).
+  Repos : anneau (conic-gradient) orange jusqu'au repos visé, vert au-delà.
+- **Molette et swipe retirés** (20/09, demande : « enlève le swipe et la
+  molette, ça sert à rien, ça complexifie la chose ») : deux gestes à deviner
+  pour ce que les −/+ font déjà, et une suppression à portée de pouce pendant
+  une série. Le chiffre n'est plus un bouton, la suppression d'une série revient
+  à la poubelle de sa carte. Partis avec eux : les tampons `VALIDÉE` /
+  `SUPPRIMER`, les variables `--sw-ok` / `--sw-suppr`, la barre `ANNULER` et
+  la feuille de la molette.
+- **Chrono libre** (20/09, demande : « une rubrique chrono où tu peux juste
+  lancer un chrono comme ça ») : un bouton ⏱ dans l'en-tête plutôt qu'un
+  cinquième onglet — la barre du bas est déjà pleine, et c'est elle qu'on
+  trouvait fouillie. Il reprend l'anneau, la braise et les boutons du plein
+  écran : même objet, sans carnet derrière. Deux modes (minuteur, chronomètre),
+  une durée par gros boutons, rien à saisir.
+- **Quatre onglets, quatre métiers** (20/09, demande : « entre le calendrier,
+  le récap, la séance, les séances, les séances du jour c'est trop fouilli ») :
+  le problème n'était pas le nombre d'onglets mais le **recouvrement** — sept
+  destinations montraient des séances, quatre la même liste sous une autre
+  forme. SÉANCE (faire) / CARNET (chercher) / PROGRÈS (mesurer) / APPRENDRE.
+  APPRENDRE reste dans la barre : les pages de contenu amènent le public, les
+  enterrer dans un menu leur coûte des visites. Dans le CARNET, le calendrier
+  et la liste vivent **sur le même écran** : un filtre trie ce qui est déjà là
+  au lieu d'ouvrir un autre écran, et le calendrier se replie sur une rangée de
+  sept — sept lignes hautes reprenaient à elles seules la place qu'on venait de
+  libérer, et le détail d'une séance se lit dans la liste juste dessous.
+- **Réglages** (20/09, demande : « une partie réglages pour fluidifier
+  l'utilisation selon la personne ») : dans la feuille du profil, avant le
+  compte. Cinq teintes par groupe plutôt qu'un sélecteur de couleur — toutes
+  lisibles sur le fond sombre, toutes atteignables au pouce (30 px, 6 px entre
+  elles). Interrupteurs de 52 × 31 px, libellé à gauche, témoin à droite. Par
+  défaut l'app est **en mode simple** : RPE et champ REPOS rangés. Ranger une
+  colonne corrige aussi la grille (`body.sans-rpe`, une jumelle par variante de
+  largeur) : cacher l'élément seul laisserait son trou.
 - **Sous-groupes** (18/09) : la pastille du groupe affiche le muscle
   (`BICEPS`, `QUADRI`) sans prendre plus de place ; les sous-groupes gardent la
   couleur de leur groupe, la silhouette du récap (face et dos) les distingue par
@@ -322,7 +349,14 @@ avant de le faire.
   le fond animé se fait en WebGL dans le code actuel.
 - **Braise** (18/09) : un fond animé aux moments forts seulement (accueil,
   bilan). **Élargie le 19/09 à la demande** à tout l'exercice en plein écran,
-  saisie comprise, avec une intensité et une teinte qui suivent l'état ;
-  toujours pas sur les listes de l'app.
+  saisie comprise, avec une intensité et une teinte qui suivent l'état, puis le
+  20/09 au chrono libre ; toujours pas sur les listes de l'app.
+- **Les couleurs des groupes se règlent** (20/09) : `GROUP_COLORS` reste le jeu
+  d'origine et devient le repli de `couleurGroupe(g)`, seul point de passage.
+  Une couleur choisie vit dans `topset_reglages`, dans ce téléphone : c'est un
+  état d'écran, pas une donnée du carnet, et elle ne monte pas dans le compte.
+- **Un réglage n'efface jamais une donnée** (20/09) : éteindre le RPE range sa
+  colonne, ne touche pas aux valeurs déjà notées, qui repartent dans les exports
+  et reviennent si on la rallume.
 - **Description de l'interface** : [`DESIGN.md`](DESIGN.md), extrait du code le
   18/09. Ce fichier-ci garde les décisions et fait foi en cas d'écart.
