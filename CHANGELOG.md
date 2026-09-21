@@ -34,8 +34,21 @@ while it stays below `1.0.0`, breaking changes (in particular to the
   map shows front and back, one zone per muscle. Re-run `schema.sql`
   (`exercices_perso.sous_groupe`). Service worker `topset-v41`.
 
+### Added
+
+- **Search an exercise from the carnet.** A bar at the top of CARNET: type a
+  name, land on that exercise's performance history — signal, top set, estimated
+  1RM, records per rep range, curve, session by session. Only exercises actually
+  logged are offered, aliases resolved, each result giving its number of sessions
+  and its last time.
+
 ### Changed
 
+- **The carnet is read by day, by week or by month.** One row of buttons instead
+  of two: JOUR / SEMAINE / MOIS drive the calendar and the list below it at once,
+  and the list shows exactly the period on screen. The TOUTES / PRÉVUES / FAITES
+  filters are gone — the card already carries its PRÉVUE badge — and the day view
+  is back, without a drawing: the list says everything a single cell would not.
 - **Four tabs, four jobs.** SÉANCE (what you are doing now), CARNET (finding a
   day or a session), PROGRÈS (records and reports, the former RÉCAP) and
   APPRENDRE. The calendar, my sessions and the history were three screens of the

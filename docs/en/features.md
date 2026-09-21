@@ -20,20 +20,35 @@ history) and the RÉCAP; four of them showed the same list in another shape.
 Four are left, each doing one thing:
 - **SÉANCE**: what you are doing now. The day banner, the exercises, the sets.
   No sub-tabs left. This is where the app opens.
-- **CARNET**: finding a day or a session. The calendar **and** the list on the
-  same screen. It folds down to the **week** (a row of seven, a dot in the
-  colour of the main muscle group) or opens out to the **month** (the grid,
-  filled dot for a done session, outlined for a planned one) — one button,
-  `VOIR LE MOIS` / `VOIR LA SEMAINE`. Arrows move by week or month;
-  `AUJOURD'HUI` turns orange once you have moved away. Below, a row of filters —
-  `TOUTES`, `PRÉVUES`, `FAITES` — **sorts the list** instead of changing screen;
-  with `TOUTES`, two named blocks, "À VENIR" and "DÉJÀ FAITES". Tapping a day or
-  a session opens its sheet, and `‹ RETOUR` brings you back to the carnet; an
-  empty day opens in SÉANCE, where `AUJOURD'HUI ›` brings you back to today.
+- **CARNET**: finding an exercise, a day or a session. The calendar **and** the
+  list on the same screen.
 - **PROGRÈS**: records, volume, session reports (the former RÉCAP).
 - **APPRENDRE**: the pages and the tools.
-The calendar's **JOUR** view went with them: it showed a session you could not
-fill in, and SÉANCE does that better.
+
+**The carnet is read by day, by week or by month** (21 September 2026, "it has to
+be just day week month"). `JOUR`, `SEMAINE` and `MOIS` drive the calendar **and**
+the list below it: the list shows the period on screen, nothing more, oldest
+first. `SEMAINE` draws a row of seven, a dot in the colour of the main muscle
+group; `MOIS` opens the grid, filled dot for a done session, outlined for a
+planned one; `JOUR` draws nothing — the header says the date and the session
+reads in full in the list, which a single cell would not do better. Arrows move
+by day, week or month; `AUJOURD'HUI` turns orange once you have moved away. In
+`JOUR`, `CRÉER MA SÉANCE` targets the day on screen. Tapping a day or a session
+opens its sheet, and `‹ RETOUR` brings you back to the carnet; an empty day opens
+in SÉANCE, where `AUJOURD'HUI ›` brings you back to today.
+
+The `TOUTES` / `PRÉVUES` / `FAITES` filters went with the three views: the card
+already carries its `PRÉVUE` badge, the filter said nothing more, and the period
+does the sorting.
+
+**Searching for an exercise.** At the top of the carnet, a search bar: type a
+name, land on its performance history — the same page as from the RÉCAP (signal,
+top set, estimated 1RM, records per rep range, curve, session by session). Only
+exercises **actually logged** are offered: a movement never done has no history
+to read, offering it would be a dead end. Aliases are resolved, so "dead" and
+"soulevé de terre" make one line. Each result gives its number of sessions and
+its last time. Nothing opens until something is typed: a list left open would
+push the calendar off screen to say nothing.
 
 **One set, one row.** `SÉRIE · 8 SEPT. · KG · REPS · RPE · ✓`, the grid of Strong
 or Hevy, kept because it is the one people know. Each set used to take three

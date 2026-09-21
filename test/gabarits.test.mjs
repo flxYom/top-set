@@ -596,17 +596,41 @@ ok('le repos monte apres une serie cochee ou un chrono en pause, et s ecrit dans
    && /localStorage\.setItem\(CLE_REPOS/.test(SRC) && /id="reposPastille"/.test(HTML)
    && /function validerFin\(ds\)\{\s*finirRepos\(false\);/.test(SRC));
 
-// Le carnet : le calendrier se replie sur la semaine ou se deplie sur le
-// mois, un jour touche ouvre sa fiche ou sa seance.
-ok('le carnet est un calendrier semaine ou mois, sans sous-onglets',
-   /id="calVueBtn"/.test(HTML) && !/id="calVues"/.test(HTML)
+// Le carnet : JOUR, SEMAINE ou MOIS, et un jour touche ouvre sa fiche ou sa
+// seance. En JOUR le calendrier ne dessine rien : la liste dessous suffit.
+ok('le carnet se regarde par jour, par semaine ou par mois',
+   /id="calVues"/.test(HTML) && !/id="calVueBtn"/.test(HTML)
+   && /data-cal="jour"/.test(HTML) && /data-cal="semaine"/.test(HTML) && /data-cal="mois"/.test(HTML)
    && /function calMoisHTML\(annee, mois\)\{/.test(SRC) && /function calSemaineHTML\(debut\)\{/.test(SRC)
-   // La vue « jour » montrait une seance sans pouvoir la remplir : SÉANCE
-   // fait ca mieux, et elle est partie avec son HTML.
-   && !/calJourHTML/.test(SRC) && !/data-cal="jour"/.test(HTML)
-   && /calVue = calVue === 'mois' \? 'semaine' : 'mois';/.test(SRC)
+   && /if \(calVue === 'jour'\)\{\s*\n\s*label\.textContent/.test(SRC)
+   && /if \(calVue === 'jour'\) d = addDays\(d, sens\);/.test(SRC)
+   && /calVue = btn\.dataset\.cal;/.test(SRC)
    && /if \(etatJour\(ds\)\) ouvrirSeance\(ds, 'planning'\); else allerAuJour\(ds\);/.test(SRC)
    && /montrerVue\(state\.ficheRetour \|\| 'seances'\)/.test(SRC));
+
+// La liste ne peut pas montrer une autre periode que le calendrier : une
+// seule fonction bouge les deux.
+ok('la liste du carnet montre exactement la periode du calendrier',
+   /function bornesCarnet\(\)\{/.test(SRC)
+   && /if \(calVue === 'jour'\) return \{ debut:calRef, fin:calRef/.test(SRC)
+   && /x\.date >= bornes\.debut && x\.date <= bornes\.fin/.test(SRC)
+   && /renderCarnet\(\);\n    rendreRecherche\(\);\n  \}/.test(SRC)
+   && /if \(state\.view === 'planning'\) renderCalendrier\(\);/.test(SRC)
+   // Les filtres prevues / faites sont partis, badge compris cote logique.
+   && !/carnetFiltre/.test(SRC) && !/data-filtre=/.test(HTML));
+
+// La recherche : un nom, et l'historique de perf de cet exercice s'ouvre.
+ok('carnet : une barre cherche un exercice et ouvre son historique',
+   /id="carnetRecherche"/.test(HTML) && /id="carnetResultats"/.test(HTML)
+   && /function exosNotes\(\)\{/.test(SRC) && /function rendreRecherche\(\)\{/.test(SRC)
+   // On ne propose que ce qui a ete note : sans serie, pas d'historique.
+   && /if \(!e\.nom \|\| !\(e\.series \|\| \[\]\)\.some\(hasData\)\) return;/.test(SRC)
+   // Les alias sont resolus : « dead » et « souleve de terre », une ligne.
+   && /var cle = cleCanonique\(e\.nom\);/.test(SRC)
+   // Rien de tape, rien d'ouvert : la liste ne pousse pas le calendrier
+   // hors de l'ecran pour ne rien dire.
+   && /zone\.hidden = !q;/.test(SRC)
+   && /ouvrirExercice\(b\.dataset\.exo, 'planning'\)/.test(SRC));
 ok('TERMINER MA SEANCE apparait des la premiere serie notee, sans attendre un rendu complet',
    corps('function renderBandeau(', 'var d = fromDateStr(ds);').indexOf('majBoutonFin(ds);') > -1);
 ok('audit UI/UX : plus d emoji dans le signal d un exercice, un point dessine a la place',
@@ -769,15 +793,12 @@ ok('SEANCE ne montre que le jour : ni sous-onglets, ni listes',
                    && !v.includes('id="seancesListe"') && !v.includes('seg-btn'); })()
    && /function renderSeances\(\)\{ renderSeanceJour\(false\); \}/.test(SRC)
    && !/id="dayPills"/.test(HTML) && !/renderDayPills|renderPlanning|planningWeekStart/.test(SRC));
-ok('CARNET : le calendrier et les seances sur un seul ecran, les filtres trient la liste',
+ok('CARNET : la recherche, le calendrier et les seances sur un seul ecran',
    (() => { const v = HTML.slice(HTML.indexOf('id="view-planning"'), HTML.indexOf('id="view-seances"'));
-            return v.includes('id="calCorps"') && v.includes('id="calVueBtn"')
-                && v.includes('id="carnetFiltres"') && v.includes('id="seancesListe"'); })()
-   && /data-filtre="toutes"/.test(HTML) && /data-filtre="prevues"/.test(HTML) && /data-filtre="faites"/.test(HTML)
-   && /var carnetFiltre = 'toutes';/.test(SRC)
-   // Un filtre trie, il ne change pas d ecran : le calendrier reste au-dessus.
-   && corps("document.getElementById('carnetFiltres').addEventListener", "document.getElementById('subTabs')").indexOf('montrerVue') < 0
-   && /if \(state\.view === 'planning'\)\{ renderCalendrier\(\); renderCarnet\(\); \}/.test(SRC));
+            return v.includes('id="carnetRecherche"') && v.includes('id="calVues"')
+                && v.includes('id="calCorps"') && v.includes('id="seancesListe"'); })()
+   // Changer de vue ne change pas d ecran : tout reste sur le carnet.
+   && corps("document.getElementById('calVues').addEventListener", "document.getElementById('carnetRecherche')").indexOf('montrerVue') < 0);
 
 console.log(`\n${pass} reussis, ${fail} echoues`);
 process.exit(fail ? 1 : 0);
