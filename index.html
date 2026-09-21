@@ -587,13 +587,6 @@
     border-left:3px solid var(--orange);padding-left:10px;
     font-size:12.5px;line-height:1.5;color:var(--dim);
   }
-  .seance-mois{
-    margin:22px 0 2px;
-    font-size:11px;font-weight:800;letter-spacing:.1em;
-    color:var(--dim);text-transform:uppercase;
-  }
-  .seance-mois:first-child{margin-top:6px;}
-
   .seance-carte{
     display:block;width:100%;text-align:left;
     border:2.5px solid var(--ink);
@@ -2822,22 +2815,38 @@
     .reg-teinte{width:26px;height:26px;}
   }
 
-  /* Le calendrier du carnet se replie et se deplie ici, plutot que sur trois
-     sous-onglets JOUR / SEMAINE / MOIS (20/09). */
-  .btn-cal-vue{
-    display:block;width:100%;min-height:44px;margin-top:10px;
-    border:1px dashed var(--trait2);border-radius:var(--r-m);background:transparent;color:var(--dim);
-    font-family:var(--f-ui);font-weight:700;font-size:12px;letter-spacing:.1em;
+  /* Chercher un exercice depuis le carnet : on tape un nom, on tombe sur son
+     historique de perf (21/09/2026). Les resultats ne s'affichent qu'une fois
+     quelque chose tape — sinon ils repousseraient le calendrier hors de
+     l'ecran pour ne rien dire. */
+  .carnet-rech{margin-bottom:12px;}
+  .carnet-rech-champ{
+    width:100%;min-height:46px;
+    border:1px solid var(--trait);border-radius:var(--r-m);background:var(--s2);color:var(--ink);
+    font-family:inherit;font-size:14px;font-weight:700;padding:0 13px;
+    appearance:none;-webkit-appearance:none;
   }
-  .btn-cal-vue[aria-expanded="true"]{border-style:solid;border-color:var(--orange);color:var(--orange);}
-  .btn-cal-vue:active{transform:scale(.99);}
-  #carnetFiltres{margin-top:18px;}
-  /* Dans le carnet, chaque bloc de la liste dit ce qu'il montre. */
-  .seances-bloc{
-    margin:22px 0 8px;font-size:11px;font-weight:800;letter-spacing:.12em;color:var(--dim);
-    display:flex;align-items:center;gap:8px;
+  .carnet-rech-champ::-webkit-search-cancel-button{-webkit-appearance:none;}
+  .carnet-rech-champ::placeholder{color:var(--dim);font-weight:700;}
+  .carnet-rech-champ:focus-visible{outline:2px solid var(--orange);outline-offset:2px;}
+  .carnet-resultats{display:flex;flex-direction:column;gap:6px;margin-top:8px;}
+  .rech-exo{
+    display:flex;align-items:center;gap:10px;width:100%;min-height:50px;
+    padding:8px 12px;text-align:left;
+    border:1px solid var(--trait);border-radius:var(--r-m);background:var(--s1);color:var(--ink);
+    font-family:inherit;
   }
-  .seances-bloc::after{content:"";flex:1;height:1px;background:var(--trait);}
+  .rech-exo i{flex:none;width:9px;height:9px;border-radius:50%;background:var(--c,var(--dim));}
+  .rech-exo-nom{flex:1;min-width:0;font-size:13.5px;font-weight:800;}
+  .rech-exo-info{
+    flex:none;font-size:11px;font-weight:700;color:var(--dim);
+    letter-spacing:.02em;font-variant-numeric:tabular-nums;
+  }
+  .rech-vide{
+    padding:14px;border:1px dashed var(--trait2);border-radius:var(--r-m);
+    font-size:13px;line-height:1.5;color:var(--dim);text-align:center;
+  }
+  #calVues{margin-bottom:12px;}
 
   /* Le schema du recap : de face et de dos, et le detail sous chaque groupe. */
   .muscle-svg{flex:none;}
@@ -2895,10 +2904,23 @@
     </div>
   </nav>
 
-  <!-- CARNET : chercher un jour ou une seance. Le calendrier se replie sur la
-       semaine ou se deplie sur le mois, et les filtres trient la liste juste
-       dessous au lieu de changer d'ecran (20/09/2026). -->
+  <!-- CARNET : chercher un exercice, un jour ou une seance. La barre cherche
+       un exercice et ouvre son historique de perf ; JOUR / SEMAINE / MOIS
+       decident de ce que montrent le calendrier ET la liste juste dessous
+       (21/09/2026). -->
   <section class="view" id="view-planning" hidden>
+    <div class="carnet-rech">
+      <input type="search" id="carnetRecherche" class="carnet-rech-champ"
+             placeholder="Chercher un exercice…" autocomplete="off"
+             aria-label="Chercher un exercice pour voir ton historique">
+      <div class="carnet-resultats" id="carnetResultats" aria-live="polite" hidden></div>
+    </div>
+
+    <div class="segmented sub" id="calVues">
+      <button type="button" class="seg-btn" data-cal="jour">JOUR</button>
+      <button type="button" class="seg-btn active" data-cal="semaine">SEMAINE</button>
+      <button type="button" class="seg-btn" data-cal="mois">MOIS</button>
+    </div>
     <div class="week-nav">
       <button type="button" class="icon-btn" id="calPrec" aria-label="Période précédente">‹</button>
       <div class="week-label" id="calLabel">—</div>
@@ -2906,13 +2928,6 @@
       <button type="button" class="btn-today" id="calAuj" aria-label="Revenir à aujourd'hui" title="Revenir à aujourd'hui">AUJOURD'HUI</button>
     </div>
     <div class="cal-corps" id="calCorps"></div>
-    <button type="button" class="btn-cal-vue" id="calVueBtn" aria-expanded="false">VOIR LE MOIS</button>
-
-    <div class="segmented sub" id="carnetFiltres">
-      <button type="button" class="seg-btn active" data-filtre="toutes">TOUTES</button>
-      <button type="button" class="seg-btn" data-filtre="prevues">PRÉVUES</button>
-      <button type="button" class="seg-btn" data-filtre="faites">FAITES</button>
-    </div>
 
     <div class="seances-listes" id="seancesListes">
       <div class="seances-cible" id="seancesCible"></div>

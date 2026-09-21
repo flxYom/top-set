@@ -2074,61 +2074,46 @@
   function renderSeances(){ renderSeanceJour(false); }
 
   // ---------- le carnet ----------
-  // Le calendrier et les seances, sur un seul ecran (20/09/2026). Les filtres
-  // trient la liste ; ils ne changent pas d'ecran, et le calendrier reste
-  // au-dessus dans tous les cas.
-  var carnetFiltre = 'toutes';
-  function renderCarnet(){
-    var champ = document.getElementById('seanceDate');
-    if (champ && !champ.value) champ.value = toDateStr(new Date());
-    var liste = document.getElementById('seancesListe');
-    var cible = document.getElementById('seancesCible');
-    var bloc  = document.getElementById('seanceCreerBloc');
-
-    document.querySelectorAll('#carnetFiltres .seg-btn').forEach(function(b){
-      b.classList.toggle('active', b.dataset.filtre === carnetFiltre);
-    });
-    var groupes = trierSeances();
-    var avecPrevues = carnetFiltre !== 'faites';
-    var avecFaites  = carnetFiltre !== 'prevues';
-
-    // Creer une seance a venir n'a de sens que la ou elle atterrira.
-    bloc.hidden = !avecPrevues;
-    cible.textContent = '';
-
-    var html = '';
-    // Avec « toutes », chaque bloc dit ce qu'il montre : sans ca, une seance
-    // prevue et une seance faite se suivent sans qu'on sache laquelle est
-    // laquelle.
-    var deuxBlocs = avecPrevues && avecFaites && groupes.mes.length && groupes.histo.length;
-    if (avecPrevues && groupes.mes.length){
-      if (deuxBlocs) html += '<div class="seances-bloc">À VENIR</div>';
-      html += listeSeancesHTML(groupes.mes);
-    }
-    if (avecFaites && groupes.histo.length){
-      if (deuxBlocs) html += '<div class="seances-bloc">DÉJÀ FAITES</div>';
-      html += listeSeancesHTML(groupes.histo);
-    }
-    if (!html){
-      cible.textContent = '';
-      html = '<div class="seances-vide">' + (carnetFiltre === 'faites'
-        ? 'Rien de fait pour l\'instant. Les séances terminées viendront ici toutes seules.'
-        : carnetFiltre === 'prevues'
-        ? 'Aucune séance prévue. Crée-en une ci-dessus, ou note-la directement dans SÉANCE.'
-        : 'Rien encore. Crée une séance ci-dessus, ou note-la directement dans SÉANCE.')
-        + '</div>';
-    }
-    liste.innerHTML = html;
+  // Le calendrier et les seances, sur un seul ecran. JOUR, SEMAINE ou MOIS
+  // decident des deux a la fois : la liste montre la periode que montre le
+  // calendrier, ni plus ni moins (21/09/2026, demande : « faut que y ait
+  // juste jour semaine mois »). Les filtres prevues / faites ont saute — la
+  // carte porte deja son badge PRÉVUE, le filtre ne disait rien de plus.
+  function bornesCarnet(){
+    var d = fromDateStr(calRef);
+    if (calVue === 'jour') return { debut:calRef, fin:calRef, vide:'Rien ce jour-là.' };
+    if (calVue === 'mois') return { debut:toDateStr(startOfMonth(d)), fin:toDateStr(endOfMonth(d)),
+                                    vide:'Rien ce mois-ci.' };
+    var lundi = startOfWeek(d);
+    return { debut:toDateStr(lundi), fin:toDateStr(addDays(lundi, 6)), vide:'Rien cette semaine.' };
   }
+  function renderCarnet(){
+    var bornes = bornesCarnet();
+    // Creer une seance la ou l'on regarde : en JOUR, c'est le jour affiche.
+    var champ = document.getElementById('seanceDate');
+    if (champ && (calVue === 'jour' || !champ.value)) champ.value = calVue === 'jour' ? calRef : toDateStr(new Date());
+    var liste = document.getElementById('seancesListe');
+    document.getElementById('seancesCible').textContent = '';
+
+    var groupes = trierSeances();
+    var dedans = groupes.mes.concat(groupes.histo).filter(function(x){
+      return x.date >= bornes.debut && x.date <= bornes.fin;
+    });
+    // Du plus ancien au plus recent : une semaine se lit du lundi au dimanche,
+    // un mois du 1er au 31.
+    dedans.sort(function(a, b){ return a.date < b.date ? -1 : (a.date > b.date ? 1 : 0); });
+
+    liste.innerHTML = dedans.length
+      ? listeSeancesHTML(dedans)
+      : '<div class="seances-vide">' + bornes.vide
+        + ' Crée-en une ci-dessus, ou note-la directement dans SÉANCE.</div>';
+  }
+  // Le mois n'est plus rappele en tete de liste : la periode affichee tient
+  // deja dans le bandeau du calendrier, et chaque carte dit son jour.
   function listeSeancesHTML(seances){
-    var moisVu = '', html = '';
+    var html = '';
     seances.forEach(function(s){
       var sd = fromDateStr(s.date);
-      var mois = MONTH_NAMES[sd.getMonth()] + ' ' + sd.getFullYear();
-      if (mois !== moisVu){
-        moisVu = mois;
-        html += '<div class="seance-mois">' + esc(mois) + '</div>';
-      }
       var couleur = couleurGroupe(groupesPrincipaux(s.date)[0]);
       var quandS = DAY_NAMES[(sd.getDay()+6)%7] + ' ' + sd.getDate() + ' ' + MONTH_ABBR[sd.getMonth()];
       var noms = s.noms.slice(0, 5).join(' · ') + (s.noms.length > 5 ? ' · +' + (s.noms.length - 5) : '');
@@ -2149,6 +2134,61 @@
         + '</button>';
     });
     return html;
+  }
+
+  // ---------- chercher un exercice ----------
+  // On tape un nom, on tombe sur son historique de perf (21/09/2026). Seuls
+  // les exercices reellement notes sont proposes : un mouvement jamais fait
+  // n'a pas d'historique a lire, le proposer serait une impasse. Les alias
+  // sont resolus, donc « dead » et « soulevé de terre » ne font qu'une ligne.
+  function exosNotes(){
+    var par = {}, cles = [];
+    Object.keys(state.sessions).forEach(function(ds){
+      (state.sessions[ds].exercises || []).forEach(function(e){
+        if (!e.nom || !(e.series || []).some(hasData)) return;
+        var cle = cleCanonique(e.nom);
+        if (!par[cle]){ par[cle] = { nom:nomCanonique(e.nom), jours:{}, dernier:'' }; cles.push(cle); }
+        par[cle].jours[ds] = 1;
+        if (ds > par[cle].dernier) par[cle].dernier = ds;
+      });
+    });
+    return cles.map(function(c){
+      var o = par[c];
+      o.seances = Object.keys(o.jours).length;
+      return o;
+    }).sort(function(a, b){ return a.dernier < b.dernier ? 1 : (a.dernier > b.dernier ? -1 : 0); });
+  }
+  function rendreRecherche(){
+    var champ = document.getElementById('carnetRecherche');
+    var zone  = document.getElementById('carnetResultats');
+    if (!champ || !zone) return;
+    var brut = champ.value.trim(), q = sansAccents(brut);
+    // Tant que rien n'est tape, la zone reste fermee : une liste ouverte en
+    // permanence pousserait le calendrier hors de l'ecran pour rien.
+    zone.hidden = !q;
+    if (!q){ zone.innerHTML = ''; return; }
+
+    var tous = exosNotes();
+    var trouves = tous.filter(function(o){ return sansAccents(o.nom).indexOf(q) > -1; });
+    if (!tous.length){
+      zone.innerHTML = '<div class="rech-vide">Aucun exercice noté pour l\'instant. Note une série, et il apparaîtra ici.</div>';
+      return;
+    }
+    if (!trouves.length){
+      zone.innerHTML = '<div class="rech-vide">Rien qui ressemble à «\u00a0' + esc(brut) + '\u00a0».</div>';
+      return;
+    }
+    zone.innerHTML = trouves.slice(0, 12).map(function(o){
+      var g = groupeCanonique(o.nom) || 'Autre';
+      var d = fromDateStr(o.dernier);
+      return '<button type="button" class="rech-exo" data-exo="' + esc(o.nom) + '"'
+        + ' style="--c:' + couleurGroupe(g) + '">'
+        + '<i aria-hidden="true"></i>'
+        + '<span class="rech-exo-nom">' + esc(o.nom) + '</span>'
+        + '<span class="rech-exo-info">' + o.seances + (o.seances > 1 ? ' séances' : ' séance')
+        +   ' · ' + d.getDate() + ' ' + MONTH_ABBR[d.getMonth()] + '</span>'
+        + '</button>';
+    }).join('');
   }
 
   // ---------- la fiche d'une seance ----------
@@ -2401,11 +2441,12 @@
   }
 
   // ---------- le planning : un calendrier ----------
-  // La semaine, ou le mois deplie. On y regarde, on n'y note pas : toucher un
-  // jour l'ouvre dans SÉANCE. Un jour « fait » a des series remplies ;
-  // « prevu » a des exercices ou un titre, sans series. La vue « jour » a
-  // saute le 20/09 : elle montrait une seance sans qu'on puisse la remplir,
-  // et l'ecran SÉANCE fait ca mieux.
+  // JOUR, SEMAINE ou MOIS (21/09/2026). On y regarde, on n'y note pas :
+  // toucher un jour l'ouvre dans SÉANCE. Un jour « fait » a des series
+  // remplies ; « prevu » a des exercices ou un titre, sans series. En JOUR,
+  // le calendrier ne dessine rien : le bandeau dit la date et la seance se
+  // lit en entier dans la liste juste dessous, ce qu'une case ne ferait pas
+  // mieux.
   var calVue = 'semaine';
   var calRef = toDateStr(new Date());
   function etatJour(ds){
@@ -2429,20 +2470,25 @@
   }
   function decalerCalendrier(sens){
     var d = fromDateStr(calRef);
-    if (calVue === 'semaine') d = addDays(d, 7 * sens);
+    if (calVue === 'jour') d = addDays(d, sens);
+    else if (calVue === 'semaine') d = addDays(d, 7 * sens);
     else d = new Date(d.getFullYear(), d.getMonth() + sens, 1);
     calRef = toDateStr(d);
     renderCalendrier();
   }
   function renderCalendrier(){
-    var bouton = document.getElementById('calVueBtn');
-    bouton.textContent = calVue === 'mois' ? 'VOIR LA SEMAINE' : 'VOIR LE MOIS';
-    bouton.setAttribute('aria-expanded', calVue === 'mois' ? 'true' : 'false');
+    document.querySelectorAll('#calVues .seg-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.cal === calVue);
+    });
     var ref = fromDateStr(calRef), maintenant = new Date(), auj = toDateStr(maintenant);
     var label = document.getElementById('calLabel');
     var corps = document.getElementById('calCorps');
     var loin;
-    if (calVue === 'semaine'){
+    if (calVue === 'jour'){
+      label.textContent = (DAY_NAMES[(ref.getDay()+6)%7] + ' ' + ref.getDate() + ' ' + MONTH_NAMES[ref.getMonth()]).toUpperCase();
+      loin = calRef !== auj;
+      corps.innerHTML = '';
+    } else if (calVue === 'semaine'){
       var debut = startOfWeek(ref);
       // L'annee en cours ne prend plus la place de la semaine sur un petit ecran.
       var finSem = addDays(debut, 6), an = maintenant.getFullYear();
@@ -2456,6 +2502,11 @@
       corps.innerHTML = calMoisHTML(ref.getFullYear(), ref.getMonth());
     }
     document.getElementById('calAuj').classList.toggle('loin', loin);
+    // La liste suit la periode : une seule fonction bouge les deux, donc pas
+    // de calendrier qui montre une semaine pendant que la liste en montre
+    // une autre.
+    renderCarnet();
+    rendreRecherche();
   }
   // Une rangee de sept, comme le mois : le detail d'une seance se lit dans la
   // liste juste dessous, il n'a pas besoin d'etre repete ici (20/09).
@@ -2815,7 +2866,7 @@
   });
 
   function renderAll(){
-    if (state.view === 'planning'){ renderCalendrier(); renderCarnet(); }
+    if (state.view === 'planning') renderCalendrier();
     else if (state.view === 'seances') renderSeances();
     else if (state.view === 'seance') renderSeanceDetail();
     else if (state.view === 'exercice') renderExerciceDetail();
@@ -3097,10 +3148,24 @@
     montrerVue(btn.dataset.view);
   });
 
-  document.getElementById('carnetFiltres').addEventListener('click', function(e){
+  document.getElementById('calVues').addEventListener('click', function(e){
     var btn = e.target.closest('.seg-btn'); if (!btn) return;
-    carnetFiltre = btn.dataset.filtre;
-    renderCarnet();
+    calVue = btn.dataset.cal;
+    renderCalendrier();
+  });
+
+  // La recherche : un nom, et l'historique de perf de cet exercice s'ouvre.
+  document.getElementById('carnetRecherche').addEventListener('input', rendreRecherche);
+  document.getElementById('carnetRecherche').addEventListener('keydown', function(e){
+    if (e.key !== 'Enter') return;
+    var premier = document.querySelector('#carnetResultats .rech-exo');
+    if (!premier) return;
+    e.preventDefault();
+    premier.click();
+  });
+  document.getElementById('carnetResultats').addEventListener('click', function(e){
+    var b = e.target.closest('[data-exo]'); if (!b) return;
+    ouvrirExercice(b.dataset.exo, 'planning');
   });
 
   document.getElementById('subTabs').addEventListener('click', function(e){
@@ -3129,10 +3194,6 @@
     window.scrollTo(0, 0);
   });
 
-  document.getElementById('calVueBtn').addEventListener('click', function(){
-    calVue = calVue === 'mois' ? 'semaine' : 'mois';
-    renderCalendrier();
-  });
   document.getElementById('calPrec').addEventListener('click', function(){ decalerCalendrier(-1); });
   document.getElementById('calSuiv').addEventListener('click', function(){ decalerCalendrier(1); });
   document.getElementById('calAuj').addEventListener('click', function(){
@@ -4938,10 +4999,11 @@
     else if (e.target.closest('.bilan-chargement')) passerAuBilan(bilanJour);
   });
 
-  // On reprend d'abord ce qu'on a deja fait : le carnet, filtre sur les
-  // seances faites.
+  // On reprend d'abord ce qu'on a deja fait : le carnet, ouvert sur le mois,
+  // ou l'on voit le plus de seances d'un coup.
   document.getElementById('reprendreBtn').addEventListener('click', function(){
-    carnetFiltre = 'faites';
+    calVue = 'mois';
+    calRef = toDateStr(new Date());
     montrerVue('planning');
     window.scrollTo(0, 0);
   });

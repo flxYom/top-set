@@ -250,6 +250,23 @@ Cible :
   trouvait fouillie. Il reprend l'anneau, la braise et les boutons du plein
   écran : même objet, sans carnet derrière. Deux modes (minuteur, chronomètre),
   une durée par gros boutons, rien à saisir.
+- **Le carnet : trois vues, plus de filtres** (21/09, demande : « séance prévue
+  faite toutes, on s'en bat les couilles de cette rubrique, faut que y ait juste
+  jour semaine mois ») : deux commandes se disputaient le même écran — une pour
+  le calendrier (semaine / mois), une pour la liste (toutes / prévues / faites) —
+  et il fallait deviner laquelle agissait sur quoi. Il en reste **une** : la
+  période commande les deux, et la liste montre ce que le calendrier montre. Le
+  tri prévues / faites disparaît sans rien perdre — le badge `PRÉVUE` est resté
+  sur la carte. La vue `JOUR` revient à sa demande, mais sans dessin : en jour,
+  le calendrier serait une case, la liste dit tout.
+- **Chercher un exercice depuis le carnet** (21/09, même demande : « une barre de
+  recherche, tu cherches un exo et ça te dit ton historique de perf sur cet
+  exo ») : la fiche d'exercice existait déjà, mais on n'y arrivait qu'en passant
+  par le RÉCAP ou par une séance qui contenait le mouvement — deux détours pour
+  une question directe. La barre vit dans le CARNET, dont le métier est de
+  retrouver. Les résultats ne s'affichent qu'une fois quelque chose tapé : sur un
+  iPhone, une liste ouverte en permanence pousse le calendrier sous la ligne de
+  flottaison.
 - **Quatre onglets, quatre métiers** (20/09, demande : « entre le calendrier,
   le récap, la séance, les séances, les séances du jour c'est trop fouilli ») :
   le problème n'était pas le nombre d'onglets mais le **recouvrement** — sept

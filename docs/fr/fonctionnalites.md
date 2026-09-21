@@ -22,21 +22,37 @@ affichaient la même liste sous une autre forme. Il en reste quatre, et chacun
 fait une seule chose :
 - **SÉANCE** : ce qu'on fait maintenant. Le bandeau du jour, les exercices, les
   séries. Plus aucun sous-onglet. C'est là que l'app s'ouvre.
-- **CARNET** : chercher un jour ou une séance. Le calendrier **et** la liste sur
-  le même écran. Il se replie sur la **semaine** (une rangée de sept, une
-  pastille à la couleur du groupe dominant) ou se déplie sur le **mois** (la
-  grille, pastille pleine pour une séance faite, en contour pour une prévue) —
-  un seul bouton, `VOIR LE MOIS` / `VOIR LA SEMAINE`. Les flèches avancent d'une
-  semaine ou d'un mois ; `AUJOURD'HUI` passe en orange dès qu'on s'est éloigné.
-  Dessous, une rangée de filtres — `TOUTES`, `PRÉVUES`, `FAITES` — **trie la
-  liste** au lieu de changer d'écran ; avec `TOUTES`, deux blocs nommés
-  « À VENIR » et « DÉJÀ FAITES ». Toucher un jour ou une séance ouvre sa fiche,
-  et `‹ RETOUR` ramène au carnet ; un jour vide s'ouvre dans SÉANCE, où
-  `AUJOURD'HUI ›` ramène à aujourd'hui.
+- **CARNET** : chercher un exercice, un jour ou une séance. Le calendrier **et**
+  la liste sur le même écran.
 - **PROGRÈS** : records, volume, bilans (l'ancien RÉCAP).
 - **APPRENDRE** : les pages et les outils.
-La vue **JOUR** du calendrier a sauté avec eux : elle montrait une séance sans
-qu'on puisse la remplir, et SÉANCE fait ça mieux.
+
+**Le carnet se regarde par jour, par semaine ou par mois** (21/09/2026, demande :
+« faut que y ait juste jour semaine mois »). `JOUR`, `SEMAINE` et `MOIS` commandent
+le calendrier **et** la liste en dessous : elle montre la période affichée, ni
+plus ni moins, de la plus ancienne à la plus récente. `SEMAINE` dessine une rangée
+de sept, une pastille à la couleur du groupe dominant ; `MOIS` déplie la grille,
+pastille pleine pour une séance faite, en contour pour une prévue ; `JOUR` ne
+dessine rien — le bandeau dit la date et la séance se lit en entier dans la liste,
+ce qu'une case ne ferait pas mieux. Les flèches avancent d'un jour, d'une semaine
+ou d'un mois ; `AUJOURD'HUI` passe en orange dès qu'on s'est éloigné. En `JOUR`,
+`CRÉER MA SÉANCE` vise le jour affiché. Toucher un jour ou une séance ouvre sa
+fiche, et `‹ RETOUR` ramène au carnet ; un jour vide s'ouvre dans SÉANCE, où
+`AUJOURD'HUI ›` ramène à aujourd'hui.
+
+Les filtres `TOUTES` / `PRÉVUES` / `FAITES` ont sauté avec les trois vues : la
+carte porte déjà son badge `PRÉVUE`, le filtre ne disait rien de plus, et la
+période fait le tri.
+
+**Chercher un exercice.** En haut du carnet, une barre : on tape un nom, on tombe
+sur son historique de perf — la même fiche que depuis le RÉCAP (signal, top set,
+1RM estimé, records par fourchette de reps, courbe, séance par séance). Seuls les
+exercices **réellement notés** sont proposés : un mouvement jamais fait n'a pas
+d'historique à lire, le proposer serait une impasse. Les alias sont résolus, donc
+« dead » et « soulevé de terre » ne font qu'une ligne. Chaque résultat dit son
+nombre de séances et sa dernière fois. Tant que rien n'est tapé, rien ne s'ouvre :
+une liste ouverte en permanence pousserait le calendrier hors de l'écran pour ne
+rien dire.
 
 **Une série, une ligne.** `SÉRIE · 8 SEPT. · KG · REPS · RPE · ✓`, la grille de
 Strong ou Hevy, reprise parce que c'est celle qu'on connaît. Avant, chaque série
