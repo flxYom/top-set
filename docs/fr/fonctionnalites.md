@@ -453,6 +453,51 @@ lequel agissait sur quoi. `JOUR / SEMAINE / MOIS` commande le calendrier **et**
 la liste en dessous, qui montre exactement la période affichée ; le badge
 `PRÉVUE` sur la carte dit le reste.
 
+**Partager ses perfs à des amis** (8 octobre 2026). Un exercice, une séance ou
+un récap s'envoient à des amis choisis. Les mécaniques qui rendent un fil
+malsain sont connues, et aucune n'est ici.
+
+*Pas d'inconnus.* On devient amis par un **code** de 8 caractères, qu'on se
+donne de la main à la main, et les deux parties agissent : l'un saisit,
+l'autre accepte. Aucune recherche par pseudo — un pseudo tapé de travers
+désignerait quelqu'un, un code est faux ou juste. Pas de profil public, pas de
+suggestions d'amis. Le code se refait (`REFAIRE MON CODE`) sans perdre ses
+amis. Tout est dans `RÉGLAGES ET PROFIL › MES AMIS`.
+
+*On envoie, on ne publie pas.* Il n'existe **aucun fil** de ce que font tes
+amis. `↗ PARTAGER` vit là où la chose vit : sur la fiche d'une séance, sur la
+fiche d'un exercice, sous le récap. Tu choisis quoi, tu choisis à qui, et rien
+ne part avant. Le reste de ton carnet ne sort jamais.
+
+*Une copie figée.* Ce qui est envoyé est un instantané (`contenu` jsonb) :
+l'exercice avec ses chiffres clés et ses cinq dernières séances, la séance avec
+ses exercices et ses séries, le récap avec ses totaux et ses cinq premiers
+groupes. Corriger ta séance demain ne change pas ce que ton ami a lu, et aucune
+policy n'ouvre `seances`, `exercices` ou `series` à un ami. Les champs sont
+recopiés un par un (`seriePartagee`) : ce qui n'est pas nommé ne sort pas.
+
+*Aucun compteur sur personne.* Pas de nombre d'amis affiché comme un score, pas
+de total de réactions, pas de série de jours, pas de classement — et aucune
+fonction en base qui trierait des gens. Les réactions sont quatre mots fermés
+(`BRAVO`, `COSTAUD`, `SOLIDE`, `VU`), sans équivalent négatif ; elles vont à ce
+partage-là et ne s'additionnent nulle part. Rappuyer sur la même la retire.
+
+*Une liste finie.* Ce qu'on a reçu s'affiche en haut de l'écran MESSAGES, du
+plus récent au plus ancien, et ça s'arrête : pas de tri par popularité, pas de
+défilement infini. Un filet orange marque ce qui n'est pas lu, et la pastille
+de l'en-tête compte les partages non lus avec le reste. `×` range le partage
+chez soi sans que l'auteur le sache. Pas de story — demandé, et de toute façon
+c'est l'inverse de « on envoie à quelqu'un ».
+
+*Sans compte, tout marche pareil.* Les boutons `↗ PARTAGER` expliquent et
+proposent un compte ; rien ne casse.
+
+Côté base : `liens_ami`, `partages`, `partages_recus`, et douze fonctions
+`SECURITY DEFINER`. Aucune policy d'écriture, sauf la suppression de ses
+propres partages — RLS filtre des lignes et pas des colonnes, et « chacun
+modifie ses reçus » aurait laissé passer un `update` qui se rend destinataire
+d'un partage adressé à quelqu'un d'autre.
+
 **Graphique de progression** par exercice, tracé depuis ton propre historique.
 
 **Faire un retour.** Un lien en bas de chaque écran ouvre un formulaire : un bug,

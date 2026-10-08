@@ -409,6 +409,47 @@ only, and the history stayed split without a word. `definirAlias` therefore
 resolves the target before writing it, and the offer announces the **final
 destination**, never the intermediate step.
 
+**Sharing your numbers with friends** (8 October 2026). An exercise, a session
+or a recap can be sent to chosen friends. The mechanics that make a feed
+unhealthy are well known, and none of them are here.
+
+*No strangers.* You become friends through an 8-character **code**, handed over
+in person, and both sides act: one types it, the other accepts. No search by
+nickname — a nickname typed wrong would point at somebody, a code is either
+right or wrong. No public profile, no friend suggestions. The code can be
+regenerated (`REFAIRE MON CODE`) without losing your friends. All of it lives
+in `RÉGLAGES ET PROFIL › MES AMIS`.
+
+*You send, you do not publish.* There is **no feed** of what your friends do.
+`↗ PARTAGER` lives where the thing lives: on a session sheet, on an exercise
+sheet, under the recap. You pick what, you pick who, and nothing leaves before
+that. The rest of your log never goes out.
+
+*A frozen copy.* What is sent is a snapshot (`contenu` jsonb): the exercise with
+its key figures and its last five sessions, the session with its exercises and
+sets, the recap with its totals and top five groups. Fixing your session
+tomorrow does not change what your friend read, and no policy opens `seances`,
+`exercices` or `series` to a friend. Fields are copied one by one
+(`seriePartagee`): what is not named does not leave.
+
+*No counters on anyone.* No friend count shown as a score, no reaction total,
+no streak, no ranking — and no database function that would sort people. The
+reactions are four closed words (`BRAVO`, `COSTAUD`, `SOLIDE`, `VU`), with no
+negative counterpart; they belong to that one share and add up nowhere. Tapping
+the same one again removes it.
+
+*A finite list.* What you received shows at the top of the MESSAGES screen,
+newest first, and it ends: no popularity sort, no infinite scroll. An orange
+rail marks what is unread, and the header badge counts unread shares along with
+the rest. `×` files the share away on your side without the author knowing. No
+stories — asked for explicitly, and the opposite of « you send it to someone »
+anyway.
+
+*Without an account, everything works the same.* The `↗ PARTAGER` buttons
+explain and offer one; nothing breaks. On the database side: `liens_ami`,
+`partages`, `partages_recus`, and twelve `SECURITY DEFINER` functions — no write
+policy at all, because RLS filters rows, not columns.
+
 **Recap body map** (18 September 2026): front and back, one zone per muscle; a
 group logged with no detail lights all its zones, paler. Under each group in the
 legend, the per-muscle breakdown; each exercise row carries its sub-group.

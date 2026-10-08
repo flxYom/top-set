@@ -880,5 +880,73 @@ ok('aucune chaine d alias : on rattache toujours a la destination finale',
    && /var vise = cleCanonique\(nom\);\n      if \(vise !== c\)\{/.test(SRC)
    && /out\.push\(\{ cle:vise, nom:nomCanonique\(nom\), quand:quand \|\| null \}\);/.test(SRC));
 
+// ---------------------------------------------------------------------------
+// Le partage entre amis. Ces tests gardent les decisions de forme, pas le
+// chemin reseau : ce qui compte ici, c'est qu'aucune mecanique malsaine ne
+// revienne par la fenetre, et que le mode sans compte ne casse pas.
+// ---------------------------------------------------------------------------
+ok('partage : on devient amis par un code, des deux cotes',
+   /id="amisCode"/.test(HTML) && /id="amisSaisie"/.test(HTML) && /id="amisDemander"/.test(HTML)
+   && /monCodeAmi:function\(refaire\)\{/.test(SRC) && /demanderAmi:function\(code\)\{/.test(SRC)
+   && /repondreAmi:function\(lien, oui\)\{/.test(SRC) && /rompreAmi:function\(lien\)\{/.test(SRC)
+   // Une demande recue s'accepte ou se refuse ; une amitie se retire.
+   && /data-ami-oui="/.test(SRC) && /data-ami-non="/.test(SRC) && /data-ami-rompre="/.test(SRC)
+   // Le code se refait sans perdre ses amis.
+   && /id="amisRefaire"/.test(HTML)
+   // Et il n'existe aucune recherche de personnes : pas de champ pseudo, pas
+   // de suggestions.
+   && !/chercher_ami|rechercheAmi|suggestionsAmis/.test(SRC));
+
+ok('partage : on envoie une copie figee, jamais une fenetre sur le carnet',
+   /function seriePartagee\(s\)\{/.test(SRC)
+   && /function instantaneExercice\(nom\)\{/.test(SRC)
+   && /function instantaneSeance\(ds\)\{/.test(SRC)
+   && /function instantaneRecap\(periode\)\{/.test(SRC)
+   // Les champs sont recopies un par un : rien ne part par accident.
+   && (() => { const f = corps('function seriePartagee(s){', 'function exoPartage(e){');
+               return f.includes('var o = {};') && !f.includes('JSON.parse')
+                   && !/\bo\.fait\b/.test(f) && !/\bo\.id\b/.test(f); })()
+   && /class="btn-partage" id="fichePartager"/.test(SRC)
+   && /class="btn-partage" id="exoPartager"/.test(SRC)
+   && /id="recapPartager"/.test(HTML)
+   && /partager:function\(type, titre, contenu, mot, amis\)\{/.test(SRC));
+
+ok('partage : aucun fil, aucun compteur, aucun classement, aucune story',
+   // Ce qu'on recoit est une liste finie, par date, dans l'ecran des messages.
+   /id="partagesRecus"/.test(HTML) && /function rendrePartagesRecus\(\)\{/.test(SRC)
+   && /partagesRecus:function\(\)\{ return rpcAdmin\('mes_partages_recus'/.test(SRC)
+   // Quatre reactions, liste fermee, sans equivalent negatif.
+   && /var REACTIONS = \[\['bravo', 'BRAVO'\], \['costaud', 'COSTAUD'\], \['solide', 'SOLIDE'\], \['vu', 'VU'\]\];/.test(SRC)
+   // Et rien, dans toute la section, qui ressemble a un score, a un flux ou a
+   // un classement de gens. Cherche dans la section seulement : `classement()`
+   // range un exercice par muscle, et `history` contient « story ».
+   && !/leaderboard|stories|followers|abonnes|nbAmis|totalReactions|classerAmis|flux/i
+        .test(corps('// LE PARTAGE ENTRE AMIS', '// COACH'))
+   // Ranger, c'est chez soi.
+   && /rangerPartage:function\(id\)\{/.test(SRC) && /data-ranger="/.test(SRC));
+
+ok('partage : sans compte, rien ne casse et rien ne part',
+   (() => { const f = corps('function rendreListeEnvoi(){', 'document.getElementById(\'partageClose\')');
+            // Pas de compte : on explique, on propose un compte, et le bouton
+            // d envoi reste cache.
+            return f.includes("if (!Sync.estConnecte()){") && f.includes("envoyer.hidden = true;")
+                && f.includes('partageConnexion'); })()
+   && (() => { const f = corps('function rendrePartagesRecus(){', '// ---------- envoyer ----------');
+               return f.includes("if (!Sync.estConnecte()){ zone.hidden = true;"); })()
+   && (() => { const f = corps('function rendreAmis(){', 'document.getElementById(\'amisDemander\')');
+               return f.includes("if (!Sync.estConnecte()){"); })());
+
+ok('partage : la pastille de l en-tete compte aussi les partages non lus',
+   /partagesNonLus:function\(\)\{/.test(SRC)
+   && /Promise\.all\(\[support, coach, Sync\.partagesNonLus\(\)\]\)/.test(SRC)
+   // Lu veut dire affiche : la pastille tombe quand on a vu, pas quand on a
+   // reagi.
+   && /marquerPartageLu/.test(SRC));
+
+ok('partage : les quatre reactions tiennent sur un petit telephone',
+   /\.pg-reactions\{display:grid;grid-template-columns:repeat\(4,minmax\(0,1fr\)\);/.test(HTML)
+   && /@media \(max-width:360px\)\{\n    \.pg-reactions\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\);\}/.test(HTML)
+   && /\.pg-reaction\{[^}]*min-height:44px;/.test(HTML));
+
 console.log(`\n${pass} reussis, ${fail} echoues`);
 process.exit(fail ? 1 : 0);

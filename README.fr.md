@@ -46,6 +46,9 @@ c'est exactement à ça que sert ce repo pour l'instant.
 - **Ne pas repartir de zéro.** Refaire la dernière fois, les exercices de la
   semaine d'avant, la charge suggérée. `↺ DERNIÈRE FOIS` remplit les séries de
   la séance précédente et n'écrase jamais ce qui est déjà saisi.
+- **Envoyer ses perfs à un ami.** On devient amis par un code, des deux côtés ;
+  un exercice, une séance ou un récap part chez les amis qu'on choisit, en copie
+  figée. Pas de fil, pas de compteurs, pas de classement, pas de story.
 - **Sa séance, dans son ordre.** Les exercices se déplacent à la poignée ou aux
   flèches ; un superset se déplace d'un bloc.
 - **Un mouvement, un historique.** Les abréviations de salle (`bench`, `RDL`,

@@ -20,7 +20,7 @@ privé.
 carnet s'ouvre sur n'importe quel appareil. Le téléphone garde sa copie dans les
 deux cas : le compte ne remplace pas le stockage local, il le sauvegarde.
 
-Onze tables au total. Cinq portent le carnet — `seances`, `exercices`, `series`,
+Quatorze tables au total. Cinq portent le carnet — `seances`, `exercices`, `series`,
 `exercices_perso`, `consentements` — et personne n'y voit jamais la ligne d'un
 autre, sauf le coach à qui l'on a ouvert son carnet, en lecture seule. Les autres
 sont venues après :
@@ -38,6 +38,17 @@ sont venues après :
   messagerie. Voir [La messagerie](coach-et-admin.md#la-messagerie).
 - **`notifications_admin`** — ce que l'équipe doit voir passer, écrit
   uniquement par des déclencheurs.
+- **`liens_ami`** — qui est ami avec qui. Une seule ligne par paire, dans un
+  sens ou dans l'autre : l'index porte sur `least`/`greatest` des deux
+  identifiants, donc deux demandes croisées ne peuvent pas créer deux amitiés.
+- **`partages`** et **`partages_recus`** — ce qu'on s'envoie, et à qui. Le
+  contenu est une **copie figée** (`jsonb`) : un ami ne lit jamais `seances`,
+  `exercices` ni `series`, et aucune policy ne le lui ouvre. Aucune des deux
+  tables n'a de droit d'écriture direct — sauf supprimer son propre partage —
+  parce que RLS filtre des lignes et pas des colonnes : « chacun modifie ses
+  reçus » aurait laissé passer un `update` qui se rend destinataire d'un partage
+  adressé à quelqu'un d'autre. Voir
+  [Partager ses perfs à des amis](fonctionnalites.md).
 
 ### Un carnet par compte
 

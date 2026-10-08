@@ -48,6 +48,9 @@ repository is for right now.
 - **Never start from scratch.** Redo last time, last week's exercises, a
   suggested load. `↺ DERNIÈRE FOIS` fills in the sets of the previous session
   and never overwrites what you have already entered.
+- **Send your numbers to a friend.** Friends are made by a code, both sides
+  agreeing; an exercise, a session or a recap goes to the friends you pick, as a
+  frozen copy. No feed, no counters, no ranking, no stories.
 - **Your session, in your order.** Reorder the exercises by dragging a handle
   or with arrows; a superset moves as a block.
 - **One movement, one history.** Gym shorthand (`bench`, `RDL`, `OHP`…) shares

@@ -399,5 +399,28 @@ avant de le faire.
   partait dès la première série remplie, par prudence, alors qu'il ne remplace
   jamais une valeur déjà saisie. Il reste tant qu'il y a quelque chose à
   reprendre.
+- **Le partage : on envoie, on ne publie pas** (08/10) : il a demandé « un
+  réseau social quoi », en précisant « agréable et pas malsain ». La décision
+  structurante est de ne **pas** faire de fil. Pas d'écran où défilerait ce que
+  font les autres : on choisit une chose, on choisit à qui, et ça part. Tout le
+  reste en découle — amitié par code et des deux côtés, copie figée plutôt que
+  fenêtre sur le carnet, liste finie par date, aucun compteur sur personne,
+  quatre réactions fermées sans équivalent négatif et sans total, aucun
+  classement. Pas de story : demandé, et de toute façon l'inverse d'« envoyer à
+  quelqu'un ».
+- **Pas de cinquième onglet pour le partage** (08/10) : écart assumé avec « un
+  réseau social », qui aurait sa barre à lui. « Quatre onglets, quatre métiers »
+  (14/09) tient : le partage n'est pas un cinquième métier, c'est une action sur
+  ce qui existe. `↗ PARTAGER` vit donc là où la chose vit (fiche de séance,
+  fiche d'exercice, bas du récap), ce qu'on reçoit rejoint l'écran MESSAGES —
+  même question, « quelqu'un m'a adressé quelque chose », même pastille — et les
+  amis vivent dans la feuille du profil, à côté du coach, qui a la même forme.
+- **Aucun droit d'écriture sur les tables du partage** (08/10) : même
+  raisonnement que `profils` (RLS filtre des lignes, pas des colonnes). « Chacun
+  modifie ses reçus » aurait laissé passer un `update` qui se rend destinataire
+  d'un partage adressé à quelqu'un d'autre. Lire, réagir et ranger passent par
+  des fonctions. Le test RLS a d'ailleurs attrapé un `enable row level security`
+  manquant sur `partages_recus` : sans lui, les policies n'étaient même pas
+  consultées.
 - **Description de l'interface** : [`DESIGN.md`](DESIGN.md), extrait du code le
   18/09. Ce fichier-ci garde les décisions et fait foi en cas d'écart.

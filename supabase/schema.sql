@@ -1917,6 +1917,12 @@ begin
     plafond := 30;
     select count(*) into n from public.messages_support
      where user_id = new.user_id and auteur = 'membre' and cree_le > now() - interval '1 hour';
+  elsif tg_table_name = 'partages' then
+    -- Vingt partages par heure : beaucoup plus qu'un usage normal, beaucoup
+    -- moins qu'un robot. La colonne du proprietaire s'appelle `auteur` ici.
+    plafond := 20;
+    select count(*) into n from public.partages
+     where auteur = new.auteur and cree_le > now() - interval '1 hour';
   elsif tg_table_name = 'messages_coach' then
     plafond := 60;
     select count(*) into n from public.messages_coach
@@ -1942,4 +1948,641 @@ create trigger plafond_messages before insert on public.messages_support
   for each row execute function public.plafond_envois();
 drop trigger if exists plafond_mcoach on public.messages_coach;
 create trigger plafond_mcoach before insert on public.messages_coach
+  for each row execute function public.plafond_envois();
+
+-- ============================================================================
+-- 13. LE PARTAGE ENTRE AMIS
+-- ============================================================================
+-- Un réseau social dans un carnet d'entraînement, c'est le meilleur moyen de
+-- rendre l'entraînement désagréable. Les mécaniques qui rendent un fil
+-- malsain sont connues, et aucune n'est ici :
+--
+--   · pas d'inconnus. On devient amis par un CODE, que son propriétaire donne
+--     à qui il veut, et les DEUX parties agissent — l'un saisit, l'autre
+--     accepte. Aucune recherche par pseudo : un pseudo tapé de travers
+--     désignerait quelqu'un, un code est faux ou juste. Pas de profil public,
+--     pas de suggestions d'amis, pas de « personnes que tu pourrais
+--     connaître » ;
+--   · on ENVOIE, on ne publie pas. Rien ne quitte un carnet tout seul : il
+--     n'existe aucun fil de ce que font tes amis. Tu choisis un exercice, une
+--     séance ou un récap, tu choisis à qui, et tu envoies. Le reste de ton
+--     carnet ne sort jamais ;
+--   · ce qui est envoyé est une COPIE figée (`contenu` jsonb), pas une fenêtre
+--     sur tes données. Corriger ta séance demain ne change pas ce que ton ami
+--     a lu, et aucune policy n'ouvre `seances`, `exercices` ou `series` à un
+--     ami. C'est la seule façon de partager sans percer le carnet ;
+--   · aucun compteur sur personne. Pas de nombre d'amis affiché comme un
+--     score, pas de total de réactions, pas de série de jours. Les réactions
+--     existent par partage, dans une liste fermée, et ne s'additionnent nulle
+--     part ;
+--   · pas de classement. Il n'y a aucune fonction qui trie des gens par
+--     volume, par 1RM ou par assiduité, et il n'en est pas prévu ;
+--   · pas de story : demandé explicitement, et de toute façon c'est l'inverse
+--     de « on envoie à quelqu'un » ;
+--   · ça se retire. L'auteur supprime son partage, le destinataire le range
+--     chez lui, et rompre l'amitié prend effet tout de suite.
+--
+-- Le consentement n'est pas enregistré ici, contrairement au coaching : le
+-- coach LIT ton carnet, c'est un accès qu'il faut pouvoir prouver. Un partage
+-- est ton propre geste sur ta propre donnée, vers quelqu'un que tu as accepté.
+
+-- ------------------------------------------------------------- le code ami
+-- Un code par personne, indépendant du code coach : on peut être l'un, l'autre
+-- ou les deux, et un code qui fuite doit pouvoir être refait sans toucher au
+-- reste.
+alter table public.profils add column if not exists code_ami text;
+
+create unique index if not exists profils_code_ami_unique
+  on public.profils (code_ami) where code_ami is not null;
+
+
+-- -------------------------------------------------------------- les amitiés
+-- Une seule ligne par paire, dans un sens ou dans l'autre : c'est l'index qui
+-- le garantit, pas une règle applicative qu'on pourrait oublier.
+create table if not exists public.liens_ami (
+  id           uuid primary key default gen_random_uuid(),
+  demandeur    uuid not null references auth.users (id) on delete cascade,
+  destinataire uuid not null references auth.users (id) on delete cascade,
+  statut       text not null default 'en_attente',
+  demande_le   timestamptz not null default now(),
+  repondu_le   timestamptz,
+  -- Être son propre ami contournerait la logique des deux parties : la base
+  -- refuse plutôt que l'app.
+  constraint amis_pas_soi_meme check (demandeur <> destinataire)
+);
+
+alter table public.liens_ami drop constraint if exists amis_statut_connu;
+alter table public.liens_ami add  constraint amis_statut_connu
+  check (statut in ('en_attente', 'actif', 'refuse', 'rompu'));
+
+-- `least`/`greatest` rendent la paire non ordonnée : A→B et B→A sont la même
+-- amitié. Sans ça, deux demandes croisées créeraient deux amitiés entre les
+-- mêmes personnes, et rompre l'une laisserait l'autre ouverte.
+create unique index if not exists amis_une_seule_paire
+  on public.liens_ami (least(demandeur, destinataire), greatest(demandeur, destinataire))
+  where statut in ('en_attente', 'actif');
+
+create index if not exists amis_demandeur_idx    on public.liens_ami (demandeur, statut);
+create index if not exists amis_destinataire_idx on public.liens_ami (destinataire, statut);
+
+alter table public.liens_ami enable row level security;
+
+
+-- --------------------------------------------------------------- le verdict
+-- SECURITY DEFINER pour la même raison que `coach_de()` : une policy sur
+-- `liens_ami` qui irait lire `liens_ami` déclenche une récursion que Postgres
+-- refuse. La fonction ne répond que sur l'appelant — impossible de lui
+-- demander si DEUX AUTRES personnes sont amies.
+create or replace function public.ami_de(p_autre uuid)
+returns boolean
+language sql
+security definer
+stable
+set search_path = public
+as $$
+  select exists (
+    select 1 from public.liens_ami
+     where statut = 'actif'
+       and ((demandeur = auth.uid() and destinataire = p_autre)
+         or (destinataire = auth.uid() and demandeur = p_autre))
+  );
+$$;
+revoke all   on function public.ami_de(uuid) from public, anon;
+grant execute on function public.ami_de(uuid) to authenticated;
+
+drop policy if exists "Chacun voit ses amities" on public.liens_ami;
+create policy "Chacun voit ses amities"
+  on public.liens_ami for select
+  using (demandeur = auth.uid() or destinataire = auth.uid());
+
+-- Pas de policy INSERT / UPDATE / DELETE : une amitié naît, est acceptée et se
+-- rompt par des fonctions qui vérifient les deux côtés. RLS filtre des lignes,
+-- pas des colonnes : « chacun modifie ses amitiés » laisserait passer
+-- « update liens_ami set statut = 'actif' » sur une demande qu'on a envoyée.
+revoke all    on public.liens_ami from anon;
+revoke all    on public.liens_ami from authenticated;
+grant  select on public.liens_ami to authenticated;
+
+
+-- -------------------------------------------------------------- les partages
+-- `contenu` est une copie figée de ce qui a été envoyé : un exercice avec ses
+-- séries, une séance, un récap. Sa forme est celle que l'app sait relire, et
+-- elle est bornée — un carnet entier n'a rien à faire dans un partage.
+create table if not exists public.partages (
+  id      uuid primary key default gen_random_uuid(),
+  auteur  uuid not null references auth.users (id) on delete cascade,
+  type    text not null,
+  titre   text not null,
+  contenu jsonb not null default '{}'::jsonb,
+  mot     text,
+  cree_le timestamptz not null default now()
+);
+
+alter table public.partages drop constraint if exists partages_type_connu;
+alter table public.partages add  constraint partages_type_connu
+  check (type in ('exercice', 'seance', 'recap'));
+
+alter table public.partages drop constraint if exists partages_tailles;
+alter table public.partages add  constraint partages_tailles
+  check (length(titre) between 1 and 200
+     and (mot is null or length(mot) <= 280));
+-- La taille du contenu se verifie dans `partager()`, le seul chemin qui ecrit :
+-- un cast jsonb -> text n'est pas immuable, et n'a donc rien a faire dans une
+-- contrainte.
+
+create index if not exists partages_auteur_idx on public.partages (auteur, cree_le desc);
+
+alter table public.partages enable row level security;
+
+
+-- À qui c'est envoyé. Une ligne par destinataire : le même partage peut aller
+-- à trois amis, et chacun le lit, y réagit ou le range chez lui sans que les
+-- autres le sachent.
+create table if not exists public.partages_recus (
+  partage_id   uuid not null references public.partages (id) on delete cascade,
+  destinataire uuid not null references auth.users (id) on delete cascade,
+  lu_le        timestamptz,
+  reaction     text,
+  -- « rangee » et pas « range » : RANGE est un mot-clef Postgres (les fenetres
+  -- l'utilisent), et une colonne qui doit etre citee entre guillemets finit par
+  -- etre citee de travers quelque part.
+  rangee       boolean not null default false,
+  primary key (partage_id, destinataire)
+);
+
+-- Une liste fermée, volontairement courte, et sans équivalent négatif : un
+-- pouce vers le bas sur une série n'apporte rien à personne.
+alter table public.partages_recus drop constraint if exists recus_reaction_connue;
+alter table public.partages_recus add  constraint recus_reaction_connue
+  check (reaction is null or reaction in ('bravo', 'costaud', 'solide', 'vu'));
+
+create index if not exists recus_destinataire_idx
+  on public.partages_recus (destinataire, rangee);
+
+-- Sans cette ligne, `grant select` rend TOUTE la table a n'importe quel
+-- compte connecte : les policies ci-dessous ne sont consultees que si RLS est
+-- active. Elle manquait, et le test RLS l'a vu tout de suite.
+alter table public.partages_recus enable row level security;
+
+
+-- --------------------------------------------------------------- les verdicts
+-- Deux fonctions plutôt que deux policies qui se liraient l'une l'autre :
+-- `partages` a besoin de `partages_recus` pour savoir si l'appelant est
+-- destinataire, et `partages_recus` a besoin de `partages` pour savoir s'il
+-- est l'auteur. Deux policies qui se renvoient la balle, et chacune
+-- déclencherait l'évaluation de l'autre. SECURITY DEFINER coupe la boucle, et
+-- aucune des deux ne répond sur quelqu'un d'autre que l'appelant.
+create or replace function public.destinataire_de(p_partage uuid)
+returns boolean
+language sql
+security definer
+stable
+set search_path = public
+as $$
+  select exists (
+    select 1 from public.partages_recus
+     where partage_id = p_partage and destinataire = auth.uid()
+  );
+$$;
+
+create or replace function public.auteur_de(p_partage uuid)
+returns boolean
+language sql
+security definer
+stable
+set search_path = public
+as $$
+  select exists (
+    select 1 from public.partages where id = p_partage and auteur = auth.uid()
+  );
+$$;
+
+revoke all   on function public.destinataire_de(uuid) from public, anon;
+revoke all   on function public.auteur_de(uuid)       from public, anon;
+grant execute on function public.destinataire_de(uuid) to authenticated;
+grant execute on function public.auteur_de(uuid)       to authenticated;
+
+
+drop policy if exists "Chacun voit les partages qui le concernent" on public.partages;
+create policy "Chacun voit les partages qui le concernent"
+  on public.partages for select
+  using (auteur = auth.uid() or public.destinataire_de(id));
+
+-- Supprimer est le seul droit d'écriture direct : effacer une ligne ne permet
+-- pas d'en changer une colonne, et l'auteur doit pouvoir retirer ce qu'il a
+-- envoyé. Les reçus partent en cascade.
+drop policy if exists "Chacun supprime ses partages" on public.partages;
+create policy "Chacun supprime ses partages"
+  on public.partages for delete using (auteur = auth.uid());
+
+-- Pas de policy INSERT : un partage naît dans `partager()`, qui vérifie que
+-- chaque destinataire est vraiment un ami. Sans ça, n'importe qui pourrait
+-- insérer une ligne dans le reçu de n'importe qui depuis la console du
+-- navigateur.
+revoke all           on public.partages from anon;
+revoke all           on public.partages from authenticated;
+grant  select, delete on public.partages to authenticated;
+
+
+drop policy if exists "Chacun voit ses recus" on public.partages_recus;
+create policy "Chacun voit ses recus"
+  on public.partages_recus for select
+  using (destinataire = auth.uid() or public.auteur_de(partage_id));
+
+-- Pas de policy UPDATE, et ce n'est pas un oubli. RLS filtre des lignes, pas
+-- des colonnes : « chacun modifie ses reçus » laisserait passer
+-- « update partages_recus set partage_id = <un autre> where destinataire =
+-- auth.uid() », et l'appelant deviendrait destinataire d'un partage qui ne lui
+-- était pas adressé. Lire, réagir et ranger passent par des fonctions.
+revoke all    on public.partages_recus from anon;
+revoke all    on public.partages_recus from authenticated;
+grant  select on public.partages_recus to authenticated;
+
+
+-- ============================================================================
+-- Les fonctions du partage
+-- ============================================================================
+
+-- ------------------------------------------------------------ mon code d'ami
+-- Il se fabrique à la première demande, pas à l'inscription : un compte qui ne
+-- partage jamais n'a aucune raison de porter un code.
+--
+-- Même alphabet que le code coach, sans O/0 ni I/1 : ce code se lit à voix
+-- haute et se recopie à la main, c'est là qu'on perd les gens. Et même source
+-- d'aléa : `random()` de Postgres est pseudo-aléatoire, pas cryptographique ;
+-- `gen_random_uuid()` l'est, et un octet modulo 32 reste uniforme.
+create or replace function public.mon_code_ami(p_refaire boolean default false)
+returns text
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_user   uuid := auth.uid();
+  v_code   text;
+  v_octets bytea;
+  v_essais int := 0;
+begin
+  if v_user is null then raise exception 'Aucune session : connexion requise.'; end if;
+
+  -- La ligne de profil nait normalement a la connexion (`toucher_profil`).
+  -- Si elle manque, l'update plus bas ne ferait rien et on rendrait un code
+  -- que personne n'aurait enregistre.
+  insert into public.profils (user_id) values (v_user) on conflict do nothing;
+
+  select code_ami into v_code from public.profils where user_id = v_user;
+  if v_code is not null and not p_refaire then return v_code; end if;
+
+  loop
+    v_essais := v_essais + 1;
+    v_octets := substring(uuid_send(gen_random_uuid()) from 1 for 6)
+             || substring(uuid_send(gen_random_uuid()) from 1 for 6);
+    v_code := (
+      select string_agg(substr('ABCDEFGHJKLMNPQRSTUVWXYZ23456789',
+                               (get_byte(v_octets, k) % 32) + 1, 1), '' order by k)
+      from generate_series(0, 7) k
+    );
+    exit when not exists (select 1 from public.profils where code_ami = v_code);
+    if v_essais > 20 then raise exception 'Impossible de generer un code.'; end if;
+  end loop;
+
+  update public.profils set code_ami = v_code where user_id = v_user;
+  return v_code;
+end;
+$$;
+
+
+-- ------------------------------------------------------------ devenir amis
+-- Un code désigne une personne et une seule. La demande ne s'ouvre que si
+-- l'autre existe, n'est pas soi, et qu'il n'y a pas déjà quelque chose entre
+-- les deux — l'index l'interdit de toute façon, la fonction le dit en français.
+create or replace function public.demander_ami(p_code text)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_user  uuid := auth.uid();
+  v_autre uuid;
+  v_lien  uuid;
+  v_statut text;
+begin
+  if v_user is null then raise exception 'Aucune session : connexion requise.'; end if;
+
+  select user_id into v_autre from public.profils
+   where code_ami = upper(trim(coalesce(p_code, '')));
+
+  if v_autre is null then raise exception 'Code inconnu.'; end if;
+  if v_autre = v_user then raise exception 'Ce code est le tien.'; end if;
+
+  select id, statut into v_lien, v_statut from public.liens_ami
+   where statut in ('en_attente', 'actif')
+     and least(demandeur, destinataire)    = least(v_user, v_autre)
+     and greatest(demandeur, destinataire) = greatest(v_user, v_autre);
+
+  if v_statut = 'actif'      then raise exception 'Vous etes deja amis.'; end if;
+  if v_statut = 'en_attente' then
+    -- Il avait déjà demandé : saisir son code vaut accepter. Deux personnes qui
+    -- s'échangent leurs codes en même temps ne doivent pas rester bloquées.
+    if exists (select 1 from public.liens_ami
+                where id = v_lien and destinataire = v_user) then
+      update public.liens_ami set statut = 'actif', repondu_le = now() where id = v_lien;
+      return jsonb_build_object('lien', v_lien, 'statut', 'actif',
+        'ami', (select pseudo from public.profils where user_id = v_autre));
+    end if;
+    return jsonb_build_object('lien', v_lien, 'statut', 'en_attente',
+      'ami', (select pseudo from public.profils where user_id = v_autre));
+  end if;
+
+  insert into public.liens_ami (demandeur, destinataire)
+  values (v_user, v_autre) returning id into v_lien;
+
+  return jsonb_build_object('lien', v_lien, 'statut', 'en_attente',
+    'ami', (select pseudo from public.profils where user_id = v_autre));
+end;
+$$;
+
+
+-- Accepter ou refuser. Refuser ne supprime pas la ligne : celui qui a demandé
+-- doit voir qu'il a été traité, plutôt que d'attendre indéfiniment.
+create or replace function public.repondre_ami(p_lien uuid, p_accepte boolean)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_user uuid := auth.uid();
+  v_ok   boolean;
+begin
+  if v_user is null then raise exception 'Aucune session : connexion requise.'; end if;
+
+  select true into v_ok from public.liens_ami
+   where id = p_lien and destinataire = v_user and statut = 'en_attente';
+  if v_ok is null then raise exception 'Demande introuvable.'; end if;
+
+  update public.liens_ami
+     set statut = case when p_accepte then 'actif' else 'refuse' end,
+         repondu_le = now()
+   where id = p_lien;
+end;
+$$;
+
+
+-- Rompre, des deux côtés, avec effet immédiat : les policies consultent le
+-- statut à chaque requête, il n'y a rien à invalider. Les partages déjà reçus
+-- restent — ils ont été lus, les effacer réécrirait le passé.
+create or replace function public.rompre_ami(p_lien uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_user uuid := auth.uid();
+  v_ok   boolean;
+begin
+  if v_user is null then raise exception 'Aucune session : connexion requise.'; end if;
+
+  select true into v_ok from public.liens_ami
+   where id = p_lien and (demandeur = v_user or destinataire = v_user)
+     and statut in ('en_attente', 'actif');
+  if v_ok is null then raise exception 'Lien introuvable.'; end if;
+
+  update public.liens_ami set statut = 'rompu', repondu_le = now() where id = p_lien;
+end;
+$$;
+
+
+-- ------------------------------------------------------------------ mes amis
+-- Le pseudo d'un ami ne passe pas par une policy sur `profils` : cette
+-- fonction le rend, pour les amitiés de l'appelant et rien d'autre. Un ami ne
+-- peut donc pas lire la table des profils, même en lecture.
+--
+-- `sens` dit qui attend quoi : 'recue' = c'est à moi de répondre.
+create or replace function public.mes_amis()
+returns table (lien uuid, autre uuid, pseudo text, statut text, sens text, depuis timestamptz)
+language sql
+security definer
+stable
+set search_path = public
+as $$
+  select l.id,
+         case when l.demandeur = auth.uid() then l.destinataire else l.demandeur end,
+         p.pseudo,
+         l.statut,
+         case when l.demandeur = auth.uid() then 'envoyee' else 'recue' end,
+         coalesce(l.repondu_le, l.demande_le)
+    from public.liens_ami l
+    left join public.profils p
+      on p.user_id = case when l.demandeur = auth.uid() then l.destinataire else l.demandeur end
+   where (l.demandeur = auth.uid() or l.destinataire = auth.uid())
+     and l.statut in ('en_attente', 'actif')
+   order by (l.statut = 'en_attente') desc, coalesce(l.repondu_le, l.demande_le) desc;
+$$;
+
+
+-- -------------------------------------------------------------------- envoyer
+-- Le seul chemin par lequel un partage naît. Chaque destinataire est vérifié
+-- comme ami ACTIF au moment de l'envoi : le client ne décide de rien, il
+-- propose une liste. Un id qui n'est pas un ami est ignoré en silence plutôt
+-- que de faire échouer l'envoi aux autres.
+create or replace function public.partager(p_type text, p_titre text, p_contenu jsonb,
+                                           p_mot text, p_amis uuid[])
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_user    uuid := auth.uid();
+  v_partage uuid;
+  v_n       int;
+begin
+  if v_user is null then raise exception 'Aucune session : connexion requise.'; end if;
+  if p_type not in ('exercice', 'seance', 'recap') then
+    raise exception 'Type de partage inconnu.';
+  end if;
+  if coalesce(array_length(p_amis, 1), 0) = 0 then
+    raise exception 'Choisis au moins un ami.';
+  end if;
+  if coalesce(array_length(p_amis, 1), 0) > 50 then
+    raise exception 'Trop de destinataires pour un seul envoi.';
+  end if;
+  -- Un carnet entier n'a rien a faire dans un partage.
+  if length(coalesce(p_contenu, '{}'::jsonb)::text) > 32768 then
+    raise exception 'Ce partage est trop gros.';
+  end if;
+
+  insert into public.partages (auteur, type, titre, contenu, mot)
+  values (v_user, p_type,
+          left(trim(coalesce(p_titre, 'Sans titre')), 200),
+          coalesce(p_contenu, '{}'::jsonb),
+          nullif(left(trim(coalesce(p_mot, '')), 280), ''))
+  returning id into v_partage;
+
+  insert into public.partages_recus (partage_id, destinataire)
+  select v_partage, a
+    from unnest(p_amis) a
+   where public.ami_de(a)
+  on conflict do nothing;
+
+  select count(*) into v_n from public.partages_recus where partage_id = v_partage;
+
+  -- Personne de valide dans la liste : on ne laisse pas un partage orphelin
+  -- que personne ne verra jamais.
+  if v_n = 0 then
+    delete from public.partages where id = v_partage;
+    raise exception 'Aucun de ces amis n est encore actif.';
+  end if;
+
+  return jsonb_build_object('partage', v_partage, 'envoye_a', v_n);
+end;
+$$;
+
+
+-- ------------------------------------------------------------ ce qu'on reçoit
+-- Par ordre d'arrivée, du plus récent au plus ancien, et ça s'arrête. Pas de
+-- tri par popularité, pas de défilement infini : une liste finie qu'on a fini
+-- de lire. Ce qui est rangé ne revient pas.
+create or replace function public.mes_partages_recus(p_limite int default 50)
+returns table (id uuid, type text, titre text, contenu jsonb, mot text,
+               cree_le timestamptz, auteur uuid, pseudo text,
+               lu_le timestamptz, reaction text)
+language sql
+security definer
+stable
+set search_path = public
+as $$
+  select p.id, p.type, p.titre, p.contenu, p.mot, p.cree_le,
+         p.auteur, pr.pseudo, r.lu_le, r.reaction
+    from public.partages_recus r
+    join public.partages p on p.id = r.partage_id
+    left join public.profils pr on pr.user_id = p.auteur
+   where r.destinataire = auth.uid() and not r.rangee
+   order by p.cree_le desc
+   limit greatest(1, least(coalesce(p_limite, 50), 200));
+$$;
+
+
+-- Ce que j'ai envoyé, et ce qu'on m'a répondu. Les réactions sont rendues une
+-- par une, avec le pseudo : un total (« 3 bravos ») ferait un score, et un
+-- score se compare.
+create or replace function public.mes_envois(p_limite int default 30)
+returns table (id uuid, type text, titre text, cree_le timestamptz,
+               envoye_a int, reactions jsonb)
+language sql
+security definer
+stable
+set search_path = public
+as $$
+  select p.id, p.type, p.titre, p.cree_le,
+         (select count(*)::int from public.partages_recus r where r.partage_id = p.id),
+         coalesce((
+           select jsonb_agg(jsonb_build_object('pseudo', pr.pseudo, 'reaction', r.reaction)
+                            order by r.lu_le)
+             from public.partages_recus r
+             left join public.profils pr on pr.user_id = r.destinataire
+            where r.partage_id = p.id and r.reaction is not null
+         ), '[]'::jsonb)
+    from public.partages p
+   where p.auteur = auth.uid()
+   order by p.cree_le desc
+   limit greatest(1, least(coalesce(p_limite, 30), 200));
+$$;
+
+
+-- ------------------------------------------------- lire, réagir, ranger
+-- Trois fonctions plutôt qu'un droit d'UPDATE : chacune n'écrit que la colonne
+-- qu'elle a le droit d'écrire, sur la ligne de l'appelant.
+create or replace function public.marquer_partage_lu(p_partage uuid)
+returns void
+language sql
+security definer
+set search_path = public
+as $$
+  update public.partages_recus set lu_le = coalesce(lu_le, now())
+   where partage_id = p_partage and destinataire = auth.uid();
+$$;
+
+create or replace function public.reagir_partage(p_partage uuid, p_reaction text)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare v_r text := nullif(trim(coalesce(p_reaction, '')), '');
+begin
+  if auth.uid() is null then raise exception 'Aucune session : connexion requise.'; end if;
+  if v_r is not null and v_r not in ('bravo', 'costaud', 'solide', 'vu') then
+    raise exception 'Reaction inconnue.';
+  end if;
+  update public.partages_recus
+     set reaction = v_r, lu_le = coalesce(lu_le, now())
+   where partage_id = p_partage and destinataire = auth.uid();
+end;
+$$;
+
+-- Ranger est chez soi : l'auteur n'en sait rien, et son partage reste pour les
+-- autres destinataires.
+create or replace function public.ranger_partage(p_partage uuid)
+returns void
+language sql
+security definer
+set search_path = public
+as $$
+  update public.partages_recus set rangee = true
+   where partage_id = p_partage and destinataire = auth.uid();
+$$;
+
+
+-- --------------------------------------------------------------- la pastille
+-- Un comptage, jamais le contenu : la pastille de l'en-tête additionne ce qui
+-- attend d'être lu, sans rien télécharger.
+create or replace function public.partages_non_lus()
+returns int
+language sql
+security definer
+stable
+set search_path = public
+as $$
+  select count(*)::int from public.partages_recus
+   where destinataire = auth.uid() and lu_le is null and not rangee;
+$$;
+
+
+revoke all   on function public.mon_code_ami(boolean)            from public, anon;
+revoke all   on function public.demander_ami(text)               from public, anon;
+revoke all   on function public.repondre_ami(uuid, boolean)      from public, anon;
+revoke all   on function public.rompre_ami(uuid)                 from public, anon;
+revoke all   on function public.mes_amis()                       from public, anon;
+revoke all   on function public.partager(text, text, jsonb, text, uuid[]) from public, anon;
+revoke all   on function public.mes_partages_recus(int)       from public, anon;
+revoke all   on function public.mes_envois(int)                  from public, anon;
+revoke all   on function public.marquer_partage_lu(uuid)         from public, anon;
+revoke all   on function public.reagir_partage(uuid, text)       from public, anon;
+revoke all   on function public.ranger_partage(uuid)             from public, anon;
+revoke all   on function public.partages_non_lus()               from public, anon;
+
+grant execute on function public.mon_code_ami(boolean)            to authenticated;
+grant execute on function public.demander_ami(text)               to authenticated;
+grant execute on function public.repondre_ami(uuid, boolean)      to authenticated;
+grant execute on function public.rompre_ami(uuid)                 to authenticated;
+grant execute on function public.mes_amis()                       to authenticated;
+grant execute on function public.partager(text, text, jsonb, text, uuid[]) to authenticated;
+grant execute on function public.mes_partages_recus(int)       to authenticated;
+grant execute on function public.mes_envois(int)                  to authenticated;
+grant execute on function public.marquer_partage_lu(uuid)         to authenticated;
+grant execute on function public.reagir_partage(uuid, text)       to authenticated;
+grant execute on function public.ranger_partage(uuid)             to authenticated;
+grant execute on function public.partages_non_lus()               to authenticated;
+
+
+-- ------------------------------------------------------- le plafond d'envois
+-- Le même garde-fou que pour les retours et les messages : un plafond côté
+-- base, pas côté navigateur. Vingt partages par heure, c'est beaucoup plus
+-- qu'un usage normal et beaucoup moins qu'un robot.
+drop trigger if exists plafond_partages on public.partages;
+create trigger plafond_partages before insert on public.partages
   for each row execute function public.plafond_envois();

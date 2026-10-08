@@ -19,7 +19,7 @@ clearing site data, switching phones, or browsing in a private window.
 logbook opens on any device. The phone keeps its copy either way: the account
 does not replace local storage, it backs it up.
 
-Eleven tables. Five carry the logbook — `seances`, `exercices`, `series`,
+Fourteen tables. Five carry the logbook — `seances`, `exercices`, `series`,
 `exercices_perso`, `consentements` — and no one ever sees another person's row,
 except the coach you opened your logbook to, read-only. The others came later:
 
@@ -36,6 +36,16 @@ except the coach you opened your logbook to, read-only. The others came later:
   messaging. See [Messaging](coach-and-admin.md#messaging).
 - **`notifications_admin`** — what the team should see go by, written only by
   triggers.
+- **`liens_ami`** — who is friends with whom. One row per pair, either way
+  round: the index is on `least`/`greatest` of the two ids, so two crossed
+  requests cannot create two friendships.
+- **`partages`** and **`partages_recus`** — what people send each other, and to
+  whom. The content is a **frozen copy** (`jsonb`): a friend never reads
+  `seances`, `exercices` or `series`, and no policy opens them. Neither table
+  has any direct write right — apart from deleting your own share — because RLS
+  filters rows, not columns: "everyone edits their own received rows" would have
+  allowed an `update` making you the recipient of a share addressed to somebody
+  else. See [Sharing your numbers with friends](features.md).
 
 ### One logbook per account
 

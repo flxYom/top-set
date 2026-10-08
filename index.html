@@ -435,6 +435,144 @@
   .btn-ordre[hidden]{display:none;}
   .btn-ordre:active{border-color:var(--orange);color:var(--orange);}
 
+  /* ---- Le partage entre amis ---------------------------------------------
+     Un registre a part : un partage recu n'est ni une carte d'exercice ni une
+     conversation. Il se lit, on y repond d'un mot, on le range. Rien ici ne
+     compte, ne classe ni ne totalise. */
+  .btn-partage{
+    width:100%;min-height:48px;padding:0 12px;margin-top:8px;
+    background:transparent;border:2.5px dashed var(--line);
+    color:var(--ink);font-family:inherit;
+    font-size:12.5px;font-weight:800;letter-spacing:.05em;cursor:pointer;
+  }
+  .btn-partage:active{border-color:var(--orange);color:var(--orange);}
+
+  .pg-label{
+    font-size:9.5px;font-weight:800;letter-spacing:.11em;color:var(--dim);
+    margin:0 0 8px;
+  }
+  .pg-carte{
+    background:var(--panel);border:2px solid var(--line);
+    padding:12px 12px 10px;margin-bottom:10px;
+  }
+  /* Pas encore lu : un filet orange a gauche, et rien de plus. Un point qui
+     clignote ferait de la lecture une corvee. */
+  .pg-carte.nonlu{border-left:5px solid var(--orange);}
+  .pg-tete{display:flex;align-items:center;gap:9px;margin-bottom:9px;}
+  .pg-avatar{
+    flex:none;width:34px;height:34px;border-radius:9px;
+    background:var(--orange);color:#0d0c0a;
+    display:flex;align-items:center;justify-content:center;
+    font-size:15px;font-weight:800;text-transform:uppercase;
+  }
+  .pg-qui{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;}
+  .pg-qui b{font-size:14px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .pg-qui span{font-size:10.5px;font-weight:700;color:var(--dim);}
+  /* Sa zone d'appui deborde de ses bords : 40 px tiennent dans l'en-tete sans
+     ecraser le pseudo, 44 px se touchent. */
+  .pg-ranger{
+    position:relative;flex:none;width:40px;height:40px;
+    background:transparent;border:1.5px solid var(--line);
+    color:var(--dim);font-family:inherit;font-size:18px;line-height:1;cursor:pointer;
+  }
+  .pg-ranger::after{content:'';position:absolute;inset:-3px;}
+  .pg-ranger:active{border-color:var(--orange);color:var(--orange);}
+  .pg-titre{margin:0 0 4px;font-size:16px;font-weight:800;line-height:1.2;}
+  .pg-mot{
+    margin:0 0 9px;font-size:12.5px;line-height:1.45;color:var(--ink);
+    border-left:3px solid var(--yellow);padding-left:9px;
+  }
+  .pg-sous{font-size:11px;font-weight:700;letter-spacing:.04em;color:var(--dim);margin-bottom:9px;}
+
+  .pg-chiffres{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:9px;}
+  .pg-chiffre{
+    flex:1 1 92px;min-width:0;
+    display:flex;flex-direction:column;gap:2px;
+    background:var(--panel2);border:1.5px solid var(--line);padding:7px 8px;
+    font-size:8.5px;font-weight:800;letter-spacing:.08em;color:var(--dim);
+    text-transform:uppercase;
+  }
+  .pg-chiffre b{font-size:15px;letter-spacing:0;color:var(--ink);text-transform:none;}
+
+  .pg-jour,.pg-exo{
+    display:flex;flex-direction:column;gap:4px;
+    padding:7px 0;border-top:1px solid var(--line);
+  }
+  .pg-jour-date,.pg-exo-groupe{
+    font-size:9px;font-weight:800;letter-spacing:.09em;color:var(--dim);text-transform:uppercase;
+  }
+  .pg-exo-nom{font-size:13.5px;font-weight:800;}
+  .pg-series{display:flex;flex-wrap:wrap;gap:5px;}
+  .pg-serie{
+    background:var(--panel2);border:1px solid var(--line);
+    padding:4px 7px;font-size:11.5px;font-weight:800;
+    font-variant-numeric:tabular-nums;white-space:nowrap;
+  }
+  .pg-serie.top{border-color:var(--yellow);color:var(--yellow);}
+  .pg-serie.echauffement{border-style:dashed;color:var(--dim);}
+  .pg-groupe{
+    display:flex;align-items:center;gap:8px;
+    padding:6px 0;border-top:1px solid var(--line);
+    font-size:12.5px;font-weight:700;
+  }
+  .pg-groupe b{margin-left:auto;font-variant-numeric:tabular-nums;}
+  .pg-sw{flex:none;width:12px;height:12px;border-radius:3px;}
+
+  /* Quatre mots, aucun equivalent negatif, et aucun total : une reaction va a
+     ce partage-la et ne s'additionne nulle part. */
+  /* Une grille de quatre, pas un flex qui enveloppe : a 320 px le quatrieme
+     mot passait a la ligne et s'etirait sur toute la largeur, comme s'il
+     comptait plus que les autres. */
+  .pg-reactions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;margin-top:10px;}
+  .pg-reaction{
+    min-width:0;min-height:44px;padding:0 3px;
+    background:var(--panel2);border:1.5px solid var(--line);
+    color:var(--dim);font-family:inherit;
+    font-size:10px;font-weight:800;letter-spacing:.03em;cursor:pointer;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  }
+  .pg-reaction.actif{border-color:var(--orange);color:var(--orange);}
+  .pg-reaction:active{border-color:var(--orange);}
+
+  /* La feuille d'envoi */
+  .pg-quoi{
+    background:var(--panel2);border:1.5px solid var(--line);
+    padding:10px 11px;margin-bottom:12px;
+    font-size:12.5px;font-weight:800;line-height:1.35;
+  }
+  .pg-ami{
+    display:flex;align-items:center;gap:10px;
+    min-height:52px;padding:6px 10px;margin-bottom:7px;
+    background:var(--panel2);border:1.5px solid var(--line);
+    font-size:13.5px;font-weight:700;cursor:pointer;
+  }
+  .pg-ami input{flex:none;width:22px;height:22px;accent-color:var(--orange);}
+  .pg-ami .pg-avatar{width:30px;height:30px;font-size:13px;}
+
+  /* Mes amis, dans la feuille du profil */
+  .pg-demande{
+    display:flex;flex-direction:column;gap:7px;
+    background:var(--panel2);border:2px solid var(--orange);
+    padding:11px;margin-bottom:9px;font-size:13px;font-weight:700;
+  }
+  .pg-demande .btn-sheet{margin:0;}
+  .pg-ligne{
+    display:flex;align-items:center;gap:10px;
+    min-height:48px;padding:6px 11px;margin-bottom:7px;
+    background:var(--panel2);border:1.5px solid var(--line);
+    font-size:13.5px;font-weight:700;
+  }
+  .pg-ligne > span{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;
+    overflow:hidden;text-overflow:ellipsis;}
+  .pg-ligne i{font-style:normal;font-size:8.5px;font-weight:800;letter-spacing:.09em;color:var(--dim);}
+  .pg-rompre{
+    flex:none;min-height:36px;padding:0 10px;
+    background:transparent;border:1.5px solid var(--line);
+    color:var(--dim);font-family:inherit;
+    font-size:10px;font-weight:800;letter-spacing:.06em;cursor:pointer;
+  }
+  .pg-rompre:active{border-color:var(--orange);color:var(--orange);}
+
   /* La liste de l'ordre. La poignee est le seul endroit ou le doigt prend la
      ligne : partout ailleurs, le geste vertical fait defiler la feuille. */
   .ordre-liste{display:flex;flex-direction:column;gap:8px;margin:0 0 12px;padding:0;list-style:none;}
@@ -2277,6 +2415,16 @@
   }
   .ordre-ligne.glisse{border-color:var(--trait2);border-left-color:var(--orange);}
   .ordre-fleche{border:1px solid var(--trait);border-radius:var(--r-s);background:var(--s2);}
+  .btn-partage{border:1px dashed var(--trait2);border-radius:var(--r-m);background:transparent;color:var(--ink);}
+  .pg-carte{border:1px solid var(--trait);border-radius:var(--r-l);background:var(--s1);box-shadow:var(--relief);}
+  .pg-carte.nonlu{border-left:4px solid var(--orange);}
+  .pg-chiffre,.pg-serie,.pg-quoi,.pg-ami,.pg-ligne{
+    border:1px solid var(--trait);border-radius:var(--r-s);background:var(--s2);
+  }
+  .pg-demande{border:1px solid rgba(255,92,56,.5);border-radius:var(--r-m);background:var(--s2);}
+  .pg-reaction,.pg-ranger,.pg-rompre{border:1px solid var(--trait);border-radius:var(--r-s);background:var(--s2);}
+  .pg-reaction.actif{border-color:var(--orange);}
+  .pg-jour,.pg-exo,.pg-groupe{border-top:1px solid var(--trait);}
   .btn-retour{border-radius:999px;padding-left:14px;padding-right:16px;}
   .btn-sheet.danger{border-color:rgba(255,92,56,.5);}
   .segmented{background:var(--s1);border:1px solid var(--trait);border-radius:var(--r-m);padding:4px;gap:4px;}
@@ -2602,6 +2750,7 @@
   /* 11 px au plus petit : un libelle qu'on plisse les yeux pour lire en
      seance ne sert a rien. */
   .brand-mark .wm-app,.ex-groupe-chip,.ex-prev-tete,.ex-cible-tag,.series-tete,.ordre-nom b,
+  .pg-label,.pg-chiffre,.pg-reaction,.pg-jour-date,.pg-exo-groupe,.pg-ligne i,.pg-rompre,
   .col-prec-lien,.seance-creer-label,.cal-jour,.cal-entete,
   .stat-label,.fiche-exo-groupe,.exo-groupe,.exo-bloc-titre,.volume-label,.heat-title,
   .muscle-title,.muscle-note,.recap-section-title,.recap-freq,.bilan-tag,.bilan-bloc-tete,
@@ -2637,6 +2786,11 @@
     .ordre-ligne{grid-template-columns:32px minmax(0,1fr) auto;gap:6px;}
     .ordre-poignee{font-size:17px;}
     .ordre-fleche{width:37px;}
+  }
+  /* Petit telephone : deux par deux. Quatre mots sur une rangee de 264 px
+     coupaient « COSTAUD », et un mot coupe n'est plus un mot. */
+  @media (max-width:360px){
+    .pg-reactions{grid-template-columns:repeat(2,minmax(0,1fr));}
   }
 
   /* ---- Braise : le fond anime de l accueil et du bilan (18/09/2026) -------- */
@@ -3056,6 +3210,7 @@
     <div id="recapHeatmap"></div>
     <div id="recapMuscle"></div>
     <div class="recap-groups" id="recapGroups"></div>
+    <button type="button" class="btn-partage" id="recapPartager">↗ PARTAGER CE RÉCAP</button>
   </section>
 
   <section class="view" id="view-apprendre" hidden>
@@ -3090,6 +3245,10 @@
       <h2 id="messagesTitre">MESSAGES</h2>
       <button type="button" class="icon-btn" id="messagesRafraichir" aria-label="Rafraîchir">&#8635;</button>
     </div>
+    <!-- Ce que des amis ont envoyé, avant les conversations : c'est la même
+         question — quelqu'un m'a adressé quelque chose. Une liste finie, du
+         plus récent au plus ancien, jamais un fil de ce que font les autres. -->
+    <div id="partagesRecus" hidden></div>
     <div id="messagesListe"></div>
     <div id="conv" hidden>
       <p class="conv-qui" id="convQui"></p>
@@ -3216,6 +3375,27 @@
   </div>
 </div>
 
+<!-- Envoyer. On choisit quoi, on choisit à qui, et rien ne part avant. -->
+<div class="sheet" id="partageSheet" hidden>
+  <div class="sheet-card" role="dialog" aria-modal="true" aria-labelledby="partageTitre">
+    <div class="sheet-head">
+      <h2 id="partageTitre">ENVOYER À UN AMI</h2>
+      <button type="button" class="icon-btn" id="partageClose" aria-label="Fermer">×</button>
+    </div>
+    <div class="pg-quoi" id="partageQuoi">—</div>
+    <label class="sheet-label pseudo-label" for="partageMot">UN MOT, SI TU VEUX</label>
+    <input type="text" id="partageMot" class="sheet-input" maxlength="280"
+           placeholder="PR aujourd'hui…" autocomplete="off" aria-label="Un mot pour accompagner">
+    <div class="sheet-label espace">À QUI</div>
+    <div id="partageAmis"></div>
+    <button type="button" class="btn-sheet primary" id="partageEnvoyer" hidden>ENVOYER</button>
+    <p class="sheet-note">
+      Une copie figée part chez les amis que tu coches, et rien d'autre de ton
+      carnet. Corriger ta séance demain ne changera pas ce qu'ils ont lu.
+    </p>
+  </div>
+</div>
+
 <div class="sheet" id="profilSheet" hidden>
   <div class="sheet-card" role="dialog" aria-modal="true" aria-labelledby="profilTitre">
     <div class="sheet-head">
@@ -3264,6 +3444,26 @@
         <input type="text" id="compteMonPseudo" class="sheet-input" placeholder="ton pseudo" autocomplete="nickname" maxlength="24" aria-label="Ton pseudo">
         <button type="button" class="btn-sheet" id="comptePseudoOk">ENREGISTRER LE PSEUDO</button>
         <button type="button" class="btn-sheet" id="compteMigrer" hidden></button>
+
+        <div class="sheet-label espace">MES AMIS</div>
+        <div class="coach-code" id="amisCode">—</div>
+        <p class="coach-code-aide">
+          Ton code d'ami. Donne-le à quelqu'un de ta salle : il le saisit de son
+          côté, tu acceptes, et vous pourrez vous envoyer des exercices, des
+          séances et des récaps. Personne ne peut te trouver autrement.
+        </p>
+        <input type="text" id="amisSaisie" class="sheet-input" placeholder="CODE D'UN AMI"
+               maxlength="8" autocomplete="off" autocapitalize="characters"
+               spellcheck="false" aria-label="Code d'un ami">
+        <button type="button" class="btn-sheet" id="amisDemander">DEMANDER CET AMI</button>
+        <div id="amisListe"></div>
+        <div class="sheet-msg" id="amisMsg" hidden></div>
+        <button type="button" class="btn-sheet" id="amisRefaire">REFAIRE MON CODE</button>
+        <p class="sheet-note">
+          Un ami ne voit rien de ton carnet : il voit ce que tu lui envoies, et
+          c'est tout. Retirer quelqu'un prend effet tout de suite.
+        </p>
+
         <div class="sheet-label espace">MON COACH</div>
         <div id="monCoachEtat"></div>
         <div id="monCoachSaisie">
