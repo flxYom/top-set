@@ -71,6 +71,14 @@ chaîne : depuis la séance d'avant, sa propre date mène plus loin, mais le ret
 vise toujours le point de départ. Elle se cache dans les autres onglets et
 disparaît quand on revient au jour de départ, par elle ou par le calendrier.
 Pour un exercice sans historique, la colonne n'apparaît pas (`.sans-prec`).
+
+`↺ DERNIÈRE FOIS`, à côté de `+ SÉRIE`, remplit les séries de ce jour-là. Il
+**reste** tant qu'il y a quelque chose à reprendre, et ne part que quand il n'y
+a plus rien (`resteAReprendre`). Il disparaissait dès la première ligne remplie,
+alors qu'il n'écrase jamais une valeur déjà saisie : c'est justement à la
+troisième série qu'on veut encore retrouver celles de la dernière fois. Les
+chiffres de la colonne ont aussi perdu leur voile (`opacity:.8`) — seuls les
+tirets des séries que la dernière fois ne comptait pas restent effacés.
 Une série **faite** perd ses cadres, sa ligne se teinte de vert — on voit où on
 en est sans lire les coches une à une, comme chez Hevy — et elle reste
 modifiable d'un appui.
@@ -164,6 +172,22 @@ l'exercice sont dans le menu `⋯`. La carte est un conteneur (`container-type: 
 utiles — petit téléphone, superset sur un écran de 360 px — la colonne de la dernière fois
 cède sa place aux chiffres du jour, et la ligne *Dernière fois* liste alors les
 séries précédentes.
+
+**Changer l'ordre des exercices** (8 octobre 2026). Sous les suggestions,
+`⇅ CHANGER L'ORDRE DES EXERCICES` — à partir de deux exercices — ouvre une
+liste courte : une ligne par exercice, son groupe en couleur, son nombre de
+séries notées. On la glisse par la **poignée** (`⠿`), ou on monte et descend
+avec les **flèches** ; chaque déplacement s'écrit tout de suite, il n'y a pas
+d'ordre provisoire à valider. Reprendre une séance ne veut pas dire la refaire
+dans le même ordre : la machine est prise, ou on n'a plus de jus pour commencer
+par les jambes.
+
+Un **superset** tient sur une seule ligne et se déplace d'un bloc — ses membres
+doivent rester côte à côte dans `day.exercises`, sinon le bloc n'existe plus.
+Le geste vit dans une feuille et pas sur la carte elle-même : les cartes sont
+pleines de champs, et un glissement vertical dessus se confond avec le
+défilement. Dans la liste, seule la poignée prend le doigt (`touch-action:none`)
+— partout ailleurs, la feuille défile.
 
 **Duplication de série.** `+ SÉRIE` recopie la précédente : poids, reps, RPE,
 repos. Seul `fait` repart à zéro, et le commentaire ne se recopie pas. Sur cinq
@@ -385,10 +409,36 @@ l'en-tête, donc il ne s'affichait plus du tout.
 **Les abréviations de salle.** `RDL`, `OHP`, `bench`, `deadlift`, `BSS`… :
 une quarantaine d'abréviations et de noms anglais pointent vers un nom de la
 base (`SYNONYMES`). Aucun rapprochement automatique ne pouvait les trouver —
-« RDL » et « Soulevé de terre roumain » n'ont pas une lettre en commun. Dès la
-frappe, la carte propose le nom entier ; accepter **renomme** l'exercice et
-garde l'abréviation **rattachée** au vrai nom, pour la prochaine fois. Rien
-n'est décidé sans l'utilisateur : la table ne sert qu'à proposer.
+« RDL » et « Soulevé de terre roumain » n'ont pas une lettre en commun.
+
+Depuis le 8 octobre 2026, le dictionnaire **tranche tout seul** : écrire
+« bench » un jour et « Développé couché » le lendemain donne un seul historique,
+sans rien avoir à déclarer. Avant, il fallait accepter la proposition au moment
+exact de la frappe ; passé ce moment, le nom était retenu tel quel et la
+question ne revenait jamais — deux exercices pour un seul mouvement, sans que
+rien ne le dise. La carte **annonce** maintenant le rapprochement (« Compté avec
+Développé couché ») plutôt que de le demander, et laisse deux sorties :
+`RENOMMER EN DÉVELOPPÉ COUCHÉ`, ou `NON, C'EST UN AUTRE EXERCICE`.
+
+Sa décision passe devant le dictionnaire, dans les deux sens. Séparer deux noms
+**se note** (`seul: true` dans `topset_custom_exercises`) : sans ce drapeau,
+rien ne distinguait « il a tranché » de « il n'a rien dit », et le dictionnaire
+aurait recollé à la frappe suivante ce qu'il venait de séparer.
+
+**Fusionner deux exercices après coup.** Dans le menu `⋯` de la carte,
+`⇄ C'EST LE MÊME EXERCICE QUE…` ouvre la liste des exercices et rattache les
+deux noms : un seul historique, records et récap compris. Quand c'est déjà fait,
+le menu le dit — `⇄ RATTACHÉ À « DÉVELOPPÉ COUCHÉ »` — et la feuille propose de
+`LES SÉPARER`. C'est le même geste qu'à la frappe, mais disponible aussi
+longtemps que l'exercice existe : une faute de nom ne coupe plus l'historique
+pour de bon. « Développé haltères » et « bench haltère » ne sont dans aucun
+dictionnaire ; c'est par là qu'on les réunit.
+
+**Aucune chaîne d'alias.** Rattacher un nom à un nom déjà rattaché s'arrêtait à
+la première étape : `bench haltère` → `bench` → `Développé couché` ne résolvait
+qu'un cran, et l'historique restait coupé en deux sans rien dire. `definirAlias`
+résout donc la cible avant de l'écrire, et la proposition annonce la
+**destination finale**, jamais l'étape intermédiaire.
 
 **Récap.** Volume total (poids × répétitions, additionné), calendrier des séances,
 records par exercice et répartition par groupe musculaire — sur la semaine, le
@@ -397,13 +447,11 @@ groupe noté sans précision allume toutes ses zones, plus pâles. Sous chaque
 groupe de la légende, le détail par muscle ; chaque ligne d'exercice porte son
 sous-groupe.
 
-**Trois filtres dans le CARNET.** *Prévues* — ce qui reste à faire : les séances
-préparées mais pas loguées, celle du jour, celles à venir, triées du plus ancien
-au plus récent pour qu'une séance sautée remonte. C'est là que vit *Créer ma
-séance*. *Faites* — ce qui est fait, du plus récent au plus ancien, groupé par
-mois. *Toutes* montre les deux, à venir d'abord, chaque bloc annoncé par son
-titre. La frontière est le fait de l'avoir loguée, pas la date seule : une séance
-loguée aujourd'hui reste dans *Prévues* jusqu'au lendemain.
+**Le carnet n'a plus de filtres** (20/09/2026). `TOUTES / PRÉVUES / FAITES` est
+parti : deux jeux de boutons se disputaient le même écran, et rien ne disait
+lequel agissait sur quoi. `JOUR / SEMAINE / MOIS` commande le calendrier **et**
+la liste en dessous, qui montre exactement la période affichée ; le badge
+`PRÉVUE` sur la carte dit le reste.
 
 **Graphique de progression** par exercice, tracé depuis ton propre historique.
 

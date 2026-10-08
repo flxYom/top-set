@@ -375,5 +375,29 @@ avant de le faire.
 - **Un réglage n'efface jamais une donnée** (20/09) : éteindre le RPE range sa
   colonne, ne touche pas aux valeurs déjà notées, qui repartent dans les exports
   et reviennent si on la rallume.
+- **L'ordre des exercices se change dans une feuille, pas sur la carte**
+  (08/10) : il a demandé « swiper les exercices ». Une carte est pleine de
+  champs, et un glissement vertical dessus se confond avec le défilement — le
+  geste aurait été raté une fois sur deux, les doigts gras, en salle. La feuille
+  montre une ligne par exercice, prise par une poignée (`touch-action:none`), et
+  garde des **flèches** à côté : un geste raté ne doit pas empêcher de ranger sa
+  séance, et les flèches marchent au clavier. Un superset tient une seule ligne
+  et se déplace d'un bloc : ses membres doivent rester contigus, sinon le bloc
+  n'existe plus. Écrit à chaque déplacement, sans état provisoire à valider.
+- **La fusion de deux exercices vit dans le menu de la carte** (08/10) : la
+  question « c'est le même exercice ? » ne se posait qu'à la frappe, une fois.
+  Passé ce moment, un nom mal tapé coupait l'historique pour de bon. Elle vit
+  maintenant dans le menu `⋯`, qui dit aussi l'état (`⇄ RATTACHÉ À « … »`) :
+  on lit où on en est sans rien ouvrir.
+- **Le dictionnaire des abréviations tranche, sa décision passe devant** (08/10)
+  : écart assumé avec la règle du 13/09 « la table ne sert qu'à proposer ».
+  Proposer au seul instant de la frappe laissait deux exercices pour un
+  mouvement, sans que rien ne le dise. L'app **annonce** donc le rapprochement
+  au lieu de le demander, et toute décision de l'utilisateur — rattacher comme
+  séparer — est écrite (`seul: true`) et l'emporte ensuite sur le dictionnaire.
+- **Un bouton qui n'écrase rien ne disparaît pas** (08/10) : `↺ DERNIÈRE FOIS`
+  partait dès la première série remplie, par prudence, alors qu'il ne remplace
+  jamais une valeur déjà saisie. Il reste tant qu'il y a quelque chose à
+  reprendre.
 - **Description de l'interface** : [`DESIGN.md`](DESIGN.md), extrait du code le
   18/09. Ce fichier-ci garde les décisions et fait foi en cas d'écart.
