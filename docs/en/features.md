@@ -66,6 +66,12 @@ round trip, not a chain: from the previous session its own date leads further
 back, but the return always targets the starting point. It hides on other tabs
 and goes away once you are back on the starting day, through it or the
 calendar. For an exercise with no history the column is not shown (`.sans-prec`).
+`↺ DERNIÈRE FOIS`, next to `+ SÉRIE`, fills in that day's sets. It **stays** as
+long as something is left to take, and leaves only when nothing is
+(`resteAReprendre`). It used to go away at the first filled row, although it
+never overwrites a value already entered: the third set is exactly where you
+still want last time's numbers. The column's figures also lost their veil
+(`opacity:.8`) — only the dashes for sets last time did not include stay faded.
 A **done** set loses its borders and its row turns faintly green — you see where
 you are without reading every check, as in Hevy — and one tap still edits it.
 
@@ -151,6 +157,20 @@ logging action, not a setting; timed mode and delete live in the `⋯` menu. The
 (`container-type: inline-size`): under 310 px of usable width — small phone,
 superset on a 360 px screen — the last-time column gives way to today's numbers, and
 the *Dernière fois* line lists last time's sets instead.
+
+**Reordering exercises** (8 October 2026). Under the suggestions,
+`⇅ CHANGER L'ORDRE DES EXERCICES` — from two exercises up — opens a short list:
+one row per exercise, its group in colour, how many sets are logged. Drag it by
+the **handle** (`⠿`), or move it with the **arrows**; every move is written
+immediately, there is no draft order to confirm. Redoing a session does not mean
+redoing it in the same order: the rack is taken, or there is nothing left in the
+legs to start with them.
+
+A **superset** holds one row and moves as a block — its members must stay side
+by side in `day.exercises`, or the block no longer exists. The gesture lives in
+a sheet rather than on the card itself: cards are full of fields, and a vertical
+drag on one reads as scrolling. In the list only the handle takes the finger
+(`touch-action:none`) — everywhere else the sheet scrolls.
 
 **Set duplication.** `+ SÉRIE` copies the previous set — weight, reps, RPE, rest.
 Only `fait` resets, and the comment is not copied. Five identical sets means
@@ -359,10 +379,35 @@ had moved into the header, so it no longer appeared at all.
 **Gym shorthand.** `RDL`, `OHP`, `bench`, `deadlift`, `BSS`…: some forty
 abbreviations and English names point at a name in the built-in list
 (`SYNONYMES`). No fuzzy match could find them — « RDL » and « Soulevé de terre
-roumain » share no letter. While typing, the card offers the full name;
-accepting **renames** the exercise and keeps the abbreviation **linked** to the
-real name for next time. Nothing is decided without the user: the table only
-suggests.
+roumain » share no letter.
+
+Since 8 October 2026 the dictionary **settles it by itself**: typing « bench »
+one day and « Développé couché » the next gives one single history, with nothing
+to declare. Before, you had to accept the offer at the exact moment of typing;
+past that moment the name was kept as such and the question never came back —
+two exercises for one movement, with nothing saying so. The card now **states**
+the link (« Compté avec Développé couché ») instead of asking, and leaves two
+ways out: `RENOMMER EN DÉVELOPPÉ COUCHÉ`, or `NON, C'EST UN AUTRE EXERCICE`.
+
+The user's decision wins over the dictionary, both ways. Separating two names
+**is recorded** (`seul: true` in `topset_custom_exercises`): without that flag
+nothing told « he decided » apart from « he said nothing », and the dictionary
+would have re-joined on the next keystroke what he had just separated.
+
+**Merging two exercises after the fact.** In the card's `⋯` menu,
+`⇄ C'EST LE MÊME EXERCICE QUE…` opens the exercise list and links the two names:
+one history, records and recap included. When it is already done the menu says
+so — `⇄ RATTACHÉ À « DÉVELOPPÉ COUCHÉ »` — and the sheet offers to
+`LES SÉPARER`. Same gesture as while typing, but available as long as the
+exercise exists: a typo no longer cuts the history for good. « Développé
+haltères » and « bench haltère » are in no dictionary; this is how you join
+them.
+
+**No alias chains.** Linking a name to an already-linked name stopped at the
+first step: `bench haltère` → `bench` → `Développé couché` resolved one notch
+only, and the history stayed split without a word. `definirAlias` therefore
+resolves the target before writing it, and the offer announces the **final
+destination**, never the intermediate step.
 
 **Recap body map** (18 September 2026): front and back, one zone per muscle; a
 group logged with no detail lights all its zones, paler. Under each group in the

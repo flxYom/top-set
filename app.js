@@ -235,9 +235,11 @@
   function synonymeDe(saisi){
     var cible = SYNONYMES[cleSynonyme(saisi)];
     if (!cible) return null;
-    // Deja le bon nom, ou un nom que l'utilisateur s'est approprie : rien a dire.
+    // Deja le bon nom : rien a dire.
     if (cleExo(cible) === cleExo(saisi)) return null;
-    if (CUSTOM_PAR_CLE[cleExo(saisi)]) return null;
+    // Il a tranche, dans un sens ou dans l'autre : plus de question.
+    var info = CUSTOM_PAR_CLE[cleExo(saisi)];
+    if (info && (info.alias || info.seul)) return null;
     return cible;
   }
 
@@ -265,6 +267,10 @@
     // Le sous-groupe n'existe que s'il a ete choisi a la main : '' veut dire
     // « le groupe seul, sans precision », absent veut dire « deduit du nom ».
     if (valeur && typeof valeur.sousGroupe === 'string') info.sousGroupe = sousGroupeSur(valeur.sousGroupe);
+    // « seul » : il a dit que ce nom n'est PAS le meme exercice qu'un autre.
+    // Sans ce drapeau, rien ne distingue « il a tranche » de « il n'a rien
+    // dit », et l'app rapprocherait sans fin ce qu'il a deja separe.
+    if (valeur && valeur.seul) info.seul = true;
     return info;
   }
   function sousGroupeSur(s){ return PARENT_SOUS[s] ? s : ''; }
@@ -278,7 +284,8 @@
     Object.keys(customExercises).forEach(function(k){
       var info = infoExo(customExercises[k], k);
       EXERCISE_DB_LOWER[k.toLowerCase()] = info.groupe;
-      CUSTOM_PAR_CLE[cleExo(k)] = { nom:info.nom || k, groupe:info.groupe, alias:info.alias, sousGroupe:info.sousGroupe };
+      CUSTOM_PAR_CLE[cleExo(k)] = { nom:info.nom || k, groupe:info.groupe, alias:info.alias,
+                                    seul:!!info.seul, sousGroupe:info.sousGroupe };
     });
   }
   rebuildLower();
@@ -298,6 +305,7 @@
     // Changer le groupe d'un exercice ne doit pas effacer son rattachement.
     customExercises[clean] = { nom:clean, groupe:groupe || 'Autre',
                                alias:(ancien && ancien.alias) || null };
+    if (ancien && ancien.seul) customExercises[clean].seul = true;
     if (ancien && typeof ancien.sousGroupe === 'string') customExercises[clean].sousGroupe = ancien.sousGroupe;
     saveCustom();
     rebuildLower();
@@ -308,10 +316,18 @@
   // « dead » est le souleve de terre de son auteur, pas celui d'un
   // dictionnaire : le rattachement est une decision de l'utilisateur, jamais
   // une deduction de l'app.
-  function definirAlias(nom, cleCible){
+  function definirAlias(nom, cleCible, seul){
     var clean = String(nom || '').trim();
     if (!clean) return;
     var cle = cleExo(clean);
+    // Un alias ne pointe jamais vers un alias. Si la cible est elle-meme
+    // resolue ailleurs, c'est la destination finale qu'on note : sans ca,
+    // « bench haltere » → « bench » → « developpe couche » s'arreterait a la
+    // premiere etape, et l'historique resterait coupe en deux.
+    if (cleCible){
+      var fin = cleCanonique(cleCible);
+      if (fin) cleCible = fin;
+    }
     if (cleCible && cleCible === cle) return;   // rien ne se rattache a soi
     var ancien = CUSTOM_PAR_CLE[cle];
     var groupe = (ancien && ancien.groupe) || 'Autre';
@@ -320,6 +336,9 @@
       if (g) groupe = g;
     }
     customExercises[clean] = { nom:clean, groupe:groupe, alias:cleCible || null };
+    // Detacher se note : sinon le dictionnaire des abreviations le
+    // recollerait a la frappe suivante, et il aurait dit non pour rien.
+    if (!cleCible && seul) customExercises[clean].seul = true;
     if (ancien && typeof ancien.sousGroupe === 'string') customExercises[clean].sousGroupe = ancien.sousGroupe;
     saveCustom();
     rebuildLower();
@@ -890,24 +909,41 @@
   // « bench » sont le meme mouvement, et doivent le rester d'un jour a l'autre.
   function cleExo(nom){ return normalizeName(nom).toLowerCase(); }
 
+  // La cle visee par le dictionnaire des abreviations, ou null. « bench » et
+  // « developpe couche » sont le meme mouvement : l'historique doit le savoir
+  // sans qu'on ait rien a declarer.
+  function cleSynonymeDe(nom){
+    var cible = SYNONYMES[cleSynonyme(nom)];
+    return cible ? cleExo(cible) : null;
+  }
   // Un alias ne pointe jamais vers un alias — la base l'interdit et l'app ne
   // le propose pas — donc une seule etape de resolution suffit, sans boucle.
+  //
+  // Trois cas, dans cet ordre : ce qu'il a rattache a la main, ce qu'il a
+  // explicitement separe, puis ce que le dictionnaire sait. Sa decision passe
+  // toujours devant le dictionnaire, dans les deux sens.
   function cleCanonique(nom){
     var k = cleExo(nom);
     var info = CUSTOM_PAR_CLE[k];
-    return (info && info.alias) ? info.alias : k;
+    if (info && info.alias) return info.alias;
+    if (info && info.seul) return k;
+    var syn = cleSynonymeDe(nom);
+    if (!syn || syn === k) return k;
+    // Le dictionnaire vise un nom qu'il a lui-meme rattache ailleurs : on
+    // suit son choix jusqu'au bout.
+    var sur = CUSTOM_PAR_CLE[syn];
+    return (sur && sur.alias) ? sur.alias : syn;
   }
   // Nom a afficher pour un exercice, alias resolu. Sert de cle de regroupement
   // dans le recap : deux noms rattaches produisent la meme chaine, donc une
   // seule ligne.
   function nomCanonique(nom){
-    var k = cleExo(nom);
-    var info = CUSTOM_PAR_CLE[k];
-    if (!info || !info.alias) return normalizeName(nom);
-    var cible = CUSTOM_PAR_CLE[info.alias];
+    var cle = cleCanonique(nom);
+    if (cle === cleExo(nom)) return normalizeName(nom);
+    var cible = CUSTOM_PAR_CLE[cle];
     if (cible && cible.nom) return normalizeName(cible.nom);
-    var dansBase = Object.keys(EXERCISE_DB).filter(function(n){ return cleExo(n) === info.alias; })[0];
-    return dansBase || info.alias;
+    var dansBase = Object.keys(EXERCISE_DB).filter(function(n){ return cleExo(n) === cle; })[0];
+    return dansBase || cle;
   }
 
   // Rattacher, c'est dire « c'est le meme exercice ». Le groupe musculaire
@@ -931,7 +967,11 @@
     // Une abreviation connue passe devant : « RDL » n'a aucune lettre commune
     // avec « Souleve de terre roumain ».
     var syn = synonymeDe(saisi);
-    if (syn){ vus[cleExo(syn)] = 1; out.push({ cle:cleExo(syn), nom:normalizeName(syn), quand:null }); }
+    if (syn){
+      var cs = cleCanonique(syn);
+      vus[cleExo(syn)] = 1; vus[cs] = 1;
+      out.push({ cle:cs, nom:nomCanonique(syn), quand:null });
+    }
     function ajouter(nom, quand){
       var c = cleExo(nom);
       if (!c || c === k || vus[c]) return;
@@ -942,6 +982,15 @@
       var colle = c.indexOf(k) === 0 || k.indexOf(c) === 0 ||
                   (k.length >= 3 && c.indexOf(k) > 0);
       if (!colle) return;
+      // Ce nom est deja rattache ailleurs : on propose sa cible, et on le dit
+      // avec le nom de la cible. Proposer l'etape ferait une chaine.
+      var vise = cleCanonique(nom);
+      if (vise !== c){
+        if (vise === k || vus[vise]){ vus[c] = 1; return; }
+        vus[c] = 1; vus[vise] = 1;
+        out.push({ cle:vise, nom:nomCanonique(nom), quand:quand || null });
+        return;
+      }
       vus[c] = 1;
       out.push({ cle:c, nom:normalizeName(nom), quand:quand || null });
     }
@@ -964,9 +1013,9 @@
       var c = cleExo(nom);
       if (!c || c === saufCle || vus[c]) return;
       // Un alias ne pointe jamais vers un alias : proposer une cible deja
-      // rattachee creerait une chaine que la base refuse.
-      var info = CUSTOM_PAR_CLE[c];
-      if (info && info.alias) return;
+      // resolue ailleurs — a la main ou par le dictionnaire — creerait une
+      // chaine que la base refuse.
+      if (cleCanonique(nom) !== c) return;
       vus[c] = 1;
       out.push({ cle:c, nom:normalizeName(nom) });
     }
@@ -1493,6 +1542,18 @@
     return cible;
   }
 
+  // Reste-t-il une serie de la derniere fois sans equivalent rempli
+  // aujourd'hui ? C'est la seule question qui decide si « ↺ DERNIÈRE FOIS »
+  // sert encore a quelque chose.
+  function resteAReprendre(ex, p){
+    if (p === undefined) p = precedentDe(ex);
+    if (!p) return false;
+    var series = (ex && ex.series) || [];
+    return p.prec.series.some(function(_, i){
+      return !series[i] || !hasData(series[i]);
+    });
+  }
+
   // Le HTML du bloc et des series est produit a un seul endroit : le rendu
   // initial et la mise a jour en direct ne peuvent pas diverger.
   function majBlocPrecedent(card, ex){
@@ -1512,9 +1573,20 @@
     var eid = esc(ex.id);
     // Un menu plutot que trois gros boutons en bas de chaque carte : ils
     // servent rarement, et prenaient autant de place qu'une serie.
+    // Se tromper de nom arrive, et la question « c'est le meme exercice ? »
+    // ne se posait qu'une fois, pendant la frappe. Elle vit maintenant dans le
+    // menu de la carte, aussi longtemps que l'exercice existe — et elle dit
+    // dans quel etat on est, sans avoir a l'ouvrir.
+    var rattacheA = (ex.nom && ex.nom.trim() && cleCanonique(ex.nom) !== cleExo(ex.nom))
+      ? nomCanonique(ex.nom) : '';
     var menu = '<div class="ex-menu" role="group" aria-label="Actions sur l\'exercice">'
       + (auTemps || nomAuTemps(ex.nom) || cardioParDefaut(ex) || !series.some(serieRemplie)
           ? '<button type="button" class="ex-menu-item" data-action="mesure" data-id="'+ eid +'">'+libelleMesure(auTemps, cardioParDefaut(ex))+'</button>'
+          : '')
+      + (ex.nom && ex.nom.trim()
+          ? '<button type="button" class="ex-menu-item" data-action="fusion" data-id="'+ eid +'">'
+            + (rattacheA ? '⇄ RATTACHÉ À « ' + esc(rattacheA.toUpperCase()) + ' »'
+                         : '⇄ C\'EST LE MÊME EXERCICE QUE…') + '</button>'
           : '')
       + '<button type="button" class="ex-menu-item danger ex-del" data-id="'+ eid +'">✕ SUPPRIMER L\'EXERCICE</button>'
       + '</div>';
@@ -1538,9 +1610,12 @@
       +   '<div class="series-list">'+seriesListeHTML(ex, auTemps, p)+'</div>'
       +   '<div class="ex-actions">'
       +     '<button type="button" class="btn-add-serie" data-action="add-serie" data-id="'+ eid +'" aria-label="Ajouter une série'+(series.length?', qui reprend la précédente':'')+'">+ SÉRIE</button>'
-      // La derniere fois, en un appui, a cote de « + SERIE » : tant qu'aucune
-      // serie n'est remplie. La colonne de la derniere fois, elle, se lit.
-      +     (p && !series.some(hasData) ? '<button type="button" class="btn-comme-avant" data-action="comme-avant" data-id="'+ eid +'">↺ DERNIÈRE FOIS</button>' : '')
+      // La derniere fois, en un appui, a cote de « + SERIE ». Il ne remplace
+      // jamais une valeur deja saisie : il n'avait donc aucune raison de
+      // disparaitre des la premiere ligne remplie, et c'est justement a la
+      // troisieme serie qu'on veut encore retrouver celles de ce jour-la.
+      // Il part quand il n'y a plus rien a reprendre.
+      +     (resteAReprendre(ex, p) ? '<button type="button" class="btn-comme-avant" data-action="comme-avant" data-id="'+ eid +'">↺ DERNIÈRE FOIS</button>' : '')
       // Le chrono d'un gainage : lancer, puis pause, et la serie est notee.
       +     ((auTemps || reglages.btnChrono) && !estCardio(ex) ? boutonChronoHTML(ex) : '')
       // A cote de « + SERIE », parce que c'est au meme moment qu'on y pense :
@@ -1680,6 +1755,163 @@
     (day.exercises || []).forEach(function(e){ if (e.bloc) compte[e.bloc] = (compte[e.bloc]||0) + 1; });
     (day.exercises || []).forEach(function(e){ if (e.bloc && compte[e.bloc] < 2) delete e.bloc; });
   }
+
+  // ---------- l'ordre des exercices ----------
+  // Reprendre une seance ne veut pas dire la refaire dans le meme ordre : la
+  // machine est prise, ou on n'a plus de jus pour commencer par les jambes.
+  // Les exercices se deplacent donc. Un superset se deplace d'un bloc : ses
+  // membres doivent rester cote a cote, sinon le bloc n'existe plus.
+  function blocsDuJour(day){
+    var ex = (day && day.exercises) || [], out = [], i = 0;
+    while (i < ex.length){
+      var bloc = ex[i].bloc;
+      if (!bloc){ out.push([ex[i]]); i++; continue; }
+      var groupe = [];
+      while (i < ex.length && ex[i].bloc === bloc){ groupe.push(ex[i]); i++; }
+      out.push(groupe);
+    }
+    return out;
+  }
+  function nomBloc(u){
+    return u.map(function(e){ return normalizeName(e.nom || '') || 'Sans nom'; }).join(' + ');
+  }
+  // Une ligne par exercice, et rien d'autre : ni series, ni poids. On vient
+  // y ranger sa seance, pas la relire.
+  function ordreListeHTML(day){
+    var unites = blocsDuJour(day);
+    return unites.map(function(u, i){
+      var notees = u.reduce(function(n, e){ return n + (e.series || []).filter(hasData).length; }, 0);
+      var nom = nomBloc(u);
+      return '<li class="ordre-ligne" data-pos="' + i + '" style="--c:' + couleurGroupe(classement(u[0]).groupe) + '">'
+        + '<span class="ordre-poignee" data-glisse="1" aria-hidden="true">\u283f</span>'
+        + '<span class="ordre-nom"><i>' + esc(nom) + '</i><b>'
+        +   (u.length > 1 ? 'SUPERSET · ' : '')
+        +   (notees ? notees + (notees > 1 ? ' séries notées' : ' série notée') : 'rien de noté')
+        + '</b></span>'
+        + '<span class="ordre-fleches">'
+        +   '<button type="button" class="ordre-fleche" data-sens="-1" data-pos="' + i + '"'
+        +     (i === 0 ? ' disabled' : '') + ' aria-label="Monter ' + esc(nom) + '">\u25b2</button>'
+        +   '<button type="button" class="ordre-fleche" data-sens="1" data-pos="' + i + '"'
+        +     (i === unites.length - 1 ? ' disabled' : '') + ' aria-label="Descendre ' + esc(nom) + '">\u25bc</button>'
+        + '</span>'
+        + '</li>';
+    }).join('');
+  }
+  // L'ordre affiche devient l'ordre des donnees, a chaque deplacement : pas
+  // d'ordre provisoire qu'un retour en arriere perdrait en silence.
+  function appliquerOrdre(unites){
+    var day = getOrCreateDay(state.selectedDay);
+    var plat = [];
+    unites.forEach(function(u){ u.forEach(function(e){ plat.push(e); }); });
+    day.exercises = plat;
+    scheduleSave(state.selectedDay, true);
+  }
+  function deplacerBloc(pos, sens){
+    var unites = blocsDuJour(state.sessions[state.selectedDay]);
+    var cible = pos + sens;
+    if (pos < 0 || pos >= unites.length || cible < 0 || cible >= unites.length) return;
+    var tmp = unites[pos]; unites[pos] = unites[cible]; unites[cible] = tmp;
+    appliquerOrdre(unites);
+    rendreOrdre();
+    // Le focus suit l'exercice : trois appuis de suite tombent sur le meme
+    // bouton, pas sur celui du voisin qui vient de prendre sa place.
+    var btn = document.querySelector('#ordreListe .ordre-ligne[data-pos="' + cible + '"] .ordre-fleche[data-sens="' + sens + '"]');
+    if (btn && !btn.disabled) btn.focus();
+  }
+  function rendreOrdre(){
+    var liste = document.getElementById('ordreListe');
+    if (liste) liste.innerHTML = ordreListeHTML(state.sessions[state.selectedDay]);
+  }
+  // Un seul exercice ne se range pas : le bouton ne s'affiche qu'a partir de
+  // deux.
+  function majBoutonOrdre(day){
+    var btn = document.getElementById('ordreBtn');
+    if (btn) btn.hidden = blocsDuJour(day).length < 2;
+  }
+  function ouvrirOrdre(){
+    rendreOrdre();
+    document.getElementById('ordreSheet').hidden = false;
+  }
+  function fermerOrdre(){
+    var el = document.getElementById('ordreSheet');
+    if (!el || el.hidden) return;
+    el.hidden = true;
+    renderDayPanel(true);
+    renderBandeau();
+  }
+
+  document.getElementById('ordreBtn').addEventListener('click', ouvrirOrdre);
+  document.getElementById('ordreFini').addEventListener('click', fermerOrdre);
+  document.getElementById('ordreClose').addEventListener('click', fermerOrdre);
+  document.getElementById('ordreSheet').addEventListener('click', function(e){
+    if (e.target === this) fermerOrdre();
+  });
+  document.getElementById('ordreListe').addEventListener('click', function(e){
+    var f = e.target.closest('.ordre-fleche');
+    if (!f || f.disabled) return;
+    deplacerBloc(Number(f.dataset.pos), Number(f.dataset.sens));
+  });
+
+  // Glisser par la poignee. La ligne change de place des qu'elle passe le
+  // milieu de son voisin, et son point de depart suit, pour que le doigt
+  // reste dessus. Le pointeur est capture : sans ca, le defilement de la
+  // feuille emporte le geste au premier pixel.
+  (function(){
+    var liste = document.getElementById('ordreListe');
+    if (!liste) return;
+    var glisse = null;
+    liste.addEventListener('pointerdown', function(e){
+      var poignee = e.target.closest('[data-glisse]');
+      if (!poignee) return;
+      var ligne = poignee.closest('.ordre-ligne');
+      if (!ligne) return;
+      e.preventDefault();
+      glisse = { ligne:ligne, y0:e.clientY,
+                 gap:parseFloat(getComputedStyle(liste).rowGap) || 0 };
+      ligne.classList.add('glisse');
+      try { liste.setPointerCapture(e.pointerId); } catch(err){}
+    });
+    liste.addEventListener('pointermove', function(e){
+      if (!glisse) return;
+      e.preventDefault();
+      var dy = e.clientY - glisse.y0;
+      // Une boucle, pas un test : un geste rapide traverse deux lignes dans
+      // le meme evenement.
+      for (var n = 0; n < 40; n++){
+        var prec = glisse.ligne.previousElementSibling;
+        var suiv = glisse.ligne.nextElementSibling;
+        if (dy < 0 && prec){
+          var hp = prec.getBoundingClientRect().height + glisse.gap;
+          if (-dy < hp / 2) break;
+          liste.insertBefore(glisse.ligne, prec);
+          glisse.y0 -= hp; dy += hp;
+        } else if (dy > 0 && suiv){
+          var hs = suiv.getBoundingClientRect().height + glisse.gap;
+          if (dy < hs / 2) break;
+          liste.insertBefore(suiv, glisse.ligne);
+          glisse.y0 += hs; dy -= hs;
+        } else break;
+      }
+      glisse.ligne.style.transform = 'translateY(' + dy + 'px)';
+    });
+    function finir(){
+      if (!glisse) return;
+      glisse.ligne.style.transform = '';
+      glisse.ligne.classList.remove('glisse');
+      glisse = null;
+      // L'ordre a l'ecran est la verite : on le relit, et on le note.
+      var unites = blocsDuJour(state.sessions[state.selectedDay]);
+      var neuf = [];
+      Array.prototype.forEach.call(liste.querySelectorAll('.ordre-ligne'), function(li){
+        var u = unites[Number(li.dataset.pos)];
+        if (u) neuf.push(u);
+      });
+      if (neuf.length === unites.length) appliquerOrdre(neuf);
+      rendreOrdre();
+    }
+    liste.addEventListener('pointerup', finir);
+    liste.addEventListener('pointercancel', finir);
+  })();
 
   // ---------- reprendre une seance ----------
   function seriesRemplies(ex){
@@ -2392,6 +2624,7 @@
     var list = document.getElementById('exList');
     if (state.loading){
       list.innerHTML = '<div class="empty-state">' + attente() + '</div>';
+      majBoutonOrdre(null);
       return;
     }
     var day = state.sessions[ds];
@@ -2405,6 +2638,7 @@
     }
     garderDefilement(y);
     majBoutonFin(ds);
+    majBoutonOrdre(day);
     majSuggestions();
   }
 
@@ -4590,6 +4824,17 @@
       return;
     }
 
+    var fusionBtn = e.target.closest('[data-action="fusion"]');
+    if (fusionBtn){
+      var carteF = fusionBtn.closest('.ex-card');
+      var exF = findExercise(getOrCreateDay(state.selectedDay), fusionBtn.dataset.id);
+      if (carteF) carteF.classList.remove('menu-ouvert');
+      var btnF = carteF && carteF.querySelector('[data-action="menu-exo"]');
+      if (btnF) btnF.setAttribute('aria-expanded', 'false');
+      if (exF) ouvrirFusion(carteF, exF);
+      return;
+    }
+
     var menuBtn = e.target.closest('[data-action="menu-exo"]');
     if (menuBtn){
       var carteM = menuBtn.closest('.ex-card');
@@ -4667,6 +4912,77 @@
     majSuggestions();
   });
 
+  // Rattacher deux noms, et tout ce qui en depend : « derniere fois »,
+  // records, recap et recherche changent de sens d'un coup, donc on redessine.
+  function relierExo(ex, cle, seul){
+    definirAlias(ex.nom, cle, seul);
+    var g = groupeCanonique(ex.nom); if (g) ex.groupe = g;
+    scheduleSave(state.selectedDay, true);
+    renderDayPanel(true);
+    renderBandeau();
+  }
+
+  // La fusion depuis le menu de la carte : relier ce nom a un autre exercice,
+  // ou l'en detacher. C'est le meme geste qu'a la frappe, mais disponible
+  // apres coup — sans ca, une faute de nom coupait l'historique pour de bon.
+  function ouvrirFusion(card, ex){
+    if (!card) return;
+    var nomAffiche = normalizeName(ex.nom || '');
+    if (!nomAffiche){ showToast('Donne d\'abord un nom à l\'exercice'); return; }
+    var vieux = card.querySelector('.alias-prompt');
+    if (vieux) vieux.remove();
+    var cle = cleExo(nomAffiche);
+    var vise = cleCanonique(nomAffiche);
+    var liste = tousLesExos(cle);
+
+    var box = document.createElement('div');
+    box.className = 'alias-prompt';
+    box.dataset.pour = cle;
+    var html = '<p><b>« ' + esc(nomAffiche) + ' »</b> '
+      + (vise !== cle
+          ? 'compte avec <b>' + esc(nomCanonique(nomAffiche)) + '</b> : un seul historique pour les deux.'
+          : 'a son propre historique.') + '</p>';
+    if (liste.length){
+      html += '<p class="alias-question">C\'est le même exercice que&nbsp;?</p>'
+           +  '<select class="alias-select" aria-label="Exercice auquel rattacher ce nom">'
+           +    '<option value="">Choisis l\'exercice…</option>'
+           +    liste.map(function(c){
+                  return '<option value="' + esc(c.cle) + '"' + (c.cle === vise ? ' selected' : '')
+                    + '>' + esc(c.nom) + '</option>';
+                }).join('')
+           +  '</select>'
+           +  '<button type="button" class="alias-choix" data-action="rattacher">RATTACHER</button>';
+    }
+    if (vise !== cle){
+      html += '<button type="button" class="alias-choix alias-garder" data-action="detacher">'
+           +    'LES SÉPARER : CE N\'EST PAS LE MÊME</button>';
+    }
+    html += '<button type="button" class="alias-non" data-action="fermer-fusion">ANNULER</button>';
+    box.innerHTML = html;
+
+    box.addEventListener('click', function(e){
+      if (e.target.closest('[data-action="rattacher"]')){
+        var sel = box.querySelector('.alias-select');
+        if (!sel || !sel.value){ if (sel) sel.focus(); return; }
+        var vers = sel.options[sel.selectedIndex].textContent;
+        relierExo(ex, sel.value);
+        showToast('« ' + nomAffiche + ' » rejoint ' + vers);
+        return;
+      }
+      if (e.target.closest('[data-action="detacher"]')){
+        relierExo(ex, null, true);
+        showToast('« ' + nomAffiche + ' » a son propre historique');
+        return;
+      }
+      if (e.target.closest('[data-action="fermer-fusion"]')) box.remove();
+    });
+
+    var corps = card.querySelector('.ex-body');
+    if (corps) corps.insertBefore(box, corps.firstChild);
+    var champ = box.querySelector('.alias-select');
+    if (champ) champ.focus();
+  }
+
   // Affiche la proposition dans la carte, sans re-render : re-dessiner ferait
   // perdre le focus et la position de scroll au moment precis ou l'utilisateur
   // est en train de saisir.
@@ -4690,12 +5006,15 @@
     box.dataset.pour = cleExo(ex.nom);
     box.dataset.syn = syn ? '1' : '0';
     var nomAffiche = normalizeName(ex.nom);
-    var html = '<p><b>« ' + esc(nomAffiche) + ' »</b> n\'est pas encore dans tes exercices.</p>';
+    var html = '<p><b>« ' + esc(nomAffiche) + ' »</b> '
+      + (syn ? 'est une abréviation connue.' : 'n\'est pas encore dans tes exercices.') + '</p>';
     if (syn){
-      // Une abreviation connue : le plus souvent, c'est le nom entier qu'on veut.
-      html += '<p class="alias-question">C\'est <b>' + esc(syn) + '</b>&nbsp;?</p>'
-           +  '<button type="button" class="alias-choix" data-action="renommer" data-nom="' + esc(syn) + '">OUI : ' + esc(syn.toUpperCase()) + '</button>'
-           +  '<button type="button" class="alias-choix alias-lien" data-cle="' + esc(cleExo(syn)) + '">GARDER « ' + esc(nomAffiche.toUpperCase()) +' » ET LE RELIER</button>';
+      // Le dictionnaire a deja tranche : l'historique est commun des la
+      // frappe, et « bench » retrouve tout seul le developpe couche. On ne
+      // demande donc plus « c'est X ? », on l'annonce — avec la porte de
+      // sortie juste en dessous.
+      html += '<p class="alias-question">Compté avec <b>' + esc(syn) + '</b>.</p>'
+           +  '<button type="button" class="alias-choix" data-action="renommer" data-nom="' + esc(syn) + '">RENOMMER EN ' + esc(syn.toUpperCase()) + '</button>';
     } else if (choix.length){
       html += '<p class="alias-question">C\'est le même exercice que&nbsp;?</p>';
       choix.forEach(function(c){
@@ -4708,7 +5027,8 @@
       });
     }
     html += '<button type="button" class="alias-choix alias-garder" data-action="garder">'
-         +    (syn || choix.length ? 'NON, C\'EST UN NOUVEL EXERCICE' : 'L\'AJOUTER À MES EXERCICES') + '</button>'
+         +    (syn ? 'NON, C\'EST UN AUTRE EXERCICE'
+               : choix.length ? 'NON, C\'EST UN NOUVEL EXERCICE' : 'L\'AJOUTER À MES EXERCICES') + '</button>'
          +  '<button type="button" class="alias-non" data-action="ouvrir-liste">LE RELIER À UN EXERCICE EXISTANT…</button>'
          +  '<div class="alias-liste" hidden>'
          +    '<select class="alias-select" aria-label="Exercice auquel rattacher ce nom">'
@@ -4720,14 +5040,7 @@
     box.innerHTML = html;
 
     function relier(cle){
-      definirAlias(ex.nom, cle);
-      var g = groupeCanonique(ex.nom); if (g) ex.groupe = g;
-      scheduleSave(state.selectedDay, true);
-      box.remove();
-      // L'historique change de sens d'un coup : « derniere fois », records et
-      // recap doivent refleter le rattachement tout de suite.
-      renderDayPanel(true);
-      renderBandeau();
+      relierExo(ex, cle);
       showToast('« ' + nomAffiche + ' » rejoint ton historique');
     }
 
@@ -4756,8 +5069,9 @@
       }
 
       if (e.target.closest('[data-action="garder"]')){
-        definirAlias(ex.nom, null);
-        box.remove();
+        // Dire non se note : sinon le dictionnaire reposerait la question a la
+        // frappe suivante, et le rapprochement reprendrait tout seul.
+        relierExo(ex, null, true);
         showToast('« ' + nomAffiche + ' » est dans tes exercices');
         return;
       }
@@ -4770,11 +5084,6 @@
         var sel = box.querySelector('.alias-select');
         if (!sel.value){ sel.focus(); return; }
         relier(sel.value);
-        return;
-      }
-      if (e.target.closest('.alias-non')){
-        definirAlias(ex.nom, null);
-        box.remove();
       }
     });
 
@@ -5455,6 +5764,9 @@
       var el = document.getElementById(id);
       if (el) el.hidden = true;
     });
+    // L'ordre se referme par le meme chemin, mais lui redessine la seance :
+    // les exercices ont bouge.
+    fermerOrdre();
   }
 
   // ==================================================================

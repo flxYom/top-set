@@ -44,7 +44,13 @@ c'est exactement à ça que sert ce repo pour l'instant.
   interrupteurs pour ranger ce qui ne sert pas (colonne RPE, champ REPOS,
   bouton CHRONO, chrono de repos automatique). Ranger n'efface rien.
 - **Ne pas repartir de zéro.** Refaire la dernière fois, les exercices de la
-  semaine d'avant, la charge suggérée.
+  semaine d'avant, la charge suggérée. `↺ DERNIÈRE FOIS` remplit les séries de
+  la séance précédente et n'écrase jamais ce qui est déjà saisi.
+- **Sa séance, dans son ordre.** Les exercices se déplacent à la poignée ou aux
+  flèches ; un superset se déplace d'un bloc.
+- **Un mouvement, un historique.** Les abréviations de salle (`bench`, `RDL`,
+  `OHP`…) partagent l'historique du nom entier tout seules, et le menu `⋯` de
+  la carte fusionne ou sépare deux noms d'exercice à tout moment.
 - **Voir où on en est.** Un planning en calendrier (jour, semaine, mois), les
   séances prévues et l'historique, un bilan de fin de séance comparé à la même
   séance la semaine d'avant, le récap de la semaine, du mois et de l'année, la

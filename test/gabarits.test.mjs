@@ -585,7 +585,7 @@ ok('le bilan compare a la meme seance la semaine d avant, sans tonnage',
    && !/function volumeSemaine/.test(SRC) && !/b\.volume/.test(SRC));
 ok('sous + AJOUTER UN EXERCICE, les exercices faits avec ceux-la la semaine d avant',
    /id="addExerciseBtn">\+ AJOUTER UN EXERCICE<\/button>\s*<div class="suggest-exo" id="suggestExo" hidden><\/div>/.test(HTML)
-   && /function suggestionsExo\(ds\)\{/.test(SRC) && /data-suggestion="/.test(SRC) && /majBoutonFin\(ds\);\n    majSuggestions\(\);/.test(SRC));
+   && /function suggestionsExo\(ds\)\{/.test(SRC) && /data-suggestion="/.test(SRC) && /majBoutonFin\(ds\);\n    majBoutonOrdre\(day\);\n    majSuggestions\(\);/.test(SRC));
 ok('les outils ont leur rubrique sous le planning',
    (() => { const v = HTML.slice(HTML.indexOf('id="view-planning"'), HTML.indexOf('id="view-seances"'));
             return ['/outils/calculateur-1rm', '/outils/tableau-rpe', '/outils/modele-carnet-musculation'].every(h => v.includes('href="' + h + '"')); })());
@@ -799,6 +799,86 @@ ok('CARNET : la recherche, le calendrier et les seances sur un seul ecran',
                 && v.includes('id="calCorps"') && v.includes('id="seancesListe"'); })()
    // Changer de vue ne change pas d ecran : tout reste sur le carnet.
    && corps("document.getElementById('calVues').addEventListener", "document.getElementById('carnetRecherche')").indexOf('montrerVue') < 0);
+
+// L'ordre des exercices : reprendre une seance sans la refaire dans le meme
+// ordre. Un superset tient sur une ligne, sinon le bloc se disloque.
+ok('l ordre des exercices se change, et un superset se deplace d un bloc',
+   /id="ordreSheet"/.test(HTML) && /id="ordreListe"/.test(HTML) && /id="ordreBtn"/.test(HTML)
+   && /function blocsDuJour\(day\)\{/.test(SRC)
+   // Le plein ecran avait deja son unitesDuJour() : deux homonymes dans la
+   // meme portee, et c'est le dernier qui gagne. Le navigateur l'a dit tout
+   // de suite, les tests de chaines non — d'ou ce garde-fou.
+   && SRC.split('function blocsDuJour(').length === 2
+   && SRC.split('function unitesDuJour(').length === 2
+   // Les membres d un meme bloc entrent dans la meme unite : c est ce qui les
+   // garde cote a cote quand on deplace.
+   && /while \(i < ex\.length && ex\[i\]\.bloc === bloc\)\{ groupe\.push\(ex\[i\]\); i\+\+; \}/.test(SRC)
+   && /function appliquerOrdre\(unites\)\{/.test(SRC)
+   && /day\.exercises = plat;/.test(SRC)
+   && /function deplacerBloc\(pos, sens\)\{/.test(SRC)
+   // Les fleches marchent sans glisser : un geste rate ne doit pas empecher
+   // de ranger sa seance.
+   && /class="ordre-fleche" data-sens="-1"/.test(SRC)
+   && /liste\.setPointerCapture\(e\.pointerId\)/.test(SRC)
+   // La poignee est le seul endroit qui prend la ligne : ailleurs, on defile.
+   && /\.ordre-poignee\{[^}]*touch-action:none;/.test(HTML)
+   && /\.ordre-ligne\{[^}]*touch-action:pan-y;/.test(HTML)
+   && /function fermerOrdre\(\)\{/.test(SRC) && /fermerOrdre\(\);\n  \}/.test(SRC));
+
+// « Derniere fois » : le bouton ne remplace jamais une valeur deja saisie, il
+// n avait donc aucune raison de partir des la premiere ligne remplie.
+ok('DERNIERE FOIS reste tant qu il y a une serie a reprendre',
+   /function resteAReprendre\(ex, p\)\{/.test(SRC)
+   && /return p\.prec\.series\.some\(function\(_, i\)\{\n      return !series\[i\] \|\| !hasData\(series\[i\]\);/.test(SRC)
+   && /\(resteAReprendre\(ex, p\) \? '<button type="button" class="btn-comme-avant"/.test(SRC)
+   && !/p && !series\.some\(hasData\) \?/.test(SRC)
+   // La colonne de la derniere fois se lit : plus de voile sur les chiffres,
+   // seuls les tirets restent effaces.
+   && /\.serie-prec\{[^}]*\}/.test(HTML) && !/\.serie-prec\{[^}]*opacity:\.8;/.test(HTML)
+   && /\.serie-prec\.vide\{opacity:\.45;\}/.test(HTML));
+
+// « bench » et « developpe couche » : le dictionnaire tranche tout seul, et sa
+// decision a lui passe devant, dans les deux sens.
+ok('une abreviation connue partage l historique du nom entier',
+   /function cleSynonymeDe\(nom\)\{/.test(SRC)
+   && /var cible = SYNONYMES\[cleSynonyme\(nom\)\];\n    return cible \? cleExo\(cible\) : null;/.test(SRC)
+   && (() => { const f = corps('function cleCanonique(nom){', 'function nomCanonique(nom){');
+               // L ordre compte : rattachement a la main, puis separation
+               // explicite, puis dictionnaire.
+               return f.indexOf('info.alias') < f.indexOf('info.seul')
+                   && f.indexOf('info.seul') < f.indexOf('cleSynonymeDe(nom)'); })()
+   && /if \(info && info\.seul\) return k;/.test(SRC)
+   // Separer se note, sinon le dictionnaire recollerait a la frappe suivante.
+   && /function definirAlias\(nom, cleCible, seul\)\{/.test(SRC)
+   && /if \(!cleCible && seul\) customExercises\[clean\]\.seul = true;/.test(SRC)
+   && /if \(ancien && ancien\.seul\) customExercises\[clean\]\.seul = true;/.test(SRC)
+   && /if \(info && \(info\.alias \|\| info\.seul\)\) return null;/.test(SRC));
+
+// Se tromper de nom arrive apres coup : la question doit rester posable.
+ok('fusionner deux exercices se fait depuis le menu de la carte, a tout moment',
+   /function ouvrirFusion\(card, ex\)\{/.test(SRC)
+   && /data-action="fusion" data-id="/.test(SRC)
+   && /\u21c4 RATTACH\u00c9 \u00c0 \u00ab '/.test(SRC)
+   && /data-action="rattacher"/.test(SRC) && /data-action="detacher"/.test(SRC)
+   && /relierExo\(ex, null, true\);/.test(SRC)
+   // Un seul chemin pour rattacher : la frappe et le menu passent par la.
+   && /function relierExo\(ex, cle, seul\)\{/.test(SRC)
+   && (() => { const f = corps('function relierExo(ex, cle, seul){', 'function ouvrirFusion(card, ex){');
+               return f.includes('definirAlias(ex.nom, cle, seul)')
+                   && f.includes('renderDayPanel(true)'); })()
+   // La liste des cibles n offre jamais un nom deja resolu ailleurs.
+   && /if \(cleCanonique\(nom\) !== c\) return;/.test(SRC));
+
+// Un alias ne pointe jamais vers un alias. « bench haltere » rattache a
+// « bench », lui-meme rattache au developpe couche, s'arreterait a la premiere
+// etape : l'historique resterait coupe en deux, sans que rien ne le dise.
+ok('aucune chaine d alias : on rattache toujours a la destination finale',
+   (() => { const f = corps('function definirAlias(nom, cleCible, seul){', 'function choisirMuscle(nom, groupe, sous){');
+            return f.includes('var fin = cleCanonique(cleCible);') && f.includes('if (fin) cleCible = fin;')
+                && f.indexOf('var fin = cleCanonique(cleCible);') < f.indexOf('customExercises[clean] ='); })()
+   // Et la proposition annonce la destination, pas l etape intermediaire.
+   && /var vise = cleCanonique\(nom\);\n      if \(vise !== c\)\{/.test(SRC)
+   && /out\.push\(\{ cle:vise, nom:nomCanonique\(nom\), quand:quand \|\| null \}\);/.test(SRC));
 
 console.log(`\n${pass} reussis, ${fail} echoues`);
 process.exit(fail ? 1 : 0);

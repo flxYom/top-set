@@ -36,6 +36,35 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ### Added
 
+- **Reorder the exercises of a session.** `⇅ CHANGER L'ORDRE DES EXERCICES`,
+  under the suggestions, opens a short list: drag by the handle, or move with
+  the arrows. Every move is saved at once. A superset holds one row and moves as
+  a block. Redoing a session no longer means redoing it in the same order.
+- **Merge two exercises after the fact.** The card's `⋯` menu now carries
+  `⇄ C'EST LE MÊME EXERCICE QUE…`: pick an exercise and the two names share one
+  history, records and recap included. When it is already linked the menu says
+  which one, and the sheet offers to separate them again. A typo in a name no
+  longer cuts the history for good. Service worker `topset-v43`.
+
+### Changed
+
+- **Gym shorthand settles itself.** « bench » one day and « Développé couché »
+  the next now give one history, with nothing to declare — the forty-odd
+  abbreviations already in `SYNONYMES` are resolved when reading the history,
+  not only offered while typing. Before, missing the moment of typing left two
+  exercises for one movement, with no way back. The card states the link rather
+  than asking, and `NON, C'EST UN AUTRE EXERCICE` separates them for good. The
+  user's own decision wins over the dictionary, both ways.
+- **`↺ DERNIÈRE FOIS` stays** as long as a set of that day is still worth
+  taking, instead of vanishing at the first filled row — it never overwrites a
+  value already entered, and the third set is exactly where last time's numbers
+  are still wanted. Last time's figures in the column also lost their veil.
+- **No more alias chains.** Linking a name to an already-linked name resolved
+  one notch only and left the history split. The target is now resolved before
+  being written, and the offer names the final destination.
+
+### Added
+
 - **Search an exercise from the carnet.** A bar at the top of CARNET: type a
   name, land on that exercise's performance history — signal, top set, estimated
   1RM, records per rep range, curve, session by session. Only exercises actually

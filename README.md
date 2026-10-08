@@ -46,7 +46,13 @@ repository is for right now.
   what you do not use (RPE column, REST field, CHRONO button, automatic rest
   timer). Putting something away erases nothing.
 - **Never start from scratch.** Redo last time, last week's exercises, a
-  suggested load.
+  suggested load. `↺ DERNIÈRE FOIS` fills in the sets of the previous session
+  and never overwrites what you have already entered.
+- **Your session, in your order.** Reorder the exercises by dragging a handle
+  or with arrows; a superset moves as a block.
+- **One movement, one history.** Gym shorthand (`bench`, `RDL`, `OHP`…) shares
+  the full name's history on its own, and the card's `⋯` menu merges or
+  separates two exercise names at any time.
 - **See where you stand.** A calendar planning (day, week, month), planned
   sessions and history, an end-of-session recap compared with the same session
   last week, weekly, monthly and yearly recaps, and each exercise's progression
