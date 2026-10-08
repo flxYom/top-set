@@ -36,6 +36,20 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ### Added
 
+- **Share your numbers with friends — and nothing else.** An exercise, a
+  session or a recap can be sent to chosen friends. You become friends through
+  an 8-character code handed over in person, and both sides act; there is no
+  search by nickname, no public profile, no friend suggestions. There is **no
+  feed**: nothing leaves your log until you pick what and who. What is sent is
+  a frozen `jsonb` copy, so no policy opens `seances`, `exercices` or `series`
+  to a friend, and fixing your session tomorrow does not change what they read.
+  No friend count as a score, no reaction total, no streak, no ranking — the
+  reactions are four closed words with no negative counterpart, and they add up
+  nowhere. What you received is a finite list at the top of MESSAGES, newest
+  first, with the header badge counting unread shares. No stories. Without an
+  account the buttons explain and offer one; nothing breaks. New tables
+  `liens_ami`, `partages`, `partages_recus` and twelve `SECURITY DEFINER`
+  functions — **re-run `supabase/schema.sql`**. Service worker `topset-v44`.
 - **Reorder the exercises of a session.** `⇅ CHANGER L'ORDRE DES EXERCICES`,
   under the suggestions, opens a short list: drag by the handle, or move with
   the arrows. Every move is saved at once. A superset holds one row and moves as

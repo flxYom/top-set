@@ -2532,6 +2532,7 @@
     });
 
     var meme = (ds === state.selectedDay);
+    html += '<button type="button" class="btn-partage" id="fichePartager">↗ PARTAGER CETTE SÉANCE</button>';
     html += '<button type="button" class="btn-add" id="ficheModifier">MODIFIER CETTE SÉANCE</button>';
     html += '<button type="button" class="btn-reprendre" id="ficheSelectionner"' + (meme ? ' disabled' : '') + '>'
       + (meme ? 'C\'EST LA SÉANCE DU JOUR AFFICHÉ' : 'SÉLECTIONNER POUR LE JOUR AFFICHÉ')
@@ -3029,6 +3030,8 @@
             + '</button>';
         }).join('')
       + '</div>';
+
+    html += '<button type="button" class="btn-partage" id="exoPartager">↗ PARTAGER CET EXERCICE</button>';
 
     hote.innerHTML = html;
 
@@ -5331,6 +5334,11 @@
       renderExerciceDetail();
       return;
     }
+    if (e.target.closest('#exoPartager')){
+      var nomP = state.exoOuvert;
+      ouvrirPartage('exercice', nomCanonique(nomP) || nomP, instantaneExercice(nomP));
+      return;
+    }
     var j = e.target.closest('[data-jour]');
     if (j) ouvrirSeance(j.dataset.jour);
   });
@@ -5365,6 +5373,11 @@
       modifierSeance(state.seanceOuverte);
       return;
     }
+    if (e.target.closest('#fichePartager')){
+      var dsP = state.seanceOuverte;
+      ouvrirPartage('seance', titreSeance(dsP), instantaneSeance(dsP));
+      return;
+    }
     var ajout = e.target.closest('[data-ajout-jour]');
     if (ajout){
       var nomA = ajouterAuJour(state.seanceOuverte, ajout.dataset.ajoutJour);
@@ -5385,6 +5398,12 @@
     populateDatalist();
     allerAuJour(state.selectedDay);
     showToast(n + (n > 1 ? ' exercices ajoutés' : ' exercice ajouté'));
+  });
+
+  document.getElementById('recapPartager').addEventListener('click', function(){
+    var p = state.recapPeriod;
+    var inst = instantaneRecap(p);
+    ouvrirPartage('recap', inst ? inst.label : '', inst);
   });
 
   document.getElementById('addExerciseBtn').addEventListener('click', function(){
@@ -5755,12 +5774,13 @@
     rendreReglages();
     Sync.majUI();
     document.getElementById('profilSheet').hidden = false;
+    rendreAmis();
   }
   function closeProfil(){ document.getElementById('profilSheet').hidden = true; }
 
   // Ouvrir une page depuis une feuille, c'est quitter la feuille.
   function fermerFeuilles(){
-    ['dataSheet', 'profilSheet', 'retourSheet'].forEach(function(id){
+    ['dataSheet', 'profilSheet', 'retourSheet', 'partageSheet'].forEach(function(id){
       var el = document.getElementById(id);
       if (el) el.hidden = true;
     });
@@ -6012,6 +6032,8 @@
     var liste = document.getElementById('messagesListe');
     var bloc  = document.getElementById('conv');
     document.body.classList.toggle('en-conv', !!conv && Sync.estConnecte());
+    var pg = document.getElementById('partagesRecus');
+    if (pg && (conv || !Sync.estConnecte())) pg.hidden = true;
     if (!Sync.estConnecte()){
       conv = null;
       document.getElementById('messagesTitre').textContent = 'MESSAGES';
@@ -6030,6 +6052,7 @@
       bloc.hidden = true;
       liste.hidden = false;
       document.getElementById('messagesTitre').textContent = 'MESSAGES';
+      rendrePartagesRecus();
       renderBoite();
     }
     relancerMinuteur();
@@ -6329,6 +6352,427 @@
     }
   });
   document.getElementById('convCorps').addEventListener('input', ajusterChamp);
+
+  // ==================================================================
+  // LE PARTAGE ENTRE AMIS
+  // ==================================================================
+  // Un reseau social dans un carnet d'entrainement, c'est le meilleur moyen
+  // de rendre l'entrainement desagreable. Les mecaniques qui rendent un fil
+  // malsain sont connues, et aucune n'est ici :
+  //
+  //   · pas d'inconnus : on devient amis par un code qu'on se donne, et les
+  //     deux parties agissent. Pas de recherche par pseudo, pas de profil
+  //     public, pas de suggestions ;
+  //   · on ENVOIE, on ne publie pas. Il n'existe aucun fil de ce que font tes
+  //     amis : rien ne quitte ton carnet tant que tu n'as pas choisi quoi, et
+  //     a qui ;
+  //   · ce qui part est une copie figee. Corriger ta seance demain ne change
+  //     pas ce que ton ami a lu ;
+  //   · aucun compteur sur personne : pas de nombre d'amis en gros, pas de
+  //     total de reactions, pas de serie de jours, pas de classement. Les
+  //     reactions sont quatre mots, et elles ne s'additionnent nulle part ;
+  //   · une liste finie, du plus recent au plus ancien, qu'on a fini de lire ;
+  //   · pas de story.
+  //
+  // Et la regle qui tient le reste : SANS COMPTE, TOUT MARCHE PAREIL. Les
+  // boutons de partage expliquent et proposent un compte, ils ne cassent rien.
+
+  // ---------- ce qu'on envoie : une copie, pas une fenetre ----------
+  // On recopie les champs un par un, et jamais l'objet du carnet : un `fait`,
+  // un identifiant interne ou un commentaire oublie partiraient avec. Ce qui
+  // n'est pas nomme ici ne sort pas.
+  function seriePartagee(s){
+    var o = {};
+    if (typeof s.poids === 'number') o.poids = s.poids;
+    if (s.reps !== '' && s.reps != null) o.reps = String(s.reps);
+    if (s.rpe != null) o.rpe = s.rpe;
+    if (s.type) o.type = s.type;
+    if (s.note) o.note = String(s.note).slice(0, NOTE_MAX);
+    return o;
+  }
+  function exoPartage(e){
+    var cl = classement(e);
+    return { nom: nomCanonique(e.nom) || e.nom || 'Sans nom',
+             groupe: cl.groupe + (cl.sous ? ' · ' + cl.sous : ''),
+             series: seriesRemplies(e).slice(0, 20).map(seriePartagee) };
+  }
+
+  // Un exercice : ses chiffres cles, et ses cinq dernieres seances. Tout
+  // l'historique serait lourd a envoyer et illisible a recevoir.
+  function instantaneExercice(nom){
+    var toutes = seancesDeLExo(nom);
+    if (!toutes.length) return null;
+    var auTemps = toutes.some(function(j){ return j.series.some(TS.serieAuTemps); });
+    var derniere = toutes[toutes.length - 1];
+    var top = TS.calculerTopSet(derniere.series);
+    var rm = auTemps ? null : TS.epleySerie(top);
+    var cl = classement({ nom:nom, groupe:groupeCanonique(nom) || 'Autre' });
+    return {
+      nom: nomCanonique(nom) || nom,
+      groupe: cl.groupe + (cl.sous ? ' · ' + cl.sous : ''),
+      auTemps: auTemps,
+      seances: toutes.length,
+      top: top ? perfTexte(top) : null,
+      rm: (rm === null || rm === undefined) ? null : formatWeight(Math.round(rm * 2) / 2),
+      meilleur: auTemps ? null : (TS.meilleurPoids(toutes) === null ? null : formatWeight(TS.meilleurPoids(toutes))),
+      meilleurTemps: auTemps ? TS.formatDuree(TS.meilleureDuree(toutes)) : null,
+      jours: toutes.slice(-5).map(function(j){
+        return { date:j.date, series:j.series.slice(0, 20).map(seriePartagee) };
+      })
+    };
+  }
+
+  // Une seance : son titre, ses exercices, et les trois chiffres qu'on regarde.
+  function instantaneSeance(ds){
+    var day = state.sessions[ds];
+    var exos = day ? (day.exercises || []).filter(function(e){ return seriesRemplies(e).length; }) : [];
+    if (!exos.length) return null;
+    return { date: ds, titre: titreSeance(ds),
+             series: compterJour(day), volume: volumeTexte(dayVolume(ds)) || null,
+             exercices: exos.slice(0, 20).map(exoPartage) };
+  }
+
+  // Un recap : la periode, et ce que la page montre en gros. Pas la silhouette
+  // ni le detail par muscle — c'est un resume qu'on envoie, pas un ecran.
+  function instantaneRecap(periode){
+    var d = computeRecap(periode);
+    if (!d.seances) return null;
+    var counts = groupCountsIn(d.startStr, d.endStr);
+    var groupes = GROUPS.filter(function(g){ return counts[g]; })
+      .sort(function(a, b){ return counts[b] - counts[a]; })
+      .slice(0, 5)
+      .map(function(g){ return { nom:g, series:counts[g] }; });
+    return { periode: periode, label: d.label, seances: d.seances,
+             series: d.totalSeries, mouvements: d.mouvements,
+             volume: volumeTexte(d.totalVolume) || null, groupes: groupes };
+  }
+
+  // ---------- relire ce qu'on a recu ----------
+  var PARTAGE_MOT = { exercice:'UN EXERCICE', seance:'UNE SÉANCE', recap:'UN RÉCAP' };
+  var REACTIONS = [['bravo', 'BRAVO'], ['costaud', 'COSTAUD'], ['solide', 'SOLIDE'], ['vu', 'VU']];
+
+  function serieTexte(s){
+    var d = TS.dureeSecondes(s.reps);
+    if (d !== null) return TS.formatDuree(d);
+    var p = (typeof s.poids === 'number') ? formatWeight(s.poids) : '';
+    var r = s.reps ? String(s.reps) : '';
+    if (p && r) return p + ' kg × ' + r;
+    return p ? p + ' kg' : (r ? '× ' + r : '—');
+  }
+  function seriesTexteHTML(series){
+    return '<div class="pg-series">'
+      + (series || []).map(function(s){
+          return '<span class="pg-serie' + (s.type ? ' ' + esc(s.type) : '') + '">'
+            + esc(serieTexte(s)) + '</span>';
+        }).join('')
+      + '</div>';
+  }
+  function jourCourt(ds){
+    var d = fromDateStr(ds);
+    return d ? d.getDate() + ' ' + MONTH_ABBR[d.getMonth()] : ds;
+  }
+
+  function contenuPartageHTML(p){
+    var c = p.contenu || {};
+    if (p.type === 'exercice'){
+      var stats = [];
+      if (c.top) stats.push(['Top set', c.top]);
+      if (c.rm) stats.push(['1RM estimé', c.rm + ' kg']);
+      if (c.meilleur) stats.push(['Meilleur poids', c.meilleur + ' kg']);
+      if (c.meilleurTemps) stats.push(['Meilleur temps', c.meilleurTemps]);
+      if (c.seances) stats.push([c.seances > 1 ? 'Séances' : 'Séance', String(c.seances)]);
+      return '<div class="pg-sous">' + esc(c.groupe || '') + '</div>'
+        + '<div class="pg-chiffres">'
+        + stats.map(function(x){
+            return '<span class="pg-chiffre"><b>' + esc(x[1]) + '</b>' + esc(x[0]) + '</span>';
+          }).join('')
+        + '</div>'
+        + (c.jours || []).slice().reverse().map(function(j){
+            return '<div class="pg-jour"><span class="pg-jour-date">' + esc(jourCourt(j.date)) + '</span>'
+              + seriesTexteHTML(j.series) + '</div>';
+          }).join('');
+    }
+    if (p.type === 'seance'){
+      return '<div class="pg-sous">' + esc(jourCourt(c.date) || '')
+        + (c.series ? ' · ' + c.series + (c.series > 1 ? ' séries' : ' série') : '')
+        + (c.volume ? ' · ' + esc(c.volume) : '') + '</div>'
+        + (c.exercices || []).map(function(e){
+            return '<div class="pg-exo"><span class="pg-exo-nom">' + esc(e.nom) + '</span>'
+              + '<span class="pg-exo-groupe">' + esc(e.groupe || '') + '</span>'
+              + seriesTexteHTML(e.series) + '</div>';
+          }).join('');
+    }
+    var cases = [];
+    if (c.seances)    cases.push([c.seances > 1 ? 'Séances' : 'Séance', String(c.seances)]);
+    if (c.series)     cases.push([c.series > 1 ? 'Séries' : 'Série', String(c.series)]);
+    if (c.mouvements) cases.push(['Mouvements', String(c.mouvements)]);
+    if (c.volume)     cases.push(['Volume', c.volume]);
+    return '<div class="pg-sous">' + esc(c.label || '') + '</div>'
+      + '<div class="pg-chiffres">'
+      + cases.map(function(x){
+          return '<span class="pg-chiffre"><b>' + esc(x[1]) + '</b>' + esc(x[0]) + '</span>';
+        }).join('')
+      + '</div>'
+      + (c.groupes || []).map(function(g){
+          return '<div class="pg-groupe"><span class="pg-sw" style="background:'
+            + couleurGroupe(g.nom) + '"></span>' + esc(g.nom)
+            + '<b>' + g.series + '</b></div>';
+        }).join('');
+  }
+
+  // Une carte par partage recu. La reaction est une rangee de quatre mots :
+  // aucun equivalent negatif, et aucun total nulle part.
+  function partageRecuHTML(p){
+    var auteur = p.pseudo || 'Un ami';
+    return '<article class="pg-carte' + (p.lu_le ? '' : ' nonlu') + '" data-partage="' + esc(p.id) + '">'
+      + '<header class="pg-tete">'
+      +   '<span class="pg-avatar" aria-hidden="true">' + esc(String(auteur).trim().charAt(0) || '?') + '</span>'
+      +   '<span class="pg-qui"><b>' + esc(auteur) + '</b>'
+      +     '<span>t\'a envoyé ' + (PARTAGE_MOT[p.type] || 'QUELQUE CHOSE').toLowerCase()
+      +       ' · ' + esc(quandListe(p.cree_le)) + '</span></span>'
+      +   '<button type="button" class="pg-ranger" data-ranger="' + esc(p.id) + '"'
+      +     ' aria-label="Ranger ce partage">×</button>'
+      + '</header>'
+      + '<h3 class="pg-titre">' + esc(p.titre) + '</h3>'
+      + (p.mot ? '<p class="pg-mot">« ' + esc(p.mot) + ' »</p>' : '')
+      + contenuPartageHTML(p)
+      + '<div class="pg-reactions" role="group" aria-label="Répondre à ' + esc(auteur) + '">'
+      + REACTIONS.map(function(r){
+          return '<button type="button" class="pg-reaction' + (p.reaction === r[0] ? ' actif' : '') + '"'
+            + ' data-reaction="' + r[0] + '" data-partage="' + esc(p.id) + '"'
+            + ' aria-pressed="' + (p.reaction === r[0] ? 'true' : 'false') + '">' + r[1] + '</button>';
+        }).join('')
+      + '</div>'
+      + '</article>';
+  }
+
+  var jetonPartages = 0;
+  function rendrePartagesRecus(){
+    var zone = document.getElementById('partagesRecus');
+    if (!zone) return;
+    if (!Sync.estConnecte()){ zone.hidden = true; zone.innerHTML = ''; return; }
+    var jeton = ++jetonPartages;
+    Sync.partagesRecus().then(function(rows){
+      if (jeton !== jetonPartages) return;
+      rows = rows || [];
+      zone.hidden = !rows.length;
+      if (!rows.length){ zone.innerHTML = ''; return; }
+      zone.innerHTML = '<div class="pg-label">CE QUE TES AMIS T\'ONT ENVOYÉ</div>'
+        + rows.map(partageRecuHTML).join('');
+      // Lu veut dire « affiche a l'ecran » : la pastille doit tomber quand on
+      // a vu, pas quand on a reagi.
+      var neufs = rows.filter(function(p){ return !p.lu_le; });
+      if (!neufs.length) return;
+      Promise.all(neufs.map(function(p){ return Sync.marquerPartageLu(p.id).catch(function(){}); }))
+        .then(function(){ majBadgeMessages(true); });
+    }, function(){ if (jeton === jetonPartages){ zone.hidden = true; zone.innerHTML = ''; } });
+  }
+
+  document.getElementById('partagesRecus').addEventListener('click', function(e){
+    var ranger = e.target.closest('[data-ranger]');
+    if (ranger){
+      var carte = ranger.closest('.pg-carte');
+      Sync.rangerPartage(ranger.dataset.ranger).then(function(){
+        if (carte) carte.remove();
+        majBadgeMessages(true);
+        showToast('Rangé');
+      }, function(err){ showToast(Sync.messageErreur(err)); });
+      return;
+    }
+    var r = e.target.closest('[data-reaction]');
+    if (!r) return;
+    // Rappuyer sur la meme reaction la retire : on peut changer d'avis.
+    var veut = r.getAttribute('aria-pressed') === 'true' ? null : r.dataset.reaction;
+    Sync.reagirPartage(r.dataset.partage, veut).then(function(){
+      var ligne = r.closest('.pg-reactions');
+      if (!ligne) return;
+      ligne.querySelectorAll('.pg-reaction').forEach(function(b){
+        var actif = veut && b.dataset.reaction === veut;
+        b.classList.toggle('actif', !!actif);
+        b.setAttribute('aria-pressed', actif ? 'true' : 'false');
+      });
+    }, function(err){ showToast(Sync.messageErreur(err)); });
+  });
+
+  // ---------- envoyer ----------
+  var aEnvoyer = null;    // { type, titre, contenu }
+  var amisCoches = {};
+
+  function ouvrirPartage(type, titre, contenu){
+    if (!contenu){ showToast('Rien à partager ici pour l\'instant'); return; }
+    aEnvoyer = { type:type, titre:titre, contenu:contenu };
+    amisCoches = {};
+    fermerFeuilles();
+    document.getElementById('partageQuoi').textContent = (PARTAGE_MOT[type] || '') + ' · ' + titre;
+    document.getElementById('partageMot').value = '';
+    document.getElementById('partageSheet').hidden = false;
+    rendreListeEnvoi();
+  }
+  function fermerPartage(){
+    var el = document.getElementById('partageSheet');
+    if (el) el.hidden = true;
+    aEnvoyer = null;
+  }
+
+  function rendreListeEnvoi(){
+    var zone = document.getElementById('partageAmis');
+    var envoyer = document.getElementById('partageEnvoyer');
+    if (!zone) return;
+    if (!Sync.estConnecte()){
+      envoyer.hidden = true;
+      zone.innerHTML = '<p class="sheet-note">Partager demande un compte : c\'est lui qui dit '
+        + 'à qui tu envoies. Sans compte, ton carnet marche exactement pareil.</p>'
+        + '<button type="button" class="btn-sheet primary" id="partageConnexion">'
+        + 'SE CONNECTER OU CRÉER UN COMPTE</button>';
+      return;
+    }
+    zone.innerHTML = '<div class="admin-vide">' + attente() + '</div>';
+    Sync.mesAmis().then(function(rows){
+      var actifs = (rows || []).filter(function(a){ return a.statut === 'actif'; });
+      if (!actifs.length){
+        envoyer.hidden = true;
+        zone.innerHTML = '<p class="sheet-note">Tu n\'as pas encore d\'ami sur Top Set. '
+          + 'Échangez vos codes dans RÉGLAGES ET PROFIL, et vous pourrez vous envoyer '
+          + 'des exercices, des séances et des récaps.</p>'
+          + '<button type="button" class="btn-sheet" id="partageVersAmis">OUVRIR MES AMIS</button>';
+        return;
+      }
+      envoyer.hidden = false;
+      zone.innerHTML = actifs.map(function(a){
+        var nom = a.pseudo || 'Sans pseudo';
+        return '<label class="pg-ami"><input type="checkbox" data-ami="' + esc(a.autre) + '"'
+          + (amisCoches[a.autre] ? ' checked' : '') + '>'
+          + '<span class="pg-avatar" aria-hidden="true">' + esc(nom.trim().charAt(0) || '?') + '</span>'
+          + '<span>' + esc(nom) + '</span></label>';
+      }).join('');
+    }, function(err){
+      envoyer.hidden = true;
+      zone.innerHTML = '<p class="sheet-msg erreur">' + esc(Sync.messageErreur(err)) + '</p>';
+    });
+  }
+
+  document.getElementById('partageClose').addEventListener('click', fermerPartage);
+  document.getElementById('partageSheet').addEventListener('click', function(e){
+    if (e.target === this) fermerPartage();
+  });
+  document.getElementById('partageAmis').addEventListener('change', function(e){
+    var c = e.target.closest('[data-ami]');
+    if (!c) return;
+    amisCoches[c.dataset.ami] = c.checked;
+  });
+  document.getElementById('partageAmis').addEventListener('click', function(e){
+    if (e.target.closest('#partageConnexion')){
+      fermerPartage();
+      Sync.modeAccueil('connexion');
+      Sync.montrerAccueil();
+      return;
+    }
+    if (e.target.closest('#partageVersAmis')){ fermerPartage(); openProfil(); }
+  });
+
+  document.getElementById('partageEnvoyer').addEventListener('click', function(){
+    if (!aEnvoyer) return;
+    var cibles = Object.keys(amisCoches).filter(function(k){ return amisCoches[k]; });
+    if (!cibles.length){ showToast('Choisis au moins un ami'); return; }
+    var btn = this;
+    btn.disabled = true;
+    Sync.partager(aEnvoyer.type, aEnvoyer.titre, aEnvoyer.contenu,
+                  document.getElementById('partageMot').value, cibles)
+      .then(function(r){
+        btn.disabled = false;
+        fermerPartage();
+        var n = (r && r.envoye_a) || cibles.length;
+        showToast('Envoyé à ' + n + (n > 1 ? ' amis' : ' ami'));
+      }, function(err){
+        btn.disabled = false;
+        showToast(Sync.messageErreur(err));
+      });
+  });
+
+  // ---------- mes amis, dans la feuille du profil ----------
+  function msgAmis(genre, texte){
+    var el = document.getElementById('amisMsg');
+    if (!el) return;
+    el.className = 'sheet-msg ' + genre;
+    el.textContent = texte;
+    el.hidden = !texte;
+  }
+
+  function rendreAmis(){
+    var zone = document.getElementById('amisListe');
+    var code = document.getElementById('amisCode');
+    if (!zone || !code) return;
+    if (!Sync.estConnecte()){ zone.innerHTML = ''; code.textContent = '—'; return; }
+    Sync.monCodeAmi().then(function(c){ code.textContent = c || '—'; },
+                          function(){ code.textContent = '—'; });
+    zone.innerHTML = '<div class="admin-vide">' + attente() + '</div>';
+    Sync.mesAmis().then(function(rows){
+      rows = rows || [];
+      var attente2 = rows.filter(function(a){ return a.statut === 'en_attente' && a.sens === 'recue'; });
+      var envoyees = rows.filter(function(a){ return a.statut === 'en_attente' && a.sens === 'envoyee'; });
+      var actifs   = rows.filter(function(a){ return a.statut === 'actif'; });
+      var html = '';
+      attente2.forEach(function(a){
+        var nom = a.pseudo || 'Sans pseudo';
+        html += '<div class="pg-demande"><span>' + esc(nom) + ' veut être ton ami.</span>'
+          + '<button type="button" class="btn-sheet" data-ami-oui="' + esc(a.lien) + '">ACCEPTER</button>'
+          + '<button type="button" class="btn-sheet danger" data-ami-non="' + esc(a.lien) + '">REFUSER</button>'
+          + '</div>';
+      });
+      envoyees.forEach(function(a){
+        html += '<div class="pg-ligne"><span>' + esc(a.pseudo || 'Sans pseudo')
+          + '<i>DEMANDE ENVOYÉE</i></span>'
+          + '<button type="button" class="pg-rompre" data-ami-rompre="' + esc(a.lien) + '">ANNULER</button>'
+          + '</div>';
+      });
+      actifs.forEach(function(a){
+        html += '<div class="pg-ligne"><span>' + esc(a.pseudo || 'Sans pseudo') + '</span>'
+          + '<button type="button" class="pg-rompre" data-ami-rompre="' + esc(a.lien) + '">RETIRER</button>'
+          + '</div>';
+      });
+      // Pas de « 4 amis » en gros : un nombre d'amis affiche comme un score,
+      // c'est exactement ce qu'on ne veut pas ici.
+      if (!html) html = '<p class="sheet-note">Personne pour l\'instant. Donne ton code à '
+        + 'quelqu\'un de ta salle, ou saisis le sien.</p>';
+      zone.innerHTML = html;
+    }, function(err){ zone.innerHTML = '<p class="sheet-msg erreur">' + esc(Sync.messageErreur(err)) + '</p>'; });
+  }
+
+  document.getElementById('amisDemander').addEventListener('click', function(){
+    var champ = document.getElementById('amisSaisie');
+    var v = String(champ.value || '').toUpperCase().trim();
+    if (v.length < 8){ msgAmis('erreur', 'Un code fait 8 caractères.'); champ.focus(); return; }
+    msgAmis('', '');
+    Sync.demanderAmi(v).then(function(r){
+      champ.value = '';
+      var nom = (r && r.ami) || 'cette personne';
+      msgAmis('ok', r && r.statut === 'actif'
+        ? 'Vous êtes amis : ' + nom + ' avait déjà demandé.'
+        : 'Demande envoyée à ' + nom + '. Il doit accepter.');
+      rendreAmis();
+    }, function(err){ msgAmis('erreur', Sync.messageErreur(err)); });
+  });
+
+  document.getElementById('amisRefaire').addEventListener('click', function(){
+    msgAmis('', '');
+    Sync.monCodeAmi(true).then(function(c){
+      document.getElementById('amisCode').textContent = c || '—';
+      msgAmis('ok', 'Nouveau code. L\'ancien ne marche plus ; tes amis restent.');
+    }, function(err){ msgAmis('erreur', Sync.messageErreur(err)); });
+  });
+
+  document.getElementById('amisListe').addEventListener('click', function(e){
+    var oui = e.target.closest('[data-ami-oui]');
+    var non = e.target.closest('[data-ami-non]');
+    var rom = e.target.closest('[data-ami-rompre]');
+    if (!oui && !non && !rom) return;
+    msgAmis('', '');
+    var p = oui ? Sync.repondreAmi(oui.dataset.amiOui, true)
+          : non ? Sync.repondreAmi(non.dataset.amiNon, false)
+                : Sync.rompreAmi(rom.dataset.amiRompre);
+    p.then(function(){ rendreAmis(); majBadgeMessages(true); },
+           function(err){ msgAmis('erreur', Sync.messageErreur(err)); });
+  });
 
   // ==================================================================
   // COACH
@@ -7901,6 +8345,37 @@
         return rpcAdmin('repondre_demande', { p_lien: lien, p_accepte: !!oui });
       },
       revoquerLien:function(lien){ return rpcAdmin('revoquer_lien', { p_lien: lien }); },
+
+      // ----------------------------------------------------- le partage
+      // Douze appels, tous verifies cote base : le code designe une personne,
+      // chaque destinataire est verifie comme ami au moment de l'envoi, et
+      // lire, reagir ou ranger n'ecrit que sa propre ligne. Cacher un bouton
+      // n'a jamais protege personne.
+      monCodeAmi:function(refaire){ return rpcAdmin('mon_code_ami', { p_refaire: !!refaire }); },
+      demanderAmi:function(code){
+        return rpcAdmin('demander_ami', { p_code: String(code || '').toUpperCase().trim() });
+      },
+      repondreAmi:function(lien, oui){
+        return rpcAdmin('repondre_ami', { p_lien: lien, p_accepte: !!oui });
+      },
+      rompreAmi:function(lien){ return rpcAdmin('rompre_ami', { p_lien: lien }); },
+      mesAmis:function(){ return rpcAdmin('mes_amis'); },
+      partager:function(type, titre, contenu, mot, amis){
+        return rpcAdmin('partager', { p_type:type, p_titre:titre, p_contenu:contenu,
+                                      p_mot:mot || null, p_amis:amis });
+      },
+      partagesRecus:function(){ return rpcAdmin('mes_partages_recus', { p_limite: 50 }); },
+      mesEnvois:function(){ return rpcAdmin('mes_envois', { p_limite: 30 }); },
+      marquerPartageLu:function(id){ return rpcAdmin('marquer_partage_lu', { p_partage: id }); },
+      reagirPartage:function(id, r){
+        return rpcAdmin('reagir_partage', { p_partage: id, p_reaction: r || null });
+      },
+      rangerPartage:function(id){ return rpcAdmin('ranger_partage', { p_partage: id }); },
+      partagesNonLus:function(){
+        if (!user) return Promise.resolve(0);
+        return rpcAdmin('partages_non_lus').then(function(n){ return Number(n) || 0; },
+                                                 function(){ return 0; });
+      },
       mesCoaches:function(){ return rpcAdmin('mes_coaches'); },
       monCoach:function(){ return rpcAdmin('mon_coach'); },
       tirerJoursDe:function(client){ return rpcAdmin('tirer_jours_de', { p_client: client }); },
@@ -7978,7 +8453,11 @@
             var n = 0; Object.keys(par).forEach(function(k){ n += par[k]; });
             return n;
           });
-          return Promise.all([support, coach]).then(function(t){ return t[0] + t[1]; });
+          // Les partages non lus entrent dans le meme total : c'est la meme
+          // pastille, et la question est la meme — quelqu'un m'a envoye
+          // quelque chose.
+          return Promise.all([support, coach, Sync.partagesNonLus()])
+            .then(function(t){ return t[0] + t[1] + t[2]; });
         });
       },
       adminFils:function(){ return rpcAdmin('admin_fils'); },

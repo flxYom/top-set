@@ -618,17 +618,29 @@ ok('la liste des fonctions SECURITY DEFINER est celle attendue',
      // policy n'autorise quiconque a le faire.
      'accuser_retour',
      'admin_apercu', 'admin_marquer_retour', 'admin_membres', 'admin_retours',
+     // Le partage : les trois verdicts (ami_de, auteur_de, destinataire_de)
+     // coupent la recursion entre policies qui se liraient l'une l'autre, et
+     // les ecritures verifient les deux cotes. Aucune table du partage n'a de
+     // policy d'ecriture : tout passe par la.
+     'ami_de', 'auteur_de',
      // Le lien coach : les deux verdicts (recursion de policy) et les quatre
      // ecritures, qui verifient de quel cote du lien se trouve l'appelant.
-     'cesser_coach', 'coach_de', 'demander_coach', 'devenir_coach',
-     'est_admin', 'mon_coach_id',
+     'cesser_coach', 'coach_de', 'demander_ami', 'demander_coach',
+     'destinataire_de', 'devenir_coach',
+     'est_admin',
+     'marquer_partage_lu', 'mes_amis', 'mes_envois', 'mes_partages_recus',
+     'mon_coach_id', 'mon_code_ami',
      // Le declencheur des notifications : il ecrit dans une table ou personne
      // n'a de policy insert, c'est tout l'interet.
      'notifier_admin',
+     // Le partage, suite : envoyer verifie chaque destinataire comme ami, et
+     // lire, reagir ou ranger n'ecrivent que la ligne de l'appelant.
+     'partager', 'partages_non_lus',
      // L'anti-spam : il compte les envois de l'heure, y compris ceux que le
      // RLS cache a l'appelant.
      'plafond_envois',
-     'repondre_demande', 'revoquer_lien',
+     'ranger_partage', 'reagir_partage', 'repondre_ami', 'repondre_demande',
+     'revoquer_lien', 'rompre_ami',
      'toucher_profil'
    ].join(','),
    definers.join(','));
@@ -1223,6 +1235,223 @@ await as(D, `insert into public.messages_coach (coach_id, client_id, auteur, cor
 ok('anti-spam : le plafond du coache ne bloque pas la reponse du coach', true);
 await refuse('anti-spam : la fonction du plafond ne s appelle pas depuis l API',
   () => as(B, `select public.plafond_envois()`));
+
+console.log('\n== 26. Le partage entre amis ==');
+// Trois personnes neuves : P et Q deviendront amis, Z restera dehors. C'est Z
+// qui compte le plus — tout ce qui suit doit lui etre ferme.
+const P = '66666666-6666-6666-6666-666666666666';
+const Q = '77777777-7777-7777-7777-777777777777';
+const Z = '88888888-8888-8888-8888-888888888888';
+for (const [id, mail, pseudo] of [[P, 'p@t.fr', 'Pierre'], [Q, 'q@t.fr', 'Kamil'], [Z, 'z@t.fr', 'Zoe']]){
+  await db.query(`insert into auth.users (id, email) values ($1, $2)
+                  on conflict (id) do nothing`, [id, mail]);
+  await as(id, `select public.toucher_profil($1)`, [pseudo]);
+}
+
+// ------------------------------------------------------------- devenir amis
+let codeQ = (await as(Q, `select public.mon_code_ami() c`)).rows[0].c;
+ok('le code d ami fait 8 caracteres lisibles', /^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{8}$/.test(codeQ), codeQ);
+ok('le meme appel rend le meme code',
+   (await as(Q, `select public.mon_code_ami() c`)).rows[0].c === codeQ);
+ok('le code d ami n est pas le code de coach',
+   (await db.query(`select code_ami, code_coach from public.profils where user_id = $1`, [Q]))
+     .rows[0].code_coach !== codeQ);
+
+await refuse('un code inconnu est refuse', () => as(P, `select public.demander_ami('AAAAAAAA')`));
+await refuse('son propre code est refuse', () => as(Q, `select public.demander_ami($1)`, [codeQ]));
+
+let rp = (await as(P, `select public.demander_ami($1) j`, [codeQ])).rows[0].j;
+ok('la demande part en attente, et nomme la personne',
+   rp.statut === 'en_attente' && rp.ami === 'Kamil', JSON.stringify(rp));
+ok('tant qu elle n est pas acceptee, personne n est ami',
+   (await as(P, `select public.ami_de($1) a`, [Q])).rows[0].a === false);
+
+// Une demande deja posee ne se duplique pas : l'index le garantit, la fonction
+// le dit en francais.
+rp = (await as(P, `select public.demander_ami($1) j`, [codeQ])).rows[0].j;
+ok('demander deux fois ne cree pas deux amities', rp.statut === 'en_attente');
+ok('une seule ligne pour la paire',
+   (await db.query(`select count(*)::int n from public.liens_ami
+                     where statut in ('en_attente','actif')
+                       and least(demandeur,destinataire) = least($1::uuid,$2::uuid)
+                       and greatest(demandeur,destinataire) = greatest($1::uuid,$2::uuid)`, [P, Q]))
+     .rows[0].n === 1);
+
+let lienPQ = (await db.query(`select id from public.liens_ami where demandeur = $1 and destinataire = $2`, [P, Q])).rows[0].id;
+await refuse('le demandeur ne peut pas accepter sa propre demande',
+  () => as(P, `select public.repondre_ami($1, true)`, [lienPQ]));
+await refuse('un tiers ne peut pas repondre a la place du destinataire',
+  () => as(Z, `select public.repondre_ami($1, true)`, [lienPQ]));
+
+await as(Q, `select public.repondre_ami($1, true)`, [lienPQ]);
+ok('acceptee, l amitie vaut des deux cotes',
+   (await as(P, `select public.ami_de($1) a`, [Q])).rows[0].a === true &&
+   (await as(Q, `select public.ami_de($1) a`, [P])).rows[0].a === true);
+ok('et elle ne vaut pour personne d autre',
+   (await as(Z, `select public.ami_de($1) a`, [P])).rows[0].a === false &&
+   (await as(P, `select public.ami_de($1) a`, [Z])).rows[0].a === false);
+
+// Deux personnes qui echangent leurs codes en meme temps ne doivent pas rester
+// bloquees : saisir le code de quelqu un qui a deja demande vaut accepter.
+{
+  const codeZ = (await as(Z, `select public.mon_code_ami() c`)).rows[0].c;
+  const codeP = (await as(P, `select public.mon_code_ami() c`)).rows[0].c;
+  await as(Z, `select public.demander_ami($1)`, [codeP]);
+  const croise = (await as(P, `select public.demander_ami($1) j`, [codeZ])).rows[0].j;
+  ok('deux demandes croisees font une amitie, pas un blocage', croise.statut === 'actif',
+     JSON.stringify(croise));
+  // On la coupe tout de suite : la suite a besoin que Z soit dehors.
+  const lz = (await db.query(`select id from public.liens_ami
+                               where statut = 'actif'
+                                 and least(demandeur,destinataire) = least($1::uuid,$2::uuid)
+                                 and greatest(demandeur,destinataire) = greatest($1::uuid,$2::uuid)`, [P, Z])).rows[0].id;
+  await as(P, `select public.rompre_ami($1)`, [lz]);
+  ok('et elle se coupe', (await as(P, `select public.ami_de($1) a`, [Z])).rows[0].a === false);
+}
+
+let amisP = (await as(P, `select * from public.mes_amis()`)).rows;
+ok('mes_amis rend l ami actif avec son pseudo',
+   amisP.length === 1 && amisP[0].pseudo === 'Kamil' && amisP[0].statut === 'actif',
+   JSON.stringify(amisP));
+
+// ---------------------------------------------------------------- envoyer
+const CONTENU = { nom:'Developpe couche', groupe:'Pectoraux', seances:14,
+                  jours:[{ date:'2026-10-07', series:[{ poids:80, reps:'8' }] }] };
+await refuse('envoyer sans destinataire est refuse',
+  () => as(P, `select public.partager('exercice','Developpe couche',$1::jsonb,null,array[]::uuid[])`, [JSON.stringify(CONTENU)]));
+await refuse('un type de partage inconnu est refuse',
+  () => as(P, `select public.partager('photo','x','{}'::jsonb,null,array[$1]::uuid[])`, [Q]));
+await refuse('envoyer a quelqu un qui n est pas ami est refuse',
+  () => as(P, `select public.partager('exercice','x','{}'::jsonb,null,array[$1]::uuid[])`, [Z]));
+
+let env = (await as(P, `select public.partager('exercice','Developpe couche',$1::jsonb,'PR aujourd hui',array[$2]::uuid[]) j`,
+                    [JSON.stringify(CONTENU), Q])).rows[0].j;
+ok('envoye a un ami, et a un seul', env.envoye_a === 1, JSON.stringify(env));
+const partage1 = env.partage;
+
+// ------------------------------------------------------------- qui le voit
+let recusQ = (await as(Q, `select * from public.mes_partages_recus()`)).rows;
+ok('le destinataire voit le partage, son mot et son auteur',
+   recusQ.length === 1 && recusQ[0].pseudo === 'Pierre' && recusQ[0].mot === 'PR aujourd hui'
+   && recusQ[0].contenu.nom === 'Developpe couche',
+   JSON.stringify(recusQ.map(x => x.titre)));
+ok('un non-destinataire ne voit rien, meme en lisant la table en direct',
+   (await as(Z, `select count(*)::int n from public.partages`)).rows[0].n === 0);
+ok('ni la ligne de reception',
+   (await as(Z, `select count(*)::int n from public.partages_recus`)).rows[0].n === 0);
+ok('et il ne recoit rien par la fonction',
+   (await as(Z, `select count(*)::int n from public.mes_partages_recus()`)).rows[0].n === 0);
+// anon n'a meme pas le droit de lire la table : le `revoke all` passe avant
+// les policies, et le refus arrive plus tot qu'un resultat vide.
+await refuse('anon ne lit meme pas la table des partages',
+  () => asAnon(`select count(*)::int n from public.partages`));
+await refuse('ni celle des receptions',
+  () => asAnon(`select count(*)::int n from public.partages_recus`));
+await refuse('ni celle des amities',
+  () => asAnon(`select count(*)::int n from public.liens_ami`));
+
+// Le point qui compte : aucune policy n'a ouvert le carnet a un ami.
+await as(P, `insert into public.seances (user_id, date) values ($1, '2026-10-07')
+             on conflict do nothing`, [P]);
+ok('un ami ne lit PAS les seances de son ami',
+   (await as(Q, `select count(*)::int n from public.seances where user_id = $1`, [P])).rows[0].n === 0);
+ok('un ami ne lit PAS la ligne de profil de son ami en direct',
+   (await as(Q, `select count(*)::int n from public.profils where user_id = $1`, [P])).rows[0].n === 0);
+
+// ------------------------------------------------- ecrire de travers
+await refuse('personne n insere un partage a la main',
+  () => as(P, `insert into public.partages (auteur, type, titre) values ($1,'exercice','triche')`, [P]));
+await refuse('personne ne s invite comme destinataire',
+  () => as(Z, `insert into public.partages_recus (partage_id, destinataire) values ($1, $2)`, [partage1, Z]));
+// Le trou qu'on a ferme : avec une policy UPDATE, Z aurait pu deplacer sa
+// propre ligne vers le partage de quelqu'un d'autre.
+await refuse('et personne ne deplace une ligne de reception',
+  () => as(Q, `update public.partages_recus set partage_id = $1 where destinataire = $2`, [partage1, Q]));
+await refuse('le destinataire ne modifie pas le partage recu',
+  () => as(Q, `update public.partages set titre = 'autre' where id = $1`, [partage1]));
+// Un DELETE que la policy filtre n'echoue pas : il n'efface rien. C'est la
+// ligne qui doit etre encore la, pas une exception qu'il faut verifier.
+await as(Q, `delete from public.partages where id = $1`, [partage1]);
+ok('le destinataire ne supprime pas le partage de l auteur',
+   (await db.query(`select count(*)::int n from public.partages where id = $1`, [partage1])).rows[0].n === 1);
+
+// ----------------------------------------------------- lire, reagir, ranger
+ok('non lu au depart', recusQ[0].lu_le === null);
+await as(Q, `select public.marquer_partage_lu($1)`, [partage1]);
+ok('lu une fois affiche',
+   (await as(Q, `select lu_le from public.partages_recus where partage_id = $1 and destinataire = $2`,
+             [partage1, Q])).rows[0].lu_le !== null);
+ok('la pastille retombe', (await as(Q, `select public.partages_non_lus() n`)).rows[0].n === 0);
+
+await refuse('une reaction hors de la liste est refusee',
+  () => as(Q, `select public.reagir_partage($1, 'nul')`, [partage1]));
+await as(Q, `select public.reagir_partage($1, 'costaud')`, [partage1]);
+ok('la reaction est enregistree',
+   (await as(Q, `select reaction from public.partages_recus where partage_id = $1 and destinataire = $2`,
+             [partage1, Q])).rows[0].reaction === 'costaud');
+await as(Q, `select public.reagir_partage($1, null)`, [partage1]);
+ok('rappuyer la retire',
+   (await as(Q, `select reaction from public.partages_recus where partage_id = $1 and destinataire = $2`,
+             [partage1, Q])).rows[0].reaction === null);
+await as(Q, `select public.reagir_partage($1, 'bravo')`, [partage1]);
+
+let envoisP = (await as(P, `select * from public.mes_envois()`)).rows;
+ok('l auteur voit la reaction, avec le pseudo et sans total',
+   envoisP.length === 1 && envoisP[0].envoye_a === 1
+   && envoisP[0].reactions.length === 1
+   && envoisP[0].reactions[0].pseudo === 'Kamil'
+   && envoisP[0].reactions[0].reaction === 'bravo',
+   JSON.stringify(envoisP[0] && envoisP[0].reactions));
+// Reagir a un partage qui n'est pas le sien n'echoue pas : l'update ne touche
+// aucune ligne, et c'est exactement ce qu'on veut verifier. Une exception
+// aurait aussi dit a Z que ce partage existe.
+await as(Z, `select public.reagir_partage($1,'bravo')`, [partage1]);
+ok('Z reagit dans le vide : aucune ligne ne lui appartient',
+   (await db.query(`select count(*)::int n from public.partages_recus where destinataire = $1`, [Z])).rows[0].n === 0
+   && (await db.query(`select reaction from public.partages_recus where partage_id = $1`, [partage1]))
+        .rows.every(x => x.reaction !== 'bravo' || true)
+   && (await db.query(`select count(*)::int n from public.partages_recus where partage_id = $1 and destinataire = $2 and reaction = 'bravo'`, [partage1, Z])).rows[0].n === 0);
+
+await as(Q, `select public.ranger_partage($1)`, [partage1]);
+ok('rangee, la carte quitte sa liste',
+   (await as(Q, `select count(*)::int n from public.mes_partages_recus()`)).rows[0].n === 0);
+ok('mais l auteur garde son envoi',
+   (await as(P, `select count(*)::int n from public.mes_envois()`)).rows[0].n === 1);
+
+// ------------------------------------------------------- supprimer, rompre
+await as(P, `delete from public.partages where id = $1`, [partage1]);
+ok('l auteur supprime son partage, la reception part en cascade',
+   (await db.query(`select count(*)::int n from public.partages_recus where partage_id = $1`, [partage1])).rows[0].n === 0);
+
+env = (await as(P, `select public.partager('seance','Pecs',$1::jsonb,null,array[$2]::uuid[]) j`,
+                [JSON.stringify({ date:'2026-10-07', exercices:[] }), Q])).rows[0].j;
+const partage2 = env.partage;
+await as(P, `select public.rompre_ami($1)`, [lienPQ]);
+ok('rompue, l amitie ne vaut plus',
+   (await as(P, `select public.ami_de($1) a`, [Q])).rows[0].a === false);
+ok('ce qui a deja ete envoye reste : on ne reecrit pas le passe',
+   (await as(Q, `select count(*)::int n from public.mes_partages_recus()`)).rows[0].n === 1);
+await refuse('mais on n envoie plus rien',
+  () => as(P, `select public.partager('seance','x','{}'::jsonb,null,array[$1]::uuid[])`, [Q]));
+await db.query(`delete from public.partages where id = $1`, [partage2]);
+
+// --------------------------------------------------------------- les bornes
+{
+  // On renoue pour tester le plafond et la taille.
+  await as(P, `select public.demander_ami($1)`, [codeQ]);
+  const l = (await db.query(`select id from public.liens_ami where demandeur = $1 and destinataire = $2 and statut = 'en_attente'`, [P, Q])).rows[0].id;
+  await as(Q, `select public.repondre_ami($1, true)`, [l]);
+
+  const gros = { bourrage: 'x'.repeat(40000) };
+  await refuse('un partage trop gros est refuse',
+    () => as(P, `select public.partager('seance','gros',$1::jsonb,null,array[$2]::uuid[])`, [JSON.stringify(gros), Q]));
+
+  const essai = await jusquAuRefus(P,
+    `select public.partager('seance','encore','{}'::jsonb,null,array[$1]::uuid[])`, [Q], 30);
+  ok('anti-spam : 20 partages par heure, pas un de plus',
+     essai.passes === 20 && essai.erreur && /Trop d envois/.test(essai.erreur.message),
+     'passes=' + essai.passes + ' ' + (essai.erreur && essai.erreur.message));
+}
 
 console.log(`\n${pass} reussis, ${fail} echoues`);
 process.exit(fail ? 1 : 0);
