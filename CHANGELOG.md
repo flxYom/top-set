@@ -9,6 +9,31 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ## [Unreleased]
 
+### Fixed
+
+- **Two functions of the same name in one scope.** `jourCourt` was declared
+  twice at the top level of `app.js` — the carnet's and the sharing layer's
+  — and the second silently replaced the first for the whole file. Nothing
+  was broken here, because the sharing copy was the more tolerant of the two,
+  but that exact shape had already stopped the session screen from drawing
+  (`unitesDuJour`). One definition now, keeping the guard on an unreadable
+  date, and a new guard in `test/gabarits.test.mjs` refuses any function
+  declared twice at the top level of `app.js` — the check no string test
+  could make, since both of the forms it looked for were present. The guard
+  was verified by injecting a homonym and watching it fail.
+- `mesure.js` joins the service worker shell. It was the only first-party
+  script to enter the cache after a first online visit instead of at install,
+  so an installation that never had the time to load it once online fetched it
+  and failed. Service worker `topset-v45`.
+
+### Removed
+
+- Dead code found by scanning every declaration against its uses:
+  `exosDuJour` and `etatTexte`, left over from the calendar's old JOUR view
+  — which has shown only its label, the detail being in the list just
+  below, since 20/09 — and the `.bilan-barre` and `.repos-stop` rules,
+  whose classes nothing posts any more.
+
 ### Added
 
 - **Full-screen exercise.** The orange ⤢ icon on a card opens the exercise

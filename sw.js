@@ -10,7 +10,7 @@
 // depuis un cache reviendrait a afficher des seances perimees en croyant
 // etre a jour. Le hors-ligne des donnees, c'est localStorage, pas ici.
 
-var VERSION = 'topset-v44';
+var VERSION = 'topset-v45';
 var COQUILLE = VERSION + '-coquille';
 var COURANT  = VERSION + '-courant';
 
@@ -41,6 +41,10 @@ var A_PRECHARGER = [
   'vendor/chart.umd.js',
   'supabase-config.js',
   'intelligence.js',
+  // Le chargeur de la mesure d'audience : le seul script maison qui restait
+  // hors de la coquille, donc absent du cache d'une installation qui n'a
+  // jamais eu le temps de le charger en ligne.
+  'mesure.js',
   'app.js',
   // Le peintre de la braise (Web Worker) : sans lui hors ligne, le degrade CSS.
   'braise.js',
