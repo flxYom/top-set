@@ -422,5 +422,30 @@ avant de le faire.
   des fonctions. Le test RLS a d'ailleurs attrapé un `enable row level security`
   manquant sur `partages_recus` : sans lui, les policies n'étaient même pas
   consultées.
+- **Un cycle est une déclaration posée sur un jour, pas un objet « bloc »**
+  (10/10, demande de Kamil). Il tient jusqu'à la déclaration suivante : on le
+  dit une fois, les séances d'après en héritent. L'autre forme — un objet avec
+  un début, une fin et un nom — obligeait à tenir des dates à jour, à décider
+  ce qu'une séance hors période devient, et à recopier le cycle sur chaque
+  journée. Ici la base ne porte que les jours où il a changé d'avis, et il n'y
+  a rien à recalculer quand une séance bouge. Conséquence assumée : corriger
+  la déclaration d'un jour passé re-étiquette les jours qui suivent — c'est
+  bien ce qu'on veut d'une correction.
+- **La comparaison est bornée par le cycle** (10/10). « La dernière fois », la
+  charge suggérée et le bilan de fin cherchent d'abord dans le même cycle.
+  60 kg × 12 n'est pas une baisse par rapport à 90 kg × 3, et l'app le lisait
+  comme ça. Quand il n'y a rien de comparable, on montre quand même les
+  chiffres mais on écrit d'où ils viennent, en orange : cacher l'historique
+  serait pire que l'afficher mal étiqueté, le mentir est le seul interdit.
+- **Le nom de la séance remonte sur l'écran de séance** (10/10) : il n'était
+  joignable que depuis la fiche dans CARNET, et personne ne l'avait trouvé —
+  Kamil a demandé une fonctionnalité qui existait depuis des semaines. Une
+  fonction qu'on ne trouve pas n'existe pas. Même `definirTitre` : un seul
+  chemin pour nommer.
+- **Trois portées de commentaire, pas une de plus** (10/10) : la série (« assistée
+  sur la 3e »), l'exercice, et désormais la journée (« mal dormi »). Chacune
+  répond à une question différente, et le mot de la journée se relit sur la
+  fiche de la séance — un commentaire qu'on ne relit jamais n'est qu'à moitié
+  une fonctionnalité.
 - **Description de l'interface** : [`DESIGN.md`](DESIGN.md), extrait du code le
   18/09. Ce fichier-ci garde les décisions et fait foi en cas d'écart.

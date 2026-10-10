@@ -143,16 +143,30 @@ tu n'avais pas) » — le second applique, en refaisant la fusion sur le carnet 
 cet instant. Seules les journées qui ont bougé repartent vers le compte.
 Réimporter deux fois le même fichier n'ajoute rien.
 
-**Titres, fins de séance et noms partent même seuls.** `pousser()` sortait
-quand aucune journée n'avait bougé : un titre changé, une séance validée ou un
-nom d'exercice attendaient alors la prochaine série notée, parfois des jours.
-Les quatre files sont maintenant regardées ensemble.
+**Titres, cycles, mots, fins de séance et noms partent même seuls.**
+`pousser()` sortait quand aucune journée n'avait bougé : un titre changé, une
+séance validée ou un nom d'exercice attendaient alors la prochaine série
+notée, parfois des jours. Les six files sont maintenant regardées ensemble, le
+cycle et le mot de la séance compris (`pousser_cycle`, `pousser_commentaire`,
+par le même chemin que `pousser_titre` : une file de dates, un appel par date,
+et la date ne quitte la file qu'après confirmation du serveur).
+
+**Une colonne que la base n'a pas encore ne doit rien effacer.** Le cycle et le
+mot vivent en local dès maintenant ; tant que `schema.sql` n'est pas repassé,
+la base rend la journée **sans** ces clés, et la fusion garde alors ce qui est
+ici. Une base à jour rend `cycle:null`, et là on suit. C'est la même règle que
+« séance terminée », et c'est ce qui permet de livrer l'app avant le SQL.
 
 **Le tableur se réimporte.** `lireCsvCarnet()` relit le CSV exporté, et ce
 qu'Excel en fait quand il le réenregistre : virgules au lieu de points-virgules,
 dates en JJ/MM/AAAA. Il passe ensuite par exactement le même nettoyage qu'un
 fichier JSON. Au passage, l'import relit enfin le **titre** des séances : il
-voyageait dans la sauvegarde sans jamais être relu. La colonne `Commentaire`
+voyageait dans la sauvegarde sans jamais être relu. Le 10 octobre 2026, le
+même piège a été trouvé sur trois autres champs : `clean[ds]` est une **liste
+blanche**, et tout ce qui n'y est pas nommé se perd. « Terminée » s'y perdait
+depuis toujours — restaurer une sauvegarde rendait une séance validée
+simplement « faite » — et le cycle comme le mot s'y seraient perdus. Les
+quatre sont relus. La colonne `Commentaire`
 est relue sur la série de sa ligne, comme l'export l'écrit.
 
 **Garde-fou contre l'écrasement.** `saveLocal()` réécrit le carnet entier à chaque

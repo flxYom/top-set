@@ -189,6 +189,43 @@ pleines de champs, et un glissement vertical dessus se confond avec le
 défilement. Dans la liste, seule la poignée prend le doigt (`touch-action:none`)
 — partout ailleurs, la feuille défile.
 
+**Le cycle d'entraînement** (10 octobre 2026, demandé par Kamil). « Lundi,
+pendant deux semaines, cycle force ; après, endurance. » Sous la date, une
+pastille dit le cycle en cours et l'ouvre : `FORCE`, `HYPERTROPHIE`,
+`ENDURANCE`, ou ce qu'on écrit soi-même (24 caractères).
+
+Ce que ça change, et c'est tout l'intérêt : **« la dernière fois » cherche
+d'abord dans le même cycle.** 60 kg × 12 n'est pas une baisse par rapport à
+90 kg × 3, et pourtant la colonne PRÉC. mettait les deux face à face : un jour
+d'hypertrophie se lisait comme un effondrement. L'en-tête porte maintenant le
+cycle d'où viennent les chiffres, et quand il n'y a rien de comparable elle le
+dit en orange — `DERNIÈRE FOIS · 26 SEPT. · AUTRE CYCLE : FORCE`. La charge
+suggérée se calcule sur le même périmètre, pour la même raison. Le bilan de
+fin de séance compare lui aussi à l'intérieur du cycle, et nomme celui qu'il a
+pris.
+
+Un cycle est une **déclaration posée sur un jour**, qui tient jusqu'à la
+suivante : on le dit une fois, les séances d'après en héritent sans rien
+demander. Pas d'objet « bloc » avec un début, une fin et une date à tenir à
+jour, pas de cycle recopié sur chaque séance : la base ne porte que les jours
+où il a changé d'avis. La feuille propose les siens d'abord, le plus récent en
+haut, et ne propose de retirer que ce qui a été déclaré ce jour-là — retirer un
+cycle hérité ne voudrait rien dire.
+
+**Le nom d'une séance remonte sur l'écran où l'on s'entraîne** (10 octobre
+2026). Il existait depuis longtemps, mais ne se changeait que depuis la fiche
+d'une séance dans CARNET : personne ne l'avait jamais trouvé. Il est maintenant
+sous la date, avec le `✎`, et le champ vide affiche le nom calculé en
+filigrane. Le même `definirTitre` qu'avant — un seul chemin pour nommer, donc
+`foisFaite` et le bilan continuent de s'y retrouver.
+
+**Un mot sur la séance entière** (10 octobre 2026). Il y avait le commentaire
+d'une série et celui d'un exercice ; il manquait celui du jour — « mal dormi »,
+« première depuis la coupure » n'appartiennent à aucune série. Sous la liste,
+`＋ UN MOT SUR LA SÉANCE` ouvre un champ de 500 caractères, la même borne que
+les autres commentaires, tenue aussi par la table. Le bouton ne s'affiche pas
+sur un jour vide.
+
 **Duplication de série.** `+ SÉRIE` recopie la précédente : poids, reps, RPE,
 repos. Seul `fait` repart à zéro, et le commentaire ne se recopie pas. Sur cinq
 séries identiques, tu en saisis une et tu appuies quatre fois. La ligne s'ajoute

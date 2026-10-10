@@ -172,6 +172,40 @@ a sheet rather than on the card itself: cards are full of fields, and a vertical
 drag on one reads as scrolling. In the list only the handle takes the finger
 (`touch-action:none`) — everywhere else the sheet scrolls.
 
+**The training cycle** (2026-10-10, asked for by Kamil). « Monday, for two
+weeks, strength cycle; then endurance. » Under the date, a pill states the
+current cycle and opens it: `FORCE`, `HYPERTROPHIE`, `ENDURANCE`, or whatever
+you type (24 characters).
+
+What it changes, and it is the whole point: **« last time » looks inside the
+same cycle first.** 60 kg × 12 is not a drop from 90 kg × 3, yet the PRÉC.
+column put the two face to face — a hypertrophy day read as a collapse. The
+header now carries the cycle the figures come from, and when nothing is
+comparable it says so in orange — `DERNIÈRE FOIS · 26 SEPT. · AUTRE CYCLE :
+FORCE`. The suggested load is computed over the same scope, for the same
+reason. The end-of-session summary also compares within the cycle, and names
+the one it took.
+
+A cycle is a **declaration placed on one day**, holding until the next one: you
+say it once and later sessions inherit it. No « block » object with a start, an
+end and a date to keep current, no cycle copied onto every session — the
+database only carries the days where it changed. The sheet offers yours first,
+most recent on top, and only offers to remove what was declared that day;
+removing an inherited cycle would mean nothing.
+
+**A session's name moves to the screen you train on** (2026-10-10). It had
+existed for a long time but could only be changed from a session's sheet in
+CARNET, where nobody ever found it. It now sits under the date with the `✎`,
+and an empty field shows the computed name as a placeholder. The same
+`definirTitre` as before — one path for naming, so `foisFaite` and the summary
+still agree.
+
+**A word on the whole session** (2026-10-10). There was a set's comment and an
+exercise's; the day's was missing — « slept badly », « first one since the
+break » belong to no set. Under the list, `＋ UN MOT SUR LA SÉANCE` opens a
+500-character field, the same bound as the other comments and held by the
+table too. The button does not show on an empty day.
+
 **Set duplication.** `+ SÉRIE` copies the previous set — weight, reps, RPE, rest.
 Only `fait` resets, and the comment is not copied. Five identical sets means
 typing one and tapping four times. The row is added to the card without

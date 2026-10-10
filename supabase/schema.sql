@@ -174,6 +174,42 @@ end $$;
 -- bilan affiche, et il se compare entre appareils.
 alter table public.seances add column if not exists terminee timestamptz;
 
+-- Le cycle d'entrainement d'une seance : force, hypertrophie, endurance, ou
+-- ce que la personne ecrit. Nullable, et vide pour tout l'historique : une
+-- seance d'avant ce champ n'appartient a aucun cycle declare. Cote app, le
+-- cycle en vigueur un jour donne est le dernier declare a cette date ou
+-- avant — la base ne stocke donc que les jours ou il a change, et il n'y a
+-- rien a recalculer quand une seance bouge.
+alter table public.seances add column if not exists cycle text;
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint where conname = 'seances_cycle_borne'
+  ) then
+    alter table public.seances
+      add constraint seances_cycle_borne
+      check (cycle is null or char_length(cycle) <= 24);
+  end if;
+end $$;
+
+-- Le mot sur la seance entiere : « mal dormi », « premiere depuis la
+-- coupure ». Il ne remplace ni le commentaire d'une serie ni celui d'un
+-- exercice : ceux-la disent laquelle, celui-ci dit la journee. Meme borne
+-- que les autres, et tenue par la table, pas seulement par l'app.
+alter table public.seances add column if not exists commentaire text;
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint where conname = 'seances_commentaire_borne'
+  ) then
+    alter table public.seances
+      add constraint seances_commentaire_borne
+      check (commentaire is null or char_length(commentaire) <= 500);
+  end if;
+end $$;
+
 -- Le cardio : vitesse (km/h) et inclinaison (%) moyennes d'une serie.
 -- Nullables, et vides pour toutes les series d'avant : une serie de muscu
 -- n'en a pas. Les bornes sont larges mais reelles.
@@ -491,6 +527,65 @@ begin
 end;
 $$;
 
+-- Le cycle et le mot partent a part, comme le titre et la fin : un appel qui
+-- echoue echoue seul, et la journee passe quand meme. La troncature est ici
+-- aussi, pas seulement dans l'app : le corps d'une requete ne se croit pas.
+create or replace function public.pousser_cycle(p_date date, p_cycle text)
+returns timestamptz
+language plpgsql
+security invoker
+set search_path = public
+as $$
+declare
+  v_user uuid := auth.uid();
+  v_maj  timestamptz;
+  v_val  text := nullif(trim(coalesce(p_cycle, '')), '');
+begin
+  if v_user is null then
+    raise exception 'Aucune session : connexion requise.';
+  end if;
+
+  v_val := left(v_val, 24);
+
+  insert into public.seances (user_id, date, cycle)
+  values (v_user, p_date, v_val)
+  on conflict (user_id, date) do update
+    set cycle = v_val,
+        updated_at = now()
+  returning updated_at into v_maj;
+
+  return v_maj;
+end;
+$$;
+
+create or replace function public.pousser_commentaire(p_date date, p_texte text)
+returns timestamptz
+language plpgsql
+security invoker
+set search_path = public
+as $$
+declare
+  v_user uuid := auth.uid();
+  v_maj  timestamptz;
+  v_val  text := nullif(trim(coalesce(p_texte, '')), '');
+begin
+  if v_user is null then
+    raise exception 'Aucune session : connexion requise.';
+  end if;
+
+  v_val := left(v_val, 500);
+
+  insert into public.seances (user_id, date, commentaire)
+  values (v_user, p_date, v_val)
+  on conflict (user_id, date) do update
+    set commentaire = v_val,
+        updated_at = now()
+  returning updated_at into v_maj;
+
+  return v_maj;
+end;
+$$;
+
 -- Rend les journées dans la forme exacte que l'app utilise en local, pour que
 -- le client n'ait aucune conversion à faire. Sans argument : tout l'historique
 -- (nouvel appareil). Avec p_depuis : seulement ce qui a bougé depuis.
@@ -509,6 +604,8 @@ as $$
         'date', s.date::text,
         'titre', s.titre,
         'termine', s.terminee,
+        'cycle', s.cycle,
+        'commentaire', s.commentaire,
         'updatedAt', s.updated_at,
         'exercises', coalesce((
           select jsonb_agg(
@@ -625,6 +722,10 @@ revoke execute on function public.pousser_fin(date, timestamptz) from anon, publ
 revoke execute on function public.pousser_titre(date, text) from anon, public;
 grant  execute on function public.pousser_fin(date, timestamptz) to authenticated;
 grant  execute on function public.pousser_titre(date, text) to authenticated;
+revoke execute on function public.pousser_cycle(date, text) from anon, public;
+revoke execute on function public.pousser_commentaire(date, text) from anon, public;
+grant  execute on function public.pousser_cycle(date, text) to authenticated;
+grant  execute on function public.pousser_commentaire(date, text) to authenticated;
 
 revoke execute on function public.pousser_jour(date, jsonb) from anon, public;
 revoke execute on function public.tirer_jours(timestamptz)  from anon, public;
@@ -1383,6 +1484,8 @@ as $$
         'date', s.date::text,
         'titre', s.titre,
         'termine', s.terminee,
+        'cycle', s.cycle,
+        'commentaire', s.commentaire,
         'updatedAt', s.updated_at,
         'exercises', coalesce((
           select jsonb_agg(
