@@ -55,13 +55,6 @@
       "type": "image/webp",
       "form_factor": "narrow",
       "label": "Une série par ligne, la dernière fois en face"
-    },
-    {
-      "src": "img/carnet-recap.webp",
-      "sizes": "603x705",
-      "type": "image/webp",
-      "form_factor": "narrow",
-      "label": "Le récap : volume, séries, assiduité"
     }
   ]
 }

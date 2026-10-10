@@ -28,9 +28,8 @@ c'est exactement à ça que sert ce repo pour l'instant.
 <p align="center">
   <img src="docs/screenshots/planning.png" width="240" alt="Planning de la semaine : les boutons messages, profil et données de l'en-tête, le bandeau du jour, les jours de la semaine et les groupes travaillés" />
   <img src="docs/screenshots/session.png" width="240" alt="Saisie du développé couché : la charge suggérée, puis une série par ligne — type, dernière fois, poids, reps, RPE, coche — et les outils de la série en cours" />
-  <img src="docs/screenshots/recap.png" width="240" alt="Récap de la semaine : volume levé, séries, séances, mouvements, et la bande d'assiduité" />
 </p>
-<p align="center"><sub>Planning · Saisie d'une série · Récap hebdomadaire — vrais écrans, avec des chiffres de démo pour ces captures.</sub></p>
+<p align="center"><sub>Planning · Saisie d'une série — vrais écrans, avec des chiffres de démo pour ces captures.</sub></p>
 
 ---
 

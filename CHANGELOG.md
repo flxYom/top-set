@@ -33,6 +33,16 @@ while it stays below `1.0.0`, breaking changes (in particular to the
   — which has shown only its label, the detail being in the list just
   below, since 20/09 — and the `.bilan-barre` and `.repos-stop` rules,
   whose classes nothing posts any more.
+- **The third product screenshot, which was the first one twice.**
+  `img/carnet-recap.webp` was byte for byte `img/carnet-planning.webp`, and
+  `docs/screenshots/recap.png` was `planning.png` — a copy slip from 14/09.
+  So the product page showed one image under two captions, its `SoftwareApplication`
+  JSON-LD declared it as a distinct screenshot, the Android install dialog
+  labelled it « Le récap : volume, séries, assiduité », and both READMEs gave it
+  an alt text describing a screen it did not show. Two true screenshots beat
+  three of which one lies, so the recap capture is gone from the page, the
+  JSON-LD, the manifest and the READMEs until a real one replaces it; the
+  `.captures` grid is `auto-fit`, so two fill the row.
 
 ### Added
 

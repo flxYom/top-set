@@ -216,7 +216,7 @@ network first so you always get the latest version, and nothing coming from
 Supabase is ever cached.
 
 **Screenshots in the manifest.** `manifest.webmanifest` lists the product
-page's three screenshots (`screenshots`, `form_factor: narrow`), an `id` and
+page's two screenshots (`screenshots`, `form_factor: narrow`), an `id` and
 categories: on Android, Chrome uses them for a richer install dialog, like a
 store listing. iOS ignores them.
 

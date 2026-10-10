@@ -222,7 +222,7 @@ sans réseau, dans une salle au sous-sol, et le carnet est dans le
 `localStorage`. La page passe d'abord par le réseau pour que tu aies toujours la
 dernière version, et rien de ce qui vient de Supabase n'est mis en cache.
 
-**Captures dans le manifeste.** `manifest.webmanifest` déclare les trois
+**Captures dans le manifeste.** `manifest.webmanifest` déclare les deux
 captures de la page produit (`screenshots`, `form_factor: narrow`), un `id` et
 des catégories : sur Android, Chrome s'en sert pour une fenêtre d'installation
 plus riche, comme une fiche d'application. iOS les ignore.
