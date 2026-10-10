@@ -30,9 +30,8 @@ repository is for right now.
 <p align="center">
   <img src="docs/screenshots/planning.png" width="240" alt="Weekly planning: the header's messages, profile and data buttons, today's chest-day banner, the week's day pills and the muscle groups trained" />
   <img src="docs/screenshots/session.png" width="240" alt="Logging the bench press: the suggested load, then one set per row — type, last time, weight, reps, RPE, check — and the tools of the current set" />
-  <img src="docs/screenshots/recap.png" width="240" alt="Weekly recap: volume lifted, sets, sessions, movements, and the assiduity strip" />
 </p>
-<p align="center"><sub>Planning · Logging a set · Weekly recap — real screens, seeded with placeholder numbers for these screenshots.</sub></p>
+<p align="center"><sub>Planning · Logging a set — real screens, seeded with placeholder numbers for these screenshots.</sub></p>
 
 ---
 
