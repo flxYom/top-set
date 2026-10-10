@@ -435,6 +435,93 @@
   .btn-ordre[hidden]{display:none;}
   .btn-ordre:active{border-color:var(--orange);color:var(--orange);}
 
+  /* Le nom de la seance et son cycle, sur l'ecran ou on s'entraine. Le nom
+     existait depuis longtemps mais ne se changeait que depuis la fiche, dans
+     CARNET : personne ne l'avait jamais trouve. */
+  .seance-tete{display:flex;align-items:center;gap:8px;margin:10px 0 2px;}
+  .seance-tete-nom{
+    flex:1 1 auto;min-width:0;display:flex;align-items:center;gap:7px;
+    min-height:44px;padding:0 10px;
+    background:var(--panel2);border:2px solid var(--line);
+    color:var(--ink);font-family:inherit;
+    font-size:13px;font-weight:800;letter-spacing:.03em;cursor:pointer;text-align:left;
+  }
+  .seance-tete-nom b{
+    flex:1 1 auto;min-width:0;font-weight:800;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .seance-tete-nom s{flex:none;text-decoration:none;opacity:.5;font-size:14px;}
+  .seance-tete-nom:active{border-color:var(--orange);}
+  .seance-tete-cycle{
+    flex:none;max-width:46%;display:flex;align-items:center;
+    min-height:44px;padding:0 10px;
+    background:transparent;border:2px dashed var(--line);
+    color:var(--dim);font-family:inherit;
+    font-size:10.5px;font-weight:800;letter-spacing:.08em;cursor:pointer;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  /* Pose, il ne se devine plus : il se lit. */
+  .seance-tete-cycle.mis{border-style:solid;border-color:var(--orange);color:var(--orange);}
+  .seance-tete-cycle:active{transform:translate(1px,1px);}
+  .cycle-champ{
+    flex:1 1 auto;min-width:0;min-height:44px;
+    background:var(--bg);color:var(--ink);border:2px solid var(--blue);
+    padding:0 10px;font-family:inherit;font-size:13px;font-weight:800;
+  }
+  .cycle-champ:focus{outline:none;}
+
+  /* Le mot sur la seance entiere : il y avait celui d'une serie et celui d'un
+     exercice, pas celui du jour. */
+  .seance-mot{margin-top:8px;}
+  .btn-mot{
+    width:100%;min-height:48px;padding:9px 12px;
+    background:var(--panel2);border:2.5px solid var(--line);
+    color:var(--ink);font-family:inherit;
+    font-size:12.5px;font-weight:800;letter-spacing:.05em;cursor:pointer;text-align:left;
+  }
+  .btn-mot:active{border-color:var(--orange);}
+  .btn-mot u{display:block;text-decoration:none;font-size:10px;letter-spacing:.12em;color:var(--dim);margin-bottom:4px;}
+  .btn-mot q{
+    display:block;quotes:none;font-weight:700;font-size:13px;letter-spacing:0;
+    line-height:1.4;white-space:pre-wrap;overflow-wrap:break-word;
+  }
+  .mot-champ{
+    width:100%;box-sizing:border-box;
+    background:var(--bg);color:var(--ink);border:2px solid var(--blue);
+    padding:9px 10px;font-family:inherit;font-size:13px;line-height:1.4;resize:vertical;
+  }
+  .mot-champ:focus{outline:none;}
+
+  /* La liste des cycles dans sa feuille. */
+  .cycle-liste{display:flex;flex-direction:column;gap:7px;margin:11px 0 4px;}
+  .cycle-choix{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    min-height:48px;padding:0 11px;
+    background:var(--panel2);border:2px solid var(--line);
+    color:var(--ink);font-family:inherit;
+    font-size:13px;font-weight:800;letter-spacing:.04em;cursor:pointer;text-align:left;
+  }
+  .cycle-choix.actif{border-color:var(--orange);color:var(--orange);}
+  .cycle-choix:active{transform:translate(1px,1px);}
+  .cycle-choix i{font-style:normal;flex:none;font-size:11px;letter-spacing:.1em;opacity:.65;}
+
+  /* D'ou viennent les chiffres de la colonne PREC. Quand ce n'est pas le
+     cycle du jour, ca se voit. */
+  .ex-prev-cycle{font-weight:800;}
+
+  /* Sur la fiche d'une seance : son cycle, et le mot de la journee. */
+  .fiche-cycle{
+    margin-left:8px;padding:2px 6px;
+    border:1.5px solid var(--orange);color:var(--orange);
+    font-size:9.5px;font-weight:800;letter-spacing:.1em;white-space:nowrap;
+  }
+  .fiche-mot{
+    margin-top:9px;font-size:13px;line-height:1.45;color:var(--ink);
+    border-left:3px solid var(--line);padding-left:9px;
+    white-space:pre-wrap;overflow-wrap:break-word;
+  }
+  .ex-prev-cycle.ailleurs{color:var(--orange);}
+
   /* ---- Le partage entre amis ---------------------------------------------
      Un registre a part : un partage recu n'est ni une carte d'exercice ni une
      conversation. Il se lit, on y repond d'un mot, on le range. Rien ici ne
@@ -2404,9 +2491,18 @@
     box-shadow:0 12px 28px -12px rgba(43,208,138,.65), inset 0 1px 0 rgba(255,255,255,.3);
   }
   .btn-fin:active{box-shadow:0 6px 14px -8px rgba(43,208,138,.6), inset 0 1px 0 rgba(255,255,255,.3);}
-  .btn-sheet,.btn-reprendre,.btn-recap-jour,.btn-retour,.btn-ordre{
+  .btn-sheet,.btn-reprendre,.btn-recap-jour,.btn-retour,.btn-ordre,.btn-mot{
     border:1px solid var(--trait);border-radius:var(--r-m);background:var(--s1);color:var(--ink);box-shadow:none;
   }
+  .seance-tete-nom,.cycle-choix{
+    border:1px solid var(--trait);border-radius:var(--r-m);background:var(--s1);box-shadow:var(--relief);
+  }
+  .seance-tete-cycle{border:1px dashed var(--trait2);border-radius:var(--r-m);}
+  .fiche-cycle{border:1px solid var(--orange);border-radius:var(--r-s);}
+  .fiche-mot{border-left:2px solid var(--trait);}
+  .seance-tete-cycle.mis{border-style:solid;border-color:var(--orange);}
+  .cycle-choix.actif{border-color:var(--orange);}
+  .cycle-champ,.mot-champ{border:1px solid var(--blue);border-radius:var(--r-m);background:var(--s2);}
   .ordre-ligne{
     border:1px solid var(--trait);border-left:4px solid var(--c,var(--orange));
     border-radius:var(--r-m);background:var(--s1);box-shadow:var(--relief);
@@ -2783,6 +2879,10 @@
   @media (max-width:359px){
     .ordre-ligne{grid-template-columns:32px minmax(0,1fr) auto;gap:6px;}
     .ordre-poignee{font-size:17px;}
+    /* A 320 px, le nom et le cycle cote a cote laissaient six lettres
+       chacun : ils passent l'un sous l'autre. */
+    .seance-tete{flex-wrap:wrap;gap:6px;}
+    .seance-tete-nom,.seance-tete-cycle{flex:1 1 100%;max-width:none;}
     .ordre-fleche{width:37px;}
   }
   /* Petit telephone : deux par deux. Quatre mots sur une rangee de 264 px
@@ -3175,10 +3275,15 @@
       <div class="hero" id="heroBand"></div>
       <div class="day-panel">
         <div class="day-panel-header"><h2 id="dayTitle">—</h2><button type="button" class="btn-today loin" id="jourAuj" hidden>AUJOURD'HUI ›</button></div>
+        <div class="seance-tete">
+          <button type="button" class="seance-tete-nom" id="seanceNomBtn" aria-label="Renommer la séance"><b id="seanceNomTxt">—</b><s aria-hidden="true">✎</s></button>
+          <button type="button" class="seance-tete-cycle" id="seanceCycleBtn">+ CYCLE</button>
+        </div>
         <div class="ex-list" id="exList"></div>
         <button type="button" class="btn-add" id="addExerciseBtn">+ AJOUTER UN EXERCICE</button>
         <div class="suggest-exo" id="suggestExo" hidden></div>
         <button type="button" class="btn-ordre" id="ordreBtn" hidden>⇅ CHANGER L'ORDRE DES EXERCICES</button>
+        <div class="seance-mot" id="seanceMot"></div>
         <div id="finZone" hidden></div>
         <button type="button" class="btn-reprendre" id="reprendreBtn">⟳ SÉLECTIONNER UNE SÉANCE</button>
         <button type="button" class="btn-recap-jour" id="recapJourBtn">VOIR LE RÉCAP DE CETTE SÉANCE ›</button>
@@ -3558,6 +3663,24 @@
       flèches. C'est enregistré au fur et à mesure.</p>
     <ul class="ordre-liste" id="ordreListe"></ul>
     <button type="button" class="btn-sheet" id="ordreFini">C'EST BON</button>
+  </div>
+</div>
+
+<div class="sheet" id="cycleSheet" hidden>
+  <div class="sheet-card" role="dialog" aria-modal="true" aria-labelledby="cycleTitre">
+    <div class="sheet-head">
+      <h2 id="cycleTitre">TON CYCLE EN COURS</h2>
+      <button type="button" class="icon-btn" id="cycleClose" aria-label="Fermer">×</button>
+    </div>
+    <p class="sheet-note">Tu le dis une fois : les séances suivantes le gardent,
+      jusqu'à ce que tu en changes. « La dernière fois » et le bilan ne comparent
+      plus qu'à l'intérieur du même cycle — 60 kg × 12 n'est pas une baisse par
+      rapport à 90 kg × 3.</p>
+    <div class="cycle-liste" id="cycleListe"></div>
+    <label class="sheet-label espace" for="cycleLibre">OU LE TIEN</label>
+    <input type="text" class="sheet-input" id="cycleLibre" maxlength="24" placeholder="Prise de masse, sèche, rééduc…" autocomplete="off">
+    <button type="button" class="btn-sheet primary" id="cycleValider">ENREGISTRER</button>
+    <button type="button" class="btn-sheet" id="cycleRetirer" hidden>RETIRER LE CYCLE DE CE JOUR</button>
   </div>
 </div>
 

@@ -133,15 +133,29 @@ n'avais pas) » — the second applies it, redoing the merge on the logbook as i
 is at that moment. Only the days that changed are sent to the account.
 Importing the same file twice adds nothing.
 
-**Titles, session validations and names now go out on their own.** `pousser()`
-returned early when no day had changed, so a renamed session, a validated
-session or a new exercise name waited for the next logged set — sometimes for
-days. The four queues are now checked together.
+**Titles, cycles, words, session validations and names now go out on their
+own.** `pousser()` returned early when no day had changed, so a renamed
+session, a validated session or a new exercise name waited for the next logged
+set — sometimes for days. The six queues are now checked together, the
+session's cycle and word included (`pousser_cycle`, `pousser_commentaire`, by
+the same path as `pousser_titre`: a queue of dates, one call per date, and a
+date only leaves the queue once the server confirms).
+
+**A column the database does not have yet must erase nothing.** The cycle and
+the word live locally from now on; until `schema.sql` is re-run, the database
+returns the day **without** those keys, and the merge then keeps what is here.
+An up-to-date database returns `cycle:null`, and there we follow. Same rule as
+« session finished », and it is what lets the app ship before the SQL.
 
 **The CSV imports back.** `lireCsvCarnet()` reads the exported CSV, and what
 Excel makes of it when it re-saves it: commas instead of semicolons, DD/MM/YYYY
 dates. It then goes through exactly the same cleaning as a JSON file. The
 `Commentaire` column is read onto the set of its row, as the export writes it.
+On 2026-10-10 the same trap was found on three more fields: `clean[ds]` is a
+**whitelist**, and anything not named there is lost. « Finished » had always
+been lost — restoring a backup turned a validated session into a merely done
+one — and the cycle and the word would have gone the same way. All four are
+read back.
 
 **Overwrite guard.** `saveLocal()` rewrites the whole logbook on every save. If
 `state.sessions` were empty at the wrong moment — a failed load, corrupted JSON —

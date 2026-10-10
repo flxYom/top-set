@@ -9,6 +9,43 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ## [Unreleased]
 
+### Added
+
+- **Training cycles, and a comparison that respects them.** « Monday, for two
+  weeks, strength cycle; then endurance — and it should compare me to my last
+  endurance session. » (Kamil, 10/10.) A pill under the date states the cycle
+  and opens it: `FORCE`, `HYPERTROPHIE`, `ENDURANCE`, or your own (24 chars).
+  **« Last time », the suggested load and the end-of-session summary now look
+  inside the same cycle first**: 60 kg × 12 is not a drop from 90 kg × 3, yet
+  the PRÉC. column put the two face to face and a hypertrophy day read as a
+  collapse. When nothing is comparable the figures still show, with where they
+  come from, in orange — `AUTRE CYCLE : FORCE`. A cycle is a declaration placed
+  on one day that holds until the next: said once, later sessions inherit it, so
+  there is no « block » object with dates to keep current and the database only
+  carries the days it changed. New columns `seances.cycle` and
+  `seances.commentaire` with `pousser_cycle` / `pousser_commentaire` — **re-run
+  the new part of `supabase/schema.sql`**; until then the cycle lives locally and
+  a sync does not erase it (a database without the column returns the day
+  without the key, and the client keeps what it has). Service worker
+  `topset-v46`.
+- **A session's name, on the screen you train on.** It had existed for weeks but
+  could only be changed from a session's sheet in CARNET — Kamil asked for a
+  feature that was already there, which is the whole lesson. It now sits under
+  the date with the `✎`, through the same `definirTitre`.
+- **A word on the whole session.** There was a set's comment and an exercise's;
+  the day's was missing — « slept badly » belongs to no set. `＋ UN MOT SUR LA
+  SÉANCE` under the list, 500 characters, bound by the table too, and read back
+  on the session's sheet with its cycle.
+
+### Fixed
+
+- **Restoring a backup lost « session finished », and had always done so.**
+  `clean[ds]` in `parseBackup` is a whitelist: it rebuilt the day from `date`
+  and `exercises` and re-added only `titre`. So a restore turned every validated
+  session back into a merely done one, silently — found while adding the cycle,
+  which would have gone the same way. `termine`, `cycle` and `commentaire` are
+  read back now, and a guard in `test/gabarits.test.mjs` holds the four.
+
 ### Fixed
 
 - **Two functions of the same name in one scope.** `jourCourt` was declared

@@ -585,7 +585,7 @@ ok('le bilan compare a la meme seance la semaine d avant, sans tonnage',
    && !/function volumeSemaine/.test(SRC) && !/b\.volume/.test(SRC));
 ok('sous + AJOUTER UN EXERCICE, les exercices faits avec ceux-la la semaine d avant',
    /id="addExerciseBtn">\+ AJOUTER UN EXERCICE<\/button>\s*<div class="suggest-exo" id="suggestExo" hidden><\/div>/.test(HTML)
-   && /function suggestionsExo\(ds\)\{/.test(SRC) && /data-suggestion="/.test(SRC) && /majBoutonFin\(ds\);\n    majBoutonOrdre\(day\);\n    majSuggestions\(\);/.test(SRC));
+   && /function suggestionsExo\(ds\)\{/.test(SRC) && /data-suggestion="/.test(SRC) && /majBoutonFin\(ds\);\n    majBoutonOrdre\(day\);\n    majSeanceTete\(ds\);\n    majMotSeance\(ds\);\n    majSuggestions\(\);/.test(SRC));
 ok('les outils ont leur rubrique sous le planning',
    (() => { const v = HTML.slice(HTML.indexOf('id="view-planning"'), HTML.indexOf('id="view-seances"'));
             return ['/outils/calculateur-1rm', '/outils/tableau-rpe', '/outils/modele-carnet-musculation'].every(h => v.includes('href="' + h + '"')); })());
@@ -966,6 +966,102 @@ ok('aucune fonction declaree deux fois au premier niveau d\'app.js',
 ok('le garde-fou voit bien les fonctions du premier niveau',
    Object.keys(auPremierNiveau).length > 300,
    Object.keys(auPremierNiveau).length + ' vues');
+
+console.log('\n== 28. Le cycle d\'entrainement, le nom et le mot de la seance ==');
+
+// Un cycle est une declaration posee sur un jour, qui tient jusqu'a la
+// suivante. Pas d'objet « bloc » avec un debut et une fin : on le dit une
+// fois et les jours d'apres en heritent.
+ok('le cycle en vigueur est le dernier declare a cette date ou avant',
+   /function cycleDit\(ds\)\{/.test(SRC)
+   && /function cycleDe\(ds\)\{/.test(SRC)
+   && (() => { const f = corps('function cycleDe(ds){', 'function definirCycle(ds, cycle){');
+               return f.includes('var dit = cycleDit(ds);')
+                   && f.includes('return d < ds && cycleDit(d);')
+                   && f.includes('.sort()'); })()
+   // Effacer la declaration d'un jour rend la main au cycle d'avant : ce
+   // n'est pas « plus de cycle du tout ».
+   && /if \(v\) day\.cycle = v; else delete day\.cycle;/.test(SRC));
+
+// Le fond de la demande : 60 kg x 12 n'est pas une baisse par rapport a
+// 90 kg x 3. La colonne PREC. comparait pourtant les deux.
+ok('la derniere fois cherche d abord dans le meme cycle',
+   (() => { const f = corps('function precedentDe(ex){', 'function blocPrecedentHTML(ex, p){');
+            return f.includes('var cycle = cycleDe(state.selectedDay);')
+                && f.includes('return cycleDe(j.date) === cycle;')
+                // et le repli dit d'ou il vient
+                && f.includes('ailleurs: !!(cycle && cq !== cycle)')
+                && avant(f, 'var memes = toutes.filter', 'var q = TS.performancePrecedente(toutes'); })()
+   // La suggestion se calcule sur le meme perimetre que l'historique montre.
+   && /var cible = TS\.suggererCible\(p\.seances\);/.test(SRC));
+
+ok('des chiffres d un autre cycle ne passent jamais pour comparables',
+   /AUTRE CYCLE : /.test(SRC)
+   && /class="ex-prev-cycle' \+ \(p\.ailleurs \? ' ailleurs' : ''\)/.test(SRC)
+   && /\.ex-prev-cycle\.ailleurs\{color:var\(--orange\);\}/.test(HTML));
+
+ok('le bilan compare dans le meme cycle, et dit lequel',
+   (() => { const f = corps('function seanceComparable(ds, cles, minimum){', 'function seriesDuJourPour(ds, cle){');
+            return f.includes('var cycle = cycleDe(ds);')
+                && f.includes('var meme = cycle ? (cycleDe(x) === cycle ? 1 : 0) : 1;')
+                && f.includes('meme > best.meme'); })()
+   && /\(cycleDe\(c\.ds\) \? ' · ' \+ esc\(cycleDe\(c\.ds\)\) : ''\)/.test(SRC));
+
+// Le nom d'une seance existait, mais seulement depuis sa fiche dans CARNET.
+ok('le nom de la seance se change depuis l ecran ou on s entraine',
+   /id="seanceNomBtn"/.test(HTML) && /id="seanceNomTxt"/.test(HTML)
+   && /function editerNomSeance\(\)\{/.test(SRC)
+   && /function majSeanceTete\(ds\)\{/.test(SRC)
+   // Le meme definirTitre qu'avant : un seul chemin pour nommer.
+   && (() => { const f = corps('function editerNomSeance(){', 'function rendreCycle(){');
+               return f.includes('definirTitre(ds, champ.value)')
+                   && f.includes('champ.placeholder = titreParDefaut(ds);'); })());
+
+ok('le cycle se choisit dans une feuille, avec les siens d abord',
+   /id="cycleSheet"/.test(HTML) && /id="cycleListe"/.test(HTML) && /id="cycleLibre"/.test(HTML)
+   && /id="seanceCycleBtn"/.test(HTML)
+   && /var CYCLES = \['Force', 'Hypertrophie', 'Endurance'\];/.test(SRC)
+   && (() => { const f = corps('function cyclesConnus(){', 'function commentaireSeance(ds){');
+               return avant(f, 'Object.keys(state.sessions)', 'CYCLES.forEach'); })()
+   // On ne propose de retirer que ce qui a ete declare ce jour-la.
+   && /document\.getElementById\('cycleRetirer'\)\.hidden = !cycleDit\(ds\);/.test(SRC));
+
+// Il y avait le commentaire d'une serie et celui d'un exercice, pas celui du
+// jour. « Mal dormi » n'appartient a aucune serie.
+ok('un mot se met sur la seance entiere, borne comme les autres',
+   /id="seanceMot"/.test(HTML)
+   && /function commentaireSeance\(ds\)\{/.test(SRC)
+   && /function definirCommentaire\(ds, texte\)\{/.test(SRC)
+   && /champ\.maxLength = NOTE_MAX;/.test(SRC)
+   // Pas de bouton sur un jour vide : meme regle que TERMINER MA SEANCE.
+   && /if \(!mot && !\(day && \(day\.exercises \|\| \[\]\)\.length\)\)\{ zone\.innerHTML = ''; return; \}/.test(SRC));
+
+// Le piege de la restauration : clean[ds] est une liste blanche. « termine »
+// s'y perdait depuis toujours, et le cycle comme le mot s'y perdraient.
+ok('restaurer une sauvegarde garde le titre, le cycle, le mot et la validation',
+   (() => { const f = corps('clean[ds] = { date:ds, exercises:exs };', 'var n = compterJour(clean[ds]);');
+            return f.includes('clean[ds].titre')
+                && f.includes('clean[ds].cycle')
+                && f.includes('clean[ds].commentaire')
+                && f.includes('clean[ds].termine'); })());
+
+// Une base qui n'a pas encore les colonnes rend la journee SANS les cles :
+// la synchronisation ne doit surtout pas effacer ce qui est en local.
+ok('une base sans les colonnes n efface pas le cycle ni le mot d ici',
+   /if \(d && \('cycle' in d\)\)\{ if \(d\.cycle\) j\.cycle = /.test(SRC)
+   && /else if \(state\.sessions\[ds\] && state\.sessions\[ds\]\.cycle\) j\.cycle = state\.sessions\[ds\]\.cycle;/.test(SRC)
+   && /if \(d && \('commentaire' in d\)\)\{/.test(SRC)
+   && /else if \(state\.sessions\[ds\] && state\.sessions\[ds\]\.commentaire\)/.test(SRC)
+   // Et les deux partent a part, comme le titre.
+   && /function pousserCycles\(\)\{/.test(SRC) && /function pousserMots\(\)\{/.test(SRC)
+   && /marquerCycle:marquerCycle, marquerCommentaire:marquerCommentaire,/.test(SRC));
+
+// A 320 px, le nom et le cycle cote a cote laissaient six lettres chacun.
+ok('a 320 px le nom et le cycle passent l un sous l autre, et restent a 44 px',
+   /@media \(max-width:359px\)\{[\s\S]*?\.seance-tete\{flex-wrap:wrap;/.test(HTML)
+   && /\.seance-tete-nom,\.seance-tete-cycle\{flex:1 1 100%;max-width:none;\}/.test(HTML)
+   && /\.seance-tete-nom\{[^}]*min-height:44px;/.test(HTML)
+   && /\.seance-tete-cycle\{[^}]*min-height:44px;/.test(HTML));
 
 console.log(`\n${pass} reussis, ${fail} echoues`);
 process.exit(fail ? 1 : 0);

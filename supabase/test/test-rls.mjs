@@ -1453,5 +1453,66 @@ await db.query(`delete from public.partages where id = $1`, [partage2]);
      'passes=' + essai.passes + ' ' + (essai.erreur && essai.erreur.message));
 }
 
+console.log('\n== 27. Le cycle et le mot de la seance ==');
+{
+  // Ses propres comptes : la section 24 supprime A pour verifier la cascade.
+  const C1 = '99999999-9999-9999-9999-999999999999';
+  const C2 = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+  for (const [id, mail] of [[C1, 'c1@t.fr'], [C2, 'c2@t.fr']]){
+    await db.query(`insert into auth.users (id, email) values ($1, $2)
+                    on conflict (id) do nothing`, [id, mail]);
+  }
+  const J = '2026-10-05';
+  await as(C1, `select public.pousser_jour($1::date, '[]'::jsonb)`, [J]);
+
+  await as(C1, `select public.pousser_cycle($1::date, '  Hypertrophie  ')`, [J]);
+  ok('le cycle s enregistre, espaces en moins',
+     (await db.query(`select cycle from public.seances where user_id = $1 and date = $2`, [C1, J]))
+       .rows[0].cycle === 'Hypertrophie');
+
+  await as(C1, `select public.pousser_cycle($1::date, '')`, [J]);
+  ok('un cycle vide redevient null, pas une chaine vide',
+     (await db.query(`select cycle from public.seances where user_id = $1 and date = $2`, [C1, J]))
+       .rows[0].cycle === null);
+
+  // La troncature vit dans la fonction : le corps d'une requete ne se croit
+  // pas, meme venant de notre propre app.
+  await as(C1, `select public.pousser_cycle($1::date, $2)`, [J, 'x'.repeat(80)]);
+  ok('un cycle trop long est coupe a 24 par la base',
+     (await db.query(`select cycle from public.seances where user_id = $1 and date = $2`, [C1, J]))
+       .rows[0].cycle.length === 24);
+
+  await as(C1, `select public.pousser_commentaire($1::date, $2)`, [J, 'y'.repeat(900)]);
+  ok('un mot trop long est coupe a 500 par la base',
+     (await db.query(`select commentaire from public.seances where user_id = $1 and date = $2`, [C1, J]))
+       .rows[0].commentaire.length === 500);
+
+  // Et la borne ne vit pas QUE dans la fonction : la table refuse aussi.
+  await refuse('la table refuse un cycle de 40 caracteres, meme en direct',
+    () => db.query(`update public.seances set cycle = $1 where user_id = $2 and date = $3`,
+                   ['z'.repeat(40), C1, J]));
+  await refuse('et un mot de 600',
+    () => db.query(`update public.seances set commentaire = $1 where user_id = $2 and date = $3`,
+                   ['z'.repeat(600), C1, J]));
+
+  // Le cycle d'un autre ne se lit pas, et ne se touche pas.
+  await as(C2, `select public.pousser_jour($1::date, '[]'::jsonb)`, [J]);
+  await as(C2, `select public.pousser_cycle($1::date, 'Force')`, [J]);
+  const sien = (await as(C1, `select public.tirer_jours() j`)).rows[0].j[J];
+  ok('chacun lit son cycle, pas celui de l autre',
+     sien.cycle && sien.cycle.length === 24 && sien.cycle[0] === 'x',
+     JSON.stringify(sien.cycle));
+  ok('la lecture rend bien les deux nouvelles cles',
+     ('cycle' in sien) && ('commentaire' in sien));
+  ok('et le cycle de l autre est reste le sien',
+     (await db.query(`select cycle from public.seances where user_id = $1 and date = $2`, [C2, J]))
+       .rows[0].cycle === 'Force');
+
+  await refuse('anon ne pousse pas de cycle',
+    () => asAnon(`select public.pousser_cycle($1::date, 'Force')`, [J]));
+  await refuse('anon ne pousse pas de mot',
+    () => asAnon(`select public.pousser_commentaire($1::date, 'coucou')`, [J]));
+}
+
 console.log(`\n${pass} reussis, ${fail} echoues`);
 process.exit(fail ? 1 : 0);

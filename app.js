@@ -1467,9 +1467,24 @@
   function precedentDe(ex){
     var nom = ex && ex.nom;
     if (!nom || !nom.trim()) return null;
-    var seances = seancesDeLExo(nom).filter(function(j){ return j.date !== state.selectedDay; });
-    var prec = TS.performancePrecedente(seances, state.selectedDay);
-    return prec ? { prec:prec, seances:seances } : null;
+    var toutes = seancesDeLExo(nom).filter(function(j){ return j.date !== state.selectedDay; });
+    var cycle = cycleDe(state.selectedDay);
+    // D'abord la derniere fois dans le meme cycle. Sinon la colonne PREC.
+    // mettait 90 kg x 3 en face d'une seance d'hypertrophie et faisait lire
+    // une chute la ou il n'y en avait aucune. La suggestion se calcule sur le
+    // meme perimetre, pour la meme raison : proposer une charge de force un
+    // jour d'endurance n'aide personne.
+    if (cycle){
+      var memes = toutes.filter(function(j){ return cycleDe(j.date) === cycle; });
+      var p = TS.performancePrecedente(memes, state.selectedDay);
+      if (p) return { prec:p, seances:memes, cycle:cycle, ailleurs:false };
+    }
+    // A defaut, tout l'historique — mais en disant d'ou ca vient. Des
+    // chiffres d'un autre cycle ne doivent jamais passer pour comparables.
+    var q = TS.performancePrecedente(toutes, state.selectedDay);
+    if (!q) return null;
+    var cq = cycleDe(q.date);
+    return { prec:q, seances:toutes, cycle:cq, ailleurs: !!(cycle && cq !== cycle) };
   }
 
   // Deux registres visuels distincts, et c'est volontaire : l'historique est
@@ -1487,6 +1502,13 @@
     var notePrec = jourPrec && jourPrec.note;
     var html = '<div class="ex-prev">'
       + '<div class="ex-prev-tete">DERNIÈRE FOIS · ' + esc(quand.toUpperCase())
+      // Le cycle d'ou viennent ces chiffres. Quand ce n'est pas celui du
+      // jour, c'est dit en clair : sans ca, la comparaison serait fausse
+      // sans que rien ne le signale.
+      +   (p.cycle
+            ? '<span class="ex-prev-cycle' + (p.ailleurs ? ' ailleurs' : '') + '"> · '
+              + (p.ailleurs ? 'AUTRE CYCLE : ' : '') + esc(p.cycle.toUpperCase()) + '</span>'
+            : '')
       // La liste ne sert que la ou la colonne PRÉC. n'a pas la place.
       +   '<span class="ex-prev-liste"> · ' + esc(prec.series.map(perfCourt).join(' · ')) + '</span></div>'
       + (notePrec ? '<div class="ex-prev-note">«\u00a0' + esc(notePrec) + '\u00a0»</div>' : '')
@@ -1840,6 +1862,156 @@
     renderBandeau();
   }
 
+  // ---------- le nom, le cycle et le mot, sur l'ecran de seance ----------
+  // Le nom d'une seance existait depuis longtemps, mais ne se changeait que
+  // depuis sa fiche dans CARNET : personne ne l'avait jamais trouve. Il
+  // remonte ici, la ou on s'entraine, avec le cycle a cote.
+  function majSeanceTete(ds){
+    var nom = document.getElementById('seanceNomTxt');
+    if (nom) nom.textContent = titreSeance(ds);
+    var chip = document.getElementById('seanceCycleBtn');
+    if (!chip) return;
+    var c = cycleDe(ds);
+    chip.textContent = c ? c.toUpperCase() : '+ CYCLE';
+    chip.classList.toggle('mis', !!c);
+    chip.setAttribute('aria-label', c ? 'Cycle : ' + c + ' \u2014 changer'
+                                      : 'Choisir un cycle d\'entra\u00eenement');
+  }
+
+  function editerNomSeance(){
+    var ds = state.selectedDay;
+    var btn = document.getElementById('seanceNomBtn');
+    if (!ds || !btn || btn.hidden) return;
+    var tete = btn.parentNode;
+    var champ = document.createElement('input');
+    champ.type = 'text';
+    champ.className = 'cycle-champ';
+    champ.maxLength = 60;
+    champ.value = titreChoisi(ds);
+    champ.placeholder = titreParDefaut(ds);
+    champ.setAttribute('aria-label', 'Nom de la s\u00e9ance');
+    btn.hidden = true;
+    tete.insertBefore(champ, btn);
+    champ.focus();
+    champ.select();
+    var fini = false;
+    function fin(garder){
+      if (fini) return;
+      fini = true;
+      if (garder) definirTitre(ds, champ.value);
+      champ.remove();
+      btn.hidden = false;
+      renderDayPanel(true);
+    }
+    champ.addEventListener('blur', function(){ fin(true); });
+    champ.addEventListener('keydown', function(e){
+      if (e.key === 'Enter'){ e.preventDefault(); champ.blur(); }
+      if (e.key === 'Escape'){ e.preventDefault(); fin(false); }
+    });
+  }
+
+  function rendreCycle(){
+    var ds = state.selectedDay;
+    var actuel = cycleDe(ds).toLowerCase();
+    var liste = document.getElementById('cycleListe');
+    liste.innerHTML = cyclesConnus().map(function(c){
+      var ici = c.toLowerCase() === actuel;
+      return '<button type="button" class="cycle-choix' + (ici ? ' actif' : '')
+        + '" data-cycle="' + esc(c) + '">' + esc(c.toUpperCase())
+        + (ici ? '<i>EN COURS</i>' : '') + '</button>';
+    }).join('');
+    document.getElementById('cycleLibre').value = '';
+    // On ne propose de retirer que ce qui a ete declare ce jour-la : retirer
+    // un cycle herite ne voudrait rien dire.
+    document.getElementById('cycleRetirer').hidden = !cycleDit(ds);
+  }
+  function ouvrirCycle(){
+    rendreCycle();
+    document.getElementById('cycleSheet').hidden = false;
+  }
+  function fermerCycle(){
+    var el = document.getElementById('cycleSheet');
+    if (!el || el.hidden) return;
+    el.hidden = true;
+    renderDayPanel(true);
+    renderBandeau();
+  }
+  function choisirCycle(c){
+    var ds = state.selectedDay;
+    definirCycle(ds, c);
+    fermerCycle();
+    showToast(c ? 'Cycle \u00ab\u00a0' + c + '\u00a0\u00bb \u00e0 partir du ' + jourCourt(ds)
+                : 'Cycle retir\u00e9 du ' + jourCourt(ds));
+  }
+
+  // Le mot sur la seance entiere. Il ne s'affiche pas sur un jour vide : un
+  // bouton qui ne sert a rien tous les autres jours, c'est un bouton qu'on
+  // n'appuie plus (meme raison que TERMINER MA SEANCE).
+  function majMotSeance(ds){
+    var zone = document.getElementById('seanceMot');
+    if (!zone) return;
+    if (zone.querySelector('.mot-champ')) return;
+    var mot = commentaireSeance(ds);
+    var day = state.sessions[ds];
+    if (!mot && !(day && (day.exercises || []).length)){ zone.innerHTML = ''; return; }
+    zone.innerHTML = '<button type="button" class="btn-mot" id="motBtn">'
+      + (mot ? '<u>MOT SUR LA S\u00c9ANCE</u><q>' + esc(mot) + '</q>'
+             : '\uff0b UN MOT SUR LA S\u00c9ANCE')
+      + '</button>';
+  }
+  function ouvrirMot(){
+    var ds = state.selectedDay;
+    var zone = document.getElementById('seanceMot');
+    if (!ds || !zone || zone.querySelector('.mot-champ')) return;
+    var champ = document.createElement('textarea');
+    champ.className = 'mot-champ';
+    champ.rows = 3;
+    champ.maxLength = NOTE_MAX;
+    champ.value = commentaireSeance(ds);
+    champ.placeholder = 'Mal dormi, premi\u00e8re depuis la coupure, dos qui tire\u2026';
+    champ.setAttribute('aria-label', 'Commentaire sur la s\u00e9ance');
+    zone.innerHTML = '';
+    zone.appendChild(champ);
+    champ.focus();
+    var fini = false;
+    function fin(garder){
+      if (fini) return;
+      fini = true;
+      if (garder) definirCommentaire(ds, champ.value);
+      // Le champ part d'abord : majMotSeance refuse de redessiner tant qu'il
+      // est la — c'est ce qui le protege d'un rendu qui tombe pendant qu'on
+      // ecrit, et ca l'empechait aussi de redessiner a la fin.
+      champ.remove();
+      majMotSeance(ds);
+    }
+    champ.addEventListener('blur', function(){ fin(true); });
+    champ.addEventListener('keydown', function(e){
+      if (e.key === 'Escape'){ e.preventDefault(); fin(false); }
+    });
+  }
+
+  document.getElementById('seanceNomBtn').addEventListener('click', editerNomSeance);
+  document.getElementById('seanceCycleBtn').addEventListener('click', ouvrirCycle);
+  document.getElementById('cycleClose').addEventListener('click', fermerCycle);
+  document.getElementById('cycleSheet').addEventListener('click', function(e){
+    if (e.target === this) fermerCycle();
+  });
+  document.getElementById('cycleListe').addEventListener('click', function(e){
+    var b = e.target.closest('.cycle-choix');
+    if (b) choisirCycle(b.dataset.cycle);
+  });
+  document.getElementById('cycleValider').addEventListener('click', function(){
+    var v = document.getElementById('cycleLibre').value.trim();
+    if (v) choisirCycle(v);
+  });
+  document.getElementById('cycleRetirer').addEventListener('click', function(){ choisirCycle(''); });
+  document.getElementById('cycleLibre').addEventListener('keydown', function(e){
+    if (e.key === 'Enter'){ e.preventDefault(); document.getElementById('cycleValider').click(); }
+  });
+  document.getElementById('seanceMot').addEventListener('click', function(e){
+    if (e.target.closest('#motBtn')) ouvrirMot();
+  });
+
   document.getElementById('ordreBtn').addEventListener('click', ouvrirOrdre);
   document.getElementById('ordreFini').addEventListener('click', fermerOrdre);
   document.getElementById('ordreClose').addEventListener('click', fermerOrdre);
@@ -2041,6 +2213,83 @@
     if (typeof Sync !== 'undefined' && Sync.marquerTitre) Sync.marquerTitre(ds);
   }
 
+  // ---------- le cycle d'entrainement ----------
+  // « Lundi, pendant deux semaines, cycle force ; apres, endurance. » (Kamil,
+  // 10/10/2026.) A quoi ca sert : comparer de l'hypertrophie a de la force ne
+  // veut rien dire. 60 kg x 12 n'est pas une baisse par rapport a 90 kg x 3,
+  // et pourtant la colonne PREC. le faisait lire comme ca. Le cycle est ce
+  // qui permet a « la derniere fois » de montrer la derniere fois
+  // *comparable*.
+  //
+  // Le choix de structure : un cycle est une declaration posee sur un jour,
+  // et elle tient jusqu'a la suivante. Pas d'objet « bloc » avec un debut et
+  // une fin a tenir a jour, pas de cycle recopie sur chaque seance : on le
+  // dit une fois, et les jours d'apres en heritent tout seuls. Le stockage
+  // ne porte donc que les jours ou il a change d'avis.
+  var CYCLES = ['Force', 'Hypertrophie', 'Endurance'];
+  var CYCLE_MAX = 24;
+
+  // Le cycle declare ce jour-la, et rien d'autre.
+  function cycleDit(ds){
+    var day = state.sessions[ds];
+    var c = day && day.cycle;
+    return (typeof c === 'string' && c.trim()) ? c.trim() : '';
+  }
+
+  // Le cycle en vigueur ce jour-la : le dernier declare a cette date ou
+  // avant. C'est celui qui compte partout ailleurs.
+  function cycleDe(ds){
+    if (!ds) return '';
+    var dit = cycleDit(ds);
+    if (dit) return dit;
+    var avant = Object.keys(state.sessions).filter(function(d){
+      return d < ds && cycleDit(d);
+    }).sort();
+    return avant.length ? cycleDit(avant[avant.length - 1]) : '';
+  }
+
+  function definirCycle(ds, cycle){
+    var day = getOrCreateDay(ds);
+    var v = String(cycle == null ? '' : cycle).trim().slice(0, CYCLE_MAX);
+    // Effacer, c'est retirer la declaration de ce jour : le cycle d'avant
+    // reprend la main, ce n'est pas « plus de cycle du tout ».
+    if (v) day.cycle = v; else delete day.cycle;
+    persistDay(ds);
+    if (typeof Sync !== 'undefined' && Sync.marquerCycle) Sync.marquerCycle(ds);
+  }
+
+  // Les trois proposes, plus ceux qu'il a tapes lui-meme, les siens d'abord
+  // en partant du plus recent.
+  function cyclesConnus(){
+    var vus = Object.create(null), out = [];
+    Object.keys(state.sessions).sort().reverse().forEach(function(d){
+      var c = cycleDit(d);
+      if (c && !vus[c.toLowerCase()]){ vus[c.toLowerCase()] = 1; out.push(c); }
+    });
+    CYCLES.forEach(function(c){
+      if (!vus[c.toLowerCase()]){ vus[c.toLowerCase()] = 1; out.push(c); }
+    });
+    return out;
+  }
+
+  // ---------- le commentaire d'une seance ----------
+  // Il y avait le commentaire d'une serie et celui d'un exercice ; il
+  // manquait celui de la seance entiere — « mal dormi », « premiere depuis
+  // la coupure ». Meme limite que les autres : 500 caracteres.
+  function commentaireSeance(ds){
+    var day = state.sessions[ds];
+    var t = day && day.commentaire;
+    return (typeof t === 'string' && t.trim()) ? t.trim() : '';
+  }
+
+  function definirCommentaire(ds, texte){
+    var day = getOrCreateDay(ds);
+    var v = noteSure(String(texte == null ? '' : texte).trim());
+    if (v) day.commentaire = v; else delete day.commentaire;
+    persistDay(ds);
+    if (typeof Sync !== 'undefined' && Sync.marquerCommentaire) Sync.marquerCommentaire(ds);
+  }
+
   // Combien de fois cette seance a-t-elle ete faite ? Deux seances sont « la
   // meme » quand elles portent le meme nom — celui qu'on a choisi, ou celui
   // que l'app calcule. C'est le seul critere que l'utilisateur controle.
@@ -2126,15 +2375,23 @@
   function seanceComparable(ds, cles, minimum){
     var liste = Object.keys(cles);
     if (!liste.length) return null;
+    var cycle = cycleDe(ds);
     var base = fromDateStr(ds), best = null;
     for (var k = 1; k <= 14; k++){
       var x = toDateStr(addDays(base, -k));
       if (!state.sessions[x] || !compterJour(state.sessions[x])) continue;
       var autres = clesDuJour(x, true);
       var communs = liste.filter(function(c){ return autres[c]; }).length;
+      if (!communs) continue;
+      // Le meme cycle passe devant : une seance plus proche d'une semaine
+      // mais d'un autre cycle n'est pas une comparaison, c'est une
+      // coincidence de calendrier.
+      var meme = cycle ? (cycleDe(x) === cycle ? 1 : 0) : 1;
       var ecart = Math.abs(k - 7);
-      if (communs && (!best || communs > best.communs || (communs === best.communs && ecart < best.ecart))){
-        best = { ds:x, communs:communs, ecart:ecart };
+      if (!best || meme > best.meme
+          || (meme === best.meme && communs > best.communs)
+          || (meme === best.meme && communs === best.communs && ecart < best.ecart)){
+        best = { ds:x, meme:meme, communs:communs, ecart:ecart };
       }
     }
     return best && best.communs >= (minimum || 1) ? best.ds : null;
@@ -2487,8 +2744,14 @@
       +   '<button type="button" class="fiche-titre" id="ficheTitre" title="Renommer">' + esc(titreSeance(ds)) + '</button>'
       +   '<button type="button" class="seance-crayon" id="ficheCrayon" aria-label="Renommer la séance">✎</button>'
       + '</div>'
-      + '<div class="fiche-quand">' + esc(quand) + '</div>'
+      + '<div class="fiche-quand">' + esc(quand)
+      +   (cycleDe(ds) ? '<span class="fiche-cycle">' + esc(cycleDe(ds).toUpperCase()) + '</span>' : '')
+      + '</div>'
       + (perso ? '' : '<div class="fiche-defaut">Titre calculé — appuie dessus pour le tien</div>')
+      // Le mot de la journee se relit ici : c'est l'ecran ou l'on revient
+      // regarder une seance passee.
+      + (commentaireSeance(ds)
+          ? '<div class="fiche-mot">«\u00a0' + esc(commentaireSeance(ds)) + '\u00a0»</div>' : '')
       + '</div>';
 
     if (!exos.length){
@@ -2629,6 +2892,7 @@
     if (state.loading){
       list.innerHTML = '<div class="empty-state">' + attente() + '</div>';
       majBoutonOrdre(null);
+      majSeanceTete(ds);
       return;
     }
     var day = state.sessions[ds];
@@ -2643,6 +2907,8 @@
     garderDefilement(y);
     majBoutonFin(ds);
     majBoutonOrdre(day);
+    majSeanceTete(ds);
+    majMotSeance(ds);
     majSuggestions();
   }
 
@@ -5241,7 +5507,9 @@
               + '<span>' + esc(l.texte) + (l.texte === l.avant ? ', comme ce jour-là' : ' contre ' + esc(l.avant)) + '</span>'
               + '<i class="bilan-sens ' + l.sens + '">' + sensTexte(l) + '</i></div>';
           }).join('')
-        + '<div class="bilan-bloc-note">Séance « ' + esc(titreSeance(c.ds)) + ' », comparée sur le 1RM estimé (ou la durée tenue)</div>'
+        + '<div class="bilan-bloc-note">Séance « ' + esc(titreSeance(c.ds)) + ' »'
+        +   (cycleDe(c.ds) ? ' · ' + esc(cycleDe(c.ds)) : '')
+        +   ', comparée sur le 1RM estimé (ou la durée tenue)</div>'
         + '</div>';
     }
     if (b.top){
@@ -5597,8 +5865,15 @@
       var exs = Array.isArray(day.exercises) ? day.exercises.map(normalizeExercise) : [];
       clean[ds] = { date:ds, exercises:exs };
       // Le titre voyageait dans la sauvegarde sans jamais etre relu :
-      // restaurer faisait perdre tous les noms donnes aux seances.
+      // restaurer faisait perdre tous les noms donnes aux seances. Meme
+      // piege pour « termine », qui se perdait depuis toujours — une seance
+      // validee redevenait simplement faite —, et il attendait le cycle et
+      // le commentaire. Tout ce qui vit sur le jour se relit ici, ou se
+      // perd : c'est une liste blanche, pas une copie.
       if (typeof day.titre === 'string' && day.titre.trim()) clean[ds].titre = day.titre.trim().slice(0, 60);
+      if (typeof day.cycle === 'string' && day.cycle.trim()) clean[ds].cycle = day.cycle.trim().slice(0, CYCLE_MAX);
+      if (typeof day.commentaire === 'string' && day.commentaire.trim()) clean[ds].commentaire = noteSure(day.commentaire.trim());
+      if (typeof day.termine === 'string' && day.termine.trim()) clean[ds].termine = day.termine.trim().slice(0, 40);
       var n = compterJour(clean[ds]);
       if (n){ jours++; series += n; }
     });
@@ -7434,6 +7709,14 @@
       });
       var j = { date:ds, exercises:distants.map(normalizeExercise) };
       if (d && typeof d.titre === 'string' && d.titre.trim()) j.titre = d.titre.trim();
+      // Le cycle et le mot de la seance suivent la meme regle que « termine »
+      // juste en dessous : une base qui n'a pas encore la colonne rend la
+      // journee SANS la cle, et ce qui est ici reste. Une base a jour rend
+      // cycle:null, et la, on suit.
+      if (d && ('cycle' in d)){ if (d.cycle) j.cycle = String(d.cycle).trim().slice(0, CYCLE_MAX); }
+      else if (state.sessions[ds] && state.sessions[ds].cycle) j.cycle = state.sessions[ds].cycle;
+      if (d && ('commentaire' in d)){ if (d.commentaire) j.commentaire = noteSure(String(d.commentaire).trim()); }
+      else if (state.sessions[ds] && state.sessions[ds].commentaire) j.commentaire = state.sessions[ds].commentaire;
       // « Séance terminée » suit la même règle que les commentaires : une base
       // sans la colonne rend une journée SANS la clé, et la validation d'ici
       // reste. Une base à jour rend termine:null, et là, on suit.
@@ -7490,6 +7773,8 @@
             return lireMeta().exosSales ? pousserExos().catch(function(){}) : null;
           })
           .then(function(){ return pousserTitres().catch(function(){}); })
+          .then(function(){ return pousserCycles().catch(function(){}); })
+          .then(function(){ return pousserMots().catch(function(){}); })
           .then(function(){ return pousserFins().catch(function(){}); })
           .then(function(){ return dates.length; });
       }).then(function(n){
@@ -7623,6 +7908,43 @@
 
     // Les fins de séance partent à part, comme les titres : un appel séparé
     // échoue seul, et les journées passent quand même.
+    // Le cycle et le mot partent par le meme chemin que le titre : une file de
+    // dates dans les metadonnees, un appel par date, et la date ne quitte la
+    // file qu'apres confirmation du serveur. Un seul corps pour les deux :
+    // c'etait la troisieme copie de la meme boucle.
+    function pousserParDate(cle, rpc, arg, lire){
+      if (!user) return Promise.resolve();
+      var m = lireMeta();
+      var dates = Object.keys(m[cle] || {});
+      if (!dates.length) return Promise.resolve();
+      return client().then(function(c){
+        var chaine = Promise.resolve();
+        dates.forEach(function(ds){
+          chaine = chaine.then(function(){
+            var params = { p_date:ds };
+            params[arg] = lire(ds);
+            return c.rpc(rpc, params).then(function(r){
+              if (r.error) throw r.error;
+              majMeta(function(x){ if (x[cle]) delete x[cle][ds]; });
+            });
+          });
+        });
+        return chaine;
+      });
+    }
+
+    function pousserCycles(){
+      return pousserParDate('cycles', 'pousser_cycle', 'p_cycle', function(ds){
+        return (state.sessions[ds] && state.sessions[ds].cycle) || null;
+      });
+    }
+
+    function pousserMots(){
+      return pousserParDate('mots', 'pousser_commentaire', 'p_texte', function(ds){
+        return (state.sessions[ds] && state.sessions[ds].commentaire) || null;
+      });
+    }
+
     function pousserFins(){
       if (!user) return Promise.resolve();
       var dates = Object.keys(lireMeta().fins || {});
@@ -7654,6 +7976,18 @@
       if (user) planifier(2500);
     }
 
+    function marquerCycle(ds){
+      if (!dispo()) return;
+      majMeta(function(m){ m.cycles = m.cycles || {}; m.cycles[ds] = 1; });
+      if (user) planifier(2500);
+    }
+
+    function marquerCommentaire(ds){
+      if (!dispo()) return;
+      majMeta(function(m){ m.mots = m.mots || {}; m.mots[ds] = 1; });
+      if (user) planifier(2500);
+    }
+
     function marquerExos(){
       if (!dispo()) return;
       majMeta(function(m){ m.exosSales = true; });
@@ -7668,6 +8002,8 @@
           return lireMeta().exosSales ? pousserExos().catch(function(){}) : null;
         })
         .then(function(){ return pousserTitres().catch(function(){}); })
+        .then(function(){ return pousserCycles().catch(function(){}); })
+        .then(function(){ return pousserMots().catch(function(){}); })
         .then(function(){ majUI(); })
         .catch(function(e){ echec = messageErreur(e); majUI(); });
     }
@@ -8553,6 +8889,7 @@
       adminRetours:function(s){ return rpcAdmin('admin_retours', { p_statut: s || null }); },
       adminMarquer:function(id, s){ return rpcAdmin('admin_marquer_retour', { p_id:id, p_statut:s }); },
       marquerExos:marquerExos, marquerTitre:marquerTitre, marquerFin:marquerFin,
+      marquerCycle:marquerCycle, marquerCommentaire:marquerCommentaire,
       enregistrerPseudo:enregistrerPseudo, envoyerLienMdp:envoyerLienMdp,
       changerMdp:changerMdp, modeAccueil:modeAccueil,
       montrerAccueil:montrerAccueil, fermerAccueil:fermerAccueil,
