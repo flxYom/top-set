@@ -2268,9 +2268,12 @@
     t = String(t == null ? '' : t);
     return t.charAt(0).toUpperCase() + t.slice(1);
   }
+  // « 7 oct. ». Le garde sur d sert au partage : un instantane recu peut
+  // porter une date qu on ne sait pas lire, et mieux vaut l afficher telle
+  // quelle qu une page blanche.
   function jourCourt(ds){
     var d = fromDateStr(ds);
-    return d.getDate() + ' ' + MONTH_ABBR[d.getMonth()];
+    return d ? d.getDate() + ' ' + MONTH_ABBR[d.getMonth()] : ds;
   }
   // « lundi 7 sept. »
   function jourDe(ds){
@@ -2691,18 +2694,6 @@
     return ((day.exercises || []).length || titreChoisi(ds)) ? 'prevue' : '';
   }
   function couleurJour(ds){ return couleurGroupe(groupesPrincipaux(ds)[0]); }
-  function exosDuJour(ds){
-    var etat = etatJour(ds);
-    return ((state.sessions[ds] && state.sessions[ds].exercises) || []).filter(function(e){
-      return etat === 'faite' ? seriesRemplies(e).length : true;
-    });
-  }
-  function etatTexte(ds, long){
-    var etat = etatJour(ds);
-    if (etat === 'faite') return (estTerminee(ds) ? '✓ ' + (long ? 'SÉANCE VALIDÉE' : 'VALIDÉE') : '✓ ' + (long ? 'SÉANCE FAITE' : 'FAITE'));
-    if (etat === 'prevue') return long ? 'SÉANCE PRÉVUE' : 'PRÉVUE';
-    return long ? 'RIEN CE JOUR-LÀ' : '';
-  }
   function decalerCalendrier(sens){
     var d = fromDateStr(calRef);
     if (calVue === 'jour') d = addDays(d, sens);
@@ -6466,10 +6457,6 @@
             + esc(serieTexte(s)) + '</span>';
         }).join('')
       + '</div>';
-  }
-  function jourCourt(ds){
-    var d = fromDateStr(ds);
-    return d ? d.getDate() + ' ' + MONTH_ABBR[d.getMonth()] : ds;
   }
 
   function contenuPartageHTML(p){

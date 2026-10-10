@@ -948,5 +948,24 @@ ok('partage : les quatre reactions tiennent sur un petit telephone',
    && /@media \(max-width:360px\)\{\n    \.pg-reactions\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\);\}/.test(HTML)
    && /\.pg-reaction\{[^}]*min-height:44px;/.test(HTML));
 
+console.log('\n== 27. Aucun homonyme au premier niveau d\'app.js ==');
+// app.js est un seul IIFE : deux « function X » a son premier niveau sont
+// deux declarations dans la meme portee, et la seconde ecrase la premiere en
+// silence. C'est arrive avec unitesDuJour — l'ecran de seance a cesse de se
+// dessiner — et aucun test de chaine ne pouvait le voir, puisque les deux
+// formes cherchees etaient bien presentes l'une et l'autre.
+const auPremierNiveau = {};
+[...SRC.matchAll(/^  function ([A-Za-z_$][\w$]*)\s*\(/gm)].forEach(m => {
+  auPremierNiveau[m[1]] = (auPremierNiveau[m[1]] || 0) + 1;
+});
+const homonymes = Object.keys(auPremierNiveau).filter(n => auPremierNiveau[n] > 1);
+ok('aucune fonction declaree deux fois au premier niveau d\'app.js',
+   homonymes.length === 0, homonymes.join(', '));
+// Et le garde-fou se garde lui-meme : s'il ne voit plus rien, c'est qu'il est
+// casse, pas que le fichier est propre.
+ok('le garde-fou voit bien les fonctions du premier niveau',
+   Object.keys(auPremierNiveau).length > 300,
+   Object.keys(auPremierNiveau).length + ' vues');
+
 console.log(`\n${pass} reussis, ${fail} echoues`);
 process.exit(fail ? 1 : 0);
