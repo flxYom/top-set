@@ -190,6 +190,26 @@ been lost — restoring a backup turned a validated session into a merely done
 one — and the cycle and the word would have gone the same way. All four are
 read back.
 
+**One page of the app does not overwrite another's logbook.** The local logbook
+lives under a single key shared by the whole device: the installed PWA, a Safari
+tab left open on the site, a page iOS kept suspended since yesterday. Each one
+holds its own logbook in memory and rewrites the **whole** logbook on every
+save — so the last one to save erased the sets noted in the others, with nobody
+having deleted anything. That is the quietest way to lose yesterday's session
+(14/10/2026).
+
+`saveLocal()` therefore no longer trusts its own memory: **it re-reads before
+writing**. If the stored text is no longer the one this page left there
+(`dernierEcrit`), another page has written, and `TS.fusionnerEcritures()` takes
+its days, exercises and sets back before the write, then marks them for the
+account. When nothing has moved — the normal case — the write goes straight
+through: **deleting a set is still a deletion**, not a conflict.
+
+`fusionnerEcritures()` is the counterpart of `fusionnerCarnets()` for two writes
+of the *same* logbook: neither side is "an older snapshot", so it also takes
+back sets added to an exercise both sides know, which an import never does. Like
+an import, it leaves the original logbook untouched and ignores empty cards.
+
 **Overwrite guard.** `saveLocal()` rewrites the whole logbook on every save. If
 `state.sessions` were empty at the wrong moment — a failed load, corrupted JSON —
 that single call would erase everything, permanently and silently. So:
@@ -198,9 +218,30 @@ that single call would erase everything, permanently and silently. So:
   The condition lifts on its own as soon as there is one real day again.
 - Every save keeps the **previous version** under a recovery key.
 - Unreadable JSON is **set aside** rather than overwritten.
-- A `RÉCUPÉRER N JOURS` button appears in the `⇅` panel whenever a recoverable
-  copy holds more than what is currently loaded. Recovering means importing that
-  copy: what is missing comes back, what is there does not move.
+- A `RÉCUPÉRER N JOURS` button appears in the `⇅` panel whenever a reserve holds
+  a session **missing from the loaded logbook**. Recovering means importing that
+  reserve: what is missing comes back, what is there does not move.
+
+There are **four reserves** on the phone, and until 14/10/2026 the button read
+only two of them — so the other two were being written for nothing:
+
+1. the copy from before the last save (`musculation_sessions_secours`);
+2. the text set aside when the logbook was unreadable (`…_illisible`);
+3. the losing versions of a sync conflict (`topset_conflits`, a `date@time` →
+   day map: per date, the one with the most sets is kept);
+4. the logbooks parked per account (`topset_carnet_<id>`), when several people
+   sign in on the same phone.
+
+The button offers the **union** of what those four hold in addition, and
+announces what is missing rather than the size of the reserve. The old condition
+compared the reserve to the whole logbook: it hid the button as soon as the
+logbook had more sets in total, even when a whole day was missing from it.
+
+For an account, a `TOUT RETÉLÉCHARGER DE MON COMPTE` button asks for the whole
+logbook again without the new-since cursor: ordinary sync only asks for what
+changed since last time, so nothing brought back a day that fell off this phone
+after reaching the account. The pull's guard keeps the days that are more
+complete here.
 
 ---
 

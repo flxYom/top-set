@@ -1048,18 +1048,83 @@
     }
   }
 
-  // Meilleure copie de rattrapage disponible, ou null.
-  function copieDeSecours(){
-    var best = null;
+  // Toutes les reserves ou une seance peut encore dormir sur ce telephone, en
+  // plus du carnet lui-meme. Il y en a quatre, et le bouton de recuperation
+  // n'en relisait que deux — les deux autres etaient donc ecrites pour rien :
+  //   1. la copie d'avant la derniere sauvegarde ;
+  //   2. le texte mis de cote quand le carnet etait devenu illisible ;
+  //   3. les versions gardees par la synchro quand le cloud et le telephone
+  //      ne racontaient pas la meme chose (carte « date@heure » -> journee) ;
+  //   4. les carnets ranges par compte, quand plusieurs personnes se
+  //      connectent sur le meme telephone.
+  // (14/10/2026)
+  function reservesDeSecours(){
+    var out = [];
+    function lire(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }
+
     [SECOURS_KEY, ILLISIBLE_KEY].forEach(function(k){
-      var raw = null;
-      try { raw = localStorage.getItem(k); } catch(e){ return; }
-      if (!raw) return;
-      var p = parseBackup(raw);
-      if (p.error || !p.jours) return;
-      if (!best || p.series > best.series) best = { cle:k, texte:raw, jours:p.jours, series:p.series };
+      var raw = lire(k);
+      if (raw) out.push({ cle:k, texte:raw });
     });
-    return best;
+
+    var brut = lire('topset_conflits');
+    if (brut){
+      try {
+        var c = JSON.parse(brut) || {}, jours = {};
+        Object.keys(c).forEach(function(k){
+          var ds = String(k).split('@')[0];
+          if (!/^\d{4}-\d{2}-\d{2}$/.test(ds)) return;
+          // Plusieurs rangements d'une meme date : celui qui contient le plus
+          // de series est le seul qui vaille la peine d'etre propose.
+          if (!jours[ds] || compterJour(c[k]) > compterJour(jours[ds])) jours[ds] = c[k];
+        });
+        if (Object.keys(jours).length){
+          out.push({ cle:'topset_conflits', texte:JSON.stringify({ sessions:jours }) });
+        }
+      } catch(e){}
+    }
+
+    try {
+      for (var i = 0; i < localStorage.length; i++){
+        var k2 = localStorage.key(i);
+        if (!k2 || k2.indexOf('topset_carnet_') !== 0) continue;
+        var raw2 = lire(k2);
+        if (!raw2) continue;
+        try {
+          var p = JSON.parse(raw2);
+          if (p && p.sessions && typeof p.sessions === 'object'){
+            out.push({ cle:k2, texte:JSON.stringify({ sessions:p.sessions, customExercises:p.custom || null }) });
+          }
+        } catch(e2){}
+      }
+    } catch(e3){}
+
+    return out;
+  }
+
+  // Ce que ces reserves ont en plus du carnet d'ici, reuni en une seule
+  // sauvegarde a ajouter — ou null quand elles n'apportent rien. Une seule
+  // des quatre pouvait contenir la journee perdue : on ne choisit donc pas
+  // la « meilleure », on prend tout ce qui manque.
+  function copieDeSecours(){
+    var union = {}, custom = {}, aCustom = false;
+    reservesDeSecours().forEach(function(r){
+      var p = parseBackup(r.texte);
+      if (p.error || !p.jours) return;
+      union = TS.fusionnerEcritures(union, p.sessions, fabriqueId).sessions;
+      if (p.customExercises){
+        Object.keys(p.customExercises).forEach(function(k){
+          if (!custom[k]){ custom[k] = p.customExercises[k]; aCustom = true; }
+        });
+      }
+    });
+    if (!Object.keys(union).length) return null;
+    var bilan = TS.fusionnerEcritures(state.sessions, union, fabriqueId).bilan;
+    if (!bilan.exercices && !bilan.series && !bilan.titres) return null;
+    var charge = { app:'topset', version:2, sessions:union };
+    if (aCustom) charge.customExercises = custom;
+    return { texte:JSON.stringify(charge), jours:bilan.dates.length,
+             series:bilan.series, exercices:bilan.exercices };
   }
 
   // ---------- toast ----------
@@ -6258,6 +6323,7 @@
 
   function refreshSheet(){
     majBoutonSecours();
+    majBoutonCompte();
     Sync.majUI();
     var s = backupStats();
     var el = document.getElementById('dataStat');
@@ -6266,14 +6332,43 @@
       s.jours + (s.jours > 1 ? ' jours' : ' jour') + ' \u00b7 ' +
       s.series + (s.series > 1 ? ' s\u00e9ries' : ' s\u00e9rie') + ' \u00b7 ' + s.ko + ' Ko';
   }
+  // La synchro ne redemande que les nouveautes depuis la derniere fois : si
+  // une journee est tombee d'ici apres etre partie sur le compte, rien ne la
+  // rappelle. Ce bouton redemande tout, et le garde-fou de la synchro garde
+  // les journees d'ici plus completes. (14/10/2026)
+  function majBoutonCompte(){
+    var b = document.getElementById('dataCloud');
+    if (!b) return;
+    var dispo = !!(Sync.connecte && Sync.connecte());
+    b.hidden = !dispo;
+    if (!dispo){ b.onclick = null; return; }
+    b.onclick = function(){
+      b.disabled = true;
+      sheetMsg('warn', 'Récupération de tout ton compte…');
+      Sync.tirerTout().then(function(n){
+        b.disabled = false;
+        refreshSheet();
+        sheetMsg('ok', n
+          ? n + ' journée(s) récupérée(s) depuis ton compte. Les séances d\'ici plus complètes ont été gardées.'
+          : 'Ton compte ne contient rien de plus que ce carnet.');
+      }).catch(function(e){
+        b.disabled = false;
+        sheetMsg('err', 'Récupération impossible : ' + (e && e.message ? e.message : 'réseau'));
+      });
+    };
+  }
+
   function majBoutonSecours(){
     var b = document.getElementById('dataRecover');
     var c = copieDeSecours();
-    var actuel = backupStats();
-    if (!c || c.series <= actuel.series){ b.hidden = true; b.onclick = null; return; }
+    if (!c){ b.hidden = true; b.onclick = null; return; }
     b.hidden = false;
-    b.textContent = 'R\u00c9CUP\u00c9RER ' + c.jours + (c.jours > 1 ? ' JOURS' : ' JOUR') +
-                    ' (' + c.series + (c.series > 1 ? ' S\u00c9RIES' : ' S\u00c9RIE') + ')';
+    // On annonce ce qui MANQUE, pas la taille de la reserve : \u00ab recuperer
+    // 12 jours \u00bb quand onze sont deja la ne veut rien dire.
+    b.textContent = c.series
+      ? 'R\u00c9CUP\u00c9RER ' + c.jours + (c.jours > 1 ? ' JOURS' : ' JOUR') +
+        ' (' + c.series + (c.series > 1 ? ' S\u00c9RIES' : ' S\u00c9RIE') + ')'
+      : 'R\u00c9CUP\u00c9RER CE QUI MANQUE';
     // Recuperer, c'est importer la copie : ce qui manque revient, et ce qui
     // est la ne bouge pas.
     b.onclick = function(){
@@ -9008,6 +9103,12 @@
 
     return {
       demarrer:demarrer, marquerSale:marquerSale, majUI:majUI, estAdmin:estAdmin,
+      // Le compte est la derniere reserve, et la seule qui survit au
+      // telephone : « tout retelecharger » redemande le carnet entier, sans
+      // le curseur des nouveautes. Les journees d'ici plus completes sont
+      // gardees par le garde-fou de tirer(). (14/10/2026)
+      connecte:function(){ return !!user; },
+      tirerTout:function(){ return tirer(true); },
       estCoach:function(){ return !!(profil && profil.est_coach); },
       codeCoach:function(){ return profil && profil.code_coach; },
       devenirCoach:function(){

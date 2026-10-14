@@ -608,28 +608,42 @@
     var vus = carte();
     bilan.dates.forEach(function (ds) { vus[ds] = 1; });
 
+    // Rien n'est modifie sur place : le carnet d'origine doit ressortir
+    // intact de la fusion, comme pour un import.
     Object.keys(autre || {}).forEach(function (ds) {
       var jourA = autre[ds];
       if (!jourA || typeof jourA !== 'object' || !sortie[ds]) return;
-      var parId = carte();
-      ((sortie[ds] && sortie[ds].exercises) || []).forEach(function (e) {
-        if (e && e.id) parId[e.id] = e;
-      });
-      var bouge = false;
+      var exos = sortie[ds].exercises || [];
+      var place = carte();
+      exos.forEach(function (e, i) { if (e && e.id) place[e.id] = i; });
+      var neufs = null;
+
       (jourA.exercises || []).forEach(function (ea) {
-        var ex = (ea && ea.id) ? parId[ea.id] : null;
-        if (!ex) return;
+        if (!ea || !ea.id || !(ea.id in place)) return;
+        var i = place[ea.id];
+        var ex = (neufs || exos)[i];
         var ids = carte();
         (ex.series || []).forEach(function (s) { if (s && s.id) ids[s.id] = 1; });
-        (ea.series || []).forEach(function (sa) {
-          if (!sa || !sa.id || ids[sa.id] || !serieRemplie(sa)) return;
+        var ajout = (ea.series || []).filter(function (sa) {
+          if (!sa || !sa.id || ids[sa.id] || !serieRemplie(sa)) return false;
           ids[sa.id] = 1;
-          ex.series = (ex.series || []).concat([sa]);
-          bilan.series++;
-          bouge = true;
+          return true;
         });
+        if (!ajout.length) return;
+        if (!neufs) neufs = exos.slice();
+        var copie = {};
+        Object.keys(ex).forEach(function (k) { copie[k] = ex[k]; });
+        copie.series = (ex.series || []).concat(ajout);
+        neufs[i] = copie;
+        bilan.series += ajout.length;
       });
-      if (bouge && !vus[ds]) { vus[ds] = 1; bilan.dates.push(ds); }
+
+      if (!neufs) return;
+      var jourNeuf = {};
+      Object.keys(sortie[ds]).forEach(function (k) { jourNeuf[k] = sortie[ds][k]; });
+      jourNeuf.exercises = neufs;
+      sortie[ds] = jourNeuf;
+      if (!vus[ds]) { vus[ds] = 1; bilan.dates.push(ds); }
     });
 
     return { sessions: sortie, bilan: bilan };

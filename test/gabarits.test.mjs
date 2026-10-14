@@ -1231,5 +1231,46 @@ ok('carnet et progres disent a quoi ils servent, et nomment leur periode',
    && /id="calVues" role="group" aria-labelledby="calVuesLabel"/.test(HTML)
    && /id="subTabs" role="group" aria-labelledby="subTabsLabel"/.test(HTML));
 
+// ---------------------------------------------------------------------------
+// 33. Une page de l'app n'efface pas le carnet d'une autre (14/10/2026)
+// « J'ai fait des seances hier et je les ai plus. » La PWA installee et un
+// onglet Safari sur le site partagent un seul stockage, chacun avec son
+// carnet en memoire : la derniere page qui sauvegarde ecrasait les autres.
+// ---------------------------------------------------------------------------
+ok('on relit le stockage avant d ecrire, et on reprend ce qu une autre page a note',
+   /var dernierEcrit = null;/.test(SRC)
+   && /function reprendreEcritureVoisine\(actuel\)\{/.test(SRC)
+   && /if \(actuel == null \|\| actuel === dernierEcrit\) return false;/.test(SRC)
+   && /TS\.fusionnerEcritures\(state\.sessions, normalizeLocal\(autre\), fabriqueId\)/.test(SRC)
+   // La fusion est appelee AVANT que le texte a ecrire ne soit fabrique,
+   // sinon elle ne servirait a rien.
+   && /reprendreEcritureVoisine\(actuel\);\n      var futur  = JSON\.stringify\(state\.sessions\);/.test(SRC)
+   // Ce qui revient repart aussi vers le compte.
+   && /r\.bilan\.dates\.forEach\(function\(ds\)\{ if \(Sync\) Sync\.marquerSale\(ds\); \}\);/.test(SRC)
+   // Chaque ecriture reussie retient ce qu'elle a laisse : sans ca, la
+   // sauvegarde suivante croirait a une autre page et fusionnerait pour rien.
+   && (SRC.match(/dernierEcrit = futur;/g) || []).length === 2
+   && /dernierEcrit = raw;/.test(SRC));
+
+ok('les quatre reserves de secours sont relues, pas seulement deux',
+   /function reservesDeSecours\(\)\{/.test(SRC)
+   && /\[SECOURS_KEY, ILLISIBLE_KEY\]\.forEach/.test(SRC)
+   && /var brut = lire\('topset_conflits'\);/.test(SRC)
+   && /k2\.indexOf\('topset_carnet_'\) !== 0/.test(SRC)
+   // On propose ce qui MANQUE au carnet d'ici, pas la plus grosse reserve :
+   // l'ancien test (reserve plus fournie que le carnet entier) cachait le
+   // bouton des que le carnet avait plus de series, meme s'il lui manquait
+   // une journee entiere.
+   && /var bilan = TS\.fusionnerEcritures\(state\.sessions, union, fabriqueId\)\.bilan;/.test(SRC)
+   && /if \(!bilan\.exercices && !bilan\.series && !bilan\.titres\) return null;/.test(SRC)
+   && !/c\.series <= actuel\.series/.test(SRC));
+
+ok('un compte peut redemander son carnet entier',
+   /id="dataCloud"/.test(HTML)
+   && /connecte:function\(\)\{ return !!user; \}/.test(SRC)
+   && /tirerTout:function\(\)\{ return tirer\(true\); \}/.test(SRC)
+   && /function majBoutonCompte\(\)\{/.test(SRC)
+   && /Sync\.tirerTout\(\)\.then\(function\(n\)\{/.test(SRC));
+
 console.log(`\n${pass} reussis, ${fail} echoues`);
 process.exit(fail ? 1 : 0);

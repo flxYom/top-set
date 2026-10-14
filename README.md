@@ -64,6 +64,10 @@ repository is for right now.
   and records.
 - **Keep your data.** Works offline, no account by default, JSON or spreadsheet
   export and import. An optional account syncs the logbook across devices.
+- **Never lose a session.** One storage key for the whole device, so a page of
+  the app re-reads the logbook before writing, rather than erasing what another
+  page has just noted. Four reserves keep whatever could have been lost, and the
+  `⇅` panel offers to recover what is missing.
 - **Get coached.** Messaging with the team, and a coach ↔ client link: the coach
   reads the logbook, read-only, once both sides agree.
 - **Learn.** Sourced pages on concepts, training and exercises, plus tools (1RM

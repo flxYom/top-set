@@ -25,6 +25,20 @@ while it stays below `1.0.0`, breaking changes (in particular to the
   so deleting a set is still a deletion. Reproduced in jsdom: a day written by
   a second page disappeared on the next save, and an exercise added by it was
   lost too; both now survive, and a deleted set does not come back.
+- **Two of the four recovery reserves were written for nothing.** The
+  `RÉCUPÉRER` button in the `⇅` panel only read the copy from before the last
+  save and the set-aside unreadable text. The losing versions of a sync conflict
+  (`topset_conflits`) and the logbooks parked per account (`topset_carnet_<id>`)
+  were never offered back, although a lost day could be sitting in either. The
+  button now offers the **union** of what all four hold in addition, and its
+  gate changed too: it compared the reserve to the whole logbook, so it stayed
+  hidden as soon as the logbook had more sets in total — even with a whole day
+  missing. It now reports what is **missing**, day and set count.
+- **An account can ask for its whole logbook again.** Ordinary sync only asks
+  for what changed since last time, so nothing brought back a day that had
+  fallen off the phone after reaching the account. A
+  `TOUT RETÉLÉCHARGER DE MON COMPTE` button in `⇅` re-pulls everything; the
+  pull's guard keeps the days that are more complete here.
 - **A session lost at the gym, three ways.** « I left the app, turned the wi-fi
   off, and my session for the day had disappeared. I tried several times, it
   did it again. » (14/10.) Three independent causes, each reproduced on the

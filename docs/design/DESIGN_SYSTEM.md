@@ -484,5 +484,14 @@ avant de le faire.
   rapprochement faux ne se répare pas, et deux noms ne se fondent que sur un
   geste. Pour qui n'en veut pas du tout, le réglage « je nomme mes exercices
   moi-même » coupe la question à la source.
+- **On annonce ce qui manque, pas la taille de la réserve** (14/10). Le bouton
+  de récupération du panneau `⇅` se comparait au carnet entier : il restait
+  caché dès que le carnet avait plus de séries au total, même quand une journée
+  entière lui manquait. Un bouton de rattrapage se montre quand il a quelque
+  chose à rendre, et chiffre ce qu'il rend.
+- **Ce qui est écrit pour rattraper doit être relu** (14/10). Quatre réserves
+  gardaient des séances sur le téléphone, deux seulement étaient relues : les
+  deux autres étaient donc écrites pour rien. Une réserve qu'aucun écran ne lit
+  n'est pas un filet, c'est de la place perdue.
 - **Description de l'interface** : [`DESIGN.md`](DESIGN.md), extrait du code le
   18/09. Ce fichier-ci garde les décisions et fait foi en cas d'écart.

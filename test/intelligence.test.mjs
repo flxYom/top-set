@@ -397,6 +397,33 @@ titre('Importer sans ecraser');
     { id: 'a', nom: 'Curl', groupe: 'Bras', series: [{ id: 'sa', poids: 10, reps: '10' }] }] } };
   const rm = TS.fusionnerCarnets(moitie, superset, fab).sessions['2026-09-09'].exercises;
   ok('un superset dont un seul membre arrive n en est plus un', rm.every(e => !e.bloc));
+
+  // Deux pages de l'app sur le meme telephone : aucune n'est « plus
+  // ancienne », donc une serie notee dans l'une doit survivre a la
+  // sauvegarde de l'autre — ce qu'un import, lui, refuse de faire.
+  // (14/10/2026)
+  const voisine = {
+    '2026-09-01': { date: '2026-09-01', exercises: [
+      ex('x1', 'Squat', [se('s1', 100, '5'), se('s9', 105, '3')]),
+      ex('x7', 'Presse', [se('s7', 150, '10')])] }
+  };
+  const avantV = JSON.stringify(local);
+  const rv = TS.fusionnerEcritures(local, voisine, fab);
+  egal('fusionnerEcritures ne modifie pas le carnet d origine', JSON.stringify(local), avantV);
+  egal('fusionnerEcritures reprend la serie ajoutee a un exercice connu',
+    rv.sessions['2026-09-01'].exercises[0].series.map(s => s.poids), [100, 105]);
+  egal('et l exercice entier note par l autre page',
+    rv.sessions['2026-09-01'].exercises.map(e => e.nom), ['Squat', 'Presse']);
+  egal('bilan : 2 series reprises, et la date est signalee une seule fois',
+    [rv.bilan.series, rv.bilan.dates.length], [2, 1]);
+  egal('un import, lui, ne touche pas a un exercice deja la',
+    TS.fusionnerCarnets(local, voisine, fab).sessions['2026-09-01'].exercises[0].series.length, 1);
+  egal('refusionner deux fois n ajoute rien', TS.fusionnerEcritures(rv.sessions, voisine, fab).bilan.series, 0);
+  // Une carte vide ouverte dans l'autre page n'est pas une serie notee.
+  const vide = { '2026-09-01': { date: '2026-09-01', exercises: [
+    ex('x1', 'Squat', [se('s1', 100, '5'), { id: 'sv', poids: null, reps: '', rpe: null, repos: '' }])] } };
+  egal('une serie vide de l autre page n est pas reprise',
+    TS.fusionnerEcritures(local, vide, fab).bilan.series, 0);
 }
 
 // ----------------------------------------------------------------

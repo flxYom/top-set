@@ -65,6 +65,10 @@ c'est exactement à ça que sert ce repo pour l'instant.
 - **Garder la main sur ses données.** Hors-ligne, sans compte par défaut, export
   et import JSON ou tableur. Un compte facultatif synchronise le carnet d'un
   appareil à l'autre.
+- **Ne pas perdre une séance.** Une seule clé de stockage pour tout l'appareil :
+  une page de l'app relit donc le carnet avant d'écrire, pour ne pas effacer ce
+  qu'une autre vient de noter. Quatre réserves gardent ce qui aurait pu se
+  perdre, et le panneau `⇅` propose de récupérer ce qui manque.
 - **Être suivi.** Une messagerie avec l'équipe, et un lien coach ↔ coaché : le
   coach lit le carnet, en lecture seule, après accord des deux côtés.
 - **Apprendre.** Des pages sourcées sur les notions, l'entraînement, les

@@ -204,6 +204,27 @@ simplement « faite » — et le cycle comme le mot s'y seraient perdus. Les
 quatre sont relus. La colonne `Commentaire`
 est relue sur la série de sa ligne, comme l'export l'écrit.
 
+**Une page de l'app n'écrase pas le carnet d'une autre.** Le carnet local vit
+sous une seule clé partagée par tout l'appareil : la PWA installée, un onglet
+Safari laissé ouvert sur le site, une page qu'iOS a gardée en veille depuis
+hier. Chacune garde son propre carnet en mémoire et réécrit le carnet **entier**
+à chaque sauvegarde — donc la dernière qui écrit effaçait les séances notées
+dans les autres, sans que personne n'ait rien supprimé. C'est la façon la plus
+silencieuse de perdre la séance d'hier (14/10/2026).
+
+`saveLocal()` ne fait donc plus confiance à sa propre mémoire : **avant
+d'écrire, elle relit**. Si le texte stocké n'est plus celui que cette page y a
+laissé (`dernierEcrit`), une autre page a écrit, et `TS.fusionnerEcritures()`
+reprend ses journées, ses exercices et ses séries avant la sauvegarde, puis les
+marque pour le compte. Quand rien n'a bougé — le cas normal — l'écriture passe
+directement : **supprimer une série reste une suppression**, pas un conflit.
+
+`fusionnerEcritures()` est le pendant de `fusionnerCarnets()` pour deux
+écritures du *même* carnet : aucune des deux n'est « une photo plus ancienne »,
+donc elle reprend aussi les séries ajoutées à un exercice que les deux
+connaissent, ce qu'un import ne fait jamais. Comme l'import, elle ne modifie pas
+le carnet d'origine et ignore les cartes vides.
+
 **Garde-fou contre l'écrasement.** `saveLocal()` réécrit le carnet entier à chaque
 sauvegarde. Si `state.sessions` était vide au mauvais moment — chargement raté,
 JSON corrompu — cet unique appel effacerait tout, définitivement et sans un mot.
@@ -213,9 +234,30 @@ Donc :
   La condition se lève d'elle-même dès qu'il y a de nouveau un jour réel.
 - Chaque sauvegarde conserve la **version précédente** sous une clé de secours.
 - Un JSON illisible est **mis de côté** au lieu d'être écrasé.
-- Un bouton `RÉCUPÉRER N JOURS` apparaît dans le panneau `⇅` dès qu'une copie
-  récupérable contient plus que ce qui est chargé. Récupérer, c'est importer
-  cette copie : ce qui manque revient, ce qui est là ne bouge pas.
+- Un bouton `RÉCUPÉRER N JOURS` apparaît dans le panneau `⇅` dès qu'une
+  réserve contient une séance **qui manque au carnet chargé**. Récupérer, c'est
+  importer cette réserve : ce qui manque revient, ce qui est là ne bouge pas.
+
+Il y a **quatre réserves** sur le téléphone, et le bouton n'en relisait que deux
+jusqu'au 14/10/2026 — les deux autres étaient donc écrites pour rien :
+
+1. la copie d'avant la dernière sauvegarde (`musculation_sessions_secours`) ;
+2. le texte mis de côté quand le carnet était illisible (`…_illisible`) ;
+3. les versions perdantes d'un conflit de synchro (`topset_conflits`, une carte
+   `date@heure` → journée : on garde, par date, celle qui a le plus de séries) ;
+4. les carnets rangés par compte (`topset_carnet_<id>`), quand plusieurs
+   personnes se connectent sur le même téléphone.
+
+Le bouton propose l'**union** de ce que ces quatre réserves ont en plus, et
+annonce ce qui manque — pas la taille de la réserve. L'ancienne condition
+comparait la réserve au carnet entier : elle cachait le bouton dès que le carnet
+avait plus de séries au total, même quand une journée entière lui manquait.
+
+Et pour un compte, un bouton `TOUT RETÉLÉCHARGER DE MON COMPTE` redemande le
+carnet complet sans le curseur des nouveautés : la synchro ordinaire ne
+redemande que ce qui a changé depuis la dernière fois, donc rien ne rappelait
+une journée tombée d'ici après être partie sur le compte. Le garde-fou du tirage
+garde les journées d'ici plus complètes.
 
 ---
 

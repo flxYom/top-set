@@ -3540,6 +3540,10 @@
       <textarea id="dataPaste" class="sheet-paste" rows="3" placeholder="… ou colle ici le contenu d'une sauvegarde"></textarea>
       <button type="button" class="btn-sheet primary" id="dataImport">AJOUTER À MES DONNÉES</button>
       <button type="button" class="btn-sheet" id="dataRecover" aria-label="Récupérer la copie de secours" hidden></button>
+      <!-- Le compte est la seule reserve qui survit au telephone : il doit
+           pouvoir redemander son carnet entier, et pas seulement les
+           nouveautes depuis la derniere synchro. (14/10/2026) -->
+      <button type="button" class="btn-sheet" id="dataCloud" hidden>TOUT RETÉLÉCHARGER DE MON COMPTE</button>
       <div class="sheet-msg" id="dataMsg" hidden></div>
       <p class="sheet-note">
         Un import <strong>ajoute</strong> ce qui te manque — les séances d'un
