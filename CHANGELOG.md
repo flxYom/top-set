@@ -49,9 +49,8 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 - **The day banner had no image at all.** `.hero-photo` pointed at
   `var(--img-plates)`, a variable that never existed; and the muscle-group
   drawing *replaced* the photo rather than layering over it, so logging a
-  single set made the background a black rectangle. Four distinct layers now
-  (photo, group drawing, veil, tint), written in the page instead of rebuilt on
-  every render.
+  single set made the background a black rectangle. Three distinct layers now
+  (photo, veil, tint), written in the page instead of rebuilt on every render.
 - **One class, two objects.** `.seance-tete` named both the session-name row on
   the training screen and the solid header of the carnet's session cards: the
   first inherited the second's orange background, in the middle of the banner.
@@ -66,6 +65,17 @@ while it stays below `1.0.0`, breaking changes (in particular to the
   cycle on top, **the session name large**, the group and the figures at the
   bottom. The `mix-blend-mode: color` wash at 90 %, which flattened the photo
   into a dull fill, is replaced by a one-sided gradient of the group's colour.
+- **One photo per muscle group in the day banner.** « Change the background
+  image too, take real ones or generate nicer, less AI ones, and fit them to
+  the session. » (14/10.) Seven empty gyms at night, one hard side light,
+  nobody in them — a bench press station for chest, a loaded squat rack for
+  legs, a pull-up bar and a lat pulldown for back, a dumbbell rack for
+  shoulders, an EZ bar for arms, an ab wheel for abs, a row of treadmills for
+  cardio. Generated with Higgsfield (Z Image, 0.15 credit each, 1.05 in all —
+  Soul Location, better suited to places, needs a paid plan), already
+  greyscale and 7 to 19 Ko apiece, in the offline shell. The seven line
+  drawings they replace are removed: one image per banner, not a drawing laid
+  over a photo of the same object.
 - **Typos are understood.** « If I write benc or bnech it has to understand I
   meant bench, and for every exercise. » (14/10.) Damerau-Levenshtein against
   the abbreviations, the remembered names and the built-in list, with tolerance
@@ -94,7 +104,7 @@ while it stays below `1.0.0`, breaking changes (in particular to the
   selector without saying what it drove. Each carries its title and one
   sentence, and the selector is named: AFFICHER in the carnet, ADDITIONNER SUR
   in Progrès. Neither was removed: they answer two different questions, they
-  just never asked them out loud. Service worker `topset-v47`.
+  just never asked them out loud. Service worker `topset-v48`.
 
 - **Training cycles, and a comparison that respects them.** « Monday, for two
   weeks, strength cycle; then endurance — and it should compare me to my last

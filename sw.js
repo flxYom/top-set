@@ -10,7 +10,7 @@
 // depuis un cache reviendrait a afficher des seances perimees en croyant
 // etre a jour. Le hors-ligne des donnees, c'est localStorage, pas ici.
 
-var VERSION = 'topset-v47';
+var VERSION = 'topset-v48';
 var COQUILLE = VERSION + '-coquille';
 var COURANT  = VERSION + '-courant';
 
@@ -24,15 +24,15 @@ var A_PRECHARGER = [
   'icons/icon-512.png',
   'icons/favicon-32.png',
   'icons/favicon-48.png',
-  // Les dessins du bandeau : hors ligne, un bandeau sans son dessin n'aurait
-  // plus que la couleur du groupe.
-  'img/hero/pectoraux.svg',
-  'img/hero/dos.svg',
-  'img/hero/epaules.svg',
-  'img/hero/bras.svg',
-  'img/hero/jambes.svg',
-  'img/hero/abdos.svg',
-  'img/hero/cardio.svg',
+  // Les photos du bandeau, une par groupe musculaire : hors ligne, un bandeau
+  // sans la sienne n'aurait plus que la couleur du groupe.
+  'img/hero/pectoraux.webp',
+  'img/hero/dos.webp',
+  'img/hero/epaules.webp',
+  'img/hero/bras.webp',
+  'img/hero/jambes.webp',
+  'img/hero/abdos.webp',
+  'img/hero/cardio.webp',
   // Les images d'ambiance du bandeau et de l'accueil.
   'img/ambiance/bandeau.webp',
   'img/ambiance/accueil.webp',

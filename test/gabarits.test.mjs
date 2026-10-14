@@ -11,7 +11,7 @@
 //
 //   node test/gabarits.test.mjs
 
-import { readFileSync, existsSync, readdirSync } from 'fs';
+import { readFileSync, existsSync, readdirSync, statSync } from 'fs';
 
 // Le JS de l'app vit dans app.js depuis qu'on a retire 'unsafe-inline' de la
 // CSP : sans etape de build, un script externe est le seul moyen de se passer
@@ -505,11 +505,20 @@ ok('le compteur s arrete sur les chiffres du bilan',
    /function chargerPuisBilan\(ds, rapide\)\{[\s\S]{0,1200}var b = bilanDuJour\(ds\);/.test(SRC));
 ok('les disques s arretent quand l appareil le demande',
    /@media \(prefers-reduced-motion:reduce\)\{\s*\.disque\{animation:none;opacity:1;\}/.test(HTML));
-const DESSINS = ['pectoraux', 'dos', 'epaules', 'bras', 'jambes', 'abdos', 'cardio'];
-ok('chaque dessin existe, est branche et part dans le cache hors ligne',
-   DESSINS.every(n => existsSync(new URL('../img/hero/' + n + '.svg', import.meta.url))
-     && HTML.indexOf('.hero[data-illu="' + n + '"] .hero-illu{background-image:url(\'img/hero/' + n + '.svg\');}') > -1
-     && SW.indexOf("'img/hero/" + n + ".svg'") > -1));
+const GROUPES = ['pectoraux', 'dos', 'epaules', 'bras', 'jambes', 'abdos', 'cardio'];
+// Le 14/10/2026, les sept petits dessins au trait ont laisse la place a sept
+// vraies photos de salle vide. Le dessin, lui, REMPLACAIT la photo du bandeau :
+// des qu une serie etait notee, il ne restait qu un rectangle noir.
+const poidsPhoto = n => statSync(new URL('../img/hero/' + n + '.webp', import.meta.url)).size;
+ok('chaque photo de groupe existe, est branchee et part dans le cache hors ligne',
+   GROUPES.every(n => existsSync(new URL('../img/hero/' + n + '.webp', import.meta.url))
+     && HTML.indexOf('.hero[data-illu="' + n + '"] .hero-photo{background-image:url(\'img/hero/' + n + '.webp\');}') > -1
+     && SW.indexOf("'img/hero/" + n + ".webp'") > -1));
+// La charte fixe 25 Ko pour une image d'interface : sept d'un coup dans la
+// coquille hors ligne, ca compte.
+ok('aucune photo du bandeau ne depasse 25 Ko',
+   GROUPES.every(n => poidsPhoto(n) <= 25 * 1024),
+   GROUPES.map(n => n + ' ' + Math.round(poidsPhoto(n) / 1024) + ' Ko').join(', '));
 
 console.log('\n== La refonte « Salle noire » ==');
 // Une couche posee apres les styles d'origine : si elle passait avant, les
@@ -1198,12 +1207,14 @@ ok('le bandeau porte le nom de la seance, pas le groupe musculaire',
    // champ de saisie du nom en cours d'edition.
    && HTML.indexOf('id="seanceNomBtn"') > HTML.indexOf('<div class="hero" id="heroBand">')
    && HTML.indexOf('id="seanceNomBtn"') < HTML.indexOf('<div class="day-panel">'));
-ok('le fond du bandeau existe vraiment, et le dessin ne le remplace plus',
-   // La variable --img-plates n'a jamais ete definie nulle part.
+ok('le fond du bandeau existe vraiment, et il n y a plus de calque de dessin',
+   // La variable --img-plates n'a jamais ete definie nulle part : le bandeau
+   // n'avait donc aucune image, et personne ne s'en etait apercu.
    !/var\(--img-plates\)/.test(HTML)
-   && /\.hero-photo\{[\s\S]{0,200}background-image:url\('img\/ambiance\/bandeau\.webp'\)/.test(HTML)
-   && /\.hero-illu\{/.test(HTML)
-   && !/\.hero\[data-illu\] \.hero-photo\{/.test(HTML)
+   && /\.hero-photo\{[\s\S]{0,260}background-image:url\('img\/ambiance\/bandeau\.webp'\)/.test(HTML)
+   // Une seule image par bandeau : plus de dessin pose par-dessus la photo.
+   && !/hero-illu/.test(HTML)
+   && !/img\/hero\/[a-z]+\.svg/.test(HTML + SW)
    // Et le lavis qui ecrasait tout le relief a disparu.
    && !/mix-blend-mode:color/.test(HTML));
 ok('une classe, un objet : la ligne du nom ne prend plus le fond des cartes',

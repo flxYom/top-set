@@ -218,25 +218,21 @@
   .hero-photo{
     position:absolute;inset:0;
     background-image:url('img/ambiance/bandeau.webp');
-    background-size:cover;background-position:center 30%;
-    filter:grayscale(1) contrast(1.15) brightness(.42);
+    background-size:cover;background-position:center 46%;
+    filter:grayscale(1) contrast(1.06) brightness(.74);
   }
-  /* Un dessin par groupe musculaire dominant, pose a droite, la ou le texte
-     ne va pas. Il REMPLACAIT la photo : des qu'une serie etait notee, le fond
-     devenait un rectangle noir avec un petit trait blanc dedans. Il a
-     maintenant son propre calque, par-dessus la photo. (14/10/2026) */
-  .hero-illu{
-    position:absolute;top:0;right:0;bottom:0;width:58%;
-    background-size:auto 76%;background-repeat:no-repeat;background-position:right 4px center;
-    opacity:.5;
-  }
-  .hero[data-illu="pectoraux"] .hero-illu{background-image:url('img/hero/pectoraux.svg');}
-  .hero[data-illu="dos"] .hero-illu{background-image:url('img/hero/dos.svg');}
-  .hero[data-illu="epaules"] .hero-illu{background-image:url('img/hero/epaules.svg');}
-  .hero[data-illu="bras"] .hero-illu{background-image:url('img/hero/bras.svg');}
-  .hero[data-illu="jambes"] .hero-illu{background-image:url('img/hero/jambes.svg');}
-  .hero[data-illu="abdos"] .hero-illu{background-image:url('img/hero/abdos.svg');}
-  .hero[data-illu="cardio"] .hero-illu{background-image:url('img/hero/cardio.svg');}
+  /* Une photo par groupe musculaire dominant (14/10/2026). Avant, c'etait un
+     petit dessin au trait pose a droite — et il REMPLACAIT la photo, qui de
+     toute facon n'existait pas : des qu'une serie etait notee, le bandeau
+     devenait un rectangle noir avec un trait blanc dedans. Ce sont maintenant
+     sept vraies images de salle vide, deja en gris et sous 19 Ko chacune. */
+  .hero[data-illu="pectoraux"] .hero-photo{background-image:url('img/hero/pectoraux.webp');}
+  .hero[data-illu="dos"] .hero-photo{background-image:url('img/hero/dos.webp');}
+  .hero[data-illu="epaules"] .hero-photo{background-image:url('img/hero/epaules.webp');}
+  .hero[data-illu="bras"] .hero-photo{background-image:url('img/hero/bras.webp');}
+  .hero[data-illu="jambes"] .hero-photo{background-image:url('img/hero/jambes.webp');}
+  .hero[data-illu="abdos"] .hero-photo{background-image:url('img/hero/abdos.webp');}
+  .hero[data-illu="cardio"] .hero-photo{background-image:url('img/hero/cardio.webp');}
   /* Un lavis en fusion de couleur a 90 % effacait tout le relief de la photo
      et rendait un aplat terne. La teinte du groupe arrive maintenant par un
      cote, en degrade, et laisse l'image respirer. */
@@ -2665,13 +2661,6 @@
   /* ---- Deuxieme passe, apres relecture des 18 ecrans ---------------------- */
   /* L'onglet actif gardait la bordure creme d'origine. */
   .topbar-tab.active{border:0;}
-  /* Le dessin passait sous le titre du bandeau sur telephone : il se tient a
-     droite, et s'agrandit sur un grand ecran. Il a son propre calque depuis le
-     14/10/2026 ; avant il visait .hero-photo, donc il EFFACAIT la photo. */
-  .hero-illu{background-size:60% auto;background-position:right -6px bottom -6px;}
-  @media (min-width:640px){
-    .hero-illu{background-size:auto 94%;background-position:right 14px center;}
-  }
   /* L'aide des seances reste une note, pas une carte. */
   .seances-cible{border:0;border-left:2px solid var(--orange);border-radius:0;background:none;}
   /* Les en-tetes pleins (carte de seance, groupe du recap) deviennent un
@@ -2701,10 +2690,12 @@
      orange, le noir a gauche pour le titre. Remplace la photo encodee dans la
      page, 86 Ko de moins a chaque chargement. La teinte du groupe reste, mais
      legere : la lumiere orange de l'image fait deja le travail. */
+  /* Les sept photos de groupe sont deja grises et sombres : les assombrir
+     encore d'un facteur deux n'en laissait qu'un rectangle noir. */
   .hero-photo{
     background-image:url('img/ambiance/bandeau.webp');
-    background-size:cover;background-position:center 34%;
-    filter:grayscale(1) contrast(1.12) brightness(.46);
+    background-size:cover;background-position:center 46%;
+    filter:grayscale(1) contrast(1.06) brightness(.74);
   }
   /* L'ecran d'accueil : une barre posee au sol, dans la penombre. Un voile
      plus sombre au milieu, la ou se lisent le titre et le formulaire. */
@@ -3341,7 +3332,6 @@
            page et ne sont plus refabriques a chaque rendu. -->
       <div class="hero" id="heroBand">
         <div class="hero-photo" aria-hidden="true"></div>
-        <div class="hero-illu" aria-hidden="true"></div>
         <div class="hero-voile" aria-hidden="true"></div>
         <div class="hero-teinte" aria-hidden="true"></div>
         <div class="hero-haut">

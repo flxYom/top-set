@@ -453,12 +453,18 @@ avant de le faire.
   Le bandeau porte maintenant la date, le cycle, **le nom de la séance en
   grand**, puis le groupe et les chiffres. Ce qu'on a décidé d'appeler sa
   séance passe avant ce que l'app en déduit.
-- **Un calque par rôle dans le bandeau** (14/10). La photo, le dessin du groupe,
-  le voile et la teinte sont quatre calques distincts, écrits dans la page et
-  non refabriqués à chaque rendu. Avant, le dessin du groupe *remplaçait* la
-  photo (`.hero[data-illu] .hero-photo`) : dès qu'une série était notée, il n'y
-  avait plus d'image. Et la teinte était un `mix-blend-mode: color` à 90 %, qui
+- **Un calque par rôle dans le bandeau** (14/10). La photo, le voile et la
+  teinte sont trois calques distincts, écrits dans la page et non refabriqués à
+  chaque rendu. Avant, le dessin du groupe *remplaçait* la photo
+  (`.hero[data-illu] .hero-photo`) : dès qu'une série était notée, il n'y avait
+  plus d'image. Et la teinte était un lavis en fusion de couleur à 90 %, qui
   effaçait tout le relief — elle arrive désormais par un côté, en dégradé.
+- **Une image par bandeau, pas deux** (14/10). Sept photos de salle vide
+  remplacent les sept dessins au trait, une par groupe musculaire. Poser le
+  dessin d'un banc par-dessus la photo d'un banc n'ajoutait rien : les SVG ont
+  été retirés. Coût réel annoncé avant de dépenser, comme le dit la section 9 :
+  Z Image à 0,15 crédit pièce, 1,05 crédit pour les sept — Soul Location, plus
+  adapté aux lieux, demande un plan payant.
 - **Une classe, un objet** (14/10). `.seance-tete` désignait à la fois la ligne
   du nom sur l'écran de séance et l'en-tête plein des cartes du carnet : la
   première héritait du fond orange de la seconde. La ligne du nom s'appelle

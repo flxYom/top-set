@@ -399,8 +399,17 @@ nowhere to put it.
 **The day banner takes a drawing** from the session's dominant muscle group: a
 bench for chest, a squat rack for legs, a bar and rings for back, dumbbells for
 shoulders, an EZ bar for arms, an ab wheel for abs, a heartbeat trace and a
-rope for cardio. SVGs (`img/hero/`) laid on the right, over the photo. They are
-in the service worker's shell, so they work offline too.
+rope for cardio. Seven empty gyms at night, one hard side light, nobody in them
+— generated on 2026-10-14 (Higgsfield, Z Image, 0.15 credit each, 1.05 in all),
+already greyscale and 7 to 19 Ko apiece, in `img/hero/`. « Autre » and an empty
+session keep the generic ambience photo.
+
+They used to be seven small line drawings, and they **replaced** the photo
+(`.hero[data-illu] .hero-photo`): as soon as a set was logged the banner was a
+black rectangle with a white stroke in it — all the more so as that photo did
+not exist either. The SVGs are gone: one image per banner, not a drawing laid
+over a photo of the same object. They are in the service worker's shell, so
+they work offline too.
 
 **The session's title block, rebuilt** (2026-10-14, "too weird, not pretty").
 Three stacked blocks were stepping on each other: a banner whose big title was

@@ -429,12 +429,22 @@ sur sa dernière série (après le sien, s'il y en avait un), là où « assist�
 la dernière » voulait dire quelque chose ; rien ne se perd. Un exercice sans
 série garde le sien, faute d'endroit où le poser.
 
-**Le bandeau du jour prend un dessin** selon le groupe musculaire dominant de
-la séance : un banc pour les pectoraux, une cage à squat pour les jambes, une
-barre et des anneaux pour le dos, des haltères pour les épaules, une barre EZ
-pour les bras, une roue pour les abdos, un tracé cardiaque et une corde pour le
-cardio. Des SVG (`img/hero/`) posés à droite, par-dessus la photo. Ils sont dans
-la coquille du service worker : hors ligne aussi.
+**Le bandeau du jour prend une photo** selon le groupe musculaire dominant de
+la séance : un banc de développé couché pour les pectoraux, une cage à squat
+chargée pour les jambes, une barre de traction et une poulie haute pour le dos,
+un rack d'haltères pour les épaules, une barre EZ pour les bras, une roue et un
+tapis pour les abdos, une rangée de tapis de course pour le cardio. Sept salles
+vides, de nuit, une seule lumière rasante, personne dedans — générées le
+14/10/2026 (Higgsfield, Z Image, 0,15 crédit pièce, 1,05 au total), déjà en gris
+et de 7 à 19 Ko chacune, dans `img/hero/`. « Autre » et la séance vide gardent
+la photo d'ambiance générique.
+
+Avant, c'étaient sept petits dessins au trait, et ils **remplaçaient** la photo
+(`.hero[data-illu] .hero-photo`) : dès qu'une série était notée, le bandeau
+n'était plus qu'un rectangle noir avec un trait blanc dedans — d'autant que la
+photo en question n'existait pas non plus. Les SVG ont été retirés : une seule
+image par bandeau, pas un dessin posé par-dessus une photo du même objet. Elles
+sont dans la coquille du service worker : hors ligne aussi.
 
 **Le titrage de la séance, refondu** (14/10/2026, « trop bizarre, pas belle »).
 Il y avait trois blocs empilés qui se marchaient dessus : un bandeau dont le
