@@ -229,8 +229,13 @@ only two of them — so the other two were being written for nothing:
 2. the text set aside when the logbook was unreadable (`…_illisible`);
 3. the losing versions of a sync conflict (`topset_conflits`, a `date@time` →
    day map: per date, the one with the most sets is kept);
-4. the logbooks parked per account (`topset_carnet_<id>`), when several people
-   sign in on the same phone.
+4. **its own** logbook parked per account — `topset_carnet_<their id>`, or
+   `topset_carnet_anon` when nobody is signed in.
+
+The fourth reserve is only read under its own key, never by scanning
+`topset_carnet_*`: a parked logbook is only recoverable by its owner, and
+walking them all would have offered the previous account's logbook to the next
+one on a shared phone.
 
 The button offers the **union** of what those four hold in addition, and
 announces what is missing rather than the size of the reserve. The old condition

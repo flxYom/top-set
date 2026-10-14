@@ -28,8 +28,12 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 - **Two of the four recovery reserves were written for nothing.** The
   `RÉCUPÉRER` button in the `⇅` panel only read the copy from before the last
   save and the set-aside unreadable text. The losing versions of a sync conflict
-  (`topset_conflits`) and the logbooks parked per account (`topset_carnet_<id>`)
-  were never offered back, although a lost day could be sitting in either. The
+  (`topset_conflits`) and the viewer's own logbook parked per account
+  (`topset_carnet_<their id>`, or `topset_carnet_anon` with nobody signed in)
+  were never offered back, although a lost day could be sitting in either. Only
+  that one parked logbook is read, never all of them: a parked logbook is only
+  recoverable by its owner, so scanning `topset_carnet_*` would have offered the
+  previous account's logbook to the next one on a shared phone. The
   button now offers the **union** of what all four hold in addition, and its
   gate changed too: it compared the reserve to the whole logbook, so it stayed
   hidden as soon as the logbook had more sets in total — even with a whole day

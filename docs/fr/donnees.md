@@ -245,8 +245,13 @@ jusqu'au 14/10/2026 — les deux autres étaient donc écrites pour rien :
 2. le texte mis de côté quand le carnet était illisible (`…_illisible`) ;
 3. les versions perdantes d'un conflit de synchro (`topset_conflits`, une carte
    `date@heure` → journée : on garde, par date, celle qui a le plus de séries) ;
-4. les carnets rangés par compte (`topset_carnet_<id>`), quand plusieurs
-   personnes se connectent sur le même téléphone.
+4. **son** carnet rangé par compte — `topset_carnet_<son id>`, ou
+   `topset_carnet_anon` quand personne n'est connecté.
+
+La quatrième réserve ne se lit que sous sa propre clé, jamais en balayant
+`topset_carnet_*` : un carnet rangé n'est retrouvable que par son propriétaire,
+et le parcourir aurait proposé au compte suivant le carnet du précédent sur un
+téléphone partagé.
 
 Le bouton propose l'**union** de ce que ces quatre réserves ont en plus, et
 annonce ce qui manque — pas la taille de la réserve. L'ancienne condition

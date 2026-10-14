@@ -1084,20 +1084,22 @@
       } catch(e){}
     }
 
-    try {
-      for (var i = 0; i < localStorage.length; i++){
-        var k2 = localStorage.key(i);
-        if (!k2 || k2.indexOf('topset_carnet_') !== 0) continue;
-        var raw2 = lire(k2);
-        if (!raw2) continue;
-        try {
-          var p = JSON.parse(raw2);
-          if (p && p.sessions && typeof p.sessions === 'object'){
-            out.push({ cle:k2, texte:JSON.stringify({ sessions:p.sessions, customExercises:p.custom || null }) });
-          }
-        } catch(e2){}
-      }
-    } catch(e3){}
+    // Un seul carnet range nous concerne : le sien. Les autres appartiennent
+    // aux comptes qui se sont connectes sur ce telephone, et un carnet range
+    // ne doit etre retrouvable que par son proprietaire — c'est la regle de
+    // confidentialite du rangement, et balayer « topset_carnet_* » la
+    // cassait : le compte suivant se serait vu proposer le carnet du
+    // precedent. Sans compte, le carnet anonyme est le sien.
+    var moi = (Sync && Sync.idCompte) ? Sync.idCompte() : null;
+    var raw2 = lire('topset_carnet_' + (moi || 'anon'));
+    if (raw2){
+      try {
+        var p = JSON.parse(raw2);
+        if (p && p.sessions && typeof p.sessions === 'object'){
+          out.push({ cle:'carnet range', texte:JSON.stringify({ sessions:p.sessions, customExercises:p.custom || null }) });
+        }
+      } catch(e2){}
+    }
 
     return out;
   }
@@ -9108,6 +9110,8 @@
       // le curseur des nouveautes. Les journees d'ici plus completes sont
       // gardees par le garde-fou de tirer(). (14/10/2026)
       connecte:function(){ return !!user; },
+      // Pour retrouver SON carnet range, et seulement le sien.
+      idCompte:function(){ return user ? user.id : null; },
       tirerTout:function(){ return tirer(true); },
       estCoach:function(){ return !!(profil && profil.est_coach); },
       codeCoach:function(){ return profil && profil.code_coach; },

@@ -1256,7 +1256,11 @@ ok('les quatre reserves de secours sont relues, pas seulement deux',
    /function reservesDeSecours\(\)\{/.test(SRC)
    && /\[SECOURS_KEY, ILLISIBLE_KEY\]\.forEach/.test(SRC)
    && /var brut = lire\('topset_conflits'\);/.test(SRC)
-   && /k2\.indexOf\('topset_carnet_'\) !== 0/.test(SRC)
+   // Un seul carnet range est relu : le sien. Balayer « topset_carnet_* »
+   // proposerait au compte suivant le carnet du precedent.
+   && /var raw2 = lire\('topset_carnet_' \+ \(moi \|\| 'anon'\)\);/.test(SRC)
+   && /idCompte:function\(\)\{ return user \? user\.id : null; \}/.test(SRC)
+   && !/indexOf\('topset_carnet_'\)/.test(SRC)
    // On propose ce qui MANQUE au carnet d'ici, pas la plus grosse reserve :
    // l'ancien test (reserve plus fournie que le carnet entier) cachait le
    // bouton des que le carnet avait plus de series, meme s'il lui manquait
