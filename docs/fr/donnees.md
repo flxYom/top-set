@@ -98,7 +98,27 @@ Une modification marque sa journée et l'envoi attend 2,5 s de calme : taper au
 clavier ne déclenche pas une requête par frappe. Hors ligne, la file des journées
 en attente vit dans le `localStorage` et repart sur l'événement `online` et au
 retour sur l'onglet. **Une journée ne quitte la file que si le serveur a
-confirmé.**
+confirmé, et que rien n'a bougé depuis l'envoi.**
+
+Cette deuxième moitié de phrase a coûté une séance (14/10/2026). Le marquage
+posait un simple `1`, et la confirmation effaçait le drapeau sans se demander à
+quelle version elle répondait. Sur un wifi de salle de sport, un envoi met
+vingt secondes : les séries notées pendant ce temps relevaient bien le drapeau,
+que la confirmation effaçait juste après. La journée passait alors pour envoyée
+alors que le cloud n'avait que sa vieille version — et le tirage suivant, au
+retour dans l'app, la réécrivait par-dessus la bonne. Chaque marquage pose
+maintenant **une marque différente** (`Date.now()` + un compteur) ; la
+confirmation ne libère la journée que si la marque est encore la sienne, sinon
+la journée reste sale et repart aussitôt. Les cinq files suivent la même règle :
+journées, titres, cycles, mots de séance, validations, noms d'exercices.
+
+Deux garde-fous l'entourent. Un appel qui ne revient jamais — le wifi qui
+accepte la connexion sans rien router — **rend la main au bout de 25 secondes**
+au lieu de bloquer tous les envois suivants jusqu'au rechargement. Et le
+tirage **n'adopte jamais une journée du cloud qui a moins de séries notées que
+celle d'ici** : c'est forcément un envoi en retard, donc la version locale
+gagne, repart dans la file, et celle du cloud est rangée dans
+`topset_conflits`.
 
 **Une base en retard ne mange pas les commentaires.** Les commentaires ont
 demandé deux colonnes, `exercices.note` puis `series.note`, ajoutées quand
@@ -111,7 +131,22 @@ renvoie `note: null`, et là, on la suit.
 
 Clés de stockage : `musculation_sessions` (le carnet), `topset_custom_exercises`
 (exercices mémorisés), `topset_sync` (file d'attente et curseur de synchro),
-`topset_conflits` (la version perdante d'un conflit, jamais jetée en silence).
+`topset_conflits` (la version perdante d'un conflit, jamais jetée en silence —
+bornée à vingt depuis le 14/10/2026 : elle grossissait sans fin et pouvait finir
+par remplir le stockage du téléphone).
+
+**Le stockage plein ne se perd plus en silence.** `localStorage.setItem()` lève
+quand le quota est atteint, et le `catch` l'avalait : plus rien n'était écrit
+jusqu'au rechargement, pendant que l'app continuait d'afficher une séance qui
+n'existait plus nulle part. L'écriture fait maintenant de la place avec ce qui
+est jetable, du moins utile au plus utile — les conflits, le JSON illisible mis
+de côté, la copie de secours — et retente à chaque fois. Si rien n'y fait, elle
+le dit : « Stockage du téléphone plein : exporte ton carnet ».
+
+**Ce qui attend d'être écrit part avant qu'on quitte.** Une frappe attend une
+demi-seconde avant d'être enregistrée, pour ne pas sauvegarder à chaque lettre.
+L'iPhone peut fermer l'app dans cet intervalle : `pagehide`, `beforeunload` et
+le passage en arrière-plan vident désormais cette file d'attente.
 
 ---
 

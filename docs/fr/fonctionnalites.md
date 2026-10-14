@@ -25,6 +25,16 @@ fait une seule chose :
 - **CARNET** : chercher un exercice, un jour ou une séance. Le calendrier **et**
   la liste sur le même écran.
 - **PROGRÈS** : records, volume, bilans (l'ancien RÉCAP).
+
+**Carnet et Progrès disent maintenant à quoi ils servent** (14/10/2026, « on
+comprend pas forcément la différence »). Elle existait — retrouver d'un côté,
+additionner de l'autre — mais rien ne l'écrivait, et les deux onglets
+affichaient le même sélecteur SEMAINE / MOIS sans dire ce qu'il commandait.
+Chacun porte désormais son titre et une phrase : *Carnet — ce que tu as fait*,
+*Progrès — ce que ça donne*. Et le sélecteur est nommé : **AFFICHER** dans le
+carnet (ce qu'on regarde), **ADDITIONNER SUR** dans Progrès (ce qu'on totalise).
+Aucun des deux n'a été supprimé : ils répondent à deux questions différentes, il
+manquait seulement de les poser.
 - **APPRENDRE** : les pages et les outils.
 
 **Le carnet se regarde par jour, par semaine ou par mois** (21/09/2026, demande :
@@ -271,6 +281,17 @@ oublié) : rien n'est écrit ; décocher cette série l'annule, valider la séan
 l'abandonne. Seulement sur la séance du jour, gardé dans `localStorage`
 (`topset_repos`) comme le chrono, écran allumé.
 
+**La pastille ne se cache plus derrière le clavier** (14/10/2026, « des fois je
+valide une série et ça me met pas le chrono »). Le chrono partait bien : c'est
+la pastille qui était masquée tant que le clavier était ouvert — et on coche sa
+série clavier ouvert, le champ des reps a encore le focus. Elle reste maintenant
+à l'écran et se pose **juste au-dessus du clavier** (`--clavier-h`, mesurée sur
+le `visualViewport`), à sa place de départ même si elle avait été déplacée : un
+point fixe pendant la saisie vaut mieux qu'un point qui passe dessous. Et une
+pastille déplacée tout en bas ne peut plus finir **derrière la barre
+d'onglets** : la limite basse se mesure sur la barre au lieu d'être une marge
+de 8 px.
+
 **Le repos se déplace** (18/09/2026). La pastille se déplace du doigt (8 px
 avant de parler de glisser : un appui qui tremble reste un appui) et garde sa
 place (`topset_repos_pos`, en fraction de l'écran). Un appui ouvre l'exercice
@@ -331,6 +352,10 @@ de l'en-tête ouvre `RÉGLAGES ET PROFIL`, réglages d'abord :
   charge suggérée : éteint, la suggestion s'appuie sur la seule tendance des
   charges.
 - **Garder l'écran allumé** pendant un chrono ou un repos.
+- **Je nomme mes exercices moi-même** (14/10/2026, « faut une option en mode
+  jmet le nom de mon exo »). Allumée, l'app ne demande plus rien quand on tape
+  un nom : ni abréviation, ni faute de frappe, ni ressemblance. Le menu `⋯` de
+  l'exercice sait toujours relier deux noms à la demande.
 Les réglages vivent dans ce téléphone (`topset_reglages`) : ce sont des états
 d'écran, pas des données du carnet, et ils ne montent pas dans le compte.
 
@@ -408,9 +433,27 @@ série garde le sien, faute d'endroit où le poser.
 la séance : un banc pour les pectoraux, une cage à squat pour les jambes, une
 barre et des anneaux pour le dos, des haltères pour les épaules, une barre EZ
 pour les bras, une roue pour les abdos, un tracé cardiaque et une corde pour le
-cardio. Des SVG en gris (`img/hero/`), que la teinte du groupe colore
-par-dessus comme la photo ; « Autre » et la séance vide gardent la photo des
-disques. Ils sont dans la coquille du service worker : hors ligne aussi.
+cardio. Des SVG (`img/hero/`) posés à droite, par-dessus la photo. Ils sont dans
+la coquille du service worker : hors ligne aussi.
+
+**Le titrage de la séance, refondu** (14/10/2026, « trop bizarre, pas belle »).
+Il y avait trois blocs empilés qui se marchaient dessus : un bandeau dont le
+grand titre était le *groupe musculaire*, la date une seconde fois juste en
+dessous, puis le nom de la séance dans un petit bouton — qui héritait du style
+d'en-tête des cartes du carnet (classe `.seance-tete` partagée) et s'affichait
+donc sur fond orange, en plein milieu. Un seul bloc maintenant : la date et le
+cycle en haut, **le nom de la séance en grand**, le groupe et les chiffres en
+bas. Trois défauts de fond réparés au passage :
+
+- la photo du bandeau pointait sur `var(--img-plates)`, une variable qui n'a
+  jamais existé — le fond était un rectangle noir ;
+- le dessin du groupe **remplaçait** la photo au lieu de s'y superposer : dès
+  qu'une série était notée, l'image disparaissait ;
+- un lavis `mix-blend-mode: color` à 90 % effaçait le relief de ce qui restait.
+  La teinte du groupe arrive maintenant par un côté, en dégradé.
+
+La classe du bloc a été renommée `.seance-titrage` pour mettre fin à la
+collision avec `.seance-tete`, qui est l'en-tête plein des cartes du carnet.
 
 **La fin de séance.** En bas de la séance du jour, une fois quelque chose de noté,
 `✓ TERMINER MA SÉANCE` pose la question — en signalant les séries notées mais
@@ -453,9 +496,36 @@ Depuis le 8 octobre 2026, le dictionnaire **tranche tout seul** : écrire
 sans rien avoir à déclarer. Avant, il fallait accepter la proposition au moment
 exact de la frappe ; passé ce moment, le nom était retenu tel quel et la
 question ne revenait jamais — deux exercices pour un seul mouvement, sans que
-rien ne le dise. La carte **annonce** maintenant le rapprochement (« Compté avec
-Développé couché ») plutôt que de le demander, et laisse deux sorties :
-`RENOMMER EN DÉVELOPPÉ COUCHÉ`, ou `NON, C'EST UN AUTRE EXERCICE`.
+rien ne le dise. La carte **annonce** maintenant le rapprochement
+(« bench → Développé couché ») plutôt que de le demander.
+
+**La boîte nomme sa proposition, et OUI relie à elle** (14/10/2026, « il me
+propose forcément de le relier à un autre exo, et il comprend pas direct que
+c'est développé couché […] si je le relie faut que ça le relie à l'exo
+proposé »). Elle posait une question ouverte puis renvoyait vers une liste
+déroulante vide, où il fallait retrouver soi-même l'exercice qu'elle venait de
+deviner. Trois boutons suffisent maintenant : **OUI, C'EST ÇA** (qui rattache à
+la proposition, en plein), `PLUTÔT L'ÉCRIRE « DÉVELOPPÉ COUCHÉ »`, et
+`NON, C'EST UN AUTRE EXERCICE`. `AUTRE EXERCICE…` reste dessous, et ouvre la
+liste **déjà posée sur la proposition**.
+
+**Les fautes de frappe** (14/10/2026, « si j'écris benc ou bnech faut qu'il
+puisse comprendre que j'ai voulu écrire bench, et pour tous les exos »). L'app
+compte les corrections qui séparent le mot tapé d'un nom connu — une lettre en
+trop, une qui manque, une fausse, deux inversées (Damerau-Levenshtein) — et
+propose : *« bnech » : tu voulais écrire Développé couché ?*. La tolérance suit
+la longueur : rien en dessous de quatre lettres, une correction jusqu'à huit,
+deux au-delà ; et les deux mots doivent commencer pareil, sauf si ce sont
+justement les deux premières lettres qui sont inversées. Les abréviations sont
+cherchées aussi, et c'est l'exercice visé qui est proposé, pas l'abréviation.
+Corriger remplace le nom et **retire la faute** de la liste des exercices
+mémorisés — sauf si ce mot a déjà servi ailleurs dans le carnet, et là il
+devient un rattachement : jamais d'historique coupé pour une correction de
+confort.
+
+Une faute **propose**, elle ne décide jamais : `cleCanonique()` ne la consulte
+pas. Sans cette règle, « curl » et « curls » fusionneraient tout seuls, et un
+historique faux ne se répare pas.
 
 Sa décision passe devant le dictionnaire, dans les deux sens. Séparer deux noms
 **se note** (`seul: true` dans `topset_custom_exercises`) : sans ce drapeau,

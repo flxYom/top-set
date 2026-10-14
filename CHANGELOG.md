@@ -9,7 +9,92 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ## [Unreleased]
 
+### Fixed
+
+- **A session lost at the gym, three ways.** « I left the app, turned the wi-fi
+  off, and my session for the day had disappeared. I tried several times, it
+  did it again. » (14/10.) Three independent causes, each reproduced on the
+  real app driven in a headless browser, each failing on the previous commit
+  and passing now.
+  1. **The push queue cleared on a stale version.** Marking a day wrote a plain
+     `1`, and the server's confirmation deleted the flag without asking which
+     version it answered. On gym wi-fi a push takes twenty seconds: sets logged
+     meanwhile did raise the flag, which the confirmation then wiped. The day
+     passed for sent while the cloud only held its older version, and the next
+     pull — fired by `visibilitychange`, i.e. the moment you come back to the
+     app — wrote that older version over the good one. Every marking now writes
+     **a distinct stamp**; a confirmation only releases the day if the stamp is
+     still its own, otherwise the day stays dirty and leaves again. All five
+     queues follow it, migration included.
+  2. **Full phone storage failed silently.** `localStorage.setItem()` throws at
+     the quota and the `catch` swallowed it, so nothing was written until a
+     reload while the app kept showing a session that existed nowhere. Writing
+     now frees space with what is disposable — the conflict stash, the
+     unreadable JSON set aside, the rollback copy — retries each time, and says
+     so if nothing helps. The conflict stash, which grew without bound and was
+     never read back, is capped at twenty.
+  3. **Quitting inside the half-second write delay.** A keystroke waits 500 ms
+     before being stored; the iPhone can close the app inside that window.
+     `pagehide`, `beforeunload` and going to the background now flush it.
+  Two guards around it: a request that never returns gives up after 25 seconds
+  instead of blocking every later push until a reload, and a pull never adopts
+  a cloud day holding fewer logged sets than the local one.
+- **« Sometimes I tick a set and it doesn't give me the timer. »** It did start
+  — the pill was hidden while the keyboard was open (`body.clavier`), and you
+  tick your set with the keyboard open, the reps field still focused. It stays
+  on screen and sits just above the keyboard (`--clavier-h`, from
+  `visualViewport`), at its default spot even if it had been dragged. And a
+  pill dragged to the very bottom can no longer end up behind the tab bar: the
+  lower bound is measured on the bar, not a flat 8 px margin.
+- **The day banner had no image at all.** `.hero-photo` pointed at
+  `var(--img-plates)`, a variable that never existed; and the muscle-group
+  drawing *replaced* the photo rather than layering over it, so logging a
+  single set made the background a black rectangle. Four distinct layers now
+  (photo, group drawing, veil, tint), written in the page instead of rebuilt on
+  every render.
+- **One class, two objects.** `.seance-tete` named both the session-name row on
+  the training screen and the solid header of the carnet's session cards: the
+  first inherited the second's orange background, in the middle of the banner.
+  The name row is `.seance-titrage`.
+
 ### Added
+
+- **The session's title block, rebuilt.** « The session title part is too weird,
+  not pretty. » (14/10.) Three stacked blocks were stepping on each other: a
+  banner whose big title was the *muscle group*, the date a second time right
+  below, then the session name in a small grey button. One block now: date and
+  cycle on top, **the session name large**, the group and the figures at the
+  bottom. The `mix-blend-mode: color` wash at 90 %, which flattened the photo
+  into a dull fill, is replaced by a one-sided gradient of the group's colour.
+- **Typos are understood.** « If I write benc or bnech it has to understand I
+  meant bench, and for every exercise. » (14/10.) Damerau-Levenshtein against
+  the abbreviations, the remembered names and the built-in list, with tolerance
+  by length (nothing under four letters, one correction up to eight, two
+  beyond) and a shared first letter — unless it is precisely the first two that
+  are swapped. Correcting replaces the name and removes the typo from the
+  remembered exercises, unless that word has already been used elsewhere, in
+  which case it becomes a link: never a cut history for a convenience fix. A
+  typo **offers**, it never decides — `cleCanonique()` does not consult it, or
+  « curl » and « curls » would merge on their own.
+- **The name box names its guess, and OUI links to it.** « It always offers to
+  link it to another exercise, and it doesn't get straight away that it's the
+  bench press […] if I link it, it has to link it to the one it offered. »
+  (14/10.) It asked an open question, then sent you to an empty dropdown where
+  you had to find for yourself the exercise it had just guessed. Three buttons
+  now: **OUI, C'EST ÇA** (links to the guess), `PLUTÔT L'ÉCRIRE « … »`, and
+  `NON, C'EST UN AUTRE EXERCICE`. `AUTRE EXERCICE…` opens the list already set
+  on the guess.
+- **Setting: « je nomme mes exercices moi-même ».** « I need an option where I
+  put my own exercise name. » (14/10.) Switched on, the app asks nothing while
+  you type: no abbreviation, no typo, no look-alike. The exercise's `⋯` menu
+  still links two names on demand.
+- **Carnet and Progrès say what they are for.** « You don't really get the
+  difference. » (14/10.) There was one — finding on one side, totalling on the
+  other — but nothing wrote it down, and both tabs showed the same WEEK / MONTH
+  selector without saying what it drove. Each carries its title and one
+  sentence, and the selector is named: AFFICHER in the carnet, ADDITIONNER SUR
+  in Progrès. Neither was removed: they answer two different questions, they
+  just never asked them out loud. Service worker `topset-v47`.
 
 - **Training cycles, and a comparison that respects them.** « Monday, for two
   weeks, strength cycle; then endurance — and it should compare me to my last

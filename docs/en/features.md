@@ -25,6 +25,15 @@ Four are left, each doing one thing:
 - **PROGRÈS**: records, volume, session reports (the former RÉCAP).
 - **APPRENDRE**: the pages and the tools.
 
+**Carnet and Progrès now say what they are for** (2026-10-14, "you don't really
+get the difference"). There was one — finding on one side, totalling on the
+other — but nothing wrote it down, and both tabs showed the same WEEK / MONTH
+selector without saying what it drove. Each now carries its title and one
+sentence: *Carnet — what you did*, *Progrès — what it adds up to*. And the
+selector is named: **AFFICHER** in the carnet (what you look at),
+**ADDITIONNER SUR** in Progrès (what you total). Neither was removed: they
+answer two different questions, they just never asked them out loud.
+
 **The carnet is read by day, by week or by month** (21 September 2026, "it has to
 be just day week month"). `JOUR`, `SEMAINE` and `MOIS` drive the calendar **and**
 the list below it: the list shows the period on screen, nothing more, oldest
@@ -252,6 +261,16 @@ written; unticking that set cancels it, validating the session drops it. Only
 on today's session, kept in `localStorage` (`topset_repos`) like the
 stopwatch, with the screen kept on.
 
+**The pill no longer hides behind the keyboard** (2026-10-14, "sometimes I tick
+a set and it doesn't give me the timer"). The timer did start: the pill was
+hidden while the keyboard was open — and you tick your set with the keyboard
+open, the reps field still focused. It now stays on screen and sits **just above
+the keyboard** (`--clavier-h`, measured on the `visualViewport`), back at its
+default spot even if it had been dragged: a fixed point while typing beats one
+that slides underneath. And a pill dragged to the very bottom can no longer end
+up **behind the tab bar**: the lower bound is measured on the bar instead of
+being a flat 8 px margin.
+
 **The rest pill moves** (18 September 2026). Drag it anywhere (8 px before a
 touch counts as a drag); it keeps its place (`topset_repos_pos`, as a fraction
 of the screen). A tap opens the exercise full screen, on the rest.
@@ -309,6 +328,10 @@ profile button in the header opens `RÉGLAGES ET PROFIL`, settings first:
   feeds the suggested load: switched off, the suggestion relies on the trend of
   the loads alone.
 - **Keep the screen awake** during a timer or a rest.
+- **I name my own exercises** (2026-10-14, "I need an option where I put my own
+  exercise name"). Switched on, the app asks nothing while you type a name:
+  no abbreviation, no typo, no look-alike. The exercise's `⋯` menu still links
+  two names on demand.
 Settings live in this phone (`topset_reglages`): they are screen state, not
 logbook data, and they never go up to the account.
 
@@ -376,9 +399,27 @@ nowhere to put it.
 **The day banner takes a drawing** from the session's dominant muscle group: a
 bench for chest, a squat rack for legs, a bar and rings for back, dumbbells for
 shoulders, an EZ bar for arms, an ab wheel for abs, a heartbeat trace and a
-rope for cardio. Grey SVGs (`img/hero/`) that the group's tint colours over,
-like the photo; « Autre » and an empty session keep the plates photo. They are
+rope for cardio. SVGs (`img/hero/`) laid on the right, over the photo. They are
 in the service worker's shell, so they work offline too.
+
+**The session's title block, rebuilt** (2026-10-14, "too weird, not pretty").
+Three stacked blocks were stepping on each other: a banner whose big title was
+the *muscle group*, the date a second time right below it, then the session name
+in a small button — which inherited the carnet session cards' header style
+(shared `.seance-tete` class) and therefore sat on an orange background in the
+middle of it all. One block now: date and cycle on top, **the session name
+large**, group and figures at the bottom. Three underlying defects fixed on the
+way:
+
+- the banner photo pointed at `var(--img-plates)`, a variable that never
+  existed — the background was a black rectangle;
+- the group drawing **replaced** the photo instead of layering over it: as soon
+  as a set was logged, the image vanished;
+- a `mix-blend-mode: color` wash at 90 % flattened whatever relief was left.
+  The group's tint now comes in from one side, as a gradient.
+
+The block's class was renamed `.seance-titrage` to end the collision with
+`.seance-tete`, which is the solid header of the carnet's session cards.
 
 **The end of a session.** At the bottom of today's session, once anything
 is logged, `✓ TERMINER MA SÉANCE` asks for confirmation — pointing out sets
@@ -420,8 +461,33 @@ one day and « Développé couché » the next gives one single history, with no
 to declare. Before, you had to accept the offer at the exact moment of typing;
 past that moment the name was kept as such and the question never came back —
 two exercises for one movement, with nothing saying so. The card now **states**
-the link (« Compté avec Développé couché ») instead of asking, and leaves two
-ways out: `RENOMMER EN DÉVELOPPÉ COUCHÉ`, or `NON, C'EST UN AUTRE EXERCICE`.
+the link (« bench → Développé couché ») instead of asking.
+
+**The box names its guess, and OUI links to it** (2026-10-14, "it always offers
+to link it to another exercise, and it doesn't get straight away that it's the
+bench press […] if I link it, it has to link it to the one it offered"). It
+asked an open question and then sent you to an empty dropdown, where you had to
+find for yourself the exercise it had just guessed. Three buttons are enough
+now: **OUI, C'EST ÇA** (which links to the guess, filled in), `PLUTÔT L'ÉCRIRE
+« DÉVELOPPÉ COUCHÉ »`, and `NON, C'EST UN AUTRE EXERCICE`. `AUTRE EXERCICE…`
+stays below, and opens the list **already set on the guess**.
+
+**Typos** (2026-10-14, "if I write benc or bnech it has to understand I meant
+bench, and for every exercise"). The app counts the corrections between the word
+typed and a known name — one letter too many, one missing, one wrong, two
+swapped (Damerau-Levenshtein) — and offers: *« bnech »: did you mean Développé
+couché?*. Tolerance follows length: nothing under four letters, one correction
+up to eight, two beyond; and the two words must start the same, unless it is
+precisely the first two letters that are swapped. Abbreviations are searched
+too, and it is the exercise they point at that gets offered, not the
+abbreviation. Correcting replaces the name and **removes the typo** from the
+remembered exercises — unless that word has already been used elsewhere in the
+logbook, in which case it becomes a link instead: never a cut history for a
+convenience fix.
+
+A typo **offers**, it never decides: `cleCanonique()` does not consult it.
+Without that rule « curl » and « curls » would merge on their own, and a wrong
+history does not repair itself.
 
 The user's decision wins over the dictionary, both ways. Separating two names
 **is recorded** (`seul: true` in `topset_custom_exercises`): without that flag
