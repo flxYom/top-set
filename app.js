@@ -15,7 +15,8 @@
   // colonne. Un reglage est un etat d'ecran, pas une donnee du carnet : il
   // vit dans ce telephone et ne monte pas dans le compte.
   var CLE_REGLAGES = 'topset_reglages';
-  var REGLAGES_DEFAUT = { chronoAuto:true, btnChrono:false, champRepos:false, rpe:false, ecranAllume:true, couleurs:{} };
+  var REGLAGES_DEFAUT = { chronoAuto:true, btnChrono:false, champRepos:false, rpe:false, ecranAllume:true,
+                          nomsLibres:false, couleurs:{} };
   var reglages = (function(){
     var r = {};
     Object.keys(REGLAGES_DEFAUT).forEach(function(k){
@@ -241,6 +242,89 @@
     var info = CUSTOM_PAR_CLE[cleExo(saisi)];
     if (info && (info.alias || info.seul)) return null;
     return cible;
+  }
+
+  // ---------- les fautes de frappe (14/10/2026) ----------
+  // « Si j'ecris benc ou bnech, faut qu'il comprenne que je voulais ecrire
+  // bench, et pour tous les exos. » On compte les corrections qui separent
+  // deux mots : une lettre en trop, une qui manque, une fausse, deux
+  // inversees. La tolerance depend de la longueur, parce qu'une correction
+  // sur trois lettres change deja de mot (« dos » / « dips »).
+  //
+  // Une faute PROPOSE, elle ne decide jamais. Sans cette regle, « curl » et
+  // « curls » se fondraient tout seuls en un seul exercice, et un historique
+  // faux ne se repare pas.
+  //
+  // L'algorithme est celui de Damerau-Levenshtein, coupe des que la ligne
+  // depasse la tolerance : sur quelques centaines de noms, c'est instantane.
+  function ecartMots(a, b, max){
+    if (a === b) return 0;
+    var la = a.length, lb = b.length;
+    if (Math.abs(la - lb) > max) return max + 1;
+    var prec2 = [], prec = [], cour = [], i, j;
+    for (j = 0; j <= lb; j++) prec[j] = j;
+    for (i = 1; i <= la; i++){
+      cour = [i];
+      var mini = i;
+      for (j = 1; j <= lb; j++){
+        var cout = a.charAt(i - 1) === b.charAt(j - 1) ? 0 : 1;
+        var v = Math.min(prec[j] + 1, cour[j - 1] + 1, prec[j - 1] + cout);
+        // Deux lettres inversees comptent pour une faute, pas deux : c'est
+        // tout l'interet pour « bnech ».
+        if (i > 1 && j > 1 && a.charAt(i - 1) === b.charAt(j - 2) && a.charAt(i - 2) === b.charAt(j - 1)){
+          v = Math.min(v, prec2[j - 2] + 1);
+        }
+        cour[j] = v;
+        if (v < mini) mini = v;
+      }
+      if (mini > max) return max + 1;
+      prec2 = prec; prec = cour;
+    }
+    return prec[lb];
+  }
+  function toleranceFaute(n){ return n < 4 ? 0 : (n < 9 ? 1 : 2); }
+  // Deux mots ne se corrigent l'un en l'autre que s'ils commencent pareil,
+  // ou si ce sont justement les deux premieres lettres qui sont inversees.
+  function memeDebut(a, b){
+    return a.charAt(0) === b.charAt(0) ||
+           (a.charAt(0) === b.charAt(1) && a.charAt(1) === b.charAt(0));
+  }
+  // Le nom connu que ce mot-ci rate de peu, ou null. Les abreviations sont
+  // cherchees aussi : « bnech » vise « bench », qui vise le developpe
+  // couche — c'est ce dernier qu'on propose, pas l'abreviation.
+  function fauteDeFrappe(saisi){
+    var k = cleSynonyme(saisi);
+    var max = toleranceFaute(k.length);
+    if (!max) return null;
+    // Ecrit juste : rien a corriger.
+    if (SYNONYMES[k]) return null;
+    // Il a deja tranche sur ce nom, dans un sens ou dans l'autre : plus de
+    // question. En revanche le simple fait qu'il soit memorise ne suffit pas
+    // a le declarer juste : on vient justement de l'enregistrer en quittant
+    // le champ, faute comprise.
+    var deja = CUSTOM_PAR_CLE[cleExo(saisi)];
+    if (deja && (deja.alias || deja.seul)) return null;
+    var best = null, bestEcart = max + 1, exact = false;
+    function voir(nom, cible){
+      var c = cleSynonyme(nom);
+      if (!c) return;
+      // Ce mot existe tel quel ailleurs : ce n'est pas une faute.
+      if (c === k){ if (!cible) exact = true; return; }
+      if (Math.abs(c.length - k.length) > max || !memeDebut(k, c)) return;
+      var d = ecartMots(k, c, max);
+      if (d > max || d >= bestEcart) return;
+      bestEcart = d;
+      best = cible || nom;
+    }
+    Object.keys(SYNONYMES).forEach(function(abrev){ voir(abrev, SYNONYMES[abrev]); });
+    Object.keys(EXERCISE_DB).forEach(function(n){ voir(n); });
+    // Les noms a lui en dernier : une faute qu'on vient d'enregistrer est
+    // dedans, et elle ne doit pas se corriger en elle-meme.
+    Object.keys(customExercises).forEach(function(n){ if (cleExo(n) !== cleExo(saisi)) voir(n); });
+    if (!best || exact) return null;
+    var vise = normalizeName(best);
+    // Deja le meme mot une fois les accents et la casse enleves : inutile.
+    return cleSynonyme(vise) === k ? null : vise;
   }
 
   // Exercices ajoutes par l'utilisateur ("bench leger", "curl maison"...).
@@ -814,9 +898,25 @@
   var saveTimers = {};
   function scheduleSave(ds, immediate){
     clearTimeout(saveTimers[ds]);
-    var run = function(){ persistDay(ds); };
+    var run = function(){ delete saveTimers[ds]; persistDay(ds); };
     if (immediate) run(); else saveTimers[ds] = setTimeout(run, 500);
   }
+  // Une frappe attend une demi-seconde avant d'etre ecrite, pour ne pas
+  // sauvegarder a chaque lettre. L'iPhone, lui, peut fermer l'app a l'instant
+  // ou on la quitte : ce qui attendait dans cette demi-seconde partait avec.
+  // On vide donc la file des qu'on s'en va. (14/10/2026)
+  function viderFileSauvegarde(){
+    Object.keys(saveTimers).forEach(function(ds){
+      clearTimeout(saveTimers[ds]);
+      delete saveTimers[ds];
+      persistDay(ds);
+    });
+  }
+  window.addEventListener('pagehide', viderFileSauvegarde);
+  window.addEventListener('beforeunload', viderFileSauvegarde);
+  document.addEventListener('visibilitychange', function(){
+    if (document.hidden) viderFileSauvegarde();
+  });
   // Le local d'abord, toujours, et immediatement : l'ecran ne doit jamais
   // attendre le reseau. La journee est ensuite marquee pour le cloud, si un
   // compte est connecte. Sans compte, la seconde ligne ne fait rien.
@@ -857,8 +957,35 @@
         // Un cran d'annulation. Ne coute qu'une copie et rattrape le reste.
         try { localStorage.setItem(SECOURS_KEY, actuel); } catch(e){}
       }
-      localStorage.setItem(SAVE_KEY, futur);
+      ecrireCarnet(futur);
     }catch(e){}
+  }
+
+  // Le stockage plein, c'est l'autre facon de perdre la seance du jour
+  // (14/10/2026) : setItem jette, le catch avalait tout en silence, et plus
+  // rien n'etait ecrit jusqu'au rechargement — l'app continuait d'afficher la
+  // seance en memoire, mais elle n'existait plus nulle part.
+  //
+  // On fait donc de la place avec ce qui est jetable, du moins utile au plus
+  // utile, et on retente a chaque fois. Le carnet passe avant ses filets.
+  var saveAlerte = false;
+  function ecrireCarnet(futur){
+    try { localStorage.setItem(SAVE_KEY, futur); saveAlerte = false; return true; }
+    catch(e){}
+    // Ecrit en clair : CONFLITS_KEY est declare plus bas, dans la synchro.
+    var jetables = ['topset_conflits', ILLISIBLE_KEY, SECOURS_KEY];
+    for (var i = 0; i < jetables.length; i++){
+      try { localStorage.removeItem(jetables[i]); } catch(e){}
+      try { localStorage.setItem(SAVE_KEY, futur); saveAlerte = false; return true; }
+      catch(e2){}
+    }
+    // Plus rien a jeter : le dire, une fois, au lieu de laisser croire que
+    // c'est enregistre. Le carnet reste a l'ecran et l'export marche encore.
+    if (!saveAlerte){
+      saveAlerte = true;
+      showToast('Stockage du téléphone plein : exporte ton carnet (⇅)');
+    }
+    return false;
   }
 
   function loadLocal(){
@@ -1238,7 +1365,6 @@
     // TERMINER MA SEANCE suit ce qui est note : sans ca, le bouton n'apparaissait
     // qu'au prochain rendu complet (changer d'onglet, rouvrir l'app).
     majBoutonFin(ds);
-    var d = fromDateStr(ds);
     var day = state.sessions[ds];
     var exercises = day ? day.exercises : [];
 
@@ -1250,7 +1376,6 @@
     var dom = nExos ? dominantGroup(exercises) : null;
     var vol = formatVolume(dayVolume(ds));
     var heroColor = dom ? couleurGroupe(dom) : '#8a8275';
-    var kicker = DAY_NAMES[(d.getDay()+6)%7] + ' ' + d.getDate() + ' ' + MONTH_ABBR[d.getMonth()];
 
     var tags = '';
     if (nExos){
@@ -1265,13 +1390,16 @@
     hero.style.setProperty('--hero-color', heroColor);
     if (dom && ILLUSTRATIONS[dom]) hero.dataset.illu = ILLUSTRATIONS[dom];
     else delete hero.dataset.illu;
-    hero.innerHTML = '<div class="hero-photo"></div><div class="hero-tint"></div><div class="hero-scrim"></div><div class="hero-dots"></div>'
-      + '<div class="hero-top">'
-      +   '<span class="hero-kicker">'+esc(kicker.toUpperCase())+'</span>'
-      +   '<span class="hero-title">'+esc(dom || 'Séance vide')+'</span>'
-      + '</div>'
-      + '<div class="hero-tags">'+tags+'</div>';
-
+    // Seul le texte se refait : les calques du fond et le nom de la seance
+    // vivent dans la page. Les refabriquer rechargeait l'image a chaque serie
+    // cochee, et jetait le champ de saisie du nom en cours d'edition.
+    var corps = document.getElementById('heroCorps');
+    if (corps){
+      // La date est au-dessus, avec le nom : ici c'est le groupe dominant,
+      // qui n'est plus le titre mais l'etiquette de la seance.
+      corps.innerHTML = (dom ? '<span class="hero-kicker">' + esc(dom.toUpperCase()) + '</span>' : '')
+        + '<div class="hero-tags">' + tags + '</div>';
+    }
   }
 
   // RPE en reps en reserve : 10 = plus rien, 9 = une rep restante, etc.
@@ -3587,7 +3715,12 @@
     var vv = window.visualViewport;
     if (vv && !ouvreClavier(document.activeElement)) hauteurPleine = vv.height;
     else if (vv && vv.height > hauteurPleine) hauteurPleine = vv.height;
-    document.body.classList.toggle('clavier', ouvreClavier(document.activeElement) && clavierVisible());
+    var ouvert = ouvreClavier(document.activeElement) && clavierVisible();
+    document.body.classList.toggle('clavier', ouvert);
+    // La hauteur du clavier, pour que le chrono du repos se pose juste
+    // au-dessus au lieu de se cacher dessous. Zero quand il est ferme.
+    var h = (ouvert && vv) ? Math.max(0, Math.round(innerHeight - vv.height - vv.offsetTop)) : 0;
+    document.documentElement.style.setProperty('--clavier-h', h + 'px');
   }
   document.addEventListener('focusin', function(e){
     if (!ouvreClavier(e.target)) return;
@@ -4275,9 +4408,22 @@
   // repos : le temps en grand, la prochaine serie et ses champs.
   var CLE_POS_REPOS = 'topset_repos_pos';
   var sansClicRepos = false;
+  // Le bas utile, c'est au-dessus de la barre d'onglets : une pastille posee
+  // « tout en bas » passait derriere elle et on ne la retrouvait plus
+  // (« la place du chrono est partie en couilles », 14/10/2026). On mesure la
+  // barre au lieu de recopier sa hauteur, qui change avec la mise en page.
+  function basUtile(){
+    var barre = document.querySelector('.topbar');
+    if (!barre) return 8;
+    var r = barre.getBoundingClientRect();
+    // Rangee (clavier ouvert, conversation) : elle ne gene plus.
+    if (r.top >= innerHeight - 1 || !r.height) return 8;
+    return Math.max(8, innerHeight - r.top + 8);
+  }
   function bornerPastille(x, y){
     var w = reposPastille.offsetWidth || 130, h = reposPastille.offsetHeight || 52;
-    return { x:Math.min(Math.max(8, x), innerWidth - w - 8), y:Math.min(Math.max(8, y), innerHeight - h - 8) };
+    var hautMax = Math.max(8, innerHeight - h - basUtile());
+    return { x:Math.min(Math.max(8, x), innerWidth - w - 8), y:Math.min(Math.max(8, y), hautMax) };
   }
   function placerPastilleA(x, y){
     var p = bornerPastille(x, y);
@@ -4871,7 +5017,8 @@
     { cle:'btnChrono',   titre:'Bouton CHRONO sur tous les exercices', note:'Sinon, il ne sort que pour le gainage.' },
     { cle:'champRepos',  titre:'Champ REPOS sur chaque série', note:'Le repos est déjà mesuré tout seul par la pastille.' },
     { cle:'rpe',         titre:'Colonne RPE (difficulté)', note:'Elle nourrit la charge suggérée. Les valeurs déjà notées sont gardées.' },
-    { cle:'ecranAllume', titre:'Garder l\'écran allumé', note:'Pendant un chrono ou un repos, pour ne pas rallumer entre deux séries.' }
+    { cle:'ecranAllume', titre:'Garder l\'écran allumé', note:'Pendant un chrono ou un repos, pour ne pas rallumer entre deux séries.' },
+    { cle:'nomsLibres',  titre:'Je nomme mes exercices moi-même', note:'L\'app ne demande plus rien quand tu tapes un nom. Le menu ⋯ d\'un exercice sait encore le relier à la demande.' }
   ];
   function rendreReglages(){
     var zoneC = document.getElementById('regCouleurs');
@@ -5243,90 +5390,159 @@
     if (champ) champ.focus();
   }
 
+  // Ce nom sert-il ailleurs dans le carnet ? Une faute de frappe qu'on
+  // corrige ne doit pas rester dans la liste des exercices memorises — mais
+  // seulement si elle n'a jamais servi, sinon on couperait un historique.
+  function nomUtiliseAilleurs(cle, saufDs, saufId){
+    return Object.keys(state.sessions).some(function(ds){
+      return (state.sessions[ds].exercises || []).some(function(e){
+        if (ds === saufDs && e.id === saufId) return false;
+        return cleExo(e.nom || '') === cle;
+      });
+    });
+  }
+  // Corriger une faute de frappe : le bon nom prend la place, et le mot mal
+  // tape s'en va de la liste au lieu d'y rester pour toujours. S'il a deja
+  // servi ailleurs, il reste et devient un rattachement — jamais d'historique
+  // coupe pour une correction de confort.
+  function corrigerNom(ex, neuf){
+    var mauvais = cleExo(ex.nom || '');
+    if (nomUtiliseAilleurs(mauvais, state.selectedDay, ex.id)){
+      definirAlias(ex.nom, cleExo(neuf));
+    } else {
+      Object.keys(customExercises).forEach(function(k){
+        if (cleExo(k) === mauvais) delete customExercises[k];
+      });
+      saveCustom();
+      rebuildLower();
+      if (typeof Sync !== 'undefined' && Sync.marquerExos) Sync.marquerExos();
+    }
+    ex.nom = neuf;
+    var gr = findExerciseMatch(neuf); if (gr) ex.groupe = gr;
+    scheduleSave(state.selectedDay, true);
+    populateDatalist();
+    renderDayPanel(true);
+    renderBandeau();
+    showToast('Corrigé en « ' + neuf + ' »');
+  }
+
   // Affiche la proposition dans la carte, sans re-render : re-dessiner ferait
   // perdre le focus et la position de scroll au moment precis ou l'utilisateur
   // est en train de saisir.
   //
-  // Deux questions, et une seule a la fois : « c'est le meme exercice que … ? »
-  // quand quelque chose ressemble, sinon « on le garde comme nouvel exercice ».
-  // Les deux sorties sont toujours ecrites en toutes lettres : avant, la carte
-  // annoncait juste « ajoute a tes exercices » et personne ne savait qu'on
-  // pouvait le rattacher.
+  // Refondue le 14/10/2026. Avant, la boite posait une question ouverte et
+  // renvoyait vers une liste deroulante vide : « quand j'ecris bench il me
+  // propose forcement de le relier a un autre exo, et il comprend pas direct
+  // que c'est developpe couche ». Maintenant elle nomme la proposition, et
+  // trois boutons suffisent : OUI, NON, ou un autre exercice — et « un autre
+  // exercice » ouvre la liste DEJA posee sur la proposition, au lieu de
+  // demander de la retrouver.
+  //
+  // Quatre situations, dans cet ordre :
+  //   1. une abreviation connue (« bench »)      -> on l'annonce, oui / non
+  //   2. une faute de frappe (« bnech »)         -> on propose de corriger
+  //   3. un nom qui ressemble a du deja-fait     -> oui, c'est celui-la
+  //   4. rien de proche                          -> on l'ajoute, et c'est tout
   function proposerRattachement(card, ex){
     if (!card) return;
+    // « Faut une option en mode jmet le nom de mon exo » : allumee, l'app ne
+    // demande plus rien a la frappe. Le menu ⋯ de l'exercice sait toujours
+    // relier deux noms apres coup.
+    if (reglages.nomsLibres) return;
     var vieux = card.querySelector('.alias-prompt');
     if (vieux) vieux.remove();
-    var choix = candidatsAlias(ex.nom);
+    var nomAffiche = normalizeName(ex.nom);
+    var syn   = synonymeDe(ex.nom);
+    var faute = syn ? null : fauteDeFrappe(ex.nom);
+    var choix = (syn || faute) ? [] : candidatsAlias(ex.nom);
     var liste = tousLesExos(cleExo(ex.nom));
-    if (!choix.length && !liste.length) return;
-    var syn = synonymeDe(ex.nom);
+    if (!syn && !faute && !choix.length && !liste.length) return;
+
+    // La proposition : celle qu'on nomme, et celle que « AUTRE EXERCICE… »
+    // affiche deja choisie.
+    var cibleNom = syn || faute || (choix.length ? choix[0].nom : '');
+    var cibleCle = syn ? cleCanonique(syn) : (choix.length ? choix[0].cle : '');
 
     var box = document.createElement('div');
     box.className = 'alias-prompt';
     box.dataset.pour = cleExo(ex.nom);
     box.dataset.syn = syn ? '1' : '0';
-    var nomAffiche = normalizeName(ex.nom);
-    var html = '<p><b>« ' + esc(nomAffiche) + ' »</b> '
-      + (syn ? 'est une abréviation connue.' : 'n\'est pas encore dans tes exercices.') + '</p>';
+
+    var html = '';
     if (syn){
       // Le dictionnaire a deja tranche : l'historique est commun des la
-      // frappe, et « bench » retrouve tout seul le developpe couche. On ne
-      // demande donc plus « c'est X ? », on l'annonce — avec la porte de
-      // sortie juste en dessous.
-      html += '<p class="alias-question">Compté avec <b>' + esc(syn) + '</b>.</p>'
-           +  '<button type="button" class="alias-choix" data-action="renommer" data-nom="' + esc(syn) + '">RENOMMER EN ' + esc(syn.toUpperCase()) + '</button>';
+      // frappe. On ne demande donc pas « c'est quoi ? », on l'annonce.
+      html += '<p><b>« ' + esc(nomAffiche) + ' »</b> &rarr; <b>' + esc(syn) + '</b></p>'
+           +  '<p class="alias-question">Compté avec, et l\'historique est commun.</p>'
+           +  '<button type="button" class="alias-choix alias-oui" data-action="oui">OUI, C\'EST ÇA</button>'
+           +  '<button type="button" class="alias-choix" data-action="renommer" data-nom="' + esc(syn) + '">PLUTÔT L\'ÉCRIRE « ' + esc(syn.toUpperCase()) + ' »</button>'
+           +  '<button type="button" class="alias-choix alias-garder" data-action="garder">NON, C\'EST UN AUTRE EXERCICE</button>';
+    } else if (faute){
+      html += '<p><b>« ' + esc(nomAffiche) + ' »</b> : tu voulais écrire <b>' + esc(faute) + '</b>&nbsp;?</p>'
+           +  '<button type="button" class="alias-choix alias-oui" data-action="corriger" data-nom="' + esc(faute) + '">OUI, CORRIGER</button>'
+           +  '<button type="button" class="alias-choix alias-garder" data-action="garder">NON, C\'EST BIEN « ' + esc(nomAffiche.toUpperCase()) + ' »</button>';
     } else if (choix.length){
-      html += '<p class="alias-question">C\'est le même exercice que&nbsp;?</p>';
-      choix.forEach(function(c){
+      html += '<p><b>« ' + esc(nomAffiche) + ' »</b> n\'est pas encore dans tes exercices.</p>'
+           +  '<p class="alias-question">C\'est le même que <b>' + esc(choix[0].nom) + '</b>&nbsp;?</p>'
+           +  '<button type="button" class="alias-choix alias-oui alias-lien" data-cle="' + esc(choix[0].cle) + '">OUI, C\'EST ÇA</button>';
+      choix.slice(1).forEach(function(c){
         var quand = '';
         if (c.quand){
-          var d = fromDateStr(c.quand);
-          quand = ' <span style="color:var(--dim);font-weight:700;">· ' + d.getDate() + ' ' + MONTH_ABBR[d.getMonth()] + '</span>';
+          var dq = fromDateStr(c.quand);
+          quand = ' <span style="color:var(--dim);font-weight:700;">· ' + dq.getDate() + ' ' + MONTH_ABBR[dq.getMonth()] + '</span>';
         }
-        html += '<button type="button" class="alias-choix alias-lien" data-cle="' + esc(c.cle) + '">' + esc(c.nom) + quand + '</button>';
+        html += '<button type="button" class="alias-choix alias-lien" data-cle="' + esc(c.cle) + '">PLUTÔT ' + esc(c.nom.toUpperCase()) + quand + '</button>';
       });
+      html += '<button type="button" class="alias-choix alias-garder" data-action="garder">NON, C\'EST UN NOUVEL EXERCICE</button>';
+    } else {
+      html += '<p><b>« ' + esc(nomAffiche) + ' »</b> n\'est pas encore dans tes exercices.</p>'
+           +  '<button type="button" class="alias-choix alias-garder" data-action="garder">L\'AJOUTER À MES EXERCICES</button>';
     }
-    html += '<button type="button" class="alias-choix alias-garder" data-action="garder">'
-         +    (syn ? 'NON, C\'EST UN AUTRE EXERCICE'
-               : choix.length ? 'NON, C\'EST UN NOUVEL EXERCICE' : 'L\'AJOUTER À MES EXERCICES') + '</button>'
-         +  '<button type="button" class="alias-non" data-action="ouvrir-liste">LE RELIER À UN EXERCICE EXISTANT…</button>'
-         +  '<div class="alias-liste" hidden>'
-         +    '<select class="alias-select" aria-label="Exercice auquel rattacher ce nom">'
-         +      '<option value="">Choisis l\'exercice…</option>'
-         +      liste.map(function(c){ return '<option value="' + esc(c.cle) + '">' + esc(c.nom) + '</option>'; }).join('')
-         +    '</select>'
-         +    '<button type="button" class="alias-choix" data-action="rattacher">RATTACHER</button>'
-         +  '</div>';
+    if (liste.length){
+      html += '<button type="button" class="alias-non" data-action="ouvrir-liste">AUTRE EXERCICE…</button>'
+           +  '<div class="alias-liste" hidden>'
+           +    '<select class="alias-select" aria-label="Exercice auquel rattacher ce nom">'
+           +      liste.map(function(c){
+                    return '<option value="' + esc(c.cle) + '"' + (c.cle === cibleCle ? ' selected' : '') + '>' + esc(c.nom) + '</option>';
+                  }).join('')
+           +    '</select>'
+           +    '<button type="button" class="alias-choix" data-action="rattacher">RATTACHER</button>'
+           +  '</div>';
+    }
     box.innerHTML = html;
 
     function relier(cle){
       relierExo(ex, cle);
-      showToast('« ' + nomAffiche + ' » rejoint ton historique');
+      showToast('« ' + nomAffiche + ' » rejoint ' + (nomCanonique(ex.nom) || 'ton historique'));
+    }
+    function renommer(neuf){
+      // Renommer plutot que rattacher : un seul nom dans le carnet, donc un
+      // seul historique, et rien a expliquer plus tard. L'abreviation reste,
+      // rattachee au vrai nom : la prochaine fois qu'on tape « RDL », l'app
+      // sait de quoi il s'agit. (Un nom efface ici reviendrait du cloud : la
+      // synchro des noms fusionne, elle ne supprime pas.)
+      definirAlias(ex.nom, cleExo(neuf));
+      ex.nom = neuf;
+      var gr = findExerciseMatch(neuf); if (gr) ex.groupe = gr;
+      scheduleSave(state.selectedDay, true);
+      box.remove();
+      renderDayPanel(true);
+      renderBandeau();
+      showToast('Renommé en « ' + neuf + ' »');
     }
 
     box.addEventListener('click', function(e){
+      // « Si je le relie, faut que ça le relie à l'exo proposé. »
+      if (e.target.closest('[data-action="oui"]')){ relier(cibleCle); return; }
+
       var lien = e.target.closest('.alias-lien[data-cle]');
       if (lien){ relier(lien.dataset.cle); return; }
 
       var ren = e.target.closest('[data-action="renommer"]');
-      if (ren){
-        // Renommer plutot que rattacher : un seul nom dans le carnet, donc un
-        // seul historique, et rien a expliquer plus tard.
-        var neuf = ren.dataset.nom;
-        // L'abreviation reste, rattachee au vrai nom : la prochaine fois
-        // qu'on tape « RDL », l'app sait de quoi il s'agit, et l'historique
-        // ne se coupe pas en deux. (Un nom efface ici reviendrait du cloud :
-        // la synchro des noms fusionne, elle ne supprime pas.)
-        definirAlias(ex.nom, cleExo(neuf));
-        ex.nom = neuf;
-        var gr = findExerciseMatch(neuf); if (gr) ex.groupe = gr;
-        scheduleSave(state.selectedDay, true);
-        box.remove();
-        renderDayPanel(true);
-        renderBandeau();
-        showToast('Renommé en « ' + neuf + ' »');
-        return;
-      }
+      if (ren){ renommer(ren.dataset.nom); return; }
+
+      var cor = e.target.closest('[data-action="corriger"]');
+      if (cor){ box.remove(); corrigerNom(ex, cor.dataset.nom); return; }
 
       if (e.target.closest('[data-action="garder"]')){
         // Dire non se note : sinon le dictionnaire reposerait la question a la
@@ -7602,13 +7818,79 @@
     function sales(){ return lireMeta().sales || {}; }
     function nbSales(){ return Object.keys(sales()).length; }
 
+    // ---- la file ne doit jamais se vider sur une version perimee ---------
+    // Une seance perdue a la salle (14/10/2026) : l'envoi part avec la
+    // journee telle qu'elle est a cet instant, puis le serveur confirme et la
+    // date quitte la file. Entre les deux, sur un wifi lent, on a note trois
+    // series de plus — qui ont bien releve le drapeau, et que la confirmation
+    // a efface. La journee passait alors pour envoyee alors que le cloud
+    // n'avait que sa vieille version, et le tirage suivant (au retour dans
+    // l'app : « visibilitychange ») la reecrivait par-dessus la bonne.
+    //
+    // Chaque marquage pose donc une marque differente. La confirmation ne
+    // libere la date que si la marque est encore celle qu'elle a envoyee ;
+    // sinon la journee reste sale et repart. C'est ce qui rend vraie la
+    // phrase « la synchro ne peut pas faire perdre une seance ».
+    var compteurMarque = 0;
+    function marque(){ return String(Date.now()) + '-' + (++compteurMarque); }
+    // Rend vrai si la date est RESTEE dans la file (quelque chose a bouge
+    // pendant l'envoi), faux si elle en est bien sortie.
+    function liberer(cle, ds, jeton){
+      var reste = false;
+      majMeta(function(m){
+        var f = m[cle];
+        if (!f || !(ds in f)) return;
+        if (f[ds] !== jeton){ reste = true; return; }
+        delete f[ds];
+      });
+      return reste;
+    }
+    function jetonDe(cle, ds){
+      var f = lireMeta()[cle] || {};
+      return f[ds];
+    }
+
+    // Un appel qui ne revient jamais — le wifi de la salle qui accepte la
+    // connexion sans rien router — laissait « enCours » leve pour de bon :
+    // plus un seul envoi jusqu'au rechargement, et l'echec jamais affiche.
+    var DELAI_RESEAU = 25000;
+    function avecDelai(p){
+      return new Promise(function(res, rej){
+        var fini = false;
+        var t = setTimeout(function(){
+          if (fini) return;
+          fini = true;
+          rej(new Error('Réseau trop lent'));
+        }, DELAI_RESEAU);
+        Promise.resolve(p).then(function(v){
+          if (fini) return;
+          fini = true; clearTimeout(t); res(v);
+        }, function(e){
+          if (fini) return;
+          fini = true; clearTimeout(t); rej(e);
+        });
+      });
+    }
+
     // Rien n'est jamais jete en silence : la version perdante d'un conflit est
     // mise de cote plutot que remplacee. C'est ce qui permet de dire honnetement
     // que la synchro ne peut pas faire perdre une seance.
+    // Borne a vingt : cette reserve n'est jamais relue par l'app, et une
+    // seance perdue a la salle (14/10/2026) pouvait aussi venir de la :
+    // chaque tirage y empilait une copie complete d'une journee, pour
+    // toujours, jusqu'a remplir le stockage du telephone — et une fois plein,
+    // plus une seule sauvegarde ne passait.
+    var CONFLITS_MAX = 20;
     function garderConflit(ds, contenu){
       try {
         var c = JSON.parse(localStorage.getItem(CONFLITS_KEY)) || {};
         c[ds + '@' + new Date().toISOString()] = contenu;
+        // Du plus ancien rangement au plus recent : c'est l'heure apres « @ »
+        // qui compte, pas la date de la seance.
+        var cles = Object.keys(c).sort(function(a, b){
+          return String(a.split('@')[1]) < String(b.split('@')[1]) ? -1 : 1;
+        });
+        while (cles.length > CONFLITS_MAX) delete c[cles.shift()];
         localStorage.setItem(CONFLITS_KEY, JSON.stringify(c));
       } catch(e){}
     }
@@ -7728,7 +8010,8 @@
     // ------------------------------------------------------------ ecriture
     function marquerSale(ds){
       if (!dispo()) return;
-      majMeta(function(m){ m.sales = m.sales || {}; m.sales[ds] = 1; });
+      var q = marque();
+      majMeta(function(m){ m.sales = m.sales || {}; m.sales[ds] = q; });
       if (user) planifier(2500);
       else majUI();
     }
@@ -7751,16 +8034,21 @@
       if (!dates.length && !Object.keys(enAttente.titres || {}).length
           && !Object.keys(enAttente.fins || {}).length && !enAttente.exosSales) return Promise.resolve(0);
       enCours = true; echec = ''; majUI();
+      var resteSale = false;
       return client().then(function(c){
         var chaine = Promise.resolve();
         dates.forEach(function(ds){
           chaine = chaine.then(function(){
-            return c.rpc('pousser_jour', { p_date:ds, p_exercices:jourLocal(ds).exercises })
+            // La marque est lue AVANT l'envoi : c'est la version qu'on envoie.
+            var jeton = jetonDe('sales', ds);
+            return avecDelai(c.rpc('pousser_jour', { p_date:ds, p_exercices:jourLocal(ds).exercises }))
               .then(function(r){
                 if (r.error) throw r.error;
-                // La journee ne quitte la file QUE si le serveur a confirme.
+                // La journee ne quitte la file QUE si le serveur a confirme ET
+                // que rien n'a bouge depuis : une serie notee pendant l'envoi
+                // la garde sale, et elle repart juste apres.
+                if (liberer('sales', ds, jeton)) resteSale = true;
                 majMeta(function(m){
-                  if (m.sales) delete m.sales[ds];
                   if (r.data && (!m.depuis || r.data > m.depuis)) m.depuis = r.data;
                 });
               });
@@ -7779,6 +8067,9 @@
           .then(function(){ return dates.length; });
       }).then(function(n){
         enCours = false; majUI();
+        // Note pendant l'envoi : la journee est restee sale, on la repousse
+        // tout de suite au lieu d'attendre la prochaine serie.
+        if (resteSale) planifier(1200);
         return n;
       }).catch(function(e){
         // Rien n'est perdu : les journees restent marquees et repartiront.
@@ -7795,20 +8086,34 @@
       if (!user) return Promise.resolve(0);
       return client().then(function(c){
         var depuis = tout ? null : (lireMeta().depuis || null);
-        return c.rpc('tirer_jours', { p_depuis: depuis }).then(function(r){
+        return avecDelai(c.rpc('tirer_jours', { p_depuis: depuis })).then(function(r){
           if (r.error) throw r.error;
           var distant = r.data || {};
-          var enAttente = sales(), adoptes = 0, maxMaj = lireMeta().depuis || null;
+          var enAttente = sales(), adoptes = 0, gardes = 0, maxMaj = lireMeta().depuis || null;
           Object.keys(distant).forEach(function(ds){
             var d = distant[ds];
             if (d.updatedAt && (!maxMaj || d.updatedAt > maxMaj)) maxMaj = d.updatedAt;
             // Une journee modifiee ici et pas encore envoyee gagne : c'est ce
             // que l'utilisateur vient de taper. L'autre version est gardee.
             if (enAttente[ds]){ garderConflit(ds, d); return; }
+            // Garde-fou, en plus du drapeau : une version du cloud qui a
+            // MOINS de series notees que celle d'ici ne peut pas etre la plus
+            // recente — c'est forcement un envoi qui n'est jamais parti. On
+            // garde celle d'ici et on la remet dans la file. Supprimer une
+            // serie depuis un autre appareil repasse par un envoi de cet
+            // appareil-la, donc ce cas-ci ne peut venir que d'un retard.
+            var ici = compterJour(state.sessions[ds]);
+            if (ici && compterJour(jourDistant(ds, d)) < ici){
+              garderConflit(ds, d);
+              marquerSale(ds);
+              gardes++;
+              return;
+            }
             state.sessions[ds] = jourDistant(ds, d);
             adoptes++;
           });
-          if (adoptes){ saveLocal(); renderAll(); }
+          if (adoptes || gardes){ saveLocal(); renderAll(); }
+          if (gardes) showToast('Séance d\'ici gardée : elle était plus complète');
           majMeta(function(m){ m.depuis = maxMaj; });
           return adoptes;
         });
@@ -7832,12 +8137,14 @@
       if (!user) return Promise.resolve();
       var liste = exosLocaux();
       if (!liste.length){ majMeta(function(m){ m.exosSales = false; }); return Promise.resolve(); }
+      var jeton = lireMeta().exosSales;
       return client().then(function(c){
-        return c.rpc('pousser_exos_perso', { p_exos: liste });
+        return avecDelai(c.rpc('pousser_exos_perso', { p_exos: liste }));
       }).then(function(r){
         if (r.error) throw r.error;
-        // Le drapeau ne tombe qu'apres confirmation du serveur.
-        majMeta(function(m){ m.exosSales = false; });
+        // Le drapeau ne tombe qu'apres confirmation du serveur, et seulement
+        // si la liste n'a pas rechange pendant l'envoi.
+        majMeta(function(m){ if (m.exosSales === jeton) m.exosSales = false; });
       });
     }
 
@@ -7895,10 +8202,12 @@
         dates.forEach(function(ds){
           chaine = chaine.then(function(){
             var t = (state.sessions[ds] && state.sessions[ds].titre) || null;
-            return c.rpc('pousser_titre', { p_date:ds, p_titre:t }).then(function(r){
+            var jeton = jetonDe('titres', ds);
+            return avecDelai(c.rpc('pousser_titre', { p_date:ds, p_titre:t })).then(function(r){
               if (r.error) throw r.error;
-              // La date ne quitte la file qu'apres confirmation du serveur.
-              majMeta(function(x){ if (x.titres) delete x.titres[ds]; });
+              // La date ne quitte la file qu'apres confirmation du serveur, et
+              // seulement si le titre n'a pas rechange entre-temps.
+              liberer('titres', ds, jeton);
             });
           });
         });
@@ -7923,9 +8232,10 @@
           chaine = chaine.then(function(){
             var params = { p_date:ds };
             params[arg] = lire(ds);
-            return c.rpc(rpc, params).then(function(r){
+            var jeton = jetonDe(cle, ds);
+            return avecDelai(c.rpc(rpc, params)).then(function(r){
               if (r.error) throw r.error;
-              majMeta(function(x){ if (x[cle]) delete x[cle][ds]; });
+              liberer(cle, ds, jeton);
             });
           });
         });
@@ -7954,9 +8264,10 @@
         dates.forEach(function(ds){
           chaine = chaine.then(function(){
             var f = (state.sessions[ds] && state.sessions[ds].termine) || null;
-            return c.rpc('pousser_fin', { p_date:ds, p_fin:f }).then(function(r){
+            var jeton = jetonDe('fins', ds);
+            return avecDelai(c.rpc('pousser_fin', { p_date:ds, p_fin:f })).then(function(r){
               if (r.error) throw r.error;
-              majMeta(function(x){ if (x.fins) delete x.fins[ds]; });
+              liberer('fins', ds, jeton);
             });
           });
         });
@@ -7966,31 +8277,36 @@
 
     function marquerFin(ds){
       if (!dispo()) return;
-      majMeta(function(m){ m.fins = m.fins || {}; m.fins[ds] = 1; });
+      var qf = marque();
+      majMeta(function(m){ m.fins = m.fins || {}; m.fins[ds] = qf; });
       if (user) planifier(2500);
     }
 
     function marquerTitre(ds){
       if (!dispo()) return;
-      majMeta(function(m){ m.titres = m.titres || {}; m.titres[ds] = 1; });
+      var qt = marque();
+      majMeta(function(m){ m.titres = m.titres || {}; m.titres[ds] = qt; });
       if (user) planifier(2500);
     }
 
     function marquerCycle(ds){
       if (!dispo()) return;
-      majMeta(function(m){ m.cycles = m.cycles || {}; m.cycles[ds] = 1; });
+      var qc = marque();
+      majMeta(function(m){ m.cycles = m.cycles || {}; m.cycles[ds] = qc; });
       if (user) planifier(2500);
     }
 
     function marquerCommentaire(ds){
       if (!dispo()) return;
-      majMeta(function(m){ m.mots = m.mots || {}; m.mots[ds] = 1; });
+      var qm = marque();
+      majMeta(function(m){ m.mots = m.mots || {}; m.mots[ds] = qm; });
       if (user) planifier(2500);
     }
 
     function marquerExos(){
       if (!dispo()) return;
-      majMeta(function(m){ m.exosSales = true; });
+      var qe = marque();
+      majMeta(function(m){ m.exosSales = qe; });
       if (user) planifier(2500);
     }
 
@@ -8038,10 +8354,13 @@
           // l'app depuis des mois les perdait en creant son compte.
           majMeta(function(m){
             m.sales = m.sales || {};
-            Object.keys(state.sessions).forEach(function(ds){ m.sales[ds] = 1; });
+            // Une marque, comme partout ailleurs : une serie notee pendant la
+            // migration ne doit pas sortir de la file sur la confirmation de
+            // la version d'avant.
+            Object.keys(state.sessions).forEach(function(ds){ m.sales[ds] = marque(); });
             m.titres = m.titres || {};
-            titresLocaux().forEach(function(ds){ m.titres[ds] = 1; });
-            m.exosSales = true;
+            titresLocaux().forEach(function(ds){ m.titres[ds] = marque(); });
+            m.exosSales = marque();
           });
           return pousser().then(function(){ return repris; });
         })

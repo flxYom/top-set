@@ -452,7 +452,7 @@ ok('l ecran de fin existe dans la page',
 ok('une base sans la colonne n efface pas la validation locale',
    SRC.indexOf("if (d && ('termine' in d)){ if (d.termine) j.termine = d.termine; }") > -1);
 ok('la validation part a la base par son propre appel',
-   /pousser_fin/.test(SRC) && /m\.fins\[ds\] = 1/.test(SRC));
+   /pousser_fin/.test(SRC) && /m\.fins = m\.fins \|\| \{\}; m\.fins\[ds\] = qf;/.test(SRC));
 ok('un titre ou une fin partent meme sans journee modifiee',
    /if \(!dates\.length && !Object\.keys\(enAttente\.titres/.test(SRC));
 ok('le mot du jour se tire de la date, pas du hasard',
@@ -508,7 +508,7 @@ ok('les disques s arretent quand l appareil le demande',
 const DESSINS = ['pectoraux', 'dos', 'epaules', 'bras', 'jambes', 'abdos', 'cardio'];
 ok('chaque dessin existe, est branche et part dans le cache hors ligne',
    DESSINS.every(n => existsSync(new URL('../img/hero/' + n + '.svg', import.meta.url))
-     && HTML.indexOf('.hero[data-illu="' + n + '"] .hero-photo{background-image:url(\'img/hero/' + n + '.svg\');}') > -1
+     && HTML.indexOf('.hero[data-illu="' + n + '"] .hero-illu{background-image:url(\'img/hero/' + n + '.svg\');}') > -1
      && SW.indexOf("'img/hero/" + n + ".svg'") > -1));
 
 console.log('\n== La refonte « Salle noire » ==');
@@ -655,8 +655,13 @@ ok('onglets : chacun garde sa position de defilement (planning, seances, recap, 
    && SRC.indexOf('window.scrollTo(0, defilement[vue] || 0)') > -1);
 ok('braise : le worker est precache (hors ligne) et minifie au deploiement',
    SW.indexOf("'braise.js'") > -1 && lireLF('../build.mjs').indexOf("'braise.js'") > -1);
-ok('iPhone : le grand titre du jour, deja dans le bandeau, reste pour les lecteurs d ecran seulement',
-   HTML.indexOf('.day-panel-header h2{position:absolute;width:1px;height:1px;') > -1 && HTML.indexOf('<h2 id="dayTitle">') > -1);
+// La date etait cachee sur telephone parce que le bandeau l'ecrivait juste
+// au-dessus. Depuis le 14/10/2026 le bandeau porte le NOM de la seance : la
+// date redevient sa ligne de situation, et elle n'est ecrite qu'une fois.
+ok('iPhone : la date du jour se lit, et une seule fois',
+   HTML.indexOf('<h2 id="dayTitle">') > -1
+   && HTML.indexOf('.day-panel-header h2{position:absolute;width:1px;height:1px;') < 0
+   && corps('function renderBandeau(', '// RPE en reps en reserve').indexOf('DAY_NAMES') < 0);
 {
   // La mesure d'audience : sur chaque page, seulement sur top-set.fr, jamais
   // en cache, et annoncee par la politique de confidentialite.
@@ -738,7 +743,8 @@ ok('chrono libre : une heure de depart gardee, pas un compteur qui tourne',
 // « Il faut une partie reglages ou tu peux regler tes propres couleurs par
 // exos, desactiver activer le chrono et personnaliser des reglages simples. »
 ok('reglages : par defaut l app est en mode simple, et rien n est efface',
-   /var REGLAGES_DEFAUT = \{ chronoAuto:true, btnChrono:false, champRepos:false, rpe:false, ecranAllume:true, couleurs:\{\} \};/.test(SRC)
+   SRC.indexOf('var REGLAGES_DEFAUT = { chronoAuto:true, btnChrono:false, champRepos:false, rpe:false, ecranAllume:true,') > -1
+   && SRC.indexOf('nomsLibres:false, couleurs:{} };') > -1
    && /document\.body\.classList\.toggle\('sans-rpe', !reglages\.rpe\);/.test(SRC)
    && /body\.sans-rpe \.serie-rpe,/.test(HTML)
    && /body\.sans-repos-champ \.serie-repos-champ\{display:none;\}/.test(HTML)
@@ -770,7 +776,8 @@ ok('defilement : fermer un plein ecran rend sa place, pas le haut de la page',
 ok('repos : cocher lance toujours le repos',
    corps("var faitBtn = e.target.closest('[data-action=\"toggle-fait\"]');", 'var menuBtn').indexOf('lancerRepos(state.selectedDay, serieId2);') > -1);
 ok('barre du bas : elle ne reste jamais rangee (vrai clavier seulement, etat recalcule au retour et a chaque vue)',
-   SRC.indexOf("document.body.classList.toggle('clavier', ouvreClavier(document.activeElement) && clavierVisible());") > -1
+   SRC.indexOf("var ouvert = ouvreClavier(document.activeElement) && clavierVisible();") > -1
+   && SRC.indexOf("document.body.classList.toggle('clavier', ouvert);") > -1
    && SRC.indexOf("window.addEventListener('pageshow', remettreBarre);") > -1
    && corps('function montrerVue(', 'renderAll();').indexOf("document.body.classList.remove('clavier');") > -1);
 ok('le logo ramene a la seance du jour',
@@ -1058,10 +1065,160 @@ ok('une base sans les colonnes n efface pas le cycle ni le mot d ici',
 
 // A 320 px, le nom et le cycle cote a cote laissaient six lettres chacun.
 ok('a 320 px le nom et le cycle passent l un sous l autre, et restent a 44 px',
-   /@media \(max-width:359px\)\{[\s\S]*?\.seance-tete\{flex-wrap:wrap;/.test(HTML)
-   && /\.seance-tete-nom,\.seance-tete-cycle\{flex:1 1 100%;max-width:none;\}/.test(HTML)
+   // Depuis le 14/10/2026 le cycle est monte sur la ligne de la date, et le
+   // nom de la seance occupe la sienne : c'est cette ligne-la qui se replie.
+   /@media \(max-width:359px\)\{[\s\S]*?\.day-panel-header\{flex-wrap:wrap;/.test(HTML)
+   && /\.day-panel-header h2,\.seance-tete-cycle\{flex:1 1 100%;max-width:none;\}/.test(HTML)
    && /\.seance-tete-nom\{[^}]*min-height:44px;/.test(HTML)
    && /\.seance-tete-cycle\{[^}]*min-height:44px;/.test(HTML));
+
+console.log('\n== 29. La seance du jour ne se perd pas (14/10/2026) ==');
+// « J'ai quitte l'app, coupe le wifi, et ma seance du jour avait disparu.
+//   J'ai essaye plusieurs fois, ca me l'a refait. »
+//
+// Trois causes, trois garde-fous. Le detail des scenarios est dans le
+// message de commit : ici on empeche seulement la rechute.
+
+// 1. Un envoi lent confirmait l'ancienne version de la journee et effacait
+//    le drapeau qu'une serie notee entre-temps venait de relever. La journee
+//    passait pour envoyee, et le tirage suivant l'ecrasait.
+ok('la file d envoi ne se vide que sur la version qu on a envoyee',
+   /function marque\(\)\{ return String\(Date\.now\(\)\) \+ '-' \+ \(\+\+compteurMarque\); \}/.test(SRC)
+   && /function liberer\(cle, ds, jeton\)\{/.test(SRC)
+   && /if \(f\[ds\] !== jeton\)\{ reste = true; return; \}/.test(SRC)
+   && /var jeton = jetonDe\('sales', ds\);/.test(SRC)
+   && /if \(liberer\('sales', ds, jeton\)\) resteSale = true;/.test(SRC)
+   // Et une journee restee sale repart tout de suite.
+   && /if \(resteSale\) planifier\(1200\);/.test(SRC));
+// Les quatre autres files suivent la meme regle : titre, cycle, mot, fin.
+ok('les titres, cycles, mots et fins de seance suivent la meme regle',
+   /liberer\('titres', ds, jeton\);/.test(SRC)
+   && /liberer\(cle, ds, jeton\);/.test(SRC)
+   && /liberer\('fins', ds, jeton\);/.test(SRC)
+   && /if \(m\.exosSales === jeton\) m\.exosSales = false;/.test(SRC)
+   // Plus une seule file marquee « 1 » : la migration aussi pose une marque.
+   && !/m\.(sales|titres|cycles|mots|fins)\[ds\] = 1;/.test(SRC));
+
+// 2. Un appel qui ne revient jamais — le wifi de la salle qui accepte la
+//    connexion sans rien router — laissait « enCours » leve pour de bon.
+ok('un appel qui ne revient jamais finit par rendre la main',
+   /var DELAI_RESEAU = 25000;/.test(SRC)
+   && /function avecDelai\(p\)\{/.test(SRC)
+   && /avecDelai\(c\.rpc\('pousser_jour'/.test(SRC)
+   && /avecDelai\(c\.rpc\('tirer_jours'/.test(SRC));
+
+// 3. Garde-fou de dernier recours : une version du cloud plus pauvre que
+//    celle d'ici ne peut pas etre la plus recente.
+ok('le cloud ne remplace jamais une journee plus complete',
+   /var ici = compterJour\(state\.sessions\[ds\]\);/.test(SRC)
+   && /if \(ici && compterJour\(jourDistant\(ds, d\)\) < ici\)\{/.test(SRC)
+   && /garderConflit\(ds, d\);\s*\n\s*marquerSale\(ds\);/.test(SRC));
+
+// Le stockage plein est l'autre facon de perdre la journee : setItem jette,
+// et le catch avalait tout en silence.
+ok('stockage plein : on fait de la place, puis on le dit',
+   /function ecrireCarnet\(futur\)\{/.test(SRC)
+   && /var jetables = \['topset_conflits', ILLISIBLE_KEY, SECOURS_KEY\];/.test(SRC)
+   && SRC.indexOf('Stockage du téléphone plein : exporte ton carnet') > -1
+   && /ecrireCarnet\(futur\);/.test(SRC));
+ok('la reserve des conflits ne grossit pas sans fin',
+   /var CONFLITS_MAX = 20;/.test(SRC)
+   && /while \(cles\.length > CONFLITS_MAX\) delete c\[cles\.shift\(\)\];/.test(SRC));
+
+// Une frappe attend une demi-seconde avant d'etre ecrite. L'iPhone peut
+// fermer l'app dans cet intervalle.
+ok('ce qui attend d etre ecrit part avant qu on quitte l app',
+   /function viderFileSauvegarde\(\)\{/.test(SRC)
+   && /window\.addEventListener\('pagehide', viderFileSauvegarde\);/.test(SRC)
+   && /window\.addEventListener\('beforeunload', viderFileSauvegarde\);/.test(SRC)
+   && /if \(document\.hidden\) viderFileSauvegarde\(\);/.test(SRC));
+
+console.log('\n== 30. Le chrono reste visible, et a sa place ==');
+// « Des fois je valide une serie et ca me met pas le chrono » : il partait
+// bien, mais la pastille etait cachee tant que le clavier etait ouvert — et
+// on coche sa serie clavier ouvert.
+ok('le chrono du repos ne se cache plus avec le clavier',
+   !/body\.clavier \.repos-pastille,body\.en-conv \.repos-pastille/.test(HTML)
+   && /body\.en-conv \.repos-pastille,body\.en-bilan \.repos-pastille\{display:none;\}/.test(HTML)
+   && /body\.clavier \.repos-pastille\{\s*\n\s*bottom:calc\(var\(--clavier-h,0px\) \+ 14px/.test(HTML)
+   && /--clavier-h/.test(SRC));
+// « La place du chrono est partie en couilles » : deplacee tout en bas, la
+// pastille passait derriere la barre d'onglets.
+ok('la pastille deplacee reste au-dessus de la barre d onglets',
+   /function basUtile\(\)\{/.test(SRC)
+   && /var barre = document\.querySelector\('\.topbar'\);/.test(SRC)
+   && /var hautMax = Math\.max\(8, innerHeight - h - basUtile\(\)\);/.test(SRC));
+
+console.log('\n== 31. Les noms d exercices : une proposition, jamais une decision ==');
+// « Si j'ecris benc ou bnech, faut qu'il comprenne que je voulais ecrire
+//   bench, et pour tous les exos. »
+ok('les fautes de frappe se mesurent, inversion de lettres comprise',
+   /function ecartMots\(a, b, max\)\{/.test(SRC)
+   && /a\.charAt\(i - 1\) === b\.charAt\(j - 2\) && a\.charAt\(i - 2\) === b\.charAt\(j - 1\)/.test(SRC)
+   && /function toleranceFaute\(n\)\{ return n < 4 \? 0 : \(n < 9 \? 1 : 2\); \}/.test(SRC)
+   && /function memeDebut\(a, b\)\{/.test(SRC)
+   && /function fauteDeFrappe\(saisi\)\{/.test(SRC));
+// Une faute propose, elle ne decide pas : « curl » et « curls » ne doivent
+// pas fusionner tout seuls, un historique faux ne se repare pas.
+ok('une faute ne rapproche jamais deux noms toute seule',
+   corps('function cleCanonique(', 'function nomCanonique(').indexOf('fauteDeFrappe') < 0
+   && corps('function cleSynonymeDe(', 'function cleCanonique(').indexOf('fauteDeFrappe') < 0);
+// « Il me propose forcement de le relier a un autre exo, et il comprend pas
+//   direct que c'est developpe couche. [...] Si je le relie, faut que ca le
+//   relie a l'exo propose. »
+ok('la boite nomme la proposition, et OUI relie a elle',
+   /var cibleNom = syn \|\| faute \|\| \(choix\.length \? choix\[0\]\.nom : ''\);/.test(SRC)
+   && /var cibleCle = syn \? cleCanonique\(syn\) : \(choix\.length \? choix\[0\]\.cle : ''\);/.test(SRC)
+   && SRC.indexOf('data-action="oui">OUI, C\\\'EST ÇA') > -1
+   && /if \(e\.target\.closest\('\[data-action="oui"\]'\)\)\{ relier\(cibleCle\); return; \}/.test(SRC)
+   // La liste de secours s'ouvre deja posee sur la proposition.
+   && /\(c\.cle === cibleCle \? ' selected' : ''\)/.test(SRC)
+   && /tu voulais écrire/.test(SRC));
+// « Faut une option en mode jmet le nom de mon exo. »
+ok('on peut lui dire qu on nomme ses exercices soi-meme',
+   /if \(reglages\.nomsLibres\) return;/.test(SRC)
+   && /cle:'nomsLibres'/.test(SRC)
+   && corps('function proposerRattachement(', 'var vieux = card.querySelector').indexOf('nomsLibres') > -1);
+// Corriger une faute ne doit pas laisser le mot mal tape dans la liste —
+// sauf s'il a deja servi, et la il devient un rattachement.
+ok('corriger une faute n abandonne jamais un historique',
+   /function nomUtiliseAilleurs\(cle, saufDs, saufId\)\{/.test(SRC)
+   && /function corrigerNom\(ex, neuf\)\{/.test(SRC)
+   && /if \(nomUtiliseAilleurs\(mauvais, state\.selectedDay, ex\.id\)\)\{\s*\n\s*definirAlias\(ex\.nom, cleExo\(neuf\)\);/.test(SRC));
+
+console.log('\n== 32. Le titrage de la seance, et ce que chaque onglet raconte ==');
+// « La partie titrage de la seance est trop bizarre, pas belle » : trois blocs
+// empiles, une image de fond qui n'existait pas, et une classe partagee avec
+// l'en-tete des cartes du carnet.
+ok('le bandeau porte le nom de la seance, pas le groupe musculaire',
+   /<div class="hero" id="heroBand">/.test(HTML)
+   && /<div class="hero-corps" id="heroCorps"><\/div>/.test(HTML)
+   && corps('function renderBandeau(', '// RPE en reps en reserve').indexOf("getElementById('heroCorps')") > -1
+   // Le nom et la date vivent dans la page : un rendu ne doit pas jeter le
+   // champ de saisie du nom en cours d'edition.
+   && HTML.indexOf('id="seanceNomBtn"') > HTML.indexOf('<div class="hero" id="heroBand">')
+   && HTML.indexOf('id="seanceNomBtn"') < HTML.indexOf('<div class="day-panel">'));
+ok('le fond du bandeau existe vraiment, et le dessin ne le remplace plus',
+   // La variable --img-plates n'a jamais ete definie nulle part.
+   !/var\(--img-plates\)/.test(HTML)
+   && /\.hero-photo\{[\s\S]{0,200}background-image:url\('img\/ambiance\/bandeau\.webp'\)/.test(HTML)
+   && /\.hero-illu\{/.test(HTML)
+   && !/\.hero\[data-illu\] \.hero-photo\{/.test(HTML)
+   // Et le lavis qui ecrasait tout le relief a disparu.
+   && !/mix-blend-mode:color/.test(HTML));
+ok('une classe, un objet : la ligne du nom ne prend plus le fond des cartes',
+   /<div class="seance-titrage">/.test(HTML)
+   && /\.seance-titrage\{display:flex;/.test(HTML)
+   // « .seance-tete » reste l'en-tete plein des cartes de seance du carnet.
+   && /\.seance-tete\{\s*\n\s*background:var\(--card-color,var\(--orange\)\);/.test(HTML));
+// « La partie carnet et la partie progres sont un peu flou. »
+ok('carnet et progres disent a quoi ils servent, et nomment leur periode',
+   /<div class="vue-tete">\s*\n\s*<h2>Carnet<\/h2>/.test(HTML)
+   && /<div class="vue-tete">\s*\n\s*<h2>Progrès<\/h2>/.test(HTML)
+   && /<p class="vue-sous-titre" id="calVuesLabel">AFFICHER<\/p>/.test(HTML)
+   && /<p class="vue-sous-titre" id="subTabsLabel">ADDITIONNER SUR<\/p>/.test(HTML)
+   && /id="calVues" role="group" aria-labelledby="calVuesLabel"/.test(HTML)
+   && /id="subTabs" role="group" aria-labelledby="subTabsLabel"/.test(HTML));
 
 console.log(`\n${pass} reussis, ${fail} echoues`);
 process.exit(fail ? 1 : 0);

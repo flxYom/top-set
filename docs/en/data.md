@@ -90,7 +90,26 @@ of bug rather than handling them case by case.
 A change marks its day and the push waits 2.5 s of quiet, so typing does not fire
 a request per keystroke. Offline, the queue of pending days lives in
 `localStorage` and is replayed on the `online` event and when the tab regains
-focus. **A day only leaves the queue once the server has confirmed it.**
+focus. **A day only leaves the queue once the server has confirmed it, and
+only if nothing has changed since the push left.**
+
+That second half cost a session (2026-10-14). Marking a day wrote a plain `1`,
+and the confirmation cleared the flag without asking which version it was
+answering. On gym wi-fi a push takes twenty seconds: sets logged meanwhile did
+raise the flag, which the confirmation then wiped. The day passed for sent
+while the cloud only held its older version — and the next pull, on returning
+to the app, wrote that older version over the good one. Each marking now writes
+**a distinct stamp** (`Date.now()` plus a counter); a confirmation only releases
+the day if the stamp is still its own, otherwise the day stays dirty and leaves
+again straight away. All five queues follow the rule: days, titles, cycles,
+session notes, validations, exercise names.
+
+Two guards surround it. A call that never returns — wi-fi that accepts the
+connection and routes nothing — **gives up after 25 seconds** instead of
+blocking every later push until a reload. And a pull **never adopts a cloud day
+holding fewer logged sets than the local one**: that can only be a push still
+pending, so the local version wins, goes back in the queue, and the cloud's is
+stashed in `topset_conflits`.
 
 **A database that lags behind does not eat comments.** Comments needed two
 columns, `exercices.note` then `series.note`, added when `schema.sql` is re-run.
@@ -102,7 +121,21 @@ database returns `note: null`, and then it is followed.
 
 Storage keys: `musculation_sessions` (the logbook), `topset_custom_exercises`
 (remembered exercises), `topset_sync` (queue and sync cursor), `topset_conflits`
-(the losing side of a conflict, never discarded silently).
+(the losing side of a conflict, never discarded silently — capped at twenty
+since 2026-10-14: it grew without bound and could end up filling the phone's
+storage).
+
+**Full storage no longer fails silently.** `localStorage.setItem()` throws when
+the quota is reached, and the `catch` swallowed it: nothing was written until a
+reload, while the app kept showing a session that existed nowhere. A write now
+frees space with whatever is disposable, least useful first — conflicts, the
+unreadable JSON set aside, the rollback copy — and retries each time. If
+nothing helps, it says so: "phone storage full, export your logbook".
+
+**Pending writes leave before you do.** A keystroke waits half a second before
+being stored, so the app does not save on every letter. The iPhone can close
+the app inside that window: `pagehide`, `beforeunload` and going to the
+background now flush that queue.
 
 ---
 

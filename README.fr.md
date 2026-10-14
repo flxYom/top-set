@@ -41,7 +41,12 @@ c'est exactement à ça que sert ce repo pour l'instant.
   seul. Un chrono à part (minuteur ou chronomètre) vit dans l'en-tête.
 - **La régler à sa main.** Une couleur par groupe musculaire, et des
   interrupteurs pour ranger ce qui ne sert pas (colonne RPE, champ REPOS,
-  bouton CHRONO, chrono de repos automatique). Ranger n'efface rien.
+  bouton CHRONO, chrono de repos automatique, questions sur les noms
+  d'exercices). Ranger n'efface rien.
+- **Écrire les noms comme on les dit.** `bench`, `RDL`, `OHP` rejoignent le bon
+  exercice tout seuls, et une faute de frappe (`bnech`, `benc`) se fait
+  proposer à la correction. L'app propose, c'est toi qui tranches — ou tu
+  coupes la question d'un réglage.
 - **Ne pas repartir de zéro.** Refaire la dernière fois, les exercices de la
   semaine d'avant, la charge suggérée. `↺ DERNIÈRE FOIS` remplit les séries de
   la séance précédente et n'écrase jamais ce qui est déjà saisi.

@@ -447,5 +447,36 @@ avant de le faire.
   répond à une question différente, et le mot de la journée se relit sur la
   fiche de la séance — un commentaire qu'on ne relit jamais n'est qu'à moitié
   une fonctionnalité.
+- **Le titrage de la séance est un seul bloc** (14/10). Il y en avait trois :
+  un bandeau dont le grand titre était le groupe musculaire, la date une
+  seconde fois juste en dessous, et le nom de la séance dans un petit bouton.
+  Le bandeau porte maintenant la date, le cycle, **le nom de la séance en
+  grand**, puis le groupe et les chiffres. Ce qu'on a décidé d'appeler sa
+  séance passe avant ce que l'app en déduit.
+- **Un calque par rôle dans le bandeau** (14/10). La photo, le dessin du groupe,
+  le voile et la teinte sont quatre calques distincts, écrits dans la page et
+  non refabriqués à chaque rendu. Avant, le dessin du groupe *remplaçait* la
+  photo (`.hero[data-illu] .hero-photo`) : dès qu'une série était notée, il n'y
+  avait plus d'image. Et la teinte était un `mix-blend-mode: color` à 90 %, qui
+  effaçait tout le relief — elle arrive désormais par un côté, en dégradé.
+- **Une classe, un objet** (14/10). `.seance-tete` désignait à la fois la ligne
+  du nom sur l'écran de séance et l'en-tête plein des cartes du carnet : la
+  première héritait du fond orange de la seconde. La ligne du nom s'appelle
+  `.seance-titrage`. Avant d'ajouter une classe, chercher si le nom est pris.
+- **Le chrono de repos ne se cache jamais** (14/10). Il était masqué tant que
+  le clavier était ouvert — or on coche sa série clavier ouvert, et le retour
+  « des fois ça me met pas le chrono » venait de là. Une information qui part
+  doit se voir partir. Il se pose au-dessus du clavier (`--clavier-h`), et une
+  pastille déplacée reste au-dessus de la barre d'onglets.
+- **Un onglet dit à quoi il sert** (14/10). CARNET et PROGRÈS répondaient à deux
+  questions différentes sans jamais les poser, et affichaient le même sélecteur
+  de période. Chacun porte son titre, sa phrase, et le nom de son sélecteur :
+  AFFICHER d'un côté, ADDITIONNER SUR de l'autre.
+- **Une suggestion n'est pas une décision** (14/10). L'app sait maintenant lire
+  une faute de frappe (« bnech » → Développé couché), et elle la **propose**
+  seulement. Rien dans `cleCanonique()` ne consulte les approximations : un
+  rapprochement faux ne se répare pas, et deux noms ne se fondent que sur un
+  geste. Pour qui n'en veut pas du tout, le réglage « je nomme mes exercices
+  moi-même » coupe la question à la source.
 - **Description de l'interface** : [`DESIGN.md`](DESIGN.md), extrait du code le
   18/09. Ce fichier-ci garde les décisions et fait foi en cas d'écart.

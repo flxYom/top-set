@@ -156,6 +156,17 @@
      rubrique. Rien n'est stocke, rien n'est calcule. */
   .apprendre-tete h2{font-size:26px;font-weight:800;letter-spacing:-.01em;line-height:1.1;margin:4px 0 6px;}
   .apprendre-tete p{color:var(--dim);font-size:14px;line-height:1.5;margin:0;}
+  /* « La partie carnet et la partie progres sont un peu flou, on comprend pas
+     forcement la difference » (14/10/2026). Chaque onglet dit maintenant a
+     quelle question il repond, en une phrase, et nomme son selecteur de
+     periode : « afficher » d'un cote, « additionner sur » de l'autre. */
+  .vue-tete{margin:2px 0 10px;}
+  .vue-tete h2{font-size:26px;font-weight:800;letter-spacing:-.01em;line-height:1.1;margin:4px 0 6px;}
+  .vue-tete p{color:var(--dim);font-size:13.5px;line-height:1.5;margin:0;}
+  .vue-sous-titre{
+    font-size:10px;font-weight:800;letter-spacing:.14em;color:var(--dim);
+    margin:0 0 6px;text-transform:uppercase;
+  }
   .apprendre-grille{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;}
   .apprendre-carte{
     display:flex;flex-direction:column;gap:6px;min-height:112px;padding:13px 13px 14px;
@@ -197,41 +208,50 @@
     box-shadow:4px 4px 0 var(--orange);
     overflow:hidden;
     background:#0d0c0a;
-    display:flex;flex-direction:column;justify-content:space-between;
+    display:flex;flex-direction:column;justify-content:space-between;gap:10px;
     padding:12px;
   }
+  /* La photo de fond pointait sur « --img-plates », une variable qui n'a
+     jamais existe : le bandeau etait donc un rectangle noir avec un lavis de
+     couleur par-dessus — « la partie titrage est trop bizarre, pas belle »
+     (14/10/2026). L'image de la salle existait deja dans img/ambiance. */
   .hero-photo{
     position:absolute;inset:0;
-    background-image:var(--img-plates);
-    background-size:cover;background-position:center;
-    filter:grayscale(1) contrast(1.5) brightness(.5);
+    background-image:url('img/ambiance/bandeau.webp');
+    background-size:cover;background-position:center 30%;
+    filter:grayscale(1) contrast(1.15) brightness(.42);
   }
-  /* Un dessin par groupe musculaire dominant, en gris : la teinte du groupe
-     le colore par-dessus, comme la photo. Il se pose a droite, la ou le texte
-     ne va pas. Sans groupe (seance vide, « Autre »), la photo des disques. */
-  .hero[data-illu] .hero-photo{
-    background-size:auto 100%;background-repeat:no-repeat;background-position:right 6px center;
-    filter:none;
+  /* Un dessin par groupe musculaire dominant, pose a droite, la ou le texte
+     ne va pas. Il REMPLACAIT la photo : des qu'une serie etait notee, le fond
+     devenait un rectangle noir avec un petit trait blanc dedans. Il a
+     maintenant son propre calque, par-dessus la photo. (14/10/2026) */
+  .hero-illu{
+    position:absolute;top:0;right:0;bottom:0;width:58%;
+    background-size:auto 76%;background-repeat:no-repeat;background-position:right 4px center;
+    opacity:.5;
   }
-  .hero[data-illu="pectoraux"] .hero-photo{background-image:url('img/hero/pectoraux.svg');}
-  .hero[data-illu="dos"] .hero-photo{background-image:url('img/hero/dos.svg');}
-  .hero[data-illu="epaules"] .hero-photo{background-image:url('img/hero/epaules.svg');}
-  .hero[data-illu="bras"] .hero-photo{background-image:url('img/hero/bras.svg');}
-  .hero[data-illu="jambes"] .hero-photo{background-image:url('img/hero/jambes.svg');}
-  .hero[data-illu="abdos"] .hero-photo{background-image:url('img/hero/abdos.svg');}
-  .hero[data-illu="cardio"] .hero-photo{background-image:url('img/hero/cardio.svg');}
-  .hero-tint{position:absolute;inset:0;background:var(--hero-color,var(--orange));mix-blend-mode:color;opacity:.9;}
-  .hero-scrim{position:absolute;inset:0;background:linear-gradient(105deg,rgba(13,12,10,.9) 8%,rgba(13,12,10,.12) 64%);}
-  .hero-dots{
+  .hero[data-illu="pectoraux"] .hero-illu{background-image:url('img/hero/pectoraux.svg');}
+  .hero[data-illu="dos"] .hero-illu{background-image:url('img/hero/dos.svg');}
+  .hero[data-illu="epaules"] .hero-illu{background-image:url('img/hero/epaules.svg');}
+  .hero[data-illu="bras"] .hero-illu{background-image:url('img/hero/bras.svg');}
+  .hero[data-illu="jambes"] .hero-illu{background-image:url('img/hero/jambes.svg');}
+  .hero[data-illu="abdos"] .hero-illu{background-image:url('img/hero/abdos.svg');}
+  .hero[data-illu="cardio"] .hero-illu{background-image:url('img/hero/cardio.svg');}
+  /* Un lavis en fusion de couleur a 90 % effacait tout le relief de la photo
+     et rendait un aplat terne. La teinte du groupe arrive maintenant par un
+     cote, en degrade, et laisse l'image respirer. */
+  .hero-voile{
     position:absolute;inset:0;
-    background-image:radial-gradient(circle at 2px 2px, rgba(13,12,10,.5) 1.7px, transparent 0);
-    background-size:9px 9px;
-    -webkit-mask-image:linear-gradient(to right,transparent,#000);
-    mask-image:linear-gradient(to right,transparent,#000);
+    background:linear-gradient(185deg,rgba(13,12,10,.25) 0%,rgba(13,12,10,.72) 58%,rgba(13,12,10,.94) 100%);
   }
-  .hero-top{position:relative;display:flex;flex-direction:column;gap:5px;}
+  .hero-teinte{
+    position:absolute;inset:0;
+    background:linear-gradient(100deg,var(--hero-color,var(--orange)) -20%,transparent 62%);
+    opacity:.34;
+  }
+  .hero-haut{position:relative;display:flex;flex-direction:column;gap:6px;}
+  .hero-corps{position:relative;display:flex;flex-direction:column;gap:7px;}
   .hero-kicker{font-size:10px;font-weight:800;letter-spacing:.14em;color:var(--yellow);}
-  .hero-title{font-size:26px;font-weight:800;letter-spacing:-.03em;line-height:1;text-transform:uppercase;}
   .hero-tags{position:relative;display:flex;flex-wrap:wrap;gap:7px;}
   .hero-tag{font-size:10px;font-weight:800;letter-spacing:.06em;padding:4px 7px;background:var(--ink);color:#0d0c0a;}
   .hero-tag.green{background:var(--green);}
@@ -300,8 +320,8 @@
   .badge i{width:9px;height:9px;background:var(--dot);display:inline-block;}
 
   .day-panel{display:flex;flex-direction:column;gap:12px;}
-  .day-panel-header{display:flex;align-items:center;justify-content:space-between;gap:10px;}
-  .day-panel-header h2{font-size:20px;font-weight:800;letter-spacing:-.01em;text-transform:capitalize;min-width:0;}
+  .day-panel-header{display:flex;align-items:center;gap:10px;}
+  .day-panel-header h2{flex:1 1 auto;font-size:20px;font-weight:800;letter-spacing:-.01em;text-transform:capitalize;min-width:0;}
   .ex-list{display:flex;flex-direction:column;gap:14px;}
 
   .ex-card{
@@ -409,6 +429,10 @@
   /* « C'est un nouvel exercice » est une reponse comme une autre, mais ce
      n'est pas celle qu'on propose en premier : bord gris, pas jaune. */
   .alias-garder{border-color:var(--line);}
+  /* OUI est la reponse attendue neuf fois sur dix (14/10/2026) : elle est
+     pleine, les autres sont en contour. On repond d'un pouce sans lire. */
+  .alias-oui{background:var(--yellow);color:#0d0c0a;}
+  .alias-oui:active{background:var(--ink);color:#0d0c0a;}
   .btn-retour{
     align-self:flex-start;min-height:44px;padding:0 14px;
     background:transparent;border:2px solid var(--line);
@@ -438,20 +462,28 @@
   /* Le nom de la seance et son cycle, sur l'ecran ou on s'entraine. Le nom
      existait depuis longtemps mais ne se changeait que depuis la fiche, dans
      CARNET : personne ne l'avait jamais trouve. */
-  .seance-tete{display:flex;align-items:center;gap:8px;margin:10px 0 2px;}
+  /* Renomme le 14/10/2026 : ce bloc s'appelait « .seance-tete », comme
+     l'en-tete plein des cartes du carnet — il heritait donc de son fond
+     orange et de son texte noir, en plein milieu du bandeau. */
+  .seance-titrage{display:flex;align-items:center;gap:8px;}
+  /* Le nom de la seance est devenu le titre du bandeau (14/10/2026) : avant,
+     le grand titre etait le groupe musculaire et le nom tenait dans un petit
+     bouton gris en dessous. On lit donc d'abord ce qu'on a decide d'appeler
+     sa seance ; le groupe est passe en etiquette avec les chiffres. */
   .seance-tete-nom{
-    flex:1 1 auto;min-width:0;display:flex;align-items:center;gap:7px;
-    min-height:44px;padding:0 10px;
-    background:var(--panel2);border:2px solid var(--line);
+    flex:1 1 auto;min-width:0;display:flex;align-items:center;gap:8px;
+    min-height:44px;padding:0;
+    background:transparent;border:0;
     color:var(--ink);font-family:inherit;
-    font-size:13px;font-weight:800;letter-spacing:.03em;cursor:pointer;text-align:left;
+    font-size:26px;font-weight:800;letter-spacing:-.03em;line-height:1.05;cursor:pointer;text-align:left;
   }
   .seance-tete-nom b{
-    flex:1 1 auto;min-width:0;font-weight:800;
+    flex:0 1 auto;min-width:0;font-weight:800;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   }
-  .seance-tete-nom s{flex:none;text-decoration:none;opacity:.5;font-size:14px;}
-  .seance-tete-nom:active{border-color:var(--orange);}
+  .seance-tete-nom s{flex:none;text-decoration:none;opacity:.45;font-size:14px;}
+  .seance-tete-nom:active{color:var(--orange);}
+  .seance-tete-nom:active s{opacity:.9;}
   .seance-tete-cycle{
     flex:none;max-width:46%;display:flex;align-items:center;
     min-height:44px;padding:0 10px;
@@ -2303,11 +2335,13 @@
   }
   /* Les chiffres et les titres gardent Bricolage : c'est la voix de Top Set.
      Le texte courant passe a la police du telephone, plus lisible en petit. */
-  h1,h2,h3,.hero-title,.brand-mark,.accueil-marque,.cal-num,.week-label,
+  h1,h2,h3,.seance-tete-nom b,.brand-mark,.accueil-marque,.cal-num,.week-label,
   .serie-poids,.serie-reps,.serie-duree,.serie-cardio,.serie-num,.ex-name,.bilan-question,.bilan-titre,
   .bilan-volume-num,.barre-compteurs b,.retour-seance,.btn-add,.btn-fin,.topbar-tab,.seg-btn,
   .btn-sheet,.ex-cible-val,.stat-tile,.volume-block,.recap-label,.seance-carte,.fiche-tete,
   .exo-record,.bilan-tuile b,.hero-tag,.day-panel-header h2{font-family:var(--f-titre);}
+  .vue-tete h2{font-family:var(--f-titre);letter-spacing:-.02em;}
+  .vue-sous-titre{font-family:var(--f-ui);color:var(--ink3);}
   input,select,textarea,button{font-family:inherit;}
   :focus-visible{outline:2px solid var(--orange);outline-offset:2px;}
 
@@ -2382,7 +2416,20 @@
     body.avec-retour .repos-pastille{bottom:calc(var(--nav-h) + 84px + env(safe-area-inset-bottom));}
     body.en-repos .toast{bottom:calc(var(--nav-h) + 82px + env(safe-area-inset-bottom));}
     body.en-repos.avec-retour .toast{bottom:calc(var(--nav-h) + 148px + env(safe-area-inset-bottom));}
-    body.clavier .repos-pastille,body.en-conv .repos-pastille,body.en-bilan .repos-pastille{display:none;}
+    body.en-conv .repos-pastille,body.en-bilan .repos-pastille{display:none;}
+    /* Le chrono du repos ne se cache plus avec le clavier (14/10/2026). On
+       coche sa serie clavier ouvert : il partait, mais hors de vue — « je
+       valide une serie et ca me met pas le chrono ». Il monte au-dessus du
+       clavier, a sa place de depart, meme s'il avait ete deplace : un point
+       fixe pendant la saisie vaut mieux qu'un point qui passe dessous. */
+    body.clavier .repos-pastille{
+      bottom:calc(var(--clavier-h,0px) + 14px + env(safe-area-inset-bottom));
+    }
+    body.clavier .repos-pastille.deplacee{
+      left:max(16px,calc(env(safe-area-inset-left) + 12px)) !important;
+      top:auto !important;
+      bottom:calc(var(--clavier-h,0px) + 14px + env(safe-area-inset-bottom)) !important;
+    }
     /* Le clavier sort : la barre se range, sinon elle monterait avec lui et
        couvrirait la ligne qu'on remplit. Dans une conversation, la saisie
        prend sa place. */
@@ -2395,10 +2442,8 @@
     min-height:156px;border:1px solid var(--trait);border-radius:var(--r-xl);
     box-shadow:var(--relief);padding:16px 16px 14px;
   }
-  .hero-scrim{background:linear-gradient(100deg,rgba(12,11,10,.94) 12%,rgba(12,11,10,.35) 58%,rgba(12,11,10,.1));}
-  .hero-dots{opacity:.45;}
+  .hero-voile{background:linear-gradient(185deg,rgba(12,11,10,.2) 0%,rgba(12,11,10,.68) 54%,rgba(12,11,10,.95) 100%);}
   .hero-kicker{font-family:var(--f-ui);font-size:11px;font-weight:700;letter-spacing:.16em;color:var(--dim);}
-  .hero-title{font-size:32px;letter-spacing:-.035em;}
   .hero-tags{gap:6px;}
   .hero-tag{
     border-radius:999px;padding:5px 11px;font-size:11px;font-weight:700;letter-spacing:.06em;
@@ -2416,7 +2461,12 @@
   .cal-case.auj{border-color:var(--orange);box-shadow:inset 0 0 0 1px var(--orange);}
   .badge{border:1px solid var(--trait);border-radius:999px;background:var(--s1);font-family:var(--f-ui);font-weight:600;}
   .badge i{border-radius:50%;}
-  .day-panel-header h2{font-size:22px;letter-spacing:-.025em;}
+  /* La date est passee au-dessus du nom de la seance, en petit : elle situe,
+     elle ne titre plus. Elle n'est plus ecrite deux fois de suite. */
+  .day-panel-header h2{
+    font-family:var(--f-ui);font-size:11px;font-weight:700;letter-spacing:.16em;
+    color:var(--dim);text-transform:uppercase;
+  }
 
   /* ---- Carte d'exercice ---------------------------------------------------- */
   .ex-card{
@@ -2449,6 +2499,8 @@
   .ex-cible-tag{border-radius:6px;font-family:var(--f-ui);}
   .ex-cible-copie{border:1px solid rgba(255,92,56,.5);border-radius:12px;}
   .alias-prompt,.alias-choix,.alias-select{border-width:1px;border-radius:var(--r-m);}
+  .alias-oui{border-color:var(--orange);background:var(--orange);color:#0d0c0a;font-weight:800;}
+  .alias-oui:active{background:var(--orange);filter:brightness(.92);color:#0d0c0a;}
 
   /* Les series */
   .series-tete{font-family:var(--f-ui);font-weight:700;color:var(--ink3);}
@@ -2494,10 +2546,12 @@
   .btn-sheet,.btn-reprendre,.btn-recap-jour,.btn-retour,.btn-ordre,.btn-mot{
     border:1px solid var(--trait);border-radius:var(--r-m);background:var(--s1);color:var(--ink);box-shadow:none;
   }
-  .seance-tete-nom,.cycle-choix{
+  .cycle-choix{
     border:1px solid var(--trait);border-radius:var(--r-m);background:var(--s1);box-shadow:var(--relief);
   }
-  .seance-tete-cycle{border:1px dashed var(--trait2);border-radius:var(--r-m);}
+  /* Le titre du bandeau : la police de Top Set, et de l'air autour. */
+  .seance-tete-nom{font-family:var(--f-titre);font-size:clamp(24px,7.4vw,31px);}
+  .seance-tete-cycle{border:1px dashed var(--trait2);border-radius:999px;background:rgba(12,11,10,.4);}
   .fiche-cycle{border:1px solid var(--orange);border-radius:var(--r-s);}
   .fiche-mot{border-left:2px solid var(--trait);}
   .seance-tete-cycle.mis{border-style:solid;border-color:var(--orange);}
@@ -2612,10 +2666,11 @@
   /* L'onglet actif gardait la bordure creme d'origine. */
   .topbar-tab.active{border:0;}
   /* Le dessin passait sous le titre du bandeau sur telephone : il se tient a
-     droite, a 60 % de la largeur, et s'agrandit sur un grand ecran. */
-  .hero[data-illu] .hero-photo{background-size:60% auto;background-position:right -6px bottom -6px;}
+     droite, et s'agrandit sur un grand ecran. Il a son propre calque depuis le
+     14/10/2026 ; avant il visait .hero-photo, donc il EFFACAIT la photo. */
+  .hero-illu{background-size:60% auto;background-position:right -6px bottom -6px;}
   @media (min-width:640px){
-    .hero[data-illu] .hero-photo{background-size:auto 94%;background-position:right 14px center;}
+    .hero-illu{background-size:auto 94%;background-position:right 14px center;}
   }
   /* L'aide des seances reste une note, pas une carte. */
   .seances-cible{border:0;border-left:2px solid var(--orange);border-radius:0;background:none;}
@@ -2646,12 +2701,11 @@
      orange, le noir a gauche pour le titre. Remplace la photo encodee dans la
      page, 86 Ko de moins a chaque chargement. La teinte du groupe reste, mais
      legere : la lumiere orange de l'image fait deja le travail. */
-  .hero:not([data-illu]) .hero-photo{
+  .hero-photo{
     background-image:url('img/ambiance/bandeau.webp');
-    background-size:cover;background-position:right center;
-    filter:none;
+    background-size:cover;background-position:center 34%;
+    filter:grayscale(1) contrast(1.12) brightness(.46);
   }
-  .hero:not([data-illu]) .hero-tint{opacity:.3;}
   /* L'ecran d'accueil : une barre posee au sol, dans la penombre. Un voile
      plus sombre au milieu, la ou se lisent le titre et le formulaire. */
   .accueil{
@@ -2881,8 +2935,8 @@
     .ordre-poignee{font-size:17px;}
     /* A 320 px, le nom et le cycle cote a cote laissaient six lettres
        chacun : ils passent l'un sous l'autre. */
-    .seance-tete{flex-wrap:wrap;gap:6px;}
-    .seance-tete-nom,.seance-tete-cycle{flex:1 1 100%;max-width:none;}
+    .day-panel-header{flex-wrap:wrap;gap:6px;}
+    .day-panel-header h2,.seance-tete-cycle{flex:1 1 100%;max-width:none;}
     .ordre-fleche{width:37px;}
   }
   /* Petit telephone : deux par deux. Quatre mots sur une rangee de 264 px
@@ -3173,12 +3227,10 @@
 
   /* ---- iPhone, de 320 a 430 px (18/09/2026) ------------------------------ */
   @media (max-width:899px){
-    /* Le bandeau dit deja le jour : le grand titre qui le repetait juste
-       dessous reste pour les lecteurs d ecran, plus a l ecran. Le bouton
-       AUJOURD HUI, lui, reste visible quand on regarde un autre jour. */
-    .day-panel-header h2{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0;}
-    .day-panel-header:not(:has(#jourAuj:not([hidden]))){margin-bottom:-12px;}
-    .day-panel-header{justify-content:flex-end;}
+    /* Le jour etait cache ici parce que le bandeau le repetait juste au-dessus.
+       Depuis le 14/10/2026 le bandeau porte le NOM de la seance, et la date est
+       redevenue sa ligne de situation : elle se lit de nouveau. */
+    .day-panel-header{gap:8px;}
   }
   /* Sous 360 px : MES SEANCES tient sur une ligne, MOUVEMENTS dans sa tuile. */
   @media (max-width:359px){
@@ -3226,6 +3278,10 @@
        decident de ce que montrent le calendrier ET la liste juste dessous
        (21/09/2026). -->
   <section class="view" id="view-planning" hidden>
+    <div class="vue-tete">
+      <h2>Carnet</h2>
+      <p>Ce que tu as fait. Le calendrier, tes séances passées, et la recherche d'un exercice pour voir son historique.</p>
+    </div>
     <div class="carnet-rech">
       <input type="search" id="carnetRecherche" class="carnet-rech-champ"
              placeholder="Chercher un exercice…" autocomplete="off"
@@ -3233,7 +3289,11 @@
       <div class="carnet-resultats" id="carnetResultats" aria-live="polite" hidden></div>
     </div>
 
-    <div class="segmented sub" id="calVues">
+    <!-- Les deux onglets avaient le meme selecteur de periode sans dire a quoi
+         il sert : « on comprend pas forcement la difference ». Ici il choisit
+         ce qu'on REGARDE ; dans PROGRES, ce qu'on ADDITIONNE. (14/10/2026) -->
+    <p class="vue-sous-titre" id="calVuesLabel">AFFICHER</p>
+    <div class="segmented sub" id="calVues" role="group" aria-labelledby="calVuesLabel">
       <button type="button" class="seg-btn" data-cal="jour">JOUR</button>
       <button type="button" class="seg-btn active" data-cal="semaine">SEMAINE</button>
       <button type="button" class="seg-btn" data-cal="mois">MOIS</button>
@@ -3272,13 +3332,31 @@
        calendrier vivent dans le CARNET depuis le 20/09/2026. -->
   <section class="view" id="view-seances">
     <div class="seances-jour" id="seancesJour">
-      <div class="hero" id="heroBand"></div>
-      <div class="day-panel">
-        <div class="day-panel-header"><h2 id="dayTitle">—</h2><button type="button" class="btn-today loin" id="jourAuj" hidden>AUJOURD'HUI ›</button></div>
-        <div class="seance-tete">
-          <button type="button" class="seance-tete-nom" id="seanceNomBtn" aria-label="Renommer la séance"><b id="seanceNomTxt">—</b><s aria-hidden="true">✎</s></button>
-          <button type="button" class="seance-tete-cycle" id="seanceCycleBtn">+ CYCLE</button>
+      <!-- Le titrage de la seance, refondu le 14/10/2026. Il y avait trois
+           blocs empiles qui se marchaient dessus : un bandeau dont le grand
+           titre etait le groupe musculaire, la date une seconde fois juste
+           en dessous, puis le nom de la seance en petit bouton. Un seul bloc
+           maintenant : la date, le NOM de la seance en grand, le cycle a
+           cote, et les chiffres en bas. Les calques du fond sont dans la
+           page et ne sont plus refabriques a chaque rendu. -->
+      <div class="hero" id="heroBand">
+        <div class="hero-photo" aria-hidden="true"></div>
+        <div class="hero-illu" aria-hidden="true"></div>
+        <div class="hero-voile" aria-hidden="true"></div>
+        <div class="hero-teinte" aria-hidden="true"></div>
+        <div class="hero-haut">
+          <div class="day-panel-header">
+            <h2 id="dayTitle">—</h2>
+            <button type="button" class="seance-tete-cycle" id="seanceCycleBtn">+ CYCLE</button>
+            <button type="button" class="btn-today loin" id="jourAuj" hidden>AUJOURD'HUI ›</button>
+          </div>
+          <div class="seance-titrage">
+            <button type="button" class="seance-tete-nom" id="seanceNomBtn" aria-label="Renommer la séance"><b id="seanceNomTxt">—</b><s aria-hidden="true">✎</s></button>
+          </div>
         </div>
+        <div class="hero-corps" id="heroCorps"></div>
+      </div>
+      <div class="day-panel">
         <div class="ex-list" id="exList"></div>
         <button type="button" class="btn-add" id="addExerciseBtn">+ AJOUTER UN EXERCICE</button>
         <div class="suggest-exo" id="suggestExo" hidden></div>
@@ -3302,7 +3380,12 @@
   </section>
 
   <section class="view" id="view-recap" hidden>
-    <div class="segmented sub" id="subTabs">
+    <div class="vue-tete">
+      <h2>Progrès</h2>
+      <p>Ce que ça donne. Les totaux, l'assiduité et les muscles travaillés sur une période — pas le détail des séances, qui est dans le carnet.</p>
+    </div>
+    <p class="vue-sous-titre" id="subTabsLabel">ADDITIONNER SUR</p>
+    <div class="segmented sub" id="subTabs" role="group" aria-labelledby="subTabsLabel">
       <button type="button" class="seg-btn active" data-period="semaine">SEMAINE</button>
       <button type="button" class="seg-btn" data-period="mois">MOIS</button>
       <button type="button" class="seg-btn" data-period="annee">ANNÉE</button>

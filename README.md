@@ -43,7 +43,10 @@ repository is for right now.
   standalone timer (countdown or stopwatch) lives in the header.
 - **Tune it to your hand.** A colour per muscle group, and switches to put away
   what you do not use (RPE column, REST field, CHRONO button, automatic rest
-  timer). Putting something away erases nothing.
+  timer, questions about exercise names). Putting something away erases nothing.
+- **Write names the way you say them.** `bench`, `RDL`, `OHP` join the right
+  exercise on their own, and a typo (`bnech`, `benc`) gets offered for
+  correction. The app suggests, you decide — or you switch the question off.
 - **Never start from scratch.** Redo last time, last week's exercises, a
   suggested load. `↺ DERNIÈRE FOIS` fills in the sets of the previous session
   and never overwrites what you have already entered.
