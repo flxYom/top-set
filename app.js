@@ -936,10 +936,51 @@
     catch(e){ return -1; }
   }
 
+  // Le carnet local est partage par TOUT l'appareil : la PWA installee, un
+  // onglet Safari laisse ouvert sur le site, une page qu'iOS a gardee en
+  // veille depuis hier. Chacune garde son propre carnet en memoire et ecrit
+  // le carnet ENTIER a chaque sauvegarde — donc la derniere qui ecrit efface
+  // les seances notees dans les autres. C'est la facon la plus silencieuse de
+  // perdre la seance d'hier : personne n'a rien supprime. (14/10/2026)
+  //
+  // On ne fait donc plus confiance a sa propre memoire. Avant d'ecrire, on
+  // relit : si le stockage n'est plus celui qu'on y a laisse, quelqu'un
+  // d'autre a note quelque chose, et on le reprend AVANT d'ecrire. Quand rien
+  // n'a bouge — le cas normal — on ecrit directement : supprimer une serie
+  // reste une suppression, pas un conflit.
+  var dernierEcrit = null;
+  var fusionSignalee = false;
+
+  function reprendreEcritureVoisine(actuel){
+    if (actuel == null || actuel === dernierEcrit) return false;
+    var autre = null;
+    try { autre = JSON.parse(actuel); } catch(e){ return false; }
+    if (!autre || typeof autre !== 'object') return false;
+    var r;
+    try { r = TS.fusionnerEcritures(state.sessions, normalizeLocal(autre), fabriqueId); }
+    catch(e){ return false; }
+    if (!r.bilan.jours && !r.bilan.exercices && !r.bilan.series && !r.bilan.titres) return false;
+    state.sessions = r.sessions;
+    // Ce qui revient doit aussi partir vers le compte : l'autre page l'avait
+    // peut-etre marque, mais rien ne le garantit.
+    r.bilan.dates.forEach(function(ds){ if (Sync) Sync.marquerSale(ds); });
+    // Pas de rendu ici : on est peut-etre appele au milieu d'un rendu.
+    setTimeout(function(){
+      renderAll();
+      if (!fusionSignalee){
+        fusionSignalee = true;
+        showToast('Séries notées sur une autre page : tout est remis ensemble');
+      }
+    }, 0);
+    return true;
+  }
+
   function saveLocal(){
     try{
+      var actuel = null;
+      try { actuel = localStorage.getItem(SAVE_KEY); } catch(e){}
+      reprendreEcritureVoisine(actuel);
       var futur  = JSON.stringify(state.sessions);
-      var actuel = localStorage.getItem(SAVE_KEY);
       if (actuel != null && actuel !== futur){
         var avant = nbJoursTexte(actuel);
         var apres = Object.keys(state.sessions).length;
@@ -970,13 +1011,13 @@
   // utile, et on retente a chaque fois. Le carnet passe avant ses filets.
   var saveAlerte = false;
   function ecrireCarnet(futur){
-    try { localStorage.setItem(SAVE_KEY, futur); saveAlerte = false; return true; }
+    try { localStorage.setItem(SAVE_KEY, futur); dernierEcrit = futur; saveAlerte = false; return true; }
     catch(e){}
     // Ecrit en clair : CONFLITS_KEY est declare plus bas, dans la synchro.
     var jetables = ['topset_conflits', ILLISIBLE_KEY, SECOURS_KEY];
     for (var i = 0; i < jetables.length; i++){
       try { localStorage.removeItem(jetables[i]); } catch(e){}
-      try { localStorage.setItem(SAVE_KEY, futur); saveAlerte = false; return true; }
+      try { localStorage.setItem(SAVE_KEY, futur); dernierEcrit = futur; saveAlerte = false; return true; }
       catch(e2){}
     }
     // Plus rien a jeter : le dire, une fois, au lieu de laisser croire que
@@ -992,6 +1033,9 @@
     var raw = null;
     try{ raw = localStorage.getItem(SAVE_KEY); }catch(e){ return null; }
     if (!raw) return null;
+    // Ce qu'on vient de lire est, pour l'instant, ce qu'on a laisse dans le
+    // stockage : sans ca la premiere sauvegarde croirait a une autre page.
+    dernierEcrit = raw;
     try{ return JSON.parse(raw); }
     catch(e){
       // Un JSON casse ne doit pas devenir un carnet vide qu'on reecrira

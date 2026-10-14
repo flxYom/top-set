@@ -11,6 +11,20 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ### Fixed
 
+- **A fourth way to lose a session: the app's own second page.** « I did
+  sessions yesterday and they are gone. » (14/10.) The local notebook lives
+  under a single `localStorage` key shared by the whole device — the installed
+  PWA, a Safari tab left open on the site, a page iOS kept suspended since
+  yesterday. Each page holds its own notebook in memory and writes the *whole*
+  notebook on every save, so the last one to save erased the sets noted in the
+  others, with nobody having deleted anything. `saveLocal()` now re-reads
+  before writing: if the stored text is no longer the one this page left there,
+  another page has written, and `TS.fusionnerEcritures()` takes its days,
+  exercises and sets back *before* the write (and marks them for the account).
+  When nothing has moved — the normal case — the write goes straight through,
+  so deleting a set is still a deletion. Reproduced in jsdom: a day written by
+  a second page disappeared on the next save, and an exercise added by it was
+  lost too; both now survive, and a deleted set does not come back.
 - **A session lost at the gym, three ways.** « I left the app, turned the wi-fi
   off, and my session for the day had disappeared. I tried several times, it
   did it again. » (14/10.) Three independent causes, each reproduced on the

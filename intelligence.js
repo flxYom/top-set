@@ -595,6 +595,46 @@
     return { sessions: sortie, bilan: bilan };
   }
 
+  // Fusionner deux ecritures du MEME carnet, et non un fichier importe : les
+  // deux pages de l'app ouvertes sur le meme telephone, qui partagent un seul
+  // stockage et chacune sa memoire. Ici les deux cotes sont a egalite — aucun
+  // n'est « une photo plus ancienne » —, donc on reprend aussi les series
+  // ajoutees a un exercice que les deux connaissent, ce qu'un import ne fait
+  // jamais. Une serie notee dans une page ne doit pas disparaitre parce que
+  // l'autre a sauvegarde apres elle. (14/10/2026)
+  function fusionnerEcritures(mien, autre, fabrique) {
+    var r = fusionnerCarnets(mien, autre, fabrique);
+    var sortie = r.sessions, bilan = r.bilan;
+    var vus = carte();
+    bilan.dates.forEach(function (ds) { vus[ds] = 1; });
+
+    Object.keys(autre || {}).forEach(function (ds) {
+      var jourA = autre[ds];
+      if (!jourA || typeof jourA !== 'object' || !sortie[ds]) return;
+      var parId = carte();
+      ((sortie[ds] && sortie[ds].exercises) || []).forEach(function (e) {
+        if (e && e.id) parId[e.id] = e;
+      });
+      var bouge = false;
+      (jourA.exercises || []).forEach(function (ea) {
+        var ex = (ea && ea.id) ? parId[ea.id] : null;
+        if (!ex) return;
+        var ids = carte();
+        (ex.series || []).forEach(function (s) { if (s && s.id) ids[s.id] = 1; });
+        (ea.series || []).forEach(function (sa) {
+          if (!sa || !sa.id || ids[sa.id] || !serieRemplie(sa)) return;
+          ids[sa.id] = 1;
+          ex.series = (ex.series || []).concat([sa]);
+          bilan.series++;
+          bouge = true;
+        });
+      });
+      if (bouge && !vus[ds]) { vus[ds] = 1; bilan.dates.push(ds); }
+    });
+
+    return { sessions: sortie, bilan: bilan };
+  }
+
   // ------------------------------------------------------------------
   // Relire le tableur exporte
   // ------------------------------------------------------------------
@@ -733,6 +773,7 @@
     dureeTotale: dureeTotale,
     signatureExo: signatureExo,
     fusionnerCarnets: fusionnerCarnets,
+    fusionnerEcritures: fusionnerEcritures,
     lireCsvCarnet: lireCsvCarnet,
     FOURCHETTES: FOURCHETTES,
     INCREMENT: INCREMENT,
