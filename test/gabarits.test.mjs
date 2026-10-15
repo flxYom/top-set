@@ -1315,6 +1315,15 @@ ok('les reserves partagees portent le nom de leur proprietaire',
    && /\[SECOURS_KEY, ILLISIBLE_KEY, 'topset_conflits', JOURNAL_KEY, PROPRIO_KEY\]\.forEach/.test(SRC)
    && /viderStockageCarnet\(\);\n      saveLocal\(\);/.test(SRC));
 
+ok('un carnet par compte, a chaque demarrage et pas seulement a la connexion',
+   // Une session dure des semaines : la regle ne peut pas ne valoir qu'au
+   // moment ou l'on tape son mot de passe.
+   /if \(lireMeta\(\)\.userId && lireMeta\(\)\.userId !== user\.id\) return apresConnexion\(\);/.test(SRC)
+   // Et un ecran vide a une explication : sans reseau, le carnet du compte
+   // qui arrive est peut-etre encore dans le cloud.
+   && (SRC.match(/Tes séances arriveront dès que le réseau revient/g) || []).length === 2
+   && (SRC.match(/if \(!joursRemplis\(state\.sessions\)\)\{/g) || []).length === 2);
+
 ok('le diagnostic du stockage ne recopie ni secret ni carnet',
    /id="dataDiag"/.test(HTML)
    && /function diagnosticTexte\(version\)\{/.test(SRC)

@@ -265,6 +265,20 @@ announces what is missing rather than the size of the reserve. The old condition
 compared the reserve to the whole logbook: it hid the button as soon as the
 logbook had more sets in total, even when a whole day was missing from it.
 
+**One logbook per account, at every start.** The rule "the logbook follows the
+account, not the device" was only enforced when typing a password. But a session
+lasts weeks: if the one restored at startup is not the one the logbook belongs
+to — `topset_sync` lost, account changed through another path — the app synced
+anyway, and one account's logbook left for the other's cloud. `demarrer()` now
+compares the restored account with `userId` before any sync and swaps logbooks
+if needed.
+
+And an empty screen now has an explanation: when the pull fails while the
+logbook is empty — at the gym, with no network, right after an account swap —
+the app says the sessions will arrive as soon as the network is back, on the
+screen you are actually looking at. The account panel's message cannot be seen
+from there, and an empty screen with no word reads as "everything is gone".
+
 **A reserve never crosses from one account to another.** The first four
 reserves live under keys shared by the whole device. On a phone where two
 accounts sign in, a reserve with no owner would be taken back by the next

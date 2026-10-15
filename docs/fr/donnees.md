@@ -282,6 +282,20 @@ annonce ce qui manque — pas la taille de la réserve. L'ancienne condition
 comparait la réserve au carnet entier : elle cachait le bouton dès que le carnet
 avait plus de séries au total, même quand une journée entière lui manquait.
 
+**Un carnet par compte, à chaque démarrage.** La règle « le carnet suit le
+compte, pas l'appareil » n'était appliquée qu'au moment de taper son mot de
+passe. Or une session dure des semaines : si celle qui est restaurée à
+l'ouverture n'est pas celle du carnet présent — `topset_sync` perdue, compte
+changé par un autre chemin — l'app synchronisait quand même, et le carnet de
+l'un partait sur le cloud de l'autre. `demarrer()` compare donc le compte
+restauré à `userId` avant toute synchro et échange les carnets si besoin.
+
+Et un écran vide a maintenant une explication : quand le tirage échoue alors
+que le carnet est vide — à la salle, sans réseau, juste après un échange de
+comptes — l'app dit « tes séances arriveront dès que le réseau revient » sur
+l'écran où l'on est. Le message du panneau des comptes ne se voit pas de là, et
+un écran vide sans un mot se lit « tout a disparu ».
+
 **Une réserve ne traverse jamais d'un compte à l'autre.** Les quatre premières
 réserves vivent sous des clés partagées par tout l'appareil. Sur un téléphone où
 deux comptes se connectent, une réserve sans propriétaire se ferait donc

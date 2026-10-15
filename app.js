@@ -9177,7 +9177,18 @@
             cacherLoader();
             msgCompte('ok', mot + (n ? ' ' + n + ' journee(s) recuperee(s) depuis ton compte.' : ''));
             majUI();
-          }).catch(function(e){ cacherLoader(); msgCompte('err', messageErreur(e)); });
+          }).catch(function(e){
+            cacherLoader();
+            msgCompte('err', messageErreur(e));
+            // Le carnet de ce compte-la n'est peut-etre que dans le cloud, et
+            // le cloud vient de ne pas repondre : l'ecran est alors vide, et
+            // un ecran vide sans explication se lit « tout a disparu ». Le
+            // message du panneau des comptes ne se voit pas d'ici : il faut le
+            // dire sur l'ecran ou on est. (15/10/2026)
+            if (!joursRemplis(state.sessions)){
+              showToast('Tes séances arriveront dès que le réseau revient');
+            }
+          });
       }
 
       // Meme compte qu'avant, mais le carnet a ete range a la deconnexion :
@@ -9209,7 +9220,12 @@
         .then(function(){ return tirer(true); }).then(function(n){
         msgCompte('ok', n ? n + ' journee(s) recuperee(s) depuis ton compte.' : 'Tout est deja a jour.');
         majUI();
-      }).catch(function(e){ msgCompte('err', messageErreur(e)); });
+      }).catch(function(e){
+        msgCompte('err', messageErreur(e));
+        if (!joursRemplis(state.sessions)){
+          showToast('Tes séances arriveront dès que le réseau revient');
+        }
+      });
     }
 
     // ------------------------------------------------------------------ UI
@@ -9326,6 +9342,13 @@
       client().then(function(){
         majUI();
         if (!user) return;
+        // Un carnet par compte, a CHAQUE demarrage et pas seulement au moment
+        // ou l'on tape son mot de passe. Une session dure des semaines : si
+        // celle qui est restauree n'est pas celle du carnet present — meta
+        // perdue, compte change par un autre chemin — il faut echanger les
+        // carnets avant toute synchro, sinon le carnet de l'un part sur le
+        // cloud de l'autre et les deux se melangent pour de bon. (15/10/2026)
+        if (lireMeta().userId && lireMeta().userId !== user.id) return apresConnexion();
         synchroniser();
         // Une session restauree est une ouverture comme une autre : c'est ici
         // que se date la visite, et ici qu'on apprend qu'on est administrateur.

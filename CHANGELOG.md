@@ -29,6 +29,19 @@ while it stays below `1.0.0`, breaking changes (in particular to the
   the day's title: **22 KB against 121 KB** for a 60-day test logbook. It is
   written on every save, including right after the logbook's own write failed,
   and it is never dropped to make room. A logbook can be rebuilt from it alone.
+- **One logbook per account, at every start — not only at sign-in.** Two
+  accounts on the same phone (15/10). The rule was only enforced when typing a
+  password, yet a session lasts weeks: if the session restored at startup was
+  not the one the logbook on screen belongs to, the app synced anyway and one
+  account's days left for the other's cloud. `demarrer()` now compares the
+  restored account with the stored `userId` before any sync, and swaps the
+  logbooks first. Proven in jsdom: on the previous commit the other account's
+  logbook was not parked at all on a cold start.
+- **An empty screen now says why.** When the pull fails while the logbook is
+  empty — at the gym, no network, right after an account swap — the toast says
+  the sessions will arrive as soon as the network is back. The account panel's
+  message cannot be seen from the logbook screen, and an empty screen with no
+  word reads as "everything is gone".
 - **A reserve never crosses from one account to another.** The repair above
   marks what it takes back for sync, so a reserve read from the wrong account
   would not merely be disclosed on a shared phone — it would be pushed to the
