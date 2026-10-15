@@ -29,6 +29,17 @@ while it stays below `1.0.0`, breaking changes (in particular to the
   the day's title: **22 KB against 121 KB** for a 60-day test logbook. It is
   written on every save, including right after the logbook's own write failed,
   and it is never dropped to make room. A logbook can be rebuilt from it alone.
+- **A reserve never crosses from one account to another.** The repair above
+  marks what it takes back for sync, so a reserve read from the wrong account
+  would not merely be disclosed on a shared phone — it would be pushed to the
+  wrong cloud account. The journal now carries its owner in its envelope and
+  refuses to be read by anyone else; the three raw reserves are filtered by a
+  device mark (`topset_proprio`) written alongside them, with the automatic
+  repair accepting only the current account's and the panel's button never
+  offering another account's; and switching accounts forgets those reserves
+  after parking the outgoing logbook, then empties the logbook's storage for
+  good — without which the next save copied the old logbook straight back into
+  the recovery copy. Proven in jsdom in both directions.
 - **A storage diagnostic to send in.** `DIAGNOSTIC DU STOCKAGE` in the `⇅` panel
   writes a readable report: installed version, what is on screen, one line per
   key with its size and what it holds (days, sets, date range), the total, and

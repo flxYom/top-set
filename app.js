@@ -1014,14 +1014,22 @@
   // utile, et on retente a chaque fois. Le carnet passe avant ses filets.
   var saveAlerte = false;
   function ecrireCarnet(futur){
-    try { localStorage.setItem(SAVE_KEY, futur); dernierEcrit = futur; saveAlerte = false; return true; }
-    catch(e){}
+    try {
+      localStorage.setItem(SAVE_KEY, futur);
+      dernierEcrit = futur; saveAlerte = false;
+      marquerProprio();
+      return true;
+    } catch(e){}
     // Ecrit en clair : CONFLITS_KEY est declare plus bas, dans la synchro.
     var jetables = ['topset_conflits', ILLISIBLE_KEY, SECOURS_KEY];
     for (var i = 0; i < jetables.length; i++){
       try { localStorage.removeItem(jetables[i]); } catch(e){}
-      try { localStorage.setItem(SAVE_KEY, futur); dernierEcrit = futur; saveAlerte = false; return true; }
-      catch(e2){}
+      try {
+        localStorage.setItem(SAVE_KEY, futur);
+        dernierEcrit = futur; saveAlerte = false;
+        marquerProprio();
+        return true;
+      } catch(e2){}
     }
     // Plus rien a jeter : le dire, une fois, au lieu de laisser croire que
     // c'est enregistre. Le carnet reste a l'ecran et l'export marche encore.
@@ -1059,6 +1067,48 @@
   // plus. Il ne remplace rien, il permet de reconstruire. (15/10/2026)
   var JOURNAL_KEY = 'topset_journal';
 
+  // A qui appartient ce qui est ecrit en ce moment : l'identifiant du compte
+  // connecte, ou « anon » sans compte. Les reserves vivent sous des cles
+  // partagees par tout l'appareil ; sur un telephone ou deux personnes se
+  // connectent, une reserve sans proprietaire se ferait reprendre par le
+  // compte suivant — et, pire, repartirait sur SON cloud, puisque la
+  // reparation marque ce qu'elle reprend. (15/10/2026)
+  function proprietaire(){
+    var id = (Sync && Sync.idCompte) ? Sync.idCompte() : null;
+    return id || 'anon';
+  }
+
+  // Changement de compte ou deconnexion : les reserves partagees decrivent le
+  // carnet qui s'en va, et le carnet qui s'en va est deja range sous la cle de
+  // son proprietaire. Les garder ici n'ajoute aucune securite et melange deux
+  // personnes : on les oublie.
+  // Les trois reserves brutes (copie de secours, JSON illisible, conflits de
+  // synchro) sont des textes de carnet : rien dedans ne dit a qui elles sont.
+  // C'est donc l'appareil qui le retient, dans une cle a part, ecrite en meme
+  // temps qu'elles.
+  var PROPRIO_KEY = 'topset_proprio';
+  function marquerProprio(){
+    try { localStorage.setItem(PROPRIO_KEY, proprietaire()); } catch(e){}
+  }
+  function proprioReserves(){
+    try { return localStorage.getItem(PROPRIO_KEY); } catch(e){ return null; }
+  }
+
+  function oublierReserves(){
+    [SECOURS_KEY, ILLISIBLE_KEY, 'topset_conflits', JOURNAL_KEY, PROPRIO_KEY].forEach(function(k){
+      try { localStorage.removeItem(k); } catch(e){}
+    });
+  }
+
+  // Vider le carnet volontairement, au changement de compte. Le garde-fou
+  // anti-carnet-vide vit dans saveLocal() : on ecrit donc directement, apres
+  // que le carnet partant a ete range. Sans ca, la sauvegarde suivante
+  // recopiait l'ancien carnet dans la copie de secours.
+  function viderStockageCarnet(){
+    ecrireCarnet('{}');
+    oublierReserves();
+  }
+
   function ecrireJournal(){
     var j = {};
     Object.keys(state.sessions).forEach(function(ds){
@@ -1074,17 +1124,26 @@
       if (!exos.length) return;
       j[ds] = day.titre ? { e:exos, t:day.titre } : { e:exos };
     });
-    try { localStorage.setItem(JOURNAL_KEY, JSON.stringify(j)); return true; }
-    catch(e){ return false; }
+    try {
+      localStorage.setItem(JOURNAL_KEY, JSON.stringify({ p:proprietaire(), j:j }));
+      marquerProprio();
+      return true;
+    } catch(e){ return false; }
   }
 
   function journalEnCarnet(){
     var brut = null;
     try { brut = localStorage.getItem(JOURNAL_KEY); } catch(e){ return null; }
     if (!brut) return null;
-    var j = null;
-    try { j = JSON.parse(brut); } catch(e2){ return null; }
-    if (!j || typeof j !== 'object') return null;
+    var enveloppe = null;
+    try { enveloppe = JSON.parse(brut); } catch(e2){ return null; }
+    if (!enveloppe || typeof enveloppe !== 'object') return null;
+    // Un journal n'est relu que par celui qui l'a ecrit. Un journal sans
+    // proprietaire vient d'une version precedente : on ne le croit que sans
+    // compte, et la premiere sauvegarde le reecrit signe.
+    var j = (enveloppe.j && typeof enveloppe.j === 'object') ? enveloppe.j : enveloppe;
+    var proprio = (typeof enveloppe.p === 'string') ? enveloppe.p : 'anon';
+    if (proprio !== proprietaire()) return null;
     var sessions = {};
     Object.keys(j).forEach(function(ds){
       if (!/^\d{4}-\d{2}-\d{2}$/.test(ds)) return;
@@ -1117,11 +1176,19 @@
   //   4. les carnets ranges par compte, quand plusieurs personnes se
   //      connectent sur le meme telephone.
   // (14/10/2026)
-  function reservesDeSecours(){
+  // `auto` : lecture faite par la reparation du demarrage, celle qui reprend
+  // sans rien demander et renvoie vers le compte. Elle ne prend que ce qui est
+  // prouve a nous. Le bouton du panneau, lui (auto absent), accepte aussi une
+  // reserve d'avant cette marque — c'est un geste, pas un automatisme — mais
+  // jamais une reserve marquee au nom d'un AUTRE compte.
+  function reservesDeSecours(auto){
     var out = [];
     function lire(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }
 
-    [SECOURS_KEY, ILLISIBLE_KEY].forEach(function(k){
+    var moi = proprietaire(), marque = proprioReserves();
+    var brutesOk = marque ? (marque === moi) : (!auto || moi === 'anon');
+
+    if (brutesOk) [SECOURS_KEY, ILLISIBLE_KEY].forEach(function(k){
       var raw = lire(k);
       if (raw) out.push({ cle:k, texte:raw });
     });
@@ -1129,7 +1196,7 @@
     var jrn = journalEnCarnet();
     if (jrn) out.push({ cle:'journal', texte:JSON.stringify({ sessions:jrn }) });
 
-    var brut = lire('topset_conflits');
+    var brut = brutesOk ? lire('topset_conflits') : null;
     if (brut){
       try {
         var c = JSON.parse(brut) || {}, jours = {};
@@ -1170,9 +1237,9 @@
   // sauvegarde a ajouter — ou null quand elles n'apportent rien. Une seule
   // des quatre pouvait contenir la journee perdue : on ne choisit donc pas
   // la « meilleure », on prend tout ce qui manque.
-  function copieDeSecours(){
+  function copieDeSecours(auto){
     var union = {}, custom = {}, aCustom = false;
-    reservesDeSecours().forEach(function(r){
+    reservesDeSecours(auto).forEach(function(r){
       var p = parseBackup(r.texte);
       if (p.error || !p.jours) return;
       union = TS.fusionnerEcritures(union, p.sessions, fabriqueId).sessions;
@@ -6111,7 +6178,7 @@
   // revient pas a chaque ouverture. (15/10/2026)
   function reparerAuDemarrage(){
     var c;
-    try { c = copieDeSecours(); } catch(e){ return; }
+    try { c = copieDeSecours(true); } catch(e){ return; }
     if (!c || (!c.jours && !c.series)) return;
     var p = parseBackup(c.texte);
     if (p.error || !p.jours) return;
@@ -9050,6 +9117,14 @@
     function viderCarnet(){
       state.sessions = {};
       customExercises = {};
+      // Le carnet partant vient d'etre range sous la cle de son proprietaire.
+      // Les reserves partagees, elles, le decrivent encore : les laisser ici
+      // les ferait reprendre par le compte qui arrive — et repartir sur SON
+      // cloud, puisque la reparation marque ce qu'elle reprend. On les oublie,
+      // et on vide le stockage du carnet pour de bon : sans ca la sauvegarde
+      // suivante recopierait l'ancien carnet dans la copie de secours.
+      // (15/10/2026)
+      viderStockageCarnet();
       saveLocal(); saveCustom(); rebuildLower(); populateDatalist();
       // La file d'envoi et le curseur appartiennent au carnet qu'on vient de
       // ranger : les garder ferait pousser les journees d'un compte vers

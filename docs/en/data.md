@@ -265,6 +265,24 @@ announces what is missing rather than the size of the reserve. The old condition
 compared the reserve to the whole logbook: it hid the button as soon as the
 logbook had more sets in total, even when a whole day was missing from it.
 
+**A reserve never crosses from one account to another.** The first four
+reserves live under keys shared by the whole device. On a phone where two
+accounts sign in, a reserve with no owner would be taken back by the next
+account — and pushed to **its** cloud, since the repair marks what it takes back
+for sync. Three locks:
+
+- the journal carries its owner in its envelope (`{p:'<id>', j:{…}}`) and
+  refuses to be read by anyone else;
+- the three raw reserves are logbook texts, where nothing says whose they are:
+  the device remembers it instead, in `topset_proprio`, written at the same time
+  as they are. The automatic repair only accepts what carries the current
+  account's mark; the panel's button also accepts a reserve from before that
+  mark — a deliberate gesture, not an automatism — but never one marked with
+  another account's name;
+- switching accounts **forgets** those reserves, after parking the outgoing
+  logbook under its owner's key, and empties the logbook's storage for good:
+  without that, the next save copied the old logbook into the recovery copy.
+
 **The storage diagnostic.** When a session is missing, the first question is not
 "which bug" but "what is actually on this phone". The `DIAGNOSTIC DU STOCKAGE`
 button in the `⇅` panel writes a readable report: the installed version (the

@@ -282,6 +282,25 @@ annonce ce qui manque — pas la taille de la réserve. L'ancienne condition
 comparait la réserve au carnet entier : elle cachait le bouton dès que le carnet
 avait plus de séries au total, même quand une journée entière lui manquait.
 
+**Une réserve ne traverse jamais d'un compte à l'autre.** Les quatre premières
+réserves vivent sous des clés partagées par tout l'appareil. Sur un téléphone où
+deux comptes se connectent, une réserve sans propriétaire se ferait donc
+reprendre par le compte suivant — et repartirait sur **son** cloud, puisque la
+réparation marque pour envoi ce qu'elle reprend. Trois verrous :
+
+- le journal porte le propriétaire dans son enveloppe (`{p:'<id>', j:{…}}`) et
+  se refuse à un autre ;
+- les trois réserves brutes sont des textes de carnet, où rien ne dit à qui
+  elles sont : c'est l'appareil qui le retient, dans `topset_proprio`, écrit en
+  même temps qu'elles. La réparation automatique n'accepte que ce qui porte la
+  marque du compte courant ; le bouton du panneau, lui, accepte aussi une
+  réserve d'avant cette marque — c'est un geste, pas un automatisme — mais
+  jamais une réserve marquée au nom d'un autre compte ;
+- un changement de compte **oublie** ces réserves, après avoir rangé le carnet
+  partant sous la clé de son propriétaire, et vide le stockage du carnet pour de
+  bon : sans ça la sauvegarde suivante recopiait l'ancien carnet dans la copie de
+  secours.
+
 **Le diagnostic du stockage.** Quand une séance manque, la première question
 n'est pas « quel bug » mais « qu'y a-t-il vraiment dans ce téléphone ». Le
 bouton `DIAGNOSTIC DU STOCKAGE` du panneau `⇅` écrit un rapport lisible :

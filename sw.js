@@ -10,7 +10,7 @@
 // depuis un cache reviendrait a afficher des seances perimees en croyant
 // etre a jour. Le hors-ligne des donnees, c'est localStorage, pas ici.
 
-var VERSION = 'topset-v52';
+var VERSION = 'topset-v53';
 var COQUILLE = VERSION + '-coquille';
 var COURANT  = VERSION + '-courant';
 

@@ -1252,10 +1252,10 @@ ok('on relit le stockage avant d ecrire, et on reprend ce qu une autre page a no
    && (SRC.match(/dernierEcrit = futur;/g) || []).length === 2
    && /dernierEcrit = raw;/.test(SRC));
 
-ok('les quatre reserves de secours sont relues, pas seulement deux',
-   /function reservesDeSecours\(\)\{/.test(SRC)
-   && /\[SECOURS_KEY, ILLISIBLE_KEY\]\.forEach/.test(SRC)
-   && /var brut = lire\('topset_conflits'\);/.test(SRC)
+ok('les cinq reserves de secours sont relues, pas seulement deux',
+   /function reservesDeSecours\(auto\)\{/.test(SRC)
+   && /if \(brutesOk\) \[SECOURS_KEY, ILLISIBLE_KEY\]\.forEach/.test(SRC)
+   && /var brut = brutesOk \? lire\('topset_conflits'\) : null;/.test(SRC)
    // Un seul carnet range est relu : le sien. Balayer « topset_carnet_* »
    // proposerait au compte suivant le carnet du precedent.
    && /var raw2 = lire\('topset_carnet_' \+ \(moi \|\| 'anon'\)\);/.test(SRC)
@@ -1296,6 +1296,24 @@ ok('un journal compact permet de reconstruire le carnet',
    && /var jrn = journalEnCarnet\(\);/.test(SRC)
    // Il n'est jamais jete pour faire de la place : c'est le dernier filet.
    && !/jetables = \[[^\]]*JOURNAL_KEY/.test(SRC));
+
+// Une reserve partagee par l'appareil ne doit jamais traverser d'un compte a
+// l'autre : la reparation marque ce qu'elle reprend, donc un carnet repris par
+// erreur repartirait sur le cloud du compte suivant.
+ok('les reserves partagees portent le nom de leur proprietaire',
+   /function proprietaire\(\)\{/.test(SRC)
+   && /var PROPRIO_KEY = 'topset_proprio';/.test(SRC)
+   // Le journal porte le sien dans son enveloppe, et se refuse a un autre.
+   && /JSON\.stringify\(\{ p:proprietaire\(\), j:j \}\)/.test(SRC)
+   && /if \(proprio !== proprietaire\(\)\) return null;/.test(SRC)
+   // Les trois reserves brutes sont filtrees par la marque de l'appareil ;
+   // la reparation automatique n'accepte que ce qui est prouve a nous.
+   && /var brutesOk = marque \? \(marque === moi\) : \(!auto \|\| moi === 'anon'\);/.test(SRC)
+   && /copieDeSecours\(true\)/.test(SRC)
+   // Et un changement de compte les oublie, apres avoir range le carnet.
+   && /function oublierReserves\(\)\{/.test(SRC)
+   && /\[SECOURS_KEY, ILLISIBLE_KEY, 'topset_conflits', JOURNAL_KEY, PROPRIO_KEY\]\.forEach/.test(SRC)
+   && /viderStockageCarnet\(\);\n      saveLocal\(\);/.test(SRC));
 
 ok('le diagnostic du stockage ne recopie ni secret ni carnet',
    /id="dataDiag"/.test(HTML)
