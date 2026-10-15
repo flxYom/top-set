@@ -1269,6 +1269,45 @@ ok('les quatre reserves de secours sont relues, pas seulement deux',
    && /if \(!bilan\.exercices && !bilan\.series && !bilan\.titres\) return null;/.test(SRC)
    && !/c\.series <= actuel\.series/.test(SRC));
 
+// ---------------------------------------------------------------------------
+// 34. Le carnet se repare tout seul au demarrage (15/10/2026)
+// « J'arrive a la salle, j'ai plus mon historique » — et chez l'autre compte
+// il est revenu plus tard tout seul. Une lecture peut rater sans rien
+// detruire ; l'app ne doit alors pas afficher un carnet vide.
+// ---------------------------------------------------------------------------
+ok('une lecture ratee ne laisse plus un carnet vide a l ecran',
+   /function reparerAuDemarrage\(\)\{/.test(SRC)
+   && /setTimeout\(reparerAuDemarrage, 60\);/.test(SRC)
+   // Elle ne fait qu'ajouter, et elle ne se declenche que s'il manque
+   // vraiment quelque chose : sinon le message reviendrait a chaque fois.
+   && /if \(!r\.bilan\.jours && !r\.bilan\.exercices && !r\.bilan\.series\) return;/.test(SRC)
+   && /TS\.fusionnerEcritures\(state\.sessions, p\.sessions, fabriqueId\)/.test(SRC)
+   && /showToast\('Carnet réparé : '/.test(SRC));
+
+ok('un journal compact permet de reconstruire le carnet',
+   /var JOURNAL_KEY = 'topset_journal';/.test(SRC)
+   && /function ecrireJournal\(\)\{/.test(SRC)
+   && /function journalEnCarnet\(\)\{/.test(SRC)
+   // Ecrit a chaque sauvegarde, meme quand celle du carnet a echoue : c'est
+   // tout l'interet d'une reserve quatre fois plus petite.
+   && /ecrireCarnet\(futur\);\n      \/\/ Meme si l'ecriture du carnet a echoue/.test(SRC)
+   && /ecrireJournal\(\);/.test(SRC)
+   // Et il est relu comme les autres reserves.
+   && /var jrn = journalEnCarnet\(\);/.test(SRC)
+   // Il n'est jamais jete pour faire de la place : c'est le dernier filet.
+   && !/jetables = \[[^\]]*JOURNAL_KEY/.test(SRC));
+
+ok('le diagnostic du stockage ne recopie ni secret ni carnet',
+   /id="dataDiag"/.test(HTML)
+   && /function diagnosticTexte\(version\)\{/.test(SRC)
+   && /function estSecret\(cle\)\{/.test(SRC)
+   && /\^sb-\|token\|auth\|password\|secret/.test(SRC)
+   && /\(session de compte, non detaillee\)/.test(SRC)
+   // La place restante se mesure en ecrivant, donc la cle d'essai doit
+   // toujours etre retiree, echec compris.
+   && /var CLE = 'topset_essai_place'/.test(SRC)
+   && /try \{ localStorage\.removeItem\(CLE\); \} catch\(e2\)\{\}/.test(SRC));
+
 ok('un compte peut redemander son carnet entier',
    /id="dataCloud"/.test(HTML)
    && /connecte:function\(\)\{ return !!user; \}/.test(SRC)

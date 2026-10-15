@@ -493,5 +493,13 @@ avant de le faire.
   gardaient des séances sur le téléphone, deux seulement étaient relues : les
   deux autres étaient donc écrites pour rien. Une réserve qu'aucun écran ne lit
   n'est pas un filet, c'est de la place perdue.
+- **Une lecture ratée ne s'affiche jamais comme un carnet vide** (15/10). Un
+  écran vide est une affirmation : « tu n'as rien ». L'app n'a pas le droit de
+  la faire quand elle n'en sait rien. Au démarrage elle reprend d'elle-même ce
+  qui manque, puis le dit — réparer d'abord, expliquer ensuite, jamais demander.
+- **Un rapport d'état se lit sans rien connaître, et ne recopie rien** (15/10).
+  Le diagnostic du stockage donne des tailles, des comptes et des dates ; jamais
+  une valeur, jamais une clé de session. Un rapport qu'on peut envoyer sans
+  réfléchir est un rapport qu'on envoie.
 - **Description de l'interface** : [`DESIGN.md`](DESIGN.md), extrait du code le
   18/09. Ce fichier-ci garde les décisions et fait foi en cas d'écart.

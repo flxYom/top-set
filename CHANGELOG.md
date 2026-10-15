@@ -9,6 +9,33 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ## [Unreleased]
 
+### Added
+
+- **The logbook repairs itself at startup.** "I get to the gym and my history is
+  gone" — and on the other account it came back on its own later (15/10). So
+  nothing had been destroyed: the *read* had failed. A read can fail without
+  losing anything — `getItem` throwing, truncated JSON, a key iOS has emptied, a
+  logbook parked by mistake — and the app would then show an empty logbook while
+  the sessions sat right beside it. Sixty milliseconds after the first render,
+  `reparerAuDemarrage()` now compares the loaded logbook with every reserve and
+  takes back whatever is missing, without asking, saying so in a toast. Proven
+  in jsdom on four shapes of failure (key gone, truncated JSON, logbook cut down
+  to one day, day only in the sync conflicts): the previous commit showed an
+  empty or amputated logbook in all four, this one brings it back by itself —
+  and still never touches another account's parked logbook.
+- **A compact journal, the fifth reserve.** The other four are copies of the
+  whole logbook, so when storage fills up they all fail at once for the same
+  reason. `topset_journal` keeps only the exercise name, weight, reps, RPE and
+  the day's title: **22 KB against 121 KB** for a 60-day test logbook. It is
+  written on every save, including right after the logbook's own write failed,
+  and it is never dropped to make room. A logbook can be rebuilt from it alone.
+- **A storage diagnostic to send in.** `DIAGNOSTIC DU STOCKAGE` in the `⇅` panel
+  writes a readable report: installed version, what is on screen, one line per
+  key with its size and what it holds (days, sets, date range), the total, and
+  the room left — measured by writing in 64 KB steps into a probe key that is
+  always removed afterwards. No value is copied into it: an account session key
+  appears by name only, and a logbook has no business travelling in a report.
+
 ### Fixed
 
 - **A fourth way to lose a session: the app's own second page.** « I did

@@ -67,8 +67,11 @@ c'est exactement à ça que sert ce repo pour l'instant.
   appareil à l'autre.
 - **Ne pas perdre une séance.** Une seule clé de stockage pour tout l'appareil :
   une page de l'app relit donc le carnet avant d'écrire, pour ne pas effacer ce
-  qu'une autre vient de noter. Quatre réserves gardent ce qui aurait pu se
-  perdre, et le panneau `⇅` propose de récupérer ce qui manque.
+  qu'une autre vient de noter. Cinq réserves gardent ce qui aurait pu se perdre,
+  dont un journal compact qui passe encore quand le stockage est presque plein,
+  et l'app reprend d'elle-même au démarrage les journées qui manquent à l'écran.
+  Le panneau `⇅` écrit aussi un diagnostic du stockage, sans recopier ni données
+  ni secrets.
 - **Être suivi.** Une messagerie avec l'équipe, et un lien coach ↔ coaché : le
   coach lit le carnet, en lecture seule, après accord des deux côtés.
 - **Apprendre.** Des pages sourcées sur les notions, l'entraînement, les

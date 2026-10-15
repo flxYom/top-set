@@ -66,8 +66,10 @@ repository is for right now.
   export and import. An optional account syncs the logbook across devices.
 - **Never lose a session.** One storage key for the whole device, so a page of
   the app re-reads the logbook before writing, rather than erasing what another
-  page has just noted. Four reserves keep whatever could have been lost, and the
-  `⇅` panel offers to recover what is missing.
+  page has just noted. Five reserves keep whatever could have been lost —
+  including a compact journal that still fits when storage is nearly full — and
+  the app takes missing days back by itself at startup. The `⇅` panel also
+  writes a storage diagnostic, copying neither data nor secrets.
 - **Get coached.** Messaging with the team, and a coach ↔ client link: the coach
   reads the logbook, read-only, once both sides agree.
 - **Learn.** Sourced pages on concepts, training and exercises, plus tools (1RM

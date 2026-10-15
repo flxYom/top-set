@@ -999,6 +999,9 @@
         try { localStorage.setItem(SECOURS_KEY, actuel); } catch(e){}
       }
       ecrireCarnet(futur);
+      // Meme si l'ecriture du carnet a echoue : le journal est plus petit,
+      // c'est peut-etre le seul qui passe encore.
+      ecrireJournal();
     }catch(e){}
   }
 
@@ -1048,6 +1051,62 @@
     }
   }
 
+  // Cinquieme reserve, et la seule qui ne soit pas une copie du carnet : un
+  // journal compact — nom de l'exercice, poids, reps, RPE, titre du jour —
+  // sans identifiants, sans repos, sans mise en forme. Il pese trois a quatre
+  // fois moins que le carnet, donc il passe encore quand le stockage est
+  // presque plein : c'est exactement le moment ou le carnet, lui, ne passe
+  // plus. Il ne remplace rien, il permet de reconstruire. (15/10/2026)
+  var JOURNAL_KEY = 'topset_journal';
+
+  function ecrireJournal(){
+    var j = {};
+    Object.keys(state.sessions).forEach(function(ds){
+      var day = state.sessions[ds];
+      var exos = ((day && day.exercises) || []).map(function(e){
+        var series = (e.series || []).filter(serieRemplie).map(function(s){
+          return [ (typeof s.poids === 'number' ? s.poids : null),
+                   String(s.reps == null ? '' : s.reps),
+                   (typeof s.rpe === 'number' ? s.rpe : null) ];
+        });
+        return series.length ? [e.nom || '', series] : null;
+      }).filter(function(x){ return x; });
+      if (!exos.length) return;
+      j[ds] = day.titre ? { e:exos, t:day.titre } : { e:exos };
+    });
+    try { localStorage.setItem(JOURNAL_KEY, JSON.stringify(j)); return true; }
+    catch(e){ return false; }
+  }
+
+  function journalEnCarnet(){
+    var brut = null;
+    try { brut = localStorage.getItem(JOURNAL_KEY); } catch(e){ return null; }
+    if (!brut) return null;
+    var j = null;
+    try { j = JSON.parse(brut); } catch(e2){ return null; }
+    if (!j || typeof j !== 'object') return null;
+    var sessions = {};
+    Object.keys(j).forEach(function(ds){
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(ds)) return;
+      var l = j[ds];
+      if (!l || !Array.isArray(l.e)) return;
+      var exercises = l.e.map(function(x){
+        if (!Array.isArray(x)) return null;
+        var series = (Array.isArray(x[1]) ? x[1] : []).map(function(s){
+          s = Array.isArray(s) ? s : [];
+          return { poids:(typeof s[0] === 'number' ? s[0] : null),
+                   reps:String(s[1] == null ? '' : s[1]),
+                   rpe:(typeof s[2] === 'number' ? s[2] : null) };
+        });
+        return series.length ? { nom:String(x[0] || ''), series:series } : null;
+      }).filter(function(x){ return x; });
+      if (!exercises.length) return;
+      sessions[ds] = { date:ds, exercises:exercises };
+      if (typeof l.t === 'string' && l.t) sessions[ds].titre = l.t;
+    });
+    return Object.keys(sessions).length ? sessions : null;
+  }
+
   // Toutes les reserves ou une seance peut encore dormir sur ce telephone, en
   // plus du carnet lui-meme. Il y en a quatre, et le bouton de recuperation
   // n'en relisait que deux — les deux autres etaient donc ecrites pour rien :
@@ -1066,6 +1125,9 @@
       var raw = lire(k);
       if (raw) out.push({ cle:k, texte:raw });
     });
+
+    var jrn = journalEnCarnet();
+    if (jrn) out.push({ cle:'journal', texte:JSON.stringify({ sessions:jrn }) });
 
     var brut = lire('topset_conflits');
     if (brut){
@@ -6030,6 +6092,46 @@
     state.loading = false;
     renderAll();
     Sync.demarrer();
+    // Apres le premier rendu : l'ecran ne doit pas attendre une relecture de
+    // toutes les reserves, et la reparation se voit tres bien une demi-
+    // seconde plus tard.
+    setTimeout(reparerAuDemarrage, 60);
+  }
+
+  // Le carnet affiche doit etre le plus complet que ce telephone connaisse.
+  // Une lecture peut rater sans rien detruire : `getItem` qui jette, un JSON
+  // tronque, une cle qu'iOS a videe, un carnet range a tort. L'app affichait
+  // alors un carnet vide alors que les seances etaient toujours la, a cote —
+  // « j'ai plus mon historique », puis il revient tout seul plus tard.
+  //
+  // On ne demande donc plus rien dans ce cas : au demarrage, si une reserve
+  // contient des journees que le carnet charge n'a pas, on les reprend tout
+  // de suite et on le dit. Rien n'est ecrase, la fusion ne fait qu'ajouter,
+  // et une fois reparee la reserve n'apporte plus rien : le message ne
+  // revient pas a chaque ouverture. (15/10/2026)
+  function reparerAuDemarrage(){
+    var c;
+    try { c = copieDeSecours(); } catch(e){ return; }
+    if (!c || (!c.jours && !c.series)) return;
+    var p = parseBackup(c.texte);
+    if (p.error || !p.jours) return;
+    var r;
+    try { r = TS.fusionnerEcritures(state.sessions, p.sessions, fabriqueId); }
+    catch(e2){ return; }
+    if (!r.bilan.jours && !r.bilan.exercices && !r.bilan.series) return;
+    state.sessions = r.sessions;
+    if (p.customExercises){
+      var neufs = customAbsents(p.customExercises);
+      neufs.forEach(function(k){ customExercises[k] = p.customExercises[k]; });
+      if (neufs.length){ saveCustom(); rebuildLower(); populateDatalist(); }
+    }
+    saveLocal();
+    r.bilan.dates.forEach(function(ds){ if (Sync) Sync.marquerSale(ds); });
+    renderAll();
+    var quoi = r.bilan.jours
+      ? r.bilan.jours + (r.bilan.jours > 1 ? ' journées' : ' journée')
+      : r.bilan.series + (r.bilan.series > 1 ? ' séries' : ' série');
+    showToast('Carnet réparé : ' + quoi + ' retrouvée' + (r.bilan.jours > 1 || r.bilan.series > 1 ? 's' : ''));
   }
 
 
@@ -7824,6 +7926,134 @@
       sheetMsg('err', "Le t\u00e9l\u00e9chargement a echoue. Utilise \u00ab COPIER LE TEXTE \u00bb.");
     }
   });
+
+  // ---------- diagnostic du stockage ----------
+  // Quand une seance manque, la premiere question n'est pas « quel bug » mais
+  // « qu'y a-t-il vraiment dans ce telephone ». Ce rapport repond a ca, et il
+  // se lit sans rien connaitre : une ligne par cle, ce qu'elle contient, et
+  // la place qui reste. Aucune valeur n'y est recopiee — une cle de session
+  // de compte est un secret, et un carnet n'a pas a voyager dans un rapport :
+  // on ne donne que des comptes et des dates. (15/10/2026)
+  function estSecret(cle){
+    return /^sb-|token|auth|password|secret/i.test(cle);
+  }
+
+  function resumeValeur(cle, brut){
+    var p = parseBackup(brut);
+    if (!p.error && p.jours){
+      var dates = Object.keys(p.sessions).filter(function(ds){ return compterJour(p.sessions[ds]) > 0; }).sort();
+      return p.jours + ' journee(s), ' + p.series + ' serie(s), ' +
+             dates[0] + ' -> ' + dates[dates.length - 1];
+    }
+    try {
+      var o = JSON.parse(brut);
+      if (o && typeof o === 'object'){
+        var cles = Object.keys(o);
+        if (cle === JOURNAL_KEY){
+          var js = journalEnCarnet() || {}, nj = Object.keys(js).sort();
+          return nj.length + ' journee(s) en journal' +
+                 (nj.length ? ', ' + nj[0] + ' -> ' + nj[nj.length - 1] : '');
+        }
+        // La file d'attente de la synchro : ce qui n'est pas encore parti.
+        if (cle === 'topset_sync'){
+          return (Object.keys(o.sales || {}).length) + ' journee(s) en attente d envoi, curseur ' +
+                 (o.depuis || 'aucun') + (o.userId ? ', compte ' + String(o.userId).slice(0, 8) + '…' : ', sans compte');
+        }
+        return cles.length + ' entree(s)';
+      }
+    } catch(e){ return 'illisible (' + brut.length + ' caracteres)'; }
+    return brut.length + ' caracteres';
+  }
+
+  // Combien de place reste-t-il ? On ecrit par paliers dans une cle a nous,
+  // et on l'efface toujours — y compris si l'ecriture echoue en cours de
+  // route. Borne a 4 Mo pour ne pas remplir le telephone a sa place.
+  function placeRestante(){
+    var CLE = 'topset_essai_place', bloc = new Array(64 * 1024 + 1).join('x'), ko = 0;
+    try {
+      for (var i = 0; i < 64; i++){
+        localStorage.setItem(CLE, new Array(i + 2).join(bloc));
+        ko = (i + 1) * 64;
+      }
+    } catch(e){}
+    try { localStorage.removeItem(CLE); } catch(e2){}
+    return ko >= 4096 ? 'au moins 4 Mo' : 'environ ' + ko + ' Ko';
+  }
+
+  // Le nom du cache du service worker dit quelle version de l'app tourne
+  // vraiment sur ce telephone : la premiere chose a savoir quand un correctif
+  // est parti mais que le probleme revient.
+  function versionInstallee(){
+    if (!window.caches || !caches.keys) return Promise.resolve('inconnue');
+    return caches.keys().then(function(l){ return l.join(', ') || 'aucun cache'; })
+      .catch(function(){ return 'inconnue'; });
+  }
+
+  function diagnosticTexte(version){
+    var l = [], total = 0, n = 0;
+    var s = backupStats();
+    l.push('Top Set — diagnostic du stockage');
+    l.push('Le ' + new Date().toLocaleString('fr-FR'));
+    l.push('Version installee : ' + (version || 'inconnue'));
+    l.push('Navigateur : ' + navigator.userAgent);
+    l.push('Application installee : ' + (window.matchMedia && matchMedia('(display-mode: standalone)').matches ? 'oui' : 'non'));
+    l.push('');
+    l.push('A L ECRAN : ' + s.jours + ' journee(s), ' + s.series + ' serie(s), ' + s.ko + ' Ko');
+    var c = null;
+    try { c = copieDeSecours(); } catch(e){}
+    l.push('A RECUPERER : ' + (c ? c.jours + ' journee(s), ' + c.series + ' serie(s)' : 'rien'));
+    l.push('');
+    l.push('CLES PRESENTES');
+    try {
+      for (var i = 0; i < localStorage.length; i++){
+        var k = localStorage.key(i);
+        if (k == null) continue;
+        var brut = '';
+        try { brut = localStorage.getItem(k) || ''; } catch(e2){ brut = ''; }
+        n++;
+        total += brut.length;
+        var taille = (brut.length / 1024).toFixed(1) + ' Ko';
+        l.push('- ' + k + '  ' + taille + '  ' +
+               (estSecret(k) ? '(session de compte, non detaillee)' : resumeValeur(k, brut)));
+      }
+    } catch(e3){ l.push('(la liste des cles a echoue : ' + e3 + ')'); }
+    l.push('');
+    l.push('TOTAL : ' + n + ' cle(s), ' + (total / 1024).toFixed(1) + ' Ko');
+    l.push('PLACE LIBRE : ' + placeRestante());
+    return l.join('\n');
+  }
+
+  document.getElementById('dataDiag').addEventListener('click', function(){
+    sheetMsg('warn', 'Diagnostic en cours…');
+    versionInstallee().then(ecrireDiagnostic, function(){ ecrireDiagnostic('inconnue'); });
+  });
+
+  function ecrireDiagnostic(version){
+    var txt;
+    try { txt = diagnosticTexte(version); }
+    catch(e){ sheetMsg('err', 'Le diagnostic a echoue : ' + e); return; }
+    var nom = 'topset-diagnostic-' + toDateStr(new Date()) + '.txt';
+    var fait = false;
+    if (navigator.share && navigator.canShare){
+      try {
+        var f = new File([txt], nom, { type:'text/plain' });
+        if (navigator.canShare({ files:[f] })){
+          navigator.share({ files:[f], title:'Diagnostic Top Set' });
+          fait = true;
+        }
+      } catch(e2){}
+    }
+    if (!fait){
+      try { telechargerTexte(txt, nom, 'text/plain;charset=utf-8'); fait = true; } catch(e3){}
+    }
+    // Le texte reste visible et selectionnable : un telechargement bloque ne
+    // doit pas laisser quelqu'un sans rien a envoyer.
+    document.getElementById('dataPaste').value = txt;
+    disarmImport();
+    sheetMsg('ok', fait
+      ? 'Diagnostic prêt (il est aussi dans le cadre au-dessus, sélectionnable).'
+      : 'Diagnostic dans le cadre au-dessus : sélectionne tout et copie-le.');
+  }
 
   document.getElementById('dataCsv').addEventListener('click', function(){
     try {

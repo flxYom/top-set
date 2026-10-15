@@ -222,15 +222,38 @@ that single call would erase everything, permanently and silently. So:
   a session **missing from the loaded logbook**. Recovering means importing that
   reserve: what is missing comes back, what is there does not move.
 
-There are **four reserves** on the phone, and until 14/10/2026 the button read
-only two of them — so the other two were being written for nothing:
+**The logbook repairs itself at startup** (15/10/2026). A read can fail without
+destroying anything: `getItem` throwing, truncated JSON, a key iOS has emptied.
+The app then showed an empty logbook although the sessions were still right
+there — "I get to the gym and my history is gone", and then it comes back on its
+own at the next reload. Sixty milliseconds after the first render,
+`reparerAuDemarrage()` compares the loaded logbook with the reserves: if one
+holds missing days, they are taken back immediately, without asking, and a
+message says so. The merge never adds what is already there, so the message does
+not come back next time.
+
+There are **five reserves** on the phone, and until 14/10/2026 the button read
+only two of them — so the others were being written for nothing:
 
 1. the copy from before the last save (`musculation_sessions_secours`);
 2. the text set aside when the logbook was unreadable (`…_illisible`);
 3. the losing versions of a sync conflict (`topset_conflits`, a `date@time` →
    day map: per date, the one with the most sets is kept);
 4. **its own** logbook parked per account — `topset_carnet_<their id>`, or
-   `topset_carnet_anon` when nobody is signed in.
+   `topset_carnet_anon` when nobody is signed in;
+5. the **compact journal** (`topset_journal`), the only reserve that is not a
+   copy of the logbook.
+
+**The compact journal.** The first four reserves are copies of the whole
+logbook: when storage fills up they all fail at the same time, for the same
+reason. The journal keeps only the exercise name, weight, reps, RPE and the
+day's title — no ids, no rest times, no formatting. Measured on a 60-day test
+logbook: **121 KB for the logbook, 22 KB for the journal**. So it still goes
+through when the logbook no longer does, which is exactly the moment that
+worries us. It is written on every save, including right after the logbook's own
+write failed, and it is never dropped to make room. The logbook can be rebuilt
+from it alone; what it does not carry (comments, rest times, superset grouping)
+does not come back.
 
 The fourth reserve is only read under its own key, never by scanning
 `topset_carnet_*`: a parked logbook is only recoverable by its owner, and
@@ -241,6 +264,17 @@ The button offers the **union** of what those four hold in addition, and
 announces what is missing rather than the size of the reserve. The old condition
 compared the reserve to the whole logbook: it hid the button as soon as the
 logbook had more sets in total, even when a whole day was missing from it.
+
+**The storage diagnostic.** When a session is missing, the first question is not
+"which bug" but "what is actually on this phone". The `DIAGNOSTIC DU STOCKAGE`
+button in the `⇅` panel writes a readable report: the installed version (the
+service worker's cache name), what is on screen, one line per key with its size
+and what it holds — days, sets, date range — the total, and the room left,
+measured by writing in 64 KB steps into a probe key that is always removed
+afterwards. **No value is copied into it**: an account session key is a secret
+(only its name appears), and a logbook has no business travelling inside a
+report. The report goes out through the native share sheet, otherwise as a
+download, and stays in the text box so it can be copied by hand.
 
 For an account, a `TOUT RETÉLÉCHARGER DE MON COMPTE` button asks for the whole
 logbook again without the new-since cursor: ordinary sync only asks for what

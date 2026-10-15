@@ -238,15 +238,39 @@ Donc :
   réserve contient une séance **qui manque au carnet chargé**. Récupérer, c'est
   importer cette réserve : ce qui manque revient, ce qui est là ne bouge pas.
 
-Il y a **quatre réserves** sur le téléphone, et le bouton n'en relisait que deux
-jusqu'au 14/10/2026 — les deux autres étaient donc écrites pour rien :
+**Le carnet se répare tout seul au démarrage** (15/10/2026). Une lecture peut
+rater sans rien détruire : `getItem` qui lève, un JSON tronqué, une clé qu'iOS a
+vidée. L'app affichait alors un carnet vide alors que les séances étaient
+toujours là, à côté — « j'arrive à la salle, j'ai plus mon historique », puis il
+revient tout seul plus tard, au rechargement suivant. Soixante millisecondes
+après le premier rendu, `reparerAuDemarrage()` compare donc le carnet chargé aux
+réserves : si l'une contient des journées qui manquent, elles sont reprises
+immédiatement, sans rien demander, et un message le dit. La fusion n'ajoute
+jamais rien qui soit déjà là, donc le message ne revient pas à l'ouverture
+suivante.
+
+Il y a **cinq réserves** sur le téléphone, et le bouton n'en relisait que deux
+jusqu'au 14/10/2026 — les autres étaient donc écrites pour rien :
 
 1. la copie d'avant la dernière sauvegarde (`musculation_sessions_secours`) ;
 2. le texte mis de côté quand le carnet était illisible (`…_illisible`) ;
 3. les versions perdantes d'un conflit de synchro (`topset_conflits`, une carte
    `date@heure` → journée : on garde, par date, celle qui a le plus de séries) ;
 4. **son** carnet rangé par compte — `topset_carnet_<son id>`, ou
-   `topset_carnet_anon` quand personne n'est connecté.
+   `topset_carnet_anon` quand personne n'est connecté ;
+5. le **journal compact** (`topset_journal`), seule réserve qui ne soit pas une
+   copie du carnet.
+
+**Le journal compact.** Les quatre premières réserves sont des copies du carnet
+entier : quand le stockage se remplit, elles échouent toutes en même temps, pour
+la même raison. Le journal ne garde que le nom de l'exercice, le poids, les
+reps, le RPE et le titre du jour — sans identifiants, sans repos, sans mise en
+forme. Mesuré sur un carnet d'essai de soixante jours : **121 Ko pour le carnet,
+22 Ko pour le journal**. Il passe donc encore quand le carnet ne passe plus, et
+c'est exactement ce moment-là qu'on craint. Il s'écrit à chaque sauvegarde,
+y compris quand celle du carnet vient d'échouer, et il n'est jamais jeté pour
+faire de la place. Le carnet se reconstruit à partir de lui seul ; ce qu'il ne
+porte pas (commentaires, temps de repos, ordre des blocs) ne revient pas.
 
 La quatrième réserve ne se lit que sous sa propre clé, jamais en balayant
 `topset_carnet_*` : un carnet rangé n'est retrouvable que par son propriétaire,
@@ -257,6 +281,18 @@ Le bouton propose l'**union** de ce que ces quatre réserves ont en plus, et
 annonce ce qui manque — pas la taille de la réserve. L'ancienne condition
 comparait la réserve au carnet entier : elle cachait le bouton dès que le carnet
 avait plus de séries au total, même quand une journée entière lui manquait.
+
+**Le diagnostic du stockage.** Quand une séance manque, la première question
+n'est pas « quel bug » mais « qu'y a-t-il vraiment dans ce téléphone ». Le
+bouton `DIAGNOSTIC DU STOCKAGE` du panneau `⇅` écrit un rapport lisible :
+version installée (le nom du cache du service worker), ce qu'il y a à l'écran,
+une ligne par clé avec sa taille et ce qu'elle contient — journées, séries,
+plage de dates — le total, et la place qui reste, mesurée en écrivant par
+paliers de 64 Ko dans une clé d'essai toujours retirée ensuite. **Aucune valeur
+n'y est recopiée** : une clé de session de compte est un secret (elle n'apparaît
+que par son nom), et un carnet n'a pas à voyager dans un rapport. Le rapport
+part par le partage natif, sinon en téléchargement, et reste dans le cadre de
+texte pour pouvoir être copié à la main.
 
 Et pour un compte, un bouton `TOUT RETÉLÉCHARGER DE MON COMPTE` redemande le
 carnet complet sans le curseur des nouveautés : la synchro ordinaire ne
