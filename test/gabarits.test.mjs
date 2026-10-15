@@ -1127,7 +1127,7 @@ ok('le cloud ne remplace jamais une journee plus complete',
 // et le catch avalait tout en silence.
 ok('stockage plein : on fait de la place, puis on le dit',
    /function ecrireCarnet\(futur\)\{/.test(SRC)
-   && /var jetables = \['topset_conflits', ILLISIBLE_KEY, SECOURS_KEY\];/.test(SRC)
+   && /var jetables = \[CONFLITS_KEY, ILLISIBLE_KEY, SECOURS_KEY\];/.test(SRC)
    && SRC.indexOf('Stockage du téléphone plein : exporte ton carnet') > -1
    && /ecrireCarnet\(futur\);/.test(SRC));
 ok('la reserve des conflits ne grossit pas sans fin',
@@ -1252,13 +1252,27 @@ ok('on relit le stockage avant d ecrire, et on reprend ce qu une autre page a no
    && (SRC.match(/dernierEcrit = futur;/g) || []).length === 2
    && /dernierEcrit = raw;/.test(SRC));
 
+// Le piege trouve en nettoyant : « moi » etait declare DEUX fois dans
+// reservesDeSecours(), et la seconde valait null sans compte — le carnet
+// range anonyme n'etait donc jamais relu.
+ok('le proprietaire n est determine qu une seule fois par lecture',
+   (SRC.match(/var moi = proprietaire\(\), marque = proprioReserves\(\);/g) || []).length === 1
+   && !/var moi = \(Sync && Sync\.idCompte\)/.test(SRC));
+
+ok('chaque cle de stockage est declaree une seule fois',
+   (SRC.match(/'topset_conflits'/g) || []).length === 1
+   && (SRC.match(/'topset_carnet_'/g) || []).length === 1
+   && /var CONFLITS_KEY = 'topset_conflits';/.test(SRC)
+   && /function clePark\(id\)\{ return 'topset_carnet_' \+ id; \}/.test(SRC)
+   && /var raw2 = lire\(clePark\(moi\)\);/.test(SRC));
+
 ok('les cinq reserves de secours sont relues, pas seulement deux',
    /function reservesDeSecours\(auto\)\{/.test(SRC)
    && /if \(brutesOk\) \[SECOURS_KEY, ILLISIBLE_KEY\]\.forEach/.test(SRC)
-   && /var brut = brutesOk \? lire\('topset_conflits'\) : null;/.test(SRC)
+   && /var brut = brutesOk \? lire\(CONFLITS_KEY\) : null;/.test(SRC)
    // Un seul carnet range est relu : le sien. Balayer « topset_carnet_* »
    // proposerait au compte suivant le carnet du precedent.
-   && /var raw2 = lire\('topset_carnet_' \+ \(moi \|\| 'anon'\)\);/.test(SRC)
+   && /var raw2 = lire\(clePark\(moi\)\);/.test(SRC)
    && /idCompte:function\(\)\{ return user \? user\.id : null; \}/.test(SRC)
    && !/indexOf\('topset_carnet_'\)/.test(SRC)
    // On propose ce qui MANQUE au carnet d'ici, pas la plus grosse reserve :
@@ -1338,7 +1352,7 @@ ok('les reserves partagees portent le nom de leur proprietaire',
    && /copieDeSecours\(true\)/.test(SRC)
    // Et un changement de compte les oublie, apres avoir range le carnet.
    && /function oublierReserves\(\)\{/.test(SRC)
-   && /\[SECOURS_KEY, ILLISIBLE_KEY, 'topset_conflits', JOURNAL_KEY, PROPRIO_KEY\]\.forEach/.test(SRC)
+   && /\[SECOURS_KEY, ILLISIBLE_KEY, CONFLITS_KEY, JOURNAL_KEY, PROPRIO_KEY\]\.forEach/.test(SRC)
    && /viderStockageCarnet\(\);\n      saveLocal\(\);/.test(SRC));
 
 // ---------------------------------------------------------------------------
@@ -1370,7 +1384,12 @@ ok('la premiere synchro de chaque ouverture redemande tout le carnet',
    && /majMeta\(function\(m\)\{ if \(m\.sales\) delete m\.sales\[ds\]; \}\);/.test(SRC));
 
 ok('un stockage silencieux n efface pas les noms memorises',
-   /if \(actuel && actuel !== '\{\}' && futur === '\{\}'\) return;/.test(SRC)
+   // Le critere est « la liste n'a jamais ete lue », pas « elle devient
+   // vide » : corriger une faute de frappe retire un nom, et ce peut etre le
+   // dernier.
+   /if \(!customCharge && futur === '\{\}'\) return;/.test(SRC)
+   && /var customCharge = false;/.test(SRC)
+   && /customCharge = true;/.test(SRC)
    && /function oublierCustom\(\)\{/.test(SRC)
    && /ecrireCarnet\('\{\}'\);\n    oublierCustom\(\);/.test(SRC));
 

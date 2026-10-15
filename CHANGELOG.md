@@ -45,8 +45,16 @@ while it stays below `1.0.0`, breaking changes (in particular to the
   sets are kept here.
 - **Remembered names survive a silent storage.** `topset_custom_exercises` falls
   back to `{}` when its read fails, and the first save then overwrote every
-  name, group and alias. An empty list no longer replaces a full one; switching
-  accounts clears the key explicitly.
+  name, group and alias. The refusal is keyed on "the list was never read", not
+  on "the list became empty" — correcting a typo really does remove a name, and
+  it can be the last one. A missing key is an answer; an unreadable key is not.
+  Switching accounts clears the key explicitly.
+- **Clean-up of what today's fixes left behind.** The conflicts key was written
+  out five times and the parked-logbook key twice: one declaration each now, and
+  a guard keeps it that way. That sweep found a real bug: `reservesDeSecours()`
+  declared `moi` **twice**, and the second one was `null` with no account — so
+  the anonymous parked logbook was never read back. The owner mark is also only
+  written when it changes, instead of once per noted set.
 - **A read-only server audit.** `supabase/audit-seances.txt` counts, per
   account, the days, exercises and sets on the server, lists the **empty** days
   with the timestamp of the write that emptied them, and shows everything
@@ -234,8 +242,16 @@ while it stays below `1.0.0`, breaking changes (in particular to the
   sets are kept here.
 - **Remembered names survive a silent storage.** `topset_custom_exercises` falls
   back to `{}` when its read fails, and the first save then overwrote every
-  name, group and alias. An empty list no longer replaces a full one; switching
-  accounts clears the key explicitly.
+  name, group and alias. The refusal is keyed on "the list was never read", not
+  on "the list became empty" — correcting a typo really does remove a name, and
+  it can be the last one. A missing key is an answer; an unreadable key is not.
+  Switching accounts clears the key explicitly.
+- **Clean-up of what today's fixes left behind.** The conflicts key was written
+  out five times and the parked-logbook key twice: one declaration each now, and
+  a guard keeps it that way. That sweep found a real bug: `reservesDeSecours()`
+  declared `moi` **twice**, and the second one was `null` with no account — so
+  the anonymous parked logbook was never read back. The owner mark is also only
+  written when it changes, instead of once per noted set.
 - **A read-only server audit.** `supabase/audit-seances.txt` counts, per
   account, the days, exercises and sets on the server, lists the **empty** days
   with the timestamp of the write that emptied them, and shows everything
@@ -413,8 +429,16 @@ while it stays below `1.0.0`, breaking changes (in particular to the
   sets are kept here.
 - **Remembered names survive a silent storage.** `topset_custom_exercises` falls
   back to `{}` when its read fails, and the first save then overwrote every
-  name, group and alias. An empty list no longer replaces a full one; switching
-  accounts clears the key explicitly.
+  name, group and alias. The refusal is keyed on "the list was never read", not
+  on "the list became empty" — correcting a typo really does remove a name, and
+  it can be the last one. A missing key is an answer; an unreadable key is not.
+  Switching accounts clears the key explicitly.
+- **Clean-up of what today's fixes left behind.** The conflicts key was written
+  out five times and the parked-logbook key twice: one declaration each now, and
+  a guard keeps it that way. That sweep found a real bug: `reservesDeSecours()`
+  declared `moi` **twice**, and the second one was `null` with no account — so
+  the anonymous parked logbook was never read back. The owner mark is also only
+  written when it changes, instead of once per noted set.
 - **A read-only server audit.** `supabase/audit-seances.txt` counts, per
   account, the days, exercises and sets on the server, lists the **empty** days
   with the timestamp of the write that emptied them, and shows everything
@@ -497,8 +521,16 @@ while it stays below `1.0.0`, breaking changes (in particular to the
   sets are kept here.
 - **Remembered names survive a silent storage.** `topset_custom_exercises` falls
   back to `{}` when its read fails, and the first save then overwrote every
-  name, group and alias. An empty list no longer replaces a full one; switching
-  accounts clears the key explicitly.
+  name, group and alias. The refusal is keyed on "the list was never read", not
+  on "the list became empty" — correcting a typo really does remove a name, and
+  it can be the last one. A missing key is an answer; an unreadable key is not.
+  Switching accounts clears the key explicitly.
+- **Clean-up of what today's fixes left behind.** The conflicts key was written
+  out five times and the parked-logbook key twice: one declaration each now, and
+  a guard keeps it that way. That sweep found a real bug: `reservesDeSecours()`
+  declared `moi` **twice**, and the second one was `null` with no account — so
+  the anonymous parked logbook was never read back. The owner mark is also only
+  written when it changes, instead of once per noted set.
 - **A read-only server audit.** `supabase/audit-seances.txt` counts, per
   account, the days, exercises and sets on the server, lists the **empty** days
   with the timestamp of the write that emptied them, and shows everything
@@ -599,8 +631,16 @@ while it stays below `1.0.0`, breaking changes (in particular to the
   sets are kept here.
 - **Remembered names survive a silent storage.** `topset_custom_exercises` falls
   back to `{}` when its read fails, and the first save then overwrote every
-  name, group and alias. An empty list no longer replaces a full one; switching
-  accounts clears the key explicitly.
+  name, group and alias. The refusal is keyed on "the list was never read", not
+  on "the list became empty" — correcting a typo really does remove a name, and
+  it can be the last one. A missing key is an answer; an unreadable key is not.
+  Switching accounts clears the key explicitly.
+- **Clean-up of what today's fixes left behind.** The conflicts key was written
+  out five times and the parked-logbook key twice: one declaration each now, and
+  a guard keeps it that way. That sweep found a real bug: `reservesDeSecours()`
+  declared `moi` **twice**, and the second one was `null` with no account — so
+  the anonymous parked logbook was never read back. The owner mark is also only
+  written when it changes, instead of once per noted set.
 - **A read-only server audit.** `supabase/audit-seances.txt` counts, per
   account, the days, exercises and sets on the server, lists the **empty** days
   with the timestamp of the write that emptied them, and shows everything
@@ -770,8 +810,16 @@ while it stays below `1.0.0`, breaking changes (in particular to the
   sets are kept here.
 - **Remembered names survive a silent storage.** `topset_custom_exercises` falls
   back to `{}` when its read fails, and the first save then overwrote every
-  name, group and alias. An empty list no longer replaces a full one; switching
-  accounts clears the key explicitly.
+  name, group and alias. The refusal is keyed on "the list was never read", not
+  on "the list became empty" — correcting a typo really does remove a name, and
+  it can be the last one. A missing key is an answer; an unreadable key is not.
+  Switching accounts clears the key explicitly.
+- **Clean-up of what today's fixes left behind.** The conflicts key was written
+  out five times and the parked-logbook key twice: one declaration each now, and
+  a guard keeps it that way. That sweep found a real bug: `reservesDeSecours()`
+  declared `moi` **twice**, and the second one was `null` with no account — so
+  the anonymous parked logbook was never read back. The owner mark is also only
+  written when it changes, instead of once per noted set.
 - **A read-only server audit.** `supabase/audit-seances.txt` counts, per
   account, the days, exercises and sets on the server, lists the **empty** days
   with the timestamp of the write that emptied them, and shows everything
@@ -1000,8 +1048,16 @@ while it stays below `1.0.0`, breaking changes (in particular to the
   sets are kept here.
 - **Remembered names survive a silent storage.** `topset_custom_exercises` falls
   back to `{}` when its read fails, and the first save then overwrote every
-  name, group and alias. An empty list no longer replaces a full one; switching
-  accounts clears the key explicitly.
+  name, group and alias. The refusal is keyed on "the list was never read", not
+  on "the list became empty" — correcting a typo really does remove a name, and
+  it can be the last one. A missing key is an answer; an unreadable key is not.
+  Switching accounts clears the key explicitly.
+- **Clean-up of what today's fixes left behind.** The conflicts key was written
+  out five times and the parked-logbook key twice: one declaration each now, and
+  a guard keeps it that way. That sweep found a real bug: `reservesDeSecours()`
+  declared `moi` **twice**, and the second one was `null` with no account — so
+  the anonymous parked logbook was never read back. The owner mark is also only
+  written when it changes, instead of once per noted set.
 - **A read-only server audit.** `supabase/audit-seances.txt` counts, per
   account, the days, exercises and sets on the server, lists the **empty** days
   with the timestamp of the write that emptied them, and shows everything
@@ -1142,8 +1198,16 @@ while it stays below `1.0.0`, breaking changes (in particular to the
   sets are kept here.
 - **Remembered names survive a silent storage.** `topset_custom_exercises` falls
   back to `{}` when its read fails, and the first save then overwrote every
-  name, group and alias. An empty list no longer replaces a full one; switching
-  accounts clears the key explicitly.
+  name, group and alias. The refusal is keyed on "the list was never read", not
+  on "the list became empty" — correcting a typo really does remove a name, and
+  it can be the last one. A missing key is an answer; an unreadable key is not.
+  Switching accounts clears the key explicitly.
+- **Clean-up of what today's fixes left behind.** The conflicts key was written
+  out five times and the parked-logbook key twice: one declaration each now, and
+  a guard keeps it that way. That sweep found a real bug: `reservesDeSecours()`
+  declared `moi` **twice**, and the second one was `null` with no account — so
+  the anonymous parked logbook was never read back. The owner mark is also only
+  written when it changes, instead of once per noted set.
 - **A read-only server audit.** `supabase/audit-seances.txt` counts, per
   account, the days, exercises and sets on the server, lists the **empty** days
   with the timestamp of the write that emptied them, and shows everything
@@ -1739,8 +1803,16 @@ Initial public release.
   sets are kept here.
 - **Remembered names survive a silent storage.** `topset_custom_exercises` falls
   back to `{}` when its read fails, and the first save then overwrote every
-  name, group and alias. An empty list no longer replaces a full one; switching
-  accounts clears the key explicitly.
+  name, group and alias. The refusal is keyed on "the list was never read", not
+  on "the list became empty" — correcting a typo really does remove a name, and
+  it can be the last one. A missing key is an answer; an unreadable key is not.
+  Switching accounts clears the key explicitly.
+- **Clean-up of what today's fixes left behind.** The conflicts key was written
+  out five times and the parked-logbook key twice: one declaration each now, and
+  a guard keeps it that way. That sweep found a real bug: `reservesDeSecours()`
+  declared `moi` **twice**, and the second one was `null` with no account — so
+  the anonymous parked logbook was never read back. The owner mark is also only
+  written when it changes, instead of once per noted set.
 - **A read-only server audit.** `supabase/audit-seances.txt` counts, per
   account, the days, exercises and sets on the server, lists the **empty** days
   with the timestamp of the write that emptied them, and shows everything

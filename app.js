@@ -331,24 +331,29 @@
   // Ils rejoignent la liste de suggestions et suivent la sauvegarde.
   var CUSTOM_KEY = 'topset_custom_exercises';
   var customExercises = {};
+  // La lecture a-t-elle abouti ? Une cle absente est une reponse (« il n'y a
+  // rien »), une cle illisible n'en est pas une (« on ne sait pas »).
+  var customCharge = false;
   try {
     var rawCustom = localStorage.getItem(CUSTOM_KEY);
     if (rawCustom) customExercises = JSON.parse(rawCustom) || {};
-  } catch(e){ customExercises = {}; }
+    customCharge = true;
+  } catch(e){ customExercises = {}; customCharge = false; }
 
   // Meme regle que pour le carnet : une liste vide ne remplace pas une liste
-  // pleine. La lecture de cette cle, juste au-dessus, retombe sur {} quand
-  // elle rate — et la premiere sauvegarde ecrasait alors tous les noms
-  // memorises, leurs groupes et leurs rattachements. Un exercice memorise ne
-  // se supprime pas depuis l'app : passer de « des noms » a « aucun nom » ne
-  // peut donc venir que d'une lecture ratee. Le changement de compte, lui,
-  // efface la cle explicitement. (15/10/2026)
+  // pleine quand on ne sait pas ce qu'elle contenait. La lecture, juste
+  // au-dessus, retombe sur {} quand elle rate — et la premiere sauvegarde
+  // ecrasait alors tous les noms memorises, leurs groupes et leurs
+  // rattachements.
+  //
+  // Le critere n'est pas « la liste devient vide » : corriger une faute de
+  // frappe retire bel et bien un nom, et ce peut etre le dernier. C'est « la
+  // liste n'a jamais ete lue » : la, on n'a rien a dire, donc on se taît.
+  // (15/10/2026)
   function saveCustom(){
     try {
       var futur = JSON.stringify(customExercises);
-      var actuel = null;
-      try { actuel = localStorage.getItem(CUSTOM_KEY); } catch(e){}
-      if (actuel && actuel !== '{}' && futur === '{}') return;
+      if (!customCharge && futur === '{}') return;
       localStorage.setItem(CUSTOM_KEY, futur);
     } catch(e){}
   }
@@ -943,6 +948,10 @@
     if (Sync) Sync.marquerSale(ds);
   }
   var SAVE_KEY    = 'musculation_sessions';
+  // Ces deux cles-ci servent des deux cotes : la sauvegarde locale les ecrit
+  // ou les relit, la synchro les remplit. Une seule declaration, en haut.
+  var CONFLITS_KEY = 'topset_conflits';   // versions perdantes d'un conflit
+  function clePark(id){ return 'topset_carnet_' + id; }
   var SECOURS_KEY = 'musculation_sessions_secours';   // version precedente
   var ILLISIBLE_KEY = 'musculation_sessions_illisible'; // JSON casse mis de cote
   var wipeSignale = false;
@@ -1040,8 +1049,7 @@
       marquerProprio();
       return true;
     } catch(e){}
-    // Ecrit en clair : CONFLITS_KEY est declare plus bas, dans la synchro.
-    var jetables = ['topset_conflits', ILLISIBLE_KEY, SECOURS_KEY];
+    var jetables = [CONFLITS_KEY, ILLISIBLE_KEY, SECOURS_KEY];
     for (var i = 0; i < jetables.length; i++){
       try { localStorage.removeItem(jetables[i]); } catch(e){}
       try {
@@ -1186,14 +1194,18 @@
   // temps qu'elles.
   var PROPRIO_KEY = 'topset_proprio';
   function marquerProprio(){
-    try { localStorage.setItem(PROPRIO_KEY, proprietaire()); } catch(e){}
+    try {
+      var moi = proprietaire();
+      if (localStorage.getItem(PROPRIO_KEY) === moi) return;
+      localStorage.setItem(PROPRIO_KEY, moi);
+    } catch(e){}
   }
   function proprioReserves(){
     try { return localStorage.getItem(PROPRIO_KEY); } catch(e){ return null; }
   }
 
   function oublierReserves(){
-    [SECOURS_KEY, ILLISIBLE_KEY, 'topset_conflits', JOURNAL_KEY, PROPRIO_KEY].forEach(function(k){
+    [SECOURS_KEY, ILLISIBLE_KEY, CONFLITS_KEY, JOURNAL_KEY, PROPRIO_KEY].forEach(function(k){
       try { localStorage.removeItem(k); } catch(e){}
     });
   }
@@ -1296,7 +1308,7 @@
     var jrn = journalEnCarnet();
     if (jrn) out.push({ cle:'journal', texte:JSON.stringify({ sessions:jrn }) });
 
-    var brut = brutesOk ? lire('topset_conflits') : null;
+    var brut = brutesOk ? lire(CONFLITS_KEY) : null;
     if (brut){
       try {
         var c = JSON.parse(brut) || {}, jours = {};
@@ -1308,7 +1320,7 @@
           if (!jours[ds] || compterJour(c[k]) > compterJour(jours[ds])) jours[ds] = c[k];
         });
         if (Object.keys(jours).length){
-          out.push({ cle:'topset_conflits', texte:JSON.stringify({ sessions:jours }) });
+          out.push({ cle:CONFLITS_KEY, texte:JSON.stringify({ sessions:jours }) });
         }
       } catch(e){}
     }
@@ -1318,9 +1330,9 @@
     // ne doit etre retrouvable que par son proprietaire — c'est la regle de
     // confidentialite du rangement, et balayer « topset_carnet_* » la
     // cassait : le compte suivant se serait vu proposer le carnet du
-    // precedent. Sans compte, le carnet anonyme est le sien.
-    var moi = (Sync && Sync.idCompte) ? Sync.idCompte() : null;
-    var raw2 = lire('topset_carnet_' + (moi || 'anon'));
+    // precedent. Sans compte, le carnet anonyme est le sien — c'est deja ce
+    // que « moi » vaut, plus haut : proprietaire() rend « anon ».
+    var raw2 = lire(clePark(moi));
     if (raw2){
       try {
         var p = JSON.parse(raw2);
@@ -8373,7 +8385,6 @@
   // y en aura une, la page le dira avant, et la question se reposera ici.
   var VERSION_POLITIQUE = '3.2';
   var SYNC_KEY      = 'topset_sync';
-  var CONFLITS_KEY  = 'topset_conflits';
 
   var Sync = (function(){
     var cfg = window.TOPSET_SUPABASE || null;
@@ -9277,7 +9288,6 @@
     // seul son proprietaire retrouvera en se reconnectant — ce qui est aussi
     // la bonne regle de confidentialite : l'autre compte ne doit pas pouvoir
     // le recuperer.
-    function clePark(id){ return 'topset_carnet_' + id; }
 
     function joursRemplis(sessions){
       return Object.keys(sessions || {}).filter(function(ds){

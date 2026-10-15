@@ -306,9 +306,11 @@ de là.
 
 **Les noms mémorisés aussi.** `topset_custom_exercises` se relit au chargement
 et retombe sur `{}` quand la lecture rate : la première sauvegarde écrasait
-alors tous les noms, leurs groupes et leurs rattachements. Une liste vide ne
-remplace plus une liste pleine. Un changement de compte, lui, efface la clé
-explicitement.
+alors tous les noms, leurs groupes et leurs rattachements. Le critère de refus
+n'est pas « la liste devient vide » — corriger une faute de frappe retire bel et
+bien un nom, et ce peut être le dernier — mais « la liste n'a jamais été lue » :
+une clé absente est une réponse, une clé illisible n'en est pas une. Un
+changement de compte efface la clé explicitement.
 
 **Le carnet se répare tout seul au démarrage** (15/10/2026). Une lecture peut
 rater sans rien détruire : `getItem` qui lève, un JSON tronqué, une clé qu'iOS a
