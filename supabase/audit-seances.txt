@@ -1,0 +1,97 @@
+-- ===================================================================
+-- Top Set — AUDIT DE TES SEANCES SUR LE SERVEUR (15/10/2026)
+--
+-- A coller dans l'editeur SQL de Supabase, projet TOP SET.
+-- Ce script ne MODIFIE RIEN : il ne fait que lire et compter.
+-- Il s'arrete tout seul s'il est lance sur le projet Yom Nutrition.
+--
+-- Il repond a trois questions :
+--   1. combien de journees et de series ton compte a-t-il sur le serveur,
+--      et sur quelle periode ;
+--   2. y a-t-il des journees VIDES (zero serie) -- la trace de l'envoi
+--      d'une journee vide par-dessus une bonne ;
+--   3. qu'est-ce qui a ete modifie le 14 et le 15 octobre.
+-- ===================================================================
+
+-- Garde-fou : jamais sur le projet Yom Nutrition.
+do $$
+begin
+  if exists (select 1 from information_schema.tables
+             where table_schema = 'public'
+               and table_name in ('aliments_ciqual', 'user_journal')) then
+    raise exception 'Ce script est pour Top Set, pas pour Yom Nutrition. Rien n''a ete lu.';
+  end if;
+  if not exists (select 1 from information_schema.tables
+                 where table_schema = 'public' and table_name = 'seances') then
+    raise exception 'Table public.seances introuvable : ce n''est pas la base de Top Set.';
+  end if;
+end $$;
+
+-- -------------------------------------------------------------------
+-- 1. Un compte par ligne : ce que le serveur garde pour chacun.
+--    (Tu es admin : tu vois tes deux comptes, par identifiant tronque.)
+-- -------------------------------------------------------------------
+select
+  left(s.user_id::text, 8) || '…'                as compte,
+  count(distinct s.date)                         as journees,
+  count(distinct e.id)                           as exercices,
+  count(se.id)                                   as series,
+  min(s.date)                                    as premiere,
+  max(s.date)                                    as derniere,
+  max(s.updated_at)                              as derniere_ecriture
+from public.seances s
+left join public.exercices e on e.user_id = s.user_id and e.seance_id = s.id
+left join public.series   se on se.user_id = e.user_id and se.exercice_id = e.id
+group by s.user_id
+order by series desc;
+
+-- -------------------------------------------------------------------
+-- 2. Les journees VIDES : une seance existe, mais plus une seule serie.
+--    C'est la signature d'une journee envoyee vide par-dessus la bonne.
+--    « derniere_ecriture » dit quand c'est arrive.
+-- -------------------------------------------------------------------
+select
+  left(s.user_id::text, 8) || '…'  as compte,
+  s.date,
+  s.updated_at                     as derniere_ecriture,
+  count(e.id)                      as exercices,
+  count(se.id)                     as series
+from public.seances s
+left join public.exercices e on e.user_id = s.user_id and e.seance_id = s.id
+left join public.series   se on se.user_id = e.user_id and se.exercice_id = e.id
+group by s.user_id, s.date, s.updated_at
+having count(se.id) = 0
+order by s.updated_at desc
+limit 100;
+
+-- -------------------------------------------------------------------
+-- 3. Tout ce qui a ete ecrit sur le serveur depuis le 14 octobre, du
+--    plus recent au plus ancien, avec le nombre de series restantes.
+-- -------------------------------------------------------------------
+select
+  left(s.user_id::text, 8) || '…'  as compte,
+  s.date,
+  s.updated_at                     as ecrit_le,
+  count(se.id)                     as series
+from public.seances s
+left join public.exercices e on e.user_id = s.user_id and e.seance_id = s.id
+left join public.series   se on se.user_id = e.user_id and se.exercice_id = e.id
+where s.updated_at >= timestamptz '2026-10-14 00:00:00+02'
+group by s.user_id, s.date, s.updated_at
+order by s.updated_at desc
+limit 200;
+
+-- -------------------------------------------------------------------
+-- 4. Le compte des journees par mois, pour voir d'un coup d'oeil s'il
+--    manque un pan entier de l'historique.
+-- -------------------------------------------------------------------
+select
+  left(s.user_id::text, 8) || '…'          as compte,
+  to_char(s.date, 'YYYY-MM')               as mois,
+  count(distinct s.date)                   as journees,
+  count(se.id)                             as series
+from public.seances s
+left join public.exercices e on e.user_id = s.user_id and e.seance_id = s.id
+left join public.series   se on se.user_id = e.user_id and se.exercice_id = e.id
+group by s.user_id, to_char(s.date, 'YYYY-MM')
+order by mois desc, series desc;

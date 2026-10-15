@@ -9,6 +9,37 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ## [Unreleased]
 
+### Fixed (the destructive one)
+
+- **A day we do not know is no longer erased remotely.** Two accounts, both used
+  daily, both lost their history on the evening of 14/10 — so the cause could
+  not be one phone's storage. It was the push. `pousser_jour` replaces the whole
+  day server-side (that is what makes it idempotent), and `jourLocal(ds)`
+  returned an empty exercise list for a day missing from the loaded logbook,
+  while the send queue lives in another key. One failed read therefore sent an
+  **empty day over the good one**, the server confirmed, and the queue was
+  cleared — so nothing could ever repair it. Locally the empty-logbook guard
+  held; in the cloud the day was gone. Reproduced in jsdom against the version
+  that was live that evening: three days sent empty, title, cycle and completion
+  erased, queue cleared behind them. A day missing from the loaded logbook is
+  now never sent, its mark stays queued, and the same rule covers the title, the
+  cycle, the session word and the completion flag.
+- **A lying wifi no longer hammers the network.** The gym's wifi, as you walk
+  away, stays "connected" while routing nothing: `navigator.onLine` says yes,
+  `online` never fires, and every send waits out its 25-second timeout. Retries
+  back off — 30 s, 1 min, 2, 5, then 10 at most — reset on the first success,
+  and the second failure in a row says once, on the session screen, that the
+  sets are kept here.
+- **Remembered names survive a silent storage.** `topset_custom_exercises` falls
+  back to `{}` when its read fails, and the first save then overwrote every
+  name, group and alias. An empty list no longer replaces a full one; switching
+  accounts clears the key explicitly.
+- **A read-only server audit.** `supabase/audit-seances.txt` counts, per
+  account, the days, exercises and sets on the server, lists the **empty** days
+  with the timestamp of the write that emptied them, and shows everything
+  written since 14/10. It reads and counts only, and refuses to run on the Yom
+  Nutrition project.
+
 ### Added
 
 - **The logbook repairs itself at startup.** "I get to the gym and my history is
@@ -139,6 +170,37 @@ while it stays below `1.0.0`, breaking changes (in particular to the
   first inherited the second's orange background, in the middle of the banner.
   The name row is `.seance-titrage`.
 
+### Fixed (the destructive one)
+
+- **A day we do not know is no longer erased remotely.** Two accounts, both used
+  daily, both lost their history on the evening of 14/10 — so the cause could
+  not be one phone's storage. It was the push. `pousser_jour` replaces the whole
+  day server-side (that is what makes it idempotent), and `jourLocal(ds)`
+  returned an empty exercise list for a day missing from the loaded logbook,
+  while the send queue lives in another key. One failed read therefore sent an
+  **empty day over the good one**, the server confirmed, and the queue was
+  cleared — so nothing could ever repair it. Locally the empty-logbook guard
+  held; in the cloud the day was gone. Reproduced in jsdom against the version
+  that was live that evening: three days sent empty, title, cycle and completion
+  erased, queue cleared behind them. A day missing from the loaded logbook is
+  now never sent, its mark stays queued, and the same rule covers the title, the
+  cycle, the session word and the completion flag.
+- **A lying wifi no longer hammers the network.** The gym's wifi, as you walk
+  away, stays "connected" while routing nothing: `navigator.onLine` says yes,
+  `online` never fires, and every send waits out its 25-second timeout. Retries
+  back off — 30 s, 1 min, 2, 5, then 10 at most — reset on the first success,
+  and the second failure in a row says once, on the session screen, that the
+  sets are kept here.
+- **Remembered names survive a silent storage.** `topset_custom_exercises` falls
+  back to `{}` when its read fails, and the first save then overwrote every
+  name, group and alias. An empty list no longer replaces a full one; switching
+  accounts clears the key explicitly.
+- **A read-only server audit.** `supabase/audit-seances.txt` counts, per
+  account, the days, exercises and sets on the server, lists the **empty** days
+  with the timestamp of the write that emptied them, and shows everything
+  written since 14/10. It reads and counts only, and refuses to run on the Yom
+  Nutrition project.
+
 ### Added
 
 - **The session's title block, rebuilt.** « The session title part is too weird,
@@ -259,6 +321,37 @@ while it stays below `1.0.0`, breaking changes (in particular to the
   JSON-LD, the manifest and the READMEs until a real one replaces it; the
   `.captures` grid is `auto-fit`, so two fill the row.
 
+### Fixed (the destructive one)
+
+- **A day we do not know is no longer erased remotely.** Two accounts, both used
+  daily, both lost their history on the evening of 14/10 — so the cause could
+  not be one phone's storage. It was the push. `pousser_jour` replaces the whole
+  day server-side (that is what makes it idempotent), and `jourLocal(ds)`
+  returned an empty exercise list for a day missing from the loaded logbook,
+  while the send queue lives in another key. One failed read therefore sent an
+  **empty day over the good one**, the server confirmed, and the queue was
+  cleared — so nothing could ever repair it. Locally the empty-logbook guard
+  held; in the cloud the day was gone. Reproduced in jsdom against the version
+  that was live that evening: three days sent empty, title, cycle and completion
+  erased, queue cleared behind them. A day missing from the loaded logbook is
+  now never sent, its mark stays queued, and the same rule covers the title, the
+  cycle, the session word and the completion flag.
+- **A lying wifi no longer hammers the network.** The gym's wifi, as you walk
+  away, stays "connected" while routing nothing: `navigator.onLine` says yes,
+  `online` never fires, and every send waits out its 25-second timeout. Retries
+  back off — 30 s, 1 min, 2, 5, then 10 at most — reset on the first success,
+  and the second failure in a row says once, on the session screen, that the
+  sets are kept here.
+- **Remembered names survive a silent storage.** `topset_custom_exercises` falls
+  back to `{}` when its read fails, and the first save then overwrote every
+  name, group and alias. An empty list no longer replaces a full one; switching
+  accounts clears the key explicitly.
+- **A read-only server audit.** `supabase/audit-seances.txt` counts, per
+  account, the days, exercises and sets on the server, lists the **empty** days
+  with the timestamp of the write that emptied them, and shows everything
+  written since 14/10. It reads and counts only, and refuses to run on the Yom
+  Nutrition project.
+
 ### Added
 
 - **Full-screen exercise.** The orange ⤢ icon on a card opens the exercise
@@ -283,6 +376,37 @@ while it stays below `1.0.0`, breaking changes (in particular to the
   without taking more room, and remembered per exercise name. The recap body
   map shows front and back, one zone per muscle. Re-run `schema.sql`
   (`exercices_perso.sous_groupe`). Service worker `topset-v41`.
+
+### Fixed (the destructive one)
+
+- **A day we do not know is no longer erased remotely.** Two accounts, both used
+  daily, both lost their history on the evening of 14/10 — so the cause could
+  not be one phone's storage. It was the push. `pousser_jour` replaces the whole
+  day server-side (that is what makes it idempotent), and `jourLocal(ds)`
+  returned an empty exercise list for a day missing from the loaded logbook,
+  while the send queue lives in another key. One failed read therefore sent an
+  **empty day over the good one**, the server confirmed, and the queue was
+  cleared — so nothing could ever repair it. Locally the empty-logbook guard
+  held; in the cloud the day was gone. Reproduced in jsdom against the version
+  that was live that evening: three days sent empty, title, cycle and completion
+  erased, queue cleared behind them. A day missing from the loaded logbook is
+  now never sent, its mark stays queued, and the same rule covers the title, the
+  cycle, the session word and the completion flag.
+- **A lying wifi no longer hammers the network.** The gym's wifi, as you walk
+  away, stays "connected" while routing nothing: `navigator.onLine` says yes,
+  `online` never fires, and every send waits out its 25-second timeout. Retries
+  back off — 30 s, 1 min, 2, 5, then 10 at most — reset on the first success,
+  and the second failure in a row says once, on the session screen, that the
+  sets are kept here.
+- **Remembered names survive a silent storage.** `topset_custom_exercises` falls
+  back to `{}` when its read fails, and the first save then overwrote every
+  name, group and alias. An empty list no longer replaces a full one; switching
+  accounts clears the key explicitly.
+- **A read-only server audit.** `supabase/audit-seances.txt` counts, per
+  account, the days, exercises and sets on the server, lists the **empty** days
+  with the timestamp of the write that emptied them, and shows everything
+  written since 14/10. It reads and counts only, and refuses to run on the Yom
+  Nutrition project.
 
 ### Added
 
@@ -326,6 +450,37 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 - **No more alias chains.** Linking a name to an already-linked name resolved
   one notch only and left the history split. The target is now resolved before
   being written, and the offer names the final destination.
+
+### Fixed (the destructive one)
+
+- **A day we do not know is no longer erased remotely.** Two accounts, both used
+  daily, both lost their history on the evening of 14/10 — so the cause could
+  not be one phone's storage. It was the push. `pousser_jour` replaces the whole
+  day server-side (that is what makes it idempotent), and `jourLocal(ds)`
+  returned an empty exercise list for a day missing from the loaded logbook,
+  while the send queue lives in another key. One failed read therefore sent an
+  **empty day over the good one**, the server confirmed, and the queue was
+  cleared — so nothing could ever repair it. Locally the empty-logbook guard
+  held; in the cloud the day was gone. Reproduced in jsdom against the version
+  that was live that evening: three days sent empty, title, cycle and completion
+  erased, queue cleared behind them. A day missing from the loaded logbook is
+  now never sent, its mark stays queued, and the same rule covers the title, the
+  cycle, the session word and the completion flag.
+- **A lying wifi no longer hammers the network.** The gym's wifi, as you walk
+  away, stays "connected" while routing nothing: `navigator.onLine` says yes,
+  `online` never fires, and every send waits out its 25-second timeout. Retries
+  back off — 30 s, 1 min, 2, 5, then 10 at most — reset on the first success,
+  and the second failure in a row says once, on the session screen, that the
+  sets are kept here.
+- **Remembered names survive a silent storage.** `topset_custom_exercises` falls
+  back to `{}` when its read fails, and the first save then overwrote every
+  name, group and alias. An empty list no longer replaces a full one; switching
+  accounts clears the key explicitly.
+- **A read-only server audit.** `supabase/audit-seances.txt` counts, per
+  account, the days, exercises and sets on the server, lists the **empty** days
+  with the timestamp of the write that emptied them, and shows everything
+  written since 14/10. It reads and counts only, and refuses to run on the Yom
+  Nutrition project.
 
 ### Added
 
@@ -438,6 +593,37 @@ while it stays below `1.0.0`, breaking changes (in particular to the
   (`gen_random_uuid()`), not `random()`.
 - **`Cross-Origin-Opener-Policy: same-origin`** joins the security headers;
   the feedback list escapes its type and status labels too.
+
+### Fixed (the destructive one)
+
+- **A day we do not know is no longer erased remotely.** Two accounts, both used
+  daily, both lost their history on the evening of 14/10 — so the cause could
+  not be one phone's storage. It was the push. `pousser_jour` replaces the whole
+  day server-side (that is what makes it idempotent), and `jourLocal(ds)`
+  returned an empty exercise list for a day missing from the loaded logbook,
+  while the send queue lives in another key. One failed read therefore sent an
+  **empty day over the good one**, the server confirmed, and the queue was
+  cleared — so nothing could ever repair it. Locally the empty-logbook guard
+  held; in the cloud the day was gone. Reproduced in jsdom against the version
+  that was live that evening: three days sent empty, title, cycle and completion
+  erased, queue cleared behind them. A day missing from the loaded logbook is
+  now never sent, its mark stays queued, and the same rule covers the title, the
+  cycle, the session word and the completion flag.
+- **A lying wifi no longer hammers the network.** The gym's wifi, as you walk
+  away, stays "connected" while routing nothing: `navigator.onLine` says yes,
+  `online` never fires, and every send waits out its 25-second timeout. Retries
+  back off — 30 s, 1 min, 2, 5, then 10 at most — reset on the first success,
+  and the second failure in a row says once, on the session screen, that the
+  sets are kept here.
+- **Remembered names survive a silent storage.** `topset_custom_exercises` falls
+  back to `{}` when its read fails, and the first save then overwrote every
+  name, group and alias. An empty list no longer replaces a full one; switching
+  accounts clears the key explicitly.
+- **A read-only server audit.** `supabase/audit-seances.txt` counts, per
+  account, the days, exercises and sets on the server, lists the **empty** days
+  with the timestamp of the write that emptied them, and shows everything
+  written since 14/10. It reads and counts only, and refuses to run on the Yom
+  Nutrition project.
 
 ### Added
 
@@ -610,6 +796,37 @@ while it stays below `1.0.0`, breaking changes (in particular to the
   (`renderDayPanel`, `repeindreCarte`) leaves the field first and restores the
   scroll position. Two guards keep it that way (174).
 
+### Fixed (the destructive one)
+
+- **A day we do not know is no longer erased remotely.** Two accounts, both used
+  daily, both lost their history on the evening of 14/10 — so the cause could
+  not be one phone's storage. It was the push. `pousser_jour` replaces the whole
+  day server-side (that is what makes it idempotent), and `jourLocal(ds)`
+  returned an empty exercise list for a day missing from the loaded logbook,
+  while the send queue lives in another key. One failed read therefore sent an
+  **empty day over the good one**, the server confirmed, and the queue was
+  cleared — so nothing could ever repair it. Locally the empty-logbook guard
+  held; in the cloud the day was gone. Reproduced in jsdom against the version
+  that was live that evening: three days sent empty, title, cycle and completion
+  erased, queue cleared behind them. A day missing from the loaded logbook is
+  now never sent, its mark stays queued, and the same rule covers the title, the
+  cycle, the session word and the completion flag.
+- **A lying wifi no longer hammers the network.** The gym's wifi, as you walk
+  away, stays "connected" while routing nothing: `navigator.onLine` says yes,
+  `online` never fires, and every send waits out its 25-second timeout. Retries
+  back off — 30 s, 1 min, 2, 5, then 10 at most — reset on the first success,
+  and the second failure in a row says once, on the session screen, that the
+  sets are kept here.
+- **Remembered names survive a silent storage.** `topset_custom_exercises` falls
+  back to `{}` when its read fails, and the first save then overwrote every
+  name, group and alias. An empty list no longer replaces a full one; switching
+  accounts clears the key explicitly.
+- **A read-only server audit.** `supabase/audit-seances.txt` counts, per
+  account, the days, exercises and sets on the server, lists the **empty** days
+  with the timestamp of the write that emptied them, and shows everything
+  written since 14/10. It reads and counts only, and refuses to run on the Yom
+  Nutrition project.
+
 ### Added
 
 - **The schema refuses to run in the wrong Supabase project.** This account also
@@ -692,6 +909,37 @@ while it stays below `1.0.0`, breaking changes (in particular to the
   « note it in Top Set » paragraphs of the back-off, failure, RIR, RPE, rest,
   plank and top set pages. New captures of the card on the product page and in
   both READMEs. Service worker cache `topset-v18` → `topset-v19`.
+
+### Fixed (the destructive one)
+
+- **A day we do not know is no longer erased remotely.** Two accounts, both used
+  daily, both lost their history on the evening of 14/10 — so the cause could
+  not be one phone's storage. It was the push. `pousser_jour` replaces the whole
+  day server-side (that is what makes it idempotent), and `jourLocal(ds)`
+  returned an empty exercise list for a day missing from the loaded logbook,
+  while the send queue lives in another key. One failed read therefore sent an
+  **empty day over the good one**, the server confirmed, and the queue was
+  cleared — so nothing could ever repair it. Locally the empty-logbook guard
+  held; in the cloud the day was gone. Reproduced in jsdom against the version
+  that was live that evening: three days sent empty, title, cycle and completion
+  erased, queue cleared behind them. A day missing from the loaded logbook is
+  now never sent, its mark stays queued, and the same rule covers the title, the
+  cycle, the session word and the completion flag.
+- **A lying wifi no longer hammers the network.** The gym's wifi, as you walk
+  away, stays "connected" while routing nothing: `navigator.onLine` says yes,
+  `online` never fires, and every send waits out its 25-second timeout. Retries
+  back off — 30 s, 1 min, 2, 5, then 10 at most — reset on the first success,
+  and the second failure in a row says once, on the session screen, that the
+  sets are kept here.
+- **Remembered names survive a silent storage.** `topset_custom_exercises` falls
+  back to `{}` when its read fails, and the first save then overwrote every
+  name, group and alias. An empty list no longer replaces a full one; switching
+  accounts clears the key explicitly.
+- **A read-only server audit.** `supabase/audit-seances.txt` counts, per
+  account, the days, exercises and sets on the server, lists the **empty** days
+  with the timestamp of the write that emptied them, and shows everything
+  written since 14/10. It reads and counts only, and refuses to run on the Yom
+  Nutrition project.
 
 ### Added
 
@@ -1230,6 +1478,37 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 ## [0.1.0] - 2026-09-06
 
 Initial public release.
+
+### Fixed (the destructive one)
+
+- **A day we do not know is no longer erased remotely.** Two accounts, both used
+  daily, both lost their history on the evening of 14/10 — so the cause could
+  not be one phone's storage. It was the push. `pousser_jour` replaces the whole
+  day server-side (that is what makes it idempotent), and `jourLocal(ds)`
+  returned an empty exercise list for a day missing from the loaded logbook,
+  while the send queue lives in another key. One failed read therefore sent an
+  **empty day over the good one**, the server confirmed, and the queue was
+  cleared — so nothing could ever repair it. Locally the empty-logbook guard
+  held; in the cloud the day was gone. Reproduced in jsdom against the version
+  that was live that evening: three days sent empty, title, cycle and completion
+  erased, queue cleared behind them. A day missing from the loaded logbook is
+  now never sent, its mark stays queued, and the same rule covers the title, the
+  cycle, the session word and the completion flag.
+- **A lying wifi no longer hammers the network.** The gym's wifi, as you walk
+  away, stays "connected" while routing nothing: `navigator.onLine` says yes,
+  `online` never fires, and every send waits out its 25-second timeout. Retries
+  back off — 30 s, 1 min, 2, 5, then 10 at most — reset on the first success,
+  and the second failure in a row says once, on the session screen, that the
+  sets are kept here.
+- **Remembered names survive a silent storage.** `topset_custom_exercises` falls
+  back to `{}` when its read fails, and the first save then overwrote every
+  name, group and alias. An empty list no longer replaces a full one; switching
+  accounts clears the key explicitly.
+- **A read-only server audit.** `supabase/audit-seances.txt` counts, per
+  account, the days, exercises and sets on the server, lists the **empty** days
+  with the timestamp of the write that emptied them, and shows everything
+  written since 14/10. It reads and counts only, and refuses to run on the Yom
+  Nutrition project.
 
 ### Added
 

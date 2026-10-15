@@ -1315,6 +1315,32 @@ ok('les reserves partagees portent le nom de leur proprietaire',
    && /\[SECOURS_KEY, ILLISIBLE_KEY, 'topset_conflits', JOURNAL_KEY, PROPRIO_KEY\]\.forEach/.test(SRC)
    && /viderStockageCarnet\(\);\n      saveLocal\(\);/.test(SRC));
 
+// ---------------------------------------------------------------------------
+// 35. Une journee qu'on ne connait pas ne s'efface pas a distance (15/10/2026)
+// Le seul chemin qui detruisait le CLOUD, et donc les seances de tout le
+// monde : pousser_jour remplace la journee en entier cote serveur, et un
+// carnet mal charge laissait partir une journee VIDE par-dessus la bonne —
+// puis vidait la file, donc rien ne la reparait jamais.
+// ---------------------------------------------------------------------------
+ok('une journee absente du carnet charge n est jamais envoyee',
+   /function connueIci\(ds\)\{\n      return !!state\.sessions\[ds\];\n    \}/.test(SRC)
+   // Les cinq files : journees, titres, cycles/mots (pousserParDate) et fins.
+   && (SRC.match(/if \(!connueIci\(ds\)\) return;/g) || []).length === 4
+   // Et la marque reste dans la file : la journee repartira quand on la
+   // connaitra de nouveau.
+   && /\/\/ La marque est lue AVANT l'envoi/.test(SRC));
+
+ok('un stockage silencieux n efface pas les noms memorises',
+   /if \(actuel && actuel !== '\{\}' && futur === '\{\}'\) return;/.test(SRC)
+   && /function oublierCustom\(\)\{/.test(SRC)
+   && /ecrireCarnet\('\{\}'\);\n    oublierCustom\(\);/.test(SRC));
+
+ok('un wifi qui ne route plus espace les tentatives au lieu de s acharner',
+   /echecs\+\+;/.test(SRC)
+   && /planifier\(Math\.min\(30000 \* Math\.pow\(2, echecs - 1\), 600000\)\);/.test(SRC)
+   && /enCours = false; echecs = 0; majUI\(\);/.test(SRC)
+   && /if \(echecs === 2\)\{/.test(SRC));
+
 ok('un carnet par compte, a chaque demarrage et pas seulement a la connexion',
    // Une session dure des semaines : la regle ne peut pas ne valoir qu'au
    // moment ou l'on tape son mot de passe.

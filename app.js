@@ -336,8 +336,25 @@
     if (rawCustom) customExercises = JSON.parse(rawCustom) || {};
   } catch(e){ customExercises = {}; }
 
+  // Meme regle que pour le carnet : une liste vide ne remplace pas une liste
+  // pleine. La lecture de cette cle, juste au-dessus, retombe sur {} quand
+  // elle rate — et la premiere sauvegarde ecrasait alors tous les noms
+  // memorises, leurs groupes et leurs rattachements. Un exercice memorise ne
+  // se supprime pas depuis l'app : passer de « des noms » a « aucun nom » ne
+  // peut donc venir que d'une lecture ratee. Le changement de compte, lui,
+  // efface la cle explicitement. (15/10/2026)
   function saveCustom(){
-    try { localStorage.setItem(CUSTOM_KEY, JSON.stringify(customExercises)); } catch(e){}
+    try {
+      var futur = JSON.stringify(customExercises);
+      var actuel = null;
+      try { actuel = localStorage.getItem(CUSTOM_KEY); } catch(e){}
+      if (actuel && actuel !== '{}' && futur === '{}') return;
+      localStorage.setItem(CUSTOM_KEY, futur);
+    } catch(e){}
+  }
+
+  function oublierCustom(){
+    try { localStorage.removeItem(CUSTOM_KEY); } catch(e){}
   }
 
   // Un exercice memorise s'ecrivait « nom: groupe ». Il porte maintenant aussi
@@ -1106,6 +1123,7 @@
   // recopiait l'ancien carnet dans la copie de secours.
   function viderStockageCarnet(){
     ecrireCarnet('{}');
+    oublierCustom();
     oublierReserves();
   }
 
@@ -8241,7 +8259,7 @@
     var cfg = window.TOPSET_SUPABASE || null;
     var sb = null, libPromise = null, clientPromise = null;
     var user = null;
-    var enCours = false, minuteur = null, echec = '';
+    var enCours = false, minuteur = null, echec = '', echecs = 0;
 
     function dispo(){ return !!(cfg && cfg.url && cfg.anonKey); }
 
@@ -8388,6 +8406,13 @@
     function jourLocal(ds){
       return state.sessions[ds] || { date:ds, exercises:[] };
     }
+    // Le carnet charge connait-il cette journee ? Non veut dire « on n'en sait
+    // rien » — le chargement a pu rater — et non pas « elle est vide ». Une
+    // journee videe pour de bon, elle, existe toujours dans le carnet avec
+    // zero serie : elle part donc normalement.
+    function connueIci(ds){
+      return !!state.sessions[ds];
+    }
     function jourDistant(ds, d){
       // Une base qui n'a pas encore la colonne « note » renvoie des exercices
       // sans la cle. Ce n'est pas « commentaire efface » : c'est « la base
@@ -8477,6 +8502,15 @@
         var chaine = Promise.resolve();
         dates.forEach(function(ds){
           chaine = chaine.then(function(){
+            // Une journee que le carnet charge ne connait pas n'est pas une
+            // journee vide : c'est une journee dont on ne sait rien. Or
+            // l'envoi REMPLACE la journee en entier cote serveur. Un simple
+            // chargement rate — getItem qui jette, JSON tronque — laissait
+            // donc partir une journee vide par-dessus la bonne, et le cloud
+            // perdait ce que le telephone avait encore. La file garde sa
+            // marque : la journee repartira quand on la connaitra de nouveau.
+            // (15/10/2026)
+            if (!connueIci(ds)) return;
             // La marque est lue AVANT l'envoi : c'est la version qu'on envoie.
             var jeton = jetonDe('sales', ds);
             return avecDelai(c.rpc('pousser_jour', { p_date:ds, p_exercices:jourLocal(ds).exercises }))
@@ -8504,7 +8538,7 @@
           .then(function(){ return pousserFins().catch(function(){}); })
           .then(function(){ return dates.length; });
       }).then(function(n){
-        enCours = false; majUI();
+        enCours = false; echecs = 0; majUI();
         // Note pendant l'envoi : la journee est restee sale, on la repousse
         // tout de suite au lieu d'attendre la prochaine serie.
         if (resteSale) planifier(1200);
@@ -8514,7 +8548,20 @@
         enCours = false;
         echec = messageErreur(e);
         majUI();
-        planifier(30000);
+        // Un wifi de salle qu'on quitte reste « connecte » sans plus rien
+        // router : navigator.onLine dit oui, l'evenement « online » ne se
+        // declenchera jamais, et chaque envoi attend 25 secondes pour rien.
+        // On espace donc les tentatives au lieu de taper toutes les 30 s —
+        // 30 s, 1 min, 2, 5, puis 10 au plus — et on se remet a zero des
+        // qu'un envoi passe. (15/10/2026)
+        echecs++;
+        planifier(Math.min(30000 * Math.pow(2, echecs - 1), 600000));
+        // Le panneau des comptes porte le detail ; sur l'ecran de seance on ne
+        // dit rien au premier echec (ca arrive), et une seule fois au second :
+        // ce qui compte est que ses series ne sont pas perdues.
+        if (echecs === 2){
+          showToast('Réseau silencieux : tes séries sont gardées ici');
+        }
         return 0;
       });
     }
@@ -8639,6 +8686,7 @@
         var chaine = Promise.resolve();
         dates.forEach(function(ds){
           chaine = chaine.then(function(){
+            if (!connueIci(ds)) return;
             var t = (state.sessions[ds] && state.sessions[ds].titre) || null;
             var jeton = jetonDe('titres', ds);
             return avecDelai(c.rpc('pousser_titre', { p_date:ds, p_titre:t })).then(function(r){
@@ -8668,6 +8716,9 @@
         var chaine = Promise.resolve();
         dates.forEach(function(ds){
           chaine = chaine.then(function(){
+            // Meme regle pour le cycle, le mot de la seance et la validation :
+            // ce qu'on ne connait pas ne s'efface pas a distance.
+            if (!connueIci(ds)) return;
             var params = { p_date:ds };
             params[arg] = lire(ds);
             var jeton = jetonDe(cle, ds);
@@ -8701,6 +8752,7 @@
         var chaine = Promise.resolve();
         dates.forEach(function(ds){
           chaine = chaine.then(function(){
+            if (!connueIci(ds)) return;
             var f = (state.sessions[ds] && state.sessions[ds].termine) || null;
             var jeton = jetonDe('fins', ds);
             return avecDelai(c.rpc('pousser_fin', { p_date:ds, p_fin:f })).then(function(r){
@@ -9361,7 +9413,7 @@
 
       // La reconnexion relance ce qui attend. C'est tout le mecanisme de retry :
       // rien n'est perdu entre-temps, la file vit dans localStorage.
-      window.addEventListener('online', function(){ echec = ''; if (user) synchroniser(); });
+      window.addEventListener('online', function(){ echec = ''; echecs = 0; if (user) synchroniser(); });
       document.addEventListener('visibilitychange', function(){
         if (!document.hidden && user) synchroniser();
       });

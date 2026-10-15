@@ -238,6 +238,43 @@ Donc :
   réserve contient une séance **qui manque au carnet chargé**. Récupérer, c'est
   importer cette réserve : ce qui manque revient, ce qui est là ne bouge pas.
 
+**Une journée qu'on ne connaît pas ne s'efface pas à distance.** C'est le seul
+chemin qui détruisait le **cloud**, et donc les séances de n'importe quel compte
+(15/10/2026). `pousser_jour` remplace la journée en entier côté serveur — c'est
+ce qui la rend idempotente. Or `jourLocal(ds)` rendait `{exercices: []}` pour une
+journée absente du carnet chargé, et la file d'envoi, elle, vit dans une autre
+clé : un simple chargement raté — `getItem` qui lève, JSON tronqué — laissait
+donc partir une journée **vide** par-dessus la bonne. Le serveur confirmait, la
+file était vidée, et plus rien ne pouvait réparer. En local, le garde-fou
+anti-carnet-vide sauvait la mise ; dans le cloud, la journée était perdue.
+
+Une journée absente du carnet chargé n'est plus envoyée du tout : « absente »
+veut dire « on n'en sait rien », pas « elle est vide ». Sa marque reste dans la
+file, donc elle repartira dès qu'on la connaîtra de nouveau. Même règle pour le
+titre, le cycle, le mot de la séance et la validation. Une journée vidée pour de
+bon, elle, existe toujours dans le carnet avec zéro série : elle part
+normalement.
+
+Reproduit dans jsdom sur la version qui tournait le 14/10 au soir : carnet
+illisible + trois journées dans la file → **trois journées envoyées vides**, le
+titre, le cycle et la validation effacés, et la file vidée derrière. Aucune des
+quatre ne part aujourd'hui.
+
+**Un wifi qui reste « connecté » sans plus rien router** — celui de la salle
+qu'on quitte — est le pire cas : `navigator.onLine` dit oui, l'évènement
+`online` ne se déclenchera jamais, et chaque envoi attend ses 25 secondes pour
+rien. Les tentatives s'espacent donc : 30 s, 1 min, 2, 5, puis 10 au plus, et le
+compteur revient à zéro dès qu'un envoi passe. Au deuxième échec d'affilée,
+l'app le dit une fois sur l'écran de séance — « réseau silencieux : tes séries
+sont gardées ici » — parce que le détail du panneau des comptes ne se voit pas
+de là.
+
+**Les noms mémorisés aussi.** `topset_custom_exercises` se relit au chargement
+et retombe sur `{}` quand la lecture rate : la première sauvegarde écrasait
+alors tous les noms, leurs groupes et leurs rattachements. Une liste vide ne
+remplace plus une liste pleine. Un changement de compte, lui, efface la clé
+explicitement.
+
 **Le carnet se répare tout seul au démarrage** (15/10/2026). Une lecture peut
 rater sans rien détruire : `getItem` qui lève, un JSON tronqué, une clé qu'iOS a
 vidée. L'app affichait alors un carnet vide alors que les séances étaient

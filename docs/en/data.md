@@ -222,6 +222,39 @@ that single call would erase everything, permanently and silently. So:
   a session **missing from the loaded logbook**. Recovering means importing that
   reserve: what is missing comes back, what is there does not move.
 
+**A day we do not know is never erased remotely.** This was the one path that
+destroyed the **cloud**, and therefore any account's sessions (15/10/2026).
+`pousser_jour` replaces the whole day server-side — that is what makes it
+idempotent. But `jourLocal(ds)` returned `{exercices: []}` for a day missing
+from the loaded logbook, while the send queue lives in another key: a single
+failed read — `getItem` throwing, truncated JSON — let an **empty** day go out
+over the good one. The server confirmed, the queue was cleared, and nothing
+could ever repair it. Locally the empty-logbook guard saved the day; in the
+cloud it was lost.
+
+A day missing from the loaded logbook is no longer sent at all: "missing" means
+"we know nothing about it", not "it is empty". Its mark stays in the queue, so
+it will go out once we know it again. Same rule for the title, the cycle, the
+session word and the completion flag. A day deliberately emptied still exists in
+the logbook with zero sets, so it goes out normally.
+
+Reproduced in jsdom against the version live on the evening of 14/10: an
+unreadable logbook plus three days in the queue → **three days sent empty**, the
+title, cycle and completion erased, and the queue cleared behind them. None of
+the four goes out today.
+
+**A wifi that stays "connected" while routing nothing** — the gym's, as you walk
+away — is the worst case: `navigator.onLine` says yes, the `online` event will
+never fire, and every send waits out its 25 seconds for nothing. Retries now
+back off: 30 s, 1 min, 2, 5, then 10 at most, reset as soon as a send succeeds.
+On the second failure in a row the app says so once on the session screen, since
+the account panel's detail cannot be seen from there.
+
+**Remembered names too.** `topset_custom_exercises` is read at load time and
+falls back to `{}` when that read fails: the first save then overwrote every
+remembered name, group and alias. An empty list no longer replaces a full one.
+Switching accounts clears the key explicitly.
+
 **The logbook repairs itself at startup** (15/10/2026). A read can fail without
 destroying anything: `getItem` throwing, truncated JSON, a key iOS has emptied.
 The app then showed an empty logbook although the sessions were still right
