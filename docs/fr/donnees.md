@@ -238,6 +238,23 @@ Donc :
   réserve contient une séance **qui manque au carnet chargé**. Récupérer, c'est
   importer cette réserve : ce qui manque revient, ce qui est là ne bouge pas.
 
+**La deuxième maison du carnet.** Les cinq réserves vivent dans le
+`localStorage` : un seul quota, un seul endroit qu'iOS peut vider ou rendre
+illisible — donc elles tombent toutes ensemble, pour la même raison.
+`IndexedDB` est un stockage séparé, avec ses propres pannes. Le carnet (et les
+noms mémorisés) y sont recopiés deux secondes après chaque sauvegarde, et
+immédiatement quand on quitte l'app, puis relus au démarrage comme une réserve
+de plus. Un `localStorage` entièrement vidé ne perd donc plus rien.
+
+Elle suit les mêmes règles que les autres : elle porte le nom de son
+propriétaire et n'est relue que par lui, un changement de compte l'oublie, et
+son absence — navigation privée, navigateur qui la refuse — ne casse rien du
+tout.
+
+C'est la réponse à « ce n'est pas à l'utilisateur de faire ça » : une sauvegarde
+qu'il faut penser à faire n'est pas une sauvegarde. L'export `.json` reste là
+pour emporter son carnet ailleurs, pas pour se protéger de l'app.
+
 **La première synchro de chaque ouverture redemande tout le carnet.** La
 lecture incrémentale ne redemande que ce qui a changé depuis le curseur : c'est
 ce qu'il faut vingt fois par jour, mais ça ne répare jamais rien. Si
@@ -370,7 +387,10 @@ réparation marque pour envoi ce qu'elle reprend. Trois verrous :
   bon : sans ça la sauvegarde suivante recopiait l'ancien carnet dans la copie de
   secours.
 
-**Le diagnostic du stockage.** Quand une séance manque, la première question
+**Le diagnostic du stockage.** Il porte aussi l'état de la synchro — compte
+connecté, compte du carnet, curseur, journées en attente, dernier échec — parce
+que « j'ai relancé, j'ai toujours rien » ne mène nulle part sans ça. Quand une
+séance manque, la première question
 n'est pas « quel bug » mais « qu'y a-t-il vraiment dans ce téléphone ». Le
 bouton `DIAGNOSTIC DU STOCKAGE` du panneau `⇅` écrit un rapport lisible :
 version installée (le nom du cache du service worker), ce qu'il y a à l'écran,

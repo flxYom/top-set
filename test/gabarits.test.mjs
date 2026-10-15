@@ -1280,9 +1280,35 @@ ok('une lecture ratee ne laisse plus un carnet vide a l ecran',
    && /setTimeout\(reparerAuDemarrage, 60\);/.test(SRC)
    // Elle ne fait qu'ajouter, et elle ne se declenche que s'il manque
    // vraiment quelque chose : sinon le message reviendrait a chaque fois.
-   && /if \(!r\.bilan\.jours && !r\.bilan\.exercices && !r\.bilan\.series\) return;/.test(SRC)
-   && /TS\.fusionnerEcritures\(state\.sessions, p\.sessions, fabriqueId\)/.test(SRC)
+   && /if \(!r\.bilan\.jours && !r\.bilan\.exercices && !r\.bilan\.series\) return null;/.test(SRC)
+   && /TS\.fusionnerEcritures\(state\.sessions, normalizeLocal\(sessions\), fabriqueId\)/.test(SRC)
    && /showToast\('Carnet réparé : '/.test(SRC));
+
+// « C'est pas a l'utilisateur de faire ca » : une sauvegarde qu'il faut
+// penser a faire n'est pas une sauvegarde. Le carnet a donc une deuxieme
+// maison, dans un stockage separe du localStorage, ecrite toute seule.
+ok('le carnet a une deuxieme maison, ecrite sans rien demander',
+   /var IDB_NOM = 'topset', IDB_MAGASIN = 'carnet', IDB_CLE = 'courant';/.test(SRC)
+   && /function ecrireIdb\(\)\{/.test(SRC)
+   && /function lireIdb\(\)\{/.test(SRC)
+   // Recopiee a chaque sauvegarde, et forcee quand on quitte l'app.
+   && /planifierIdb\(\);/.test(SRC)
+   && /planifierIdb\(true\);/.test(SRC)
+   // Relue au demarrage, par le meme chemin que les autres reserves, et
+   // seulement si elle porte le nom du compte courant.
+   && /if \(\(copie\.p \|\| 'anon'\) !== proprietaire\(\)\) return;/.test(SRC)
+   && /lireIdb\(\)\.then\(function\(copie\)\{/.test(SRC)
+   // Oubliee au changement de compte, comme les autres.
+   && /oublierIdb\(\);/.test(SRC)
+   // Et son absence (navigation privee, vieux navigateur) ne casse rien.
+   && /if \(!window\.indexedDB\) return non\(new Error\('pas d\\'IndexedDB'\)\);/.test(SRC)
+   && /\}\).catch\(function\(\)\{ return false; \}\);/.test(SRC));
+
+ok('le diagnostic dit ce que vit la synchro',
+   /etat:function\(\)\{/.test(SRC)
+   && /l\.push\('SYNCHRO'\);/.test(SRC)
+   && /'- dernier echec : '/.test(SRC)
+   && /'- curseur : '/.test(SRC));
 
 ok('un journal compact permet de reconstruire le carnet',
    /var JOURNAL_KEY = 'topset_journal';/.test(SRC)

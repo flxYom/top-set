@@ -928,6 +928,7 @@
       delete saveTimers[ds];
       persistDay(ds);
     });
+    planifierIdb(true);
   }
   window.addEventListener('pagehide', viderFileSauvegarde);
   window.addEventListener('beforeunload', viderFileSauvegarde);
@@ -1019,6 +1020,8 @@
       // Meme si l'ecriture du carnet a echoue : le journal est plus petit,
       // c'est peut-etre le seul qui passe encore.
       ecrireJournal();
+      // Et la deuxieme maison, dans un stockage separe du localStorage.
+      planifierIdb();
     }catch(e){}
   }
 
@@ -1082,6 +1085,84 @@
   // fois moins que le carnet, donc il passe encore quand le stockage est
   // presque plein : c'est exactement le moment ou le carnet, lui, ne passe
   // plus. Il ne remplace rien, il permet de reconstruire. (15/10/2026)
+  // ---------- la deuxieme maison du carnet ----------
+  // Tout ce qui precede vit dans le localStorage : une seule reserve de
+  // stockage, un seul quota, un seul endroit qu'iOS peut vider ou rendre
+  // illisible. Les cinq filets y vivent aussi — donc ils tombent tous
+  // ensemble, pour la meme raison.
+  //
+  // IndexedDB est un stockage separe, avec son propre quota et ses propres
+  // pannes. Le carnet y est recopie a chaque sauvegarde, sans que personne
+  // n'ait rien a faire, et relu au demarrage comme une reserve de plus. C'est
+  // ce qui remplace « pense a exporter ton carnet » : ce n'est pas a
+  // l'utilisateur de se mefier de son telephone. (15/10/2026)
+  var IDB_NOM = 'topset', IDB_MAGASIN = 'carnet', IDB_CLE = 'courant';
+  var idbPromesse = null;
+
+  function idb(){
+    if (idbPromesse) return idbPromesse;
+    idbPromesse = new Promise(function(ok, non){
+      if (!window.indexedDB) return non(new Error('pas d\'IndexedDB'));
+      var req = indexedDB.open(IDB_NOM, 1);
+      req.onupgradeneeded = function(){
+        var d = req.result;
+        if (!d.objectStoreNames.contains(IDB_MAGASIN)) d.createObjectStore(IDB_MAGASIN);
+      };
+      req.onsuccess = function(){ ok(req.result); };
+      req.onerror = function(){ non(req.error || new Error('IndexedDB refuse')); };
+      req.onblocked = function(){ non(new Error('IndexedDB bloquee')); };
+    }).catch(function(e){ idbPromesse = null; throw e; });
+    return idbPromesse;
+  }
+
+  function ecrireIdb(){
+    return idb().then(function(d){
+      return new Promise(function(ok, non){
+        var t = d.transaction(IDB_MAGASIN, 'readwrite');
+        t.objectStore(IDB_MAGASIN).put({
+          p: proprietaire(),
+          quand: new Date().toISOString(),
+          sessions: state.sessions,
+          custom: customExercises
+        }, IDB_CLE);
+        t.oncomplete = function(){ ok(true); };
+        t.onerror = function(){ non(t.error || new Error('ecriture refusee')); };
+        t.onabort = function(){ non(t.error || new Error('ecriture annulee')); };
+      });
+    }).catch(function(){ return false; });
+  }
+
+  function lireIdb(){
+    return idb().then(function(d){
+      return new Promise(function(ok, non){
+        var t = d.transaction(IDB_MAGASIN, 'readonly');
+        var r = t.objectStore(IDB_MAGASIN).get(IDB_CLE);
+        r.onsuccess = function(){ ok(r.result || null); };
+        r.onerror = function(){ non(r.error || new Error('lecture refusee')); };
+      });
+    }).catch(function(){ return null; });
+  }
+
+  function oublierIdb(){
+    return idb().then(function(d){
+      return new Promise(function(ok){
+        var t = d.transaction(IDB_MAGASIN, 'readwrite');
+        t.objectStore(IDB_MAGASIN).delete(IDB_CLE);
+        t.oncomplete = function(){ ok(true); };
+        t.onerror = function(){ ok(false); };
+      });
+    }).catch(function(){ return false; });
+  }
+
+  // Une recopie par sauvegarde serait une transaction par frappe : on attend
+  // deux secondes de calme. Et on force le passage quand on quitte l'app.
+  var idbMinuteur = null;
+  function planifierIdb(immediat){
+    clearTimeout(idbMinuteur);
+    if (immediat){ ecrireIdb(); return; }
+    idbMinuteur = setTimeout(ecrireIdb, 2000);
+  }
+
   var JOURNAL_KEY = 'topset_journal';
 
   // A qui appartient ce qui est ecrit en ce moment : l'identifiant du compte
@@ -1125,6 +1206,7 @@
     ecrireCarnet('{}');
     oublierCustom();
     oublierReserves();
+    oublierIdb();
   }
 
   function ecrireJournal(){
@@ -6194,29 +6276,52 @@
   // de suite et on le dit. Rien n'est ecrase, la fusion ne fait qu'ajouter,
   // et une fois reparee la reserve n'apporte plus rien : le message ne
   // revient pas a chaque ouverture. (15/10/2026)
-  function reparerAuDemarrage(){
-    var c;
-    try { c = copieDeSecours(true); } catch(e){ return; }
-    if (!c || (!c.jours && !c.series)) return;
-    var p = parseBackup(c.texte);
-    if (p.error || !p.jours) return;
+  // Reprendre ce qu'une reserve a de plus que le carnet a l'ecran. Rend le
+  // nombre de journees et de series retrouvees, ou null si elle n'apportait
+  // rien. Ne supprime jamais : la fusion ajoute.
+  function reprendreDepuis(sessions, custom){
     var r;
-    try { r = TS.fusionnerEcritures(state.sessions, p.sessions, fabriqueId); }
-    catch(e2){ return; }
-    if (!r.bilan.jours && !r.bilan.exercices && !r.bilan.series) return;
+    try { r = TS.fusionnerEcritures(state.sessions, normalizeLocal(sessions), fabriqueId); }
+    catch(e){ return null; }
+    if (!r.bilan.jours && !r.bilan.exercices && !r.bilan.series) return null;
     state.sessions = r.sessions;
-    if (p.customExercises){
-      var neufs = customAbsents(p.customExercises);
-      neufs.forEach(function(k){ customExercises[k] = p.customExercises[k]; });
+    if (custom){
+      var neufs = customAbsents(custom);
+      neufs.forEach(function(k){ customExercises[k] = custom[k]; });
       if (neufs.length){ saveCustom(); rebuildLower(); populateDatalist(); }
     }
     saveLocal();
     r.bilan.dates.forEach(function(ds){ if (Sync) Sync.marquerSale(ds); });
     renderAll();
-    var quoi = r.bilan.jours
-      ? r.bilan.jours + (r.bilan.jours > 1 ? ' journées' : ' journée')
-      : r.bilan.series + (r.bilan.series > 1 ? ' séries' : ' série');
-    showToast('Carnet réparé : ' + quoi + ' retrouvée' + (r.bilan.jours > 1 || r.bilan.series > 1 ? 's' : ''));
+    return r.bilan;
+  }
+
+  function direReparation(bilan){
+    var quoi = bilan.jours
+      ? bilan.jours + (bilan.jours > 1 ? ' journées' : ' journée')
+      : bilan.series + (bilan.series > 1 ? ' séries' : ' série');
+    showToast('Carnet réparé : ' + quoi + ' retrouvée' + (bilan.jours > 1 || bilan.series > 1 ? 's' : ''));
+  }
+
+  function reparerAuDemarrage(){
+    var c = null;
+    try { c = copieDeSecours(true); } catch(e){}
+    if (c && (c.jours || c.series)){
+      var p = parseBackup(c.texte);
+      if (!p.error && p.jours){
+        var bilan = reprendreDepuis(p.sessions, p.customExercises);
+        if (bilan) direReparation(bilan);
+      }
+    }
+    // La deuxieme maison est asynchrone : on la lit juste apres. Un carnet
+    // qu'IndexedDB a garde pendant que le localStorage se vidait revient
+    // ici, sans que personne n'ait rien demande.
+    lireIdb().then(function(copie){
+      if (!copie || !copie.sessions || typeof copie.sessions !== 'object') return;
+      if ((copie.p || 'anon') !== proprietaire()) return;
+      var b = reprendreDepuis(copie.sessions, copie.custom);
+      if (b) direReparation(b);
+    }, function(){});
   }
 
 
@@ -8088,6 +8193,21 @@
     try { c = copieDeSecours(); } catch(e){}
     l.push('A RECUPERER : ' + (c ? c.jours + ' journee(s), ' + c.series + ' serie(s)' : 'rien'));
     l.push('');
+    l.push('SYNCHRO');
+    try {
+      var e = (Sync && Sync.etat) ? Sync.etat() : null;
+      if (!e) l.push('- indisponible');
+      else {
+        l.push('- comptes disponibles : ' + (e.dispo ? 'oui' : 'non'));
+        l.push('- connecte : ' + (e.compte ? String(e.compte).slice(0, 8) + '…' : 'non'));
+        l.push('- compte du carnet : ' + (e.compteMeta ? String(e.compteMeta).slice(0, 8) + '…' : 'aucun'));
+        l.push('- curseur : ' + (e.curseur || 'aucun') + (e.premiere ? ' (prochaine lecture : tout le carnet)' : ''));
+        l.push('- journees en attente d envoi : ' + e.enAttente);
+        l.push('- envoi en cours : ' + (e.enCours ? 'oui' : 'non'));
+        l.push('- dernier echec : ' + (e.echec || 'aucun') + (e.echecs ? ' (' + e.echecs + ' d affilee)' : ''));
+      }
+    } catch(e4){ l.push('- etat illisible : ' + e4); }
+    l.push('');
     l.push('CLES PRESENTES');
     try {
       for (var i = 0; i < localStorage.length; i++){
@@ -9528,6 +9648,22 @@
       // le curseur des nouveautes. Les journees d'ici plus completes sont
       // gardees par le garde-fou de tirer(). (14/10/2026)
       connecte:function(){ return !!user; },
+      // Pour le diagnostic : ce que la synchro est en train de vivre. Sans
+      // ca, « j'ai relance, j'ai toujours rien » ne mene nulle part.
+      etat:function(){
+        var m = lireMeta();
+        return {
+          compte:   user ? user.id : null,
+          compteMeta: m.userId || null,
+          enCours:  enCours,
+          echec:    echec || null,
+          echecs:   echecs,
+          premiere: premiereSync,
+          curseur:  m.depuis || null,
+          enAttente: Object.keys(m.sales || {}).length,
+          dispo:    dispo()
+        };
+      },
       // Pour retrouver SON carnet range, et seulement le sien.
       idCompte:function(){ return user ? user.id : null; },
       tirerTout:function(){ return tirer(true); },

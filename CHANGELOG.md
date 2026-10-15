@@ -55,6 +55,21 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ### Added
 
+- **The logbook has a second home, and nobody has to think about it.** "It is
+  not the user's job to do that" (15/10). The five reserves all live in
+  `localStorage`: one quota, one place iOS can empty — they fail together.
+  The logbook and the remembered names are now also copied into `IndexedDB`, a
+  separate store with its own failures, two seconds after each save and
+  immediately when the app is left, then read back at startup like one more
+  reserve. Proven in jsdom: a second launch with an **entirely empty**
+  `localStorage` gets the whole logbook back — titles and RPE included —
+  without anyone asking for anything. It carries its owner's name, a switch of
+  account forgets it, and its absence breaks nothing.
+- **The diagnostic now reports the sync.** Connected account, the logbook's
+  account, the cursor, days waiting to be sent, whether a send is in flight and
+  the last failure — because "I relaunched and still have nothing" leads
+  nowhere without them.
+
 - **The logbook repairs itself at startup.** "I get to the gym and my history is
   gone" — and on the other account it came back on its own later (15/10). So
   nothing had been destroyed: the *read* had failed. A read can fail without
@@ -229,6 +244,21 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ### Added
 
+- **The logbook has a second home, and nobody has to think about it.** "It is
+  not the user's job to do that" (15/10). The five reserves all live in
+  `localStorage`: one quota, one place iOS can empty — they fail together.
+  The logbook and the remembered names are now also copied into `IndexedDB`, a
+  separate store with its own failures, two seconds after each save and
+  immediately when the app is left, then read back at startup like one more
+  reserve. Proven in jsdom: a second launch with an **entirely empty**
+  `localStorage` gets the whole logbook back — titles and RPE included —
+  without anyone asking for anything. It carries its owner's name, a switch of
+  account forgets it, and its absence breaks nothing.
+- **The diagnostic now reports the sync.** Connected account, the logbook's
+  account, the cursor, days waiting to be sent, whether a send is in flight and
+  the last failure — because "I relaunched and still have nothing" leads
+  nowhere without them.
+
 - **The session's title block, rebuilt.** « The session title part is too weird,
   not pretty. » (14/10.) Three stacked blocks were stepping on each other: a
   banner whose big title was the *muscle group*, the date a second time right
@@ -393,6 +423,21 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ### Added
 
+- **The logbook has a second home, and nobody has to think about it.** "It is
+  not the user's job to do that" (15/10). The five reserves all live in
+  `localStorage`: one quota, one place iOS can empty — they fail together.
+  The logbook and the remembered names are now also copied into `IndexedDB`, a
+  separate store with its own failures, two seconds after each save and
+  immediately when the app is left, then read back at startup like one more
+  reserve. Proven in jsdom: a second launch with an **entirely empty**
+  `localStorage` gets the whole logbook back — titles and RPE included —
+  without anyone asking for anything. It carries its owner's name, a switch of
+  account forgets it, and its absence breaks nothing.
+- **The diagnostic now reports the sync.** Connected account, the logbook's
+  account, the cursor, days waiting to be sent, whether a send is in flight and
+  the last failure — because "I relaunched and still have nothing" leads
+  nowhere without them.
+
 - **Full-screen exercise.** The orange ⤢ icon on a card opens the exercise
   full screen with only the set to do: big −/+ either side of the number.
   `SÉRIE SUIVANTE` ticks it like its row and switches to the rest (time
@@ -461,6 +506,21 @@ while it stays below `1.0.0`, breaking changes (in particular to the
   Nutrition project.
 
 ### Added
+
+- **The logbook has a second home, and nobody has to think about it.** "It is
+  not the user's job to do that" (15/10). The five reserves all live in
+  `localStorage`: one quota, one place iOS can empty — they fail together.
+  The logbook and the remembered names are now also copied into `IndexedDB`, a
+  separate store with its own failures, two seconds after each save and
+  immediately when the app is left, then read back at startup like one more
+  reserve. Proven in jsdom: a second launch with an **entirely empty**
+  `localStorage` gets the whole logbook back — titles and RPE included —
+  without anyone asking for anything. It carries its owner's name, a switch of
+  account forgets it, and its absence breaks nothing.
+- **The diagnostic now reports the sync.** Connected account, the logbook's
+  account, the cursor, days waiting to be sent, whether a send is in flight and
+  the last failure — because "I relaunched and still have nothing" leads
+  nowhere without them.
 
 - **Share your numbers with friends — and nothing else.** An exercise, a
   session or a recap can be sent to chosen friends. You become friends through
@@ -548,6 +608,21 @@ while it stays below `1.0.0`, breaking changes (in particular to the
   Nutrition project.
 
 ### Added
+
+- **The logbook has a second home, and nobody has to think about it.** "It is
+  not the user's job to do that" (15/10). The five reserves all live in
+  `localStorage`: one quota, one place iOS can empty — they fail together.
+  The logbook and the remembered names are now also copied into `IndexedDB`, a
+  separate store with its own failures, two seconds after each save and
+  immediately when the app is left, then read back at startup like one more
+  reserve. Proven in jsdom: a second launch with an **entirely empty**
+  `localStorage` gets the whole logbook back — titles and RPE included —
+  without anyone asking for anything. It carries its owner's name, a switch of
+  account forgets it, and its absence breaks nothing.
+- **The diagnostic now reports the sync.** Connected account, the logbook's
+  account, the cursor, days waiting to be sent, whether a send is in flight and
+  the last failure — because "I relaunched and still have nothing" leads
+  nowhere without them.
 
 - **Search an exercise from the carnet.** A bar at the top of CARNET: type a
   name, land on that exercise's performance history — signal, top set, estimated
@@ -704,6 +779,21 @@ while it stays below `1.0.0`, breaking changes (in particular to the
   Nutrition project.
 
 ### Added
+
+- **The logbook has a second home, and nobody has to think about it.** "It is
+  not the user's job to do that" (15/10). The five reserves all live in
+  `localStorage`: one quota, one place iOS can empty — they fail together.
+  The logbook and the remembered names are now also copied into `IndexedDB`, a
+  separate store with its own failures, two seconds after each save and
+  immediately when the app is left, then read back at startup like one more
+  reserve. Proven in jsdom: a second launch with an **entirely empty**
+  `localStorage` gets the whole logbook back — titles and RPE included —
+  without anyone asking for anything. It carries its owner's name, a switch of
+  account forgets it, and its absence breaks nothing.
+- **The diagnostic now reports the sync.** Connected account, the logbook's
+  account, the cursor, days waiting to be sent, whether a send is in flight and
+  the last failure — because "I relaunched and still have nothing" leads
+  nowhere without them.
 
 - **Stopwatch for timed exercises.** `▶ CHRONO` starts it, a second tap pauses
   it and logs the time held as a ticked set; the next tap starts a new set from
@@ -920,6 +1010,21 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ### Added
 
+- **The logbook has a second home, and nobody has to think about it.** "It is
+  not the user's job to do that" (15/10). The five reserves all live in
+  `localStorage`: one quota, one place iOS can empty — they fail together.
+  The logbook and the remembered names are now also copied into `IndexedDB`, a
+  separate store with its own failures, two seconds after each save and
+  immediately when the app is left, then read back at startup like one more
+  reserve. Proven in jsdom: a second launch with an **entirely empty**
+  `localStorage` gets the whole logbook back — titles and RPE included —
+  without anyone asking for anything. It carries its owner's name, a switch of
+  account forgets it, and its absence breaks nothing.
+- **The diagnostic now reports the sync.** Connected account, the logbook's
+  account, the cursor, days waiting to be sent, whether a send is in flight and
+  the last failure — because "I relaunched and still have nothing" leads
+  nowhere without them.
+
 - **The schema refuses to run in the wrong Supabase project.** This account also
   hosts Yom Nutrition, and pasting `schema.sql` there failed with
   `column "cree_le" does not exist` — an index on a table carrying the same name
@@ -1046,6 +1151,21 @@ while it stays below `1.0.0`, breaking changes (in particular to the
   Nutrition project.
 
 ### Added
+
+- **The logbook has a second home, and nobody has to think about it.** "It is
+  not the user's job to do that" (15/10). The five reserves all live in
+  `localStorage`: one quota, one place iOS can empty — they fail together.
+  The logbook and the remembered names are now also copied into `IndexedDB`, a
+  separate store with its own failures, two seconds after each save and
+  immediately when the app is left, then read back at startup like one more
+  reserve. Proven in jsdom: a second launch with an **entirely empty**
+  `localStorage` gets the whole logbook back — titles and RPE included —
+  without anyone asking for anything. It carries its owner's name, a switch of
+  account forgets it, and its absence breaks nothing.
+- **The diagnostic now reports the sync.** Connected account, the logbook's
+  account, the cursor, days waiting to be sent, whether a send is in flight and
+  the last failure — because "I relaunched and still have nothing" leads
+  nowhere without them.
 
 - **A comment per exercise.** An optional field under the sets — « last set
   assisted », « with bands », « a bit tired ». It shows again under *Dernière
@@ -1628,6 +1748,21 @@ Initial public release.
   Nutrition project.
 
 ### Added
+
+- **The logbook has a second home, and nobody has to think about it.** "It is
+  not the user's job to do that" (15/10). The five reserves all live in
+  `localStorage`: one quota, one place iOS can empty — they fail together.
+  The logbook and the remembered names are now also copied into `IndexedDB`, a
+  separate store with its own failures, two seconds after each save and
+  immediately when the app is left, then read back at startup like one more
+  reserve. Proven in jsdom: a second launch with an **entirely empty**
+  `localStorage` gets the whole logbook back — titles and RPE included —
+  without anyone asking for anything. It carries its owner's name, a switch of
+  account forgets it, and its absence breaks nothing.
+- **The diagnostic now reports the sync.** Connected account, the logbook's
+  account, the cursor, days waiting to be sent, whether a send is in flight and
+  the last failure — because "I relaunched and still have nothing" leads
+  nowhere without them.
 
 - Weekly session planning (day pills, week navigation, "AUJOURD'HUI").
 - Set logging with weight, reps, RPE (10 → 6, half points) and rest per set.

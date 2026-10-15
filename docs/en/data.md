@@ -222,6 +222,21 @@ that single call would erase everything, permanently and silently. So:
   a session **missing from the loaded logbook**. Recovering means importing that
   reserve: what is missing comes back, what is there does not move.
 
+**The logbook's second home.** The five reserves all live in `localStorage`:
+one quota, one place iOS can empty or corrupt — so they fail together, for the
+same reason. `IndexedDB` is a separate store with its own failures. The logbook
+(and the remembered names) are copied there two seconds after each save, and
+immediately when the app is left, then read back at startup like one more
+reserve. A fully emptied `localStorage` no longer loses anything.
+
+It follows the same rules as the others: it carries its owner's name and is only
+read by them, switching accounts forgets it, and its absence — private mode, a
+browser that refuses it — breaks nothing.
+
+This is the answer to "it is not the user's job": a backup you have to remember
+is not a backup. The `.json` export stays for taking your logbook elsewhere, not
+for protecting yourself from the app.
+
 **The first sync of every launch asks for the whole logbook.** The incremental
 read only asks for what changed since the cursor: that is what you want twenty
 times a day, but it never repairs anything. If the history disappears from the
