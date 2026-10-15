@@ -238,6 +238,24 @@ Donc :
   réserve contient une séance **qui manque au carnet chargé**. Récupérer, c'est
   importer cette réserve : ce qui manque revient, ce qui est là ne bouge pas.
 
+**La première synchro de chaque ouverture redemande tout le carnet.** La
+lecture incrémentale ne redemande que ce qui a changé depuis le curseur : c'est
+ce qu'il faut vingt fois par jour, mais ça ne répare jamais rien. Si
+l'historique disparaît du téléphone, le curseur, lui, est resté à hier — et
+l'écran reste vide en face d'un compte qui a tout. C'est exactement ce qui est
+arrivé le 15/10/2026 : 38 journées sur le serveur, une seule à l'écran, et la
+synchro qui ne voyait aucune raison de redemander le reste. La première synchro
+de chaque lancement part donc sans curseur ; les suivantes restent
+incrémentales. Le tirage n'écrase jamais une journée d'ici plus complète, donc
+ça ne coûte qu'un appel.
+
+Et une journée coincée dans la file d'envoi sans exister en local ne bloque plus
+le tirage. La règle « ce qui attend d'être envoyé gagne » ne vaut que si le
+carnet chargé connaît la journée ; sinon la file parle d'une journée dont on n'a
+plus rien, et la garder bloquait la journée des deux côtés à la fois — plus
+envoyée (on ne la connaît pas), plus reçue (la file avait la priorité). La
+marque devenue vide est retirée.
+
 **Une journée qu'on ne connaît pas ne s'efface pas à distance.** C'est le seul
 chemin qui détruisait le **cloud**, et donc les séances de n'importe quel compte
 (15/10/2026). `pousser_jour` remplace la journée en entier côté serveur — c'est

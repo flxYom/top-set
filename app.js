@@ -8260,6 +8260,9 @@
     var sb = null, libPromise = null, clientPromise = null;
     var user = null;
     var enCours = false, minuteur = null, echec = '', echecs = 0;
+    // La premiere synchro de l'ouverture redemande tout le carnet ; les
+    // suivantes, seulement ce qui a change.
+    var premiereSync = true;
 
     function dispo(){ return !!(cfg && cfg.url && cfg.anonKey); }
 
@@ -8580,7 +8583,17 @@
             if (d.updatedAt && (!maxMaj || d.updatedAt > maxMaj)) maxMaj = d.updatedAt;
             // Une journee modifiee ici et pas encore envoyee gagne : c'est ce
             // que l'utilisateur vient de taper. L'autre version est gardee.
-            if (enAttente[ds]){ garderConflit(ds, d); return; }
+            //
+            // Mais seulement si le carnet charge connait cette journee. Sinon
+            // la file parle d'une journee dont on n'a plus rien : elle n'a
+            // rien a dire, et la garder bloquerait la journee des deux cotes
+            // a la fois — plus envoyee (on ne la connait pas) et plus recue
+            // (la file aurait la priorite). On prend donc celle du cloud et
+            // on retire la marque devenue vide. (15/10/2026)
+            if (enAttente[ds] && connueIci(ds)){ garderConflit(ds, d); return; }
+            if (enAttente[ds]){
+              majMeta(function(m){ if (m.sales) delete m.sales[ds]; });
+            }
             // Garde-fou, en plus du drapeau : une version du cloud qui a
             // MOINS de series notees que celle d'ici ne peut pas etre la plus
             // recente — c'est forcement un envoi qui n'est jamais parti. On
@@ -8802,7 +8815,32 @@
 
     function synchroniser(){
       if (!user) return Promise.resolve();
-      return tirer(false)
+      // La lecture ordinaire ne redemande que ce qui a change depuis le
+      // curseur. C'est ce qu'il faut vingt fois par jour, a chaque retour sur
+      // l'app — mais ca ne repare jamais rien : si l'historique a disparu du
+      // telephone, le curseur, lui, est reste a hier, et l'ecran reste vide
+      // en face d'un compte qui a tout. C'est exactement ce qui est arrive le
+      // 15/10/2026 : 38 journees sur le serveur, une seule a l'ecran.
+      //
+      // La PREMIERE synchro de chaque ouverture redemande donc le carnet
+      // entier. Une fois par lancement, et le carnet du telephone rejoint
+      // celui du compte sans que personne n'ait rien a faire. Le tirage
+      // n'ecrase jamais une journee d'ici plus complete, donc ca ne coute
+      // qu'un appel.
+      var tout = premiereSync;
+      premiereSync = false;
+      // Le voile d'attente seulement quand il n'y a rien a l'ecran : sinon il
+      // clignoterait a chaque ouverture pour rien.
+      var montrerVoile = tout && !joursRemplis(state.sessions);
+      if (montrerVoile) loader('Récupération de tes séances…');
+      return tirer(tout)
+        .then(function(n){
+          if (montrerVoile){
+            cacherLoader();
+            if (n) showToast(n + ' journée(s) récupérée(s) depuis ton compte');
+          }
+          return n;
+        }, function(e){ if (montrerVoile) cacherLoader(); throw e; })
         .then(pousser)
         .then(function(){
           return lireMeta().exosSales ? pousserExos().catch(function(){}) : null;

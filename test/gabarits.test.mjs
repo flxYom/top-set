@@ -1330,6 +1330,19 @@ ok('une journee absente du carnet charge n est jamais envoyee',
    // connaitra de nouveau.
    && /\/\/ La marque est lue AVANT l'envoi/.test(SRC));
 
+// « Dans mon espace admin y'a ecrit 38 seances, j'en vois aucune dans mon
+// recap ni dans mon carnet. » L'admin lit le serveur, le carnet lit le
+// telephone : la lecture incrementale ne repare jamais ca, puisque le
+// curseur, lui, est reste a hier.
+ok('la premiere synchro de chaque ouverture redemande tout le carnet',
+   /var premiereSync = true;/.test(SRC)
+   && /var tout = premiereSync;\n      premiereSync = false;/.test(SRC)
+   && /var montrerVoile = tout && !joursRemplis\(state\.sessions\);/.test(SRC)
+   // Et une journee coincee dans la file sans exister en local ne bloque plus
+   // le tirage : elle serait sinon ni envoyee, ni recue.
+   && /if \(enAttente\[ds\] && connueIci\(ds\)\)\{ garderConflit\(ds, d\); return; \}/.test(SRC)
+   && /majMeta\(function\(m\)\{ if \(m\.sales\) delete m\.sales\[ds\]; \}\);/.test(SRC));
+
 ok('un stockage silencieux n efface pas les noms memorises',
    /if \(actuel && actuel !== '\{\}' && futur === '\{\}'\) return;/.test(SRC)
    && /function oublierCustom\(\)\{/.test(SRC)

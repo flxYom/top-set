@@ -222,6 +222,23 @@ that single call would erase everything, permanently and silently. So:
   a session **missing from the loaded logbook**. Recovering means importing that
   reserve: what is missing comes back, what is there does not move.
 
+**The first sync of every launch asks for the whole logbook.** The incremental
+read only asks for what changed since the cursor: that is what you want twenty
+times a day, but it never repairs anything. If the history disappears from the
+phone, the cursor stayed at yesterday — and the screen stays empty facing an
+account that has everything. That is exactly what happened on 15/10/2026: 38
+days on the server, one on screen, and a sync that saw no reason to ask for the
+rest. The first sync of each launch now goes without a cursor; the following
+ones stay incremental. The pull never overwrites a day that is more complete
+here, so it costs one call.
+
+And a day stuck in the send queue without existing locally no longer blocks the
+pull. The rule "what is waiting to be sent wins" only holds if the loaded
+logbook knows the day; otherwise the queue speaks of a day we have nothing of,
+and keeping it blocked that day on both sides at once — no longer sent (we do
+not know it), no longer received (the queue had priority). The now-empty mark is
+dropped.
+
 **A day we do not know is never erased remotely.** This was the one path that
 destroyed the **cloud**, and therefore any account's sessions (15/10/2026).
 `pousser_jour` replaces the whole day server-side — that is what makes it

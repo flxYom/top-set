@@ -1,0 +1,81 @@
+-- ===================================================================
+-- Top Set — AUDIT 2 : les journees vides, et la liste exacte des dates
+--
+-- A coller dans l'editeur SQL de Supabase, projet TOP SET.
+-- Ce script ne MODIFIE RIEN : il ne fait que lire et compter.
+-- Il s'arrete tout seul s'il est lance sur le projet Yom Nutrition.
+-- ===================================================================
+
+do $$
+begin
+  if exists (select 1 from information_schema.tables
+             where table_schema = 'public'
+               and table_name in ('aliments_ciqual', 'user_journal')) then
+    raise exception 'Ce script est pour Top Set, pas pour Yom Nutrition. Rien n''a ete lu.';
+  end if;
+end $$;
+
+-- -------------------------------------------------------------------
+-- A. LES JOURNEES VIDES : la seance existe, mais plus un seul exercice.
+--    C'est la signature exacte du bug (une journee vide envoyee
+--    par-dessus la bonne). « ecrit_le » dit quand c'est arrive.
+--    AUCUNE LIGNE ICI = le bug ne t'a jamais touche.
+-- -------------------------------------------------------------------
+select
+  left(s.user_id::text, 8) || '…'  as compte,
+  s.date,
+  s.updated_at                     as ecrit_le,
+  count(e.id)                      as exercices,
+  count(se.id)                     as series
+from public.seances s
+left join public.exercices e on e.user_id = s.user_id and e.seance_id = s.id
+left join public.series   se on se.user_id = e.user_id and se.exercice_id = e.id
+group by s.user_id, s.date, s.updated_at
+having count(se.id) = 0
+order by s.updated_at desc;
+
+-- -------------------------------------------------------------------
+-- B. TOUTES TES DATES, septembre et octobre, avec leur nombre de
+--    series et l'heure de la derniere ecriture. Compare-la a ce que
+--    ton telephone affiche : une date qui manque ici n'a jamais
+--    atteint le serveur.
+-- -------------------------------------------------------------------
+select
+  left(s.user_id::text, 8) || '…'  as compte,
+  s.date,
+  count(distinct e.id)             as exercices,
+  count(se.id)                     as series,
+  s.updated_at                     as ecrit_le
+from public.seances s
+left join public.exercices e on e.user_id = s.user_id and e.seance_id = s.id
+left join public.series   se on se.user_id = e.user_id and se.exercice_id = e.id
+where s.date >= date '2026-09-01'
+  and s.user_id in (
+    -- les deux comptes qui ont un vrai historique
+    select user_id from public.seances group by user_id
+    having count(distinct date) >= 5
+  )
+group by s.user_id, s.date, s.updated_at
+order by compte, s.date;
+
+-- -------------------------------------------------------------------
+-- C. Les trous : les jours SANS seance entre ta premiere et ta
+--    derniere, compte par compte. Si tu t'entraines presque tous les
+--    jours, c'est la liste de ce qui pourrait manquer.
+-- -------------------------------------------------------------------
+with comptes as (
+  select user_id, min(date) as debut, max(date) as fin
+  from public.seances
+  group by user_id
+  having count(distinct date) >= 5
+)
+select
+  left(c.user_id::text, 8) || '…'  as compte,
+  j::date                          as jour_sans_seance
+from comptes c
+cross join generate_series(c.debut, c.fin, interval '1 day') as j
+where not exists (
+  select 1 from public.seances s
+  where s.user_id = c.user_id and s.date = j::date
+)
+order by compte, jour_sans_seance;

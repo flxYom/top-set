@@ -11,6 +11,19 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ### Fixed (the destructive one)
 
+- **"The admin page says 38 sessions, I see none in my logbook."** The admin
+  page reads the server, the logbook reads the phone (15/10). The incremental
+  pull only asks for what changed since its cursor, so it could never repair a
+  phone whose history had gone: the cursor was still at yesterday, and the
+  screen stayed at one session facing an account with 38. The first sync of
+  every launch now asks for the whole logbook, cursor ignored; the following
+  ones stay incremental. A day stuck in the send queue without existing locally
+  no longer blocks the pull either — it was neither sent (unknown locally) nor
+  received (the queue had priority). Reproduced in jsdom with a server that
+  honours the cursor: on the previous commit the phone stayed at one session
+  with thirty on the server; now all thirty come back, and the day that existed
+  only on the phone is kept.
+
 - **A day we do not know is no longer erased remotely.** Two accounts, both used
   daily, both lost their history on the evening of 14/10 — so the cause could
   not be one phone's storage. It was the push. `pousser_jour` replaces the whole
@@ -172,6 +185,19 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ### Fixed (the destructive one)
 
+- **"The admin page says 38 sessions, I see none in my logbook."** The admin
+  page reads the server, the logbook reads the phone (15/10). The incremental
+  pull only asks for what changed since its cursor, so it could never repair a
+  phone whose history had gone: the cursor was still at yesterday, and the
+  screen stayed at one session facing an account with 38. The first sync of
+  every launch now asks for the whole logbook, cursor ignored; the following
+  ones stay incremental. A day stuck in the send queue without existing locally
+  no longer blocks the pull either — it was neither sent (unknown locally) nor
+  received (the queue had priority). Reproduced in jsdom with a server that
+  honours the cursor: on the previous commit the phone stayed at one session
+  with thirty on the server; now all thirty come back, and the day that existed
+  only on the phone is kept.
+
 - **A day we do not know is no longer erased remotely.** Two accounts, both used
   daily, both lost their history on the evening of 14/10 — so the cause could
   not be one phone's storage. It was the push. `pousser_jour` replaces the whole
@@ -323,6 +349,19 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ### Fixed (the destructive one)
 
+- **"The admin page says 38 sessions, I see none in my logbook."** The admin
+  page reads the server, the logbook reads the phone (15/10). The incremental
+  pull only asks for what changed since its cursor, so it could never repair a
+  phone whose history had gone: the cursor was still at yesterday, and the
+  screen stayed at one session facing an account with 38. The first sync of
+  every launch now asks for the whole logbook, cursor ignored; the following
+  ones stay incremental. A day stuck in the send queue without existing locally
+  no longer blocks the pull either — it was neither sent (unknown locally) nor
+  received (the queue had priority). Reproduced in jsdom with a server that
+  honours the cursor: on the previous commit the phone stayed at one session
+  with thirty on the server; now all thirty come back, and the day that existed
+  only on the phone is kept.
+
 - **A day we do not know is no longer erased remotely.** Two accounts, both used
   daily, both lost their history on the evening of 14/10 — so the cause could
   not be one phone's storage. It was the push. `pousser_jour` replaces the whole
@@ -378,6 +417,19 @@ while it stays below `1.0.0`, breaking changes (in particular to the
   (`exercices_perso.sous_groupe`). Service worker `topset-v41`.
 
 ### Fixed (the destructive one)
+
+- **"The admin page says 38 sessions, I see none in my logbook."** The admin
+  page reads the server, the logbook reads the phone (15/10). The incremental
+  pull only asks for what changed since its cursor, so it could never repair a
+  phone whose history had gone: the cursor was still at yesterday, and the
+  screen stayed at one session facing an account with 38. The first sync of
+  every launch now asks for the whole logbook, cursor ignored; the following
+  ones stay incremental. A day stuck in the send queue without existing locally
+  no longer blocks the pull either — it was neither sent (unknown locally) nor
+  received (the queue had priority). Reproduced in jsdom with a server that
+  honours the cursor: on the previous commit the phone stayed at one session
+  with thirty on the server; now all thirty come back, and the day that existed
+  only on the phone is kept.
 
 - **A day we do not know is no longer erased remotely.** Two accounts, both used
   daily, both lost their history on the evening of 14/10 — so the cause could
@@ -452,6 +504,19 @@ while it stays below `1.0.0`, breaking changes (in particular to the
   being written, and the offer names the final destination.
 
 ### Fixed (the destructive one)
+
+- **"The admin page says 38 sessions, I see none in my logbook."** The admin
+  page reads the server, the logbook reads the phone (15/10). The incremental
+  pull only asks for what changed since its cursor, so it could never repair a
+  phone whose history had gone: the cursor was still at yesterday, and the
+  screen stayed at one session facing an account with 38. The first sync of
+  every launch now asks for the whole logbook, cursor ignored; the following
+  ones stay incremental. A day stuck in the send queue without existing locally
+  no longer blocks the pull either — it was neither sent (unknown locally) nor
+  received (the queue had priority). Reproduced in jsdom with a server that
+  honours the cursor: on the previous commit the phone stayed at one session
+  with thirty on the server; now all thirty come back, and the day that existed
+  only on the phone is kept.
 
 - **A day we do not know is no longer erased remotely.** Two accounts, both used
   daily, both lost their history on the evening of 14/10 — so the cause could
@@ -595,6 +660,19 @@ while it stays below `1.0.0`, breaking changes (in particular to the
   the feedback list escapes its type and status labels too.
 
 ### Fixed (the destructive one)
+
+- **"The admin page says 38 sessions, I see none in my logbook."** The admin
+  page reads the server, the logbook reads the phone (15/10). The incremental
+  pull only asks for what changed since its cursor, so it could never repair a
+  phone whose history had gone: the cursor was still at yesterday, and the
+  screen stayed at one session facing an account with 38. The first sync of
+  every launch now asks for the whole logbook, cursor ignored; the following
+  ones stay incremental. A day stuck in the send queue without existing locally
+  no longer blocks the pull either — it was neither sent (unknown locally) nor
+  received (the queue had priority). Reproduced in jsdom with a server that
+  honours the cursor: on the previous commit the phone stayed at one session
+  with thirty on the server; now all thirty come back, and the day that existed
+  only on the phone is kept.
 
 - **A day we do not know is no longer erased remotely.** Two accounts, both used
   daily, both lost their history on the evening of 14/10 — so the cause could
@@ -798,6 +876,19 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ### Fixed (the destructive one)
 
+- **"The admin page says 38 sessions, I see none in my logbook."** The admin
+  page reads the server, the logbook reads the phone (15/10). The incremental
+  pull only asks for what changed since its cursor, so it could never repair a
+  phone whose history had gone: the cursor was still at yesterday, and the
+  screen stayed at one session facing an account with 38. The first sync of
+  every launch now asks for the whole logbook, cursor ignored; the following
+  ones stay incremental. A day stuck in the send queue without existing locally
+  no longer blocks the pull either — it was neither sent (unknown locally) nor
+  received (the queue had priority). Reproduced in jsdom with a server that
+  honours the cursor: on the previous commit the phone stayed at one session
+  with thirty on the server; now all thirty come back, and the day that existed
+  only on the phone is kept.
+
 - **A day we do not know is no longer erased remotely.** Two accounts, both used
   daily, both lost their history on the evening of 14/10 — so the cause could
   not be one phone's storage. It was the push. `pousser_jour` replaces the whole
@@ -911,6 +1002,19 @@ while it stays below `1.0.0`, breaking changes (in particular to the
   both READMEs. Service worker cache `topset-v18` → `topset-v19`.
 
 ### Fixed (the destructive one)
+
+- **"The admin page says 38 sessions, I see none in my logbook."** The admin
+  page reads the server, the logbook reads the phone (15/10). The incremental
+  pull only asks for what changed since its cursor, so it could never repair a
+  phone whose history had gone: the cursor was still at yesterday, and the
+  screen stayed at one session facing an account with 38. The first sync of
+  every launch now asks for the whole logbook, cursor ignored; the following
+  ones stay incremental. A day stuck in the send queue without existing locally
+  no longer blocks the pull either — it was neither sent (unknown locally) nor
+  received (the queue had priority). Reproduced in jsdom with a server that
+  honours the cursor: on the previous commit the phone stayed at one session
+  with thirty on the server; now all thirty come back, and the day that existed
+  only on the phone is kept.
 
 - **A day we do not know is no longer erased remotely.** Two accounts, both used
   daily, both lost their history on the evening of 14/10 — so the cause could
@@ -1480,6 +1584,19 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 Initial public release.
 
 ### Fixed (the destructive one)
+
+- **"The admin page says 38 sessions, I see none in my logbook."** The admin
+  page reads the server, the logbook reads the phone (15/10). The incremental
+  pull only asks for what changed since its cursor, so it could never repair a
+  phone whose history had gone: the cursor was still at yesterday, and the
+  screen stayed at one session facing an account with 38. The first sync of
+  every launch now asks for the whole logbook, cursor ignored; the following
+  ones stay incremental. A day stuck in the send queue without existing locally
+  no longer blocks the pull either — it was neither sent (unknown locally) nor
+  received (the queue had priority). Reproduced in jsdom with a server that
+  honours the cursor: on the previous commit the phone stayed at one session
+  with thirty on the server; now all thirty come back, and the day that existed
+  only on the phone is kept.
 
 - **A day we do not know is no longer erased remotely.** Two accounts, both used
   daily, both lost their history on the evening of 14/10 — so the cause could
