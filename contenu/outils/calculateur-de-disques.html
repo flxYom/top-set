@@ -1,0 +1,148 @@
+<!--
+{
+  "type": "outil",
+  "title": "Calculateur de disques : quoi mettre de chaque côté",
+  "description": "Entre ta charge : le calculateur donne les disques à mettre de chaque côté de la barre, le total réel, et ce qui manque quand elle ne se charge pas.",
+  "h1": "Calculateur de disques",
+  "fil": "Calculateur de disques",
+  "lede": "« 82,5 kg », c'est quoi de chaque côté ? Entre ta charge et le poids de ta barre : le calculateur donne les disques à enfiler, dans l'ordre, et le total réel. C'est le même calcul que dans le carnet Top Set.",
+  "primaryQuery": "calculateur de disques musculation",
+  "published": "2026-10-22",
+  "reviewed": "2026-10-22",
+  "ordre": 2,
+  "sommaire": false,
+  "scripts": ["/intelligence.js", "/outils/disques.js"],
+  "related": ["/documentation/poids-de-la-barre", "/outils/calculateur-1rm", "/entrainement/surcharge-progressive"],
+  "sources": {
+    "ipf2026": "la barre de compétition et ses colliers pèsent 25 kg, chaque collier 2,5 kg ; les disques vont de 1,25 à 25 kg, à 0,25 % ou 10 g près ; le 25 kg est rouge, le 20 kg bleu, le 15 kg jaune ; et le poids de la barre chargée doit être un multiple de 2,5 kg."
+  }
+}
+-->
+<div class="calc" id="calcDisques">
+  <div class="champs">
+    <div class="champ">
+      <label for="d-cible">Charge voulue (kg)</label>
+      <input id="d-cible" type="text" inputmode="decimal" autocomplete="off" value="82,5">
+      <small>Barre comprise, comme dans ton carnet.</small>
+    </div>
+    <div class="champ">
+      <label for="d-barre">La barre</label>
+      <select id="d-barre">
+        <option value="20" selected>20 kg — barre olympique</option>
+        <option value="25">25 kg — barre et colliers de compétition</option>
+        <option value="15">15 kg — barre courte ou « femme »</option>
+        <option value="10">10 kg — barre EZ, barre légère</option>
+        <option value="0">0 — je charge autre chose</option>
+      </select>
+      <small>Dans le doute : <a href="/documentation/poids-de-la-barre">combien pèse la barre</a>.</small>
+    </div>
+  </div>
+
+  <fieldset class="disques-dispo">
+    <legend>Les disques que tu as</legend>
+    <div id="d-jeu">
+      <label><input type="checkbox" value="25" checked> 25</label>
+      <label><input type="checkbox" value="20" checked> 20</label>
+      <label><input type="checkbox" value="15" checked> 15</label>
+      <label><input type="checkbox" value="10" checked> 10</label>
+      <label><input type="checkbox" value="5" checked> 5</label>
+      <label><input type="checkbox" value="2.5" checked> 2,5</label>
+      <label><input type="checkbox" value="1.25" checked> 1,25</label>
+    </div>
+    <small>Décoche ce qui manque dans ta salle : le calcul s'adapte.</small>
+  </fieldset>
+
+  <div class="resultat" aria-live="polite">
+    <span class="grand" id="d-cote">25 + 5 + 1,25</span>
+    <p id="d-detail">De chaque côté, du plus lourd au plus léger. Total : 82,5 kg, barre de 20 kg comprise.</p>
+    <p class="alerte" id="d-alerte" hidden></p>
+  </div>
+</div>
+
+<h2>Comment on charge une barre</h2>
+<p>
+  Une barre se charge par paires : ce que tu mets d'un côté, tu le mets de l'autre.
+  Le calcul tient donc en trois temps.
+</p>
+<ol>
+  <li>Retire le poids de la barre de la charge voulue.</li>
+  <li>Divise ce qui reste par deux : c'est ce que porte un côté.</li>
+  <li>Prends les disques du plus lourd au plus léger, tant qu'ils rentrent.</li>
+</ol>
+<p>
+  Exemple : 82,5 kg avec une barre de 20 kg. Il reste 62,5 kg, soit 31,25 kg par côté
+  — un 25, un 5, un 1,25. Commencer par le plus lourd n'est pas un détail : c'est ce
+  qui donne le moins de disques à porter, et une barre qui ne plie pas d'un côté.
+</p>
+
+<h2>Le pas de 2,5 kg</h2>
+<p>
+  Avec des disques qui vont par paire, la plus petite marche est le double du plus
+  petit disque. Avec des 1,25 kg, tu avances donc de <strong>2,5 kg en 2,5 kg</strong> :
+  80, 82,5, 85. Entre les deux, rien — 83,75 kg ne se charge pas, et c'est aussi la
+  règle en compétition, où le poids de la barre chargée est toujours un multiple de
+  2,5 kg [@ipf2026].
+</p>
+<p>
+  Quand ta salle n'a pas de 1,25 kg, la marche passe à 5 kg. C'est beaucoup sur un
+  développé couché : [[/entrainement/surcharge-progressive|ajouter une répétition]]
+  avant d'ajouter du poids devient alors la seule façon d'avancer sans sauter une
+  marche.
+</p>
+
+<h2>Les charges courantes, déjà calculées</h2>
+<p>
+  Avec une barre de 20 kg et un jeu complet, du plus lourd au plus léger. Si tu
+  n'as pas le même matériel, le calculateur plus haut refait le compte.
+</p>
+<div class="defile">
+  <table>
+    <caption>Disques à mettre de chaque côté d'une barre de 20 kg</caption>
+    <thead><tr><th>Charge totale</th><th>De chaque côté</th></tr></thead>
+    <tbody>
+      <tr><td>30 kg</td><td>5</td></tr>
+      <tr><td>40 kg</td><td>10</td></tr>
+      <tr><td>50 kg</td><td>15</td></tr>
+      <tr><td>60 kg</td><td>20</td></tr>
+      <tr><td>70 kg</td><td>25</td></tr>
+      <tr><td>80 kg</td><td>25 + 5</td></tr>
+      <tr><td>90 kg</td><td>25 + 10</td></tr>
+      <tr><td>100 kg</td><td>25 + 15</td></tr>
+      <tr><td>110 kg</td><td>25 + 20</td></tr>
+      <tr><td>120 kg</td><td>25 + 25</td></tr>
+      <tr><td>140 kg</td><td>25 + 25 + 10</td></tr>
+      <tr><td>160 kg</td><td>25 + 25 + 20</td></tr>
+      <tr><td>180 kg</td><td>25 + 25 + 25 + 5</td></tr>
+      <tr><td>200 kg</td><td>25 + 25 + 25 + 15</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>Reconnaître un disque sans le lire</h2>
+<p>
+  En compétition, les disques sont normalisés : le 25 kg est rouge, le 20 kg bleu, le
+  15 kg jaune, et leur poids réel ne s'écarte pas de plus de 0,25 % de ce qui est
+  écrit dessus [@ipf2026]. En salle de sport ordinaire, les couleurs des petits
+  disques changent d'un fabricant à l'autre : fie-toi au chiffre gravé.
+</p>
+<p>
+  Deux pièges, et ils se paient en charge notée. Les <strong>colliers</strong> de
+  compétition pèsent 2,5 kg chacun — ils font partie des 25 kg de la barre
+  homologuée [@ipf2026] —, alors que les pinces en plastique d'une salle classique
+  pèsent quelques centaines de grammes. Et les barres ne font pas toutes 20 kg : une
+  barre guidée, une barre EZ ou une barre fixe se pèsent plutôt que de se supposer.
+  La page [[/documentation/poids-de-la-barre|combien pèse la barre]] détaille les cas.
+</p>
+
+<h2>Ce que ça change dans ton carnet</h2>
+<p>
+  Dans Top Set, tu notes la charge <strong>barre comprise</strong> : c'est ce que
+  comptent les pourcentages du 1RM et les comparaisons d'une séance à l'autre. Le
+  [[/outils/calculateur-1rm|calculateur de 1RM]] part du même chiffre, et une charge
+  cible qu'il te donne — disons 87,5 kg — se recharge ici en deux secondes.
+</p>
+<p>
+  Quelle que soit ta convention, garde-la. Noter tantôt la barre, tantôt les disques
+  seuls rend deux séances incomparables, et c'est la comparaison qui fait tout
+  l'intérêt d'un carnet.
+</p>

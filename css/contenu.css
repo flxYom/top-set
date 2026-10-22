@@ -142,6 +142,22 @@ figcaption{font-size:13px;color:var(--dim);margin-top:8px;line-height:1.5;}
 .resultat p{margin:6px 0 0;font-size:15px;}
 .resultat .alerte{color:var(--yellow);}
 
+/* Les disques qu'on a vraiment : des cases a cocher larges, parce qu'on les
+   decoche avec un pouce, debout devant un rack. */
+.disques-dispo{border:2px solid var(--line);background:var(--bg);padding:10px 12px 12px;margin:14px 0 0;}
+.disques-dispo legend{font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--dim);padding:0 6px;}
+.disques-dispo > div{display:flex;flex-wrap:wrap;gap:8px;}
+.disques-dispo label{
+  display:flex;align-items:center;gap:7px;
+  min-height:44px;padding:0 12px;
+  border:2px solid var(--line);
+  font-size:15px;font-weight:800;font-variant-numeric:tabular-nums;
+  cursor:pointer;
+}
+.disques-dispo label:has(input:checked){border-color:var(--orange);color:var(--orange);}
+.disques-dispo input{width:20px;height:20px;accent-color:var(--orange);}
+.disques-dispo small{display:block;font-size:12px;color:var(--dim);margin-top:8px;line-height:1.4;}
+
 /* ------------------------------------------------------------- fin de page */
 .liees ul{list-style:none;padding:0;display:grid;gap:8px;}
 .liees a{display:block;border:2px solid var(--line);padding:10px 14px;text-decoration:none;color:var(--ink);}

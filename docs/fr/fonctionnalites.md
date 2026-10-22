@@ -216,6 +216,41 @@ la pastille passe dessous ; s'il dépasse encore, il se resserre à 13 px. La
 mesure se fait toujours dans la disposition étroite, sinon la carte changerait
 de forme à chaque rendu.
 
+**L'app explique ce qu'elle affiche** (22 octobre 2026). Audit du marché du
+22/10 : Strong et Hevy notent, comptent, et ne situent jamais rien — c'est le
+reproche qui revient le plus dans les comparatifs. Top Set a des pages sourcées
+depuis six semaines, et **aucun chiffre de l'app n'y menait**. Trois liens
+discrets (`.lien-savoir`, 44 px de haut, à côté du chiffre et jamais en
+décoration) :
+
+- le **signal** d'un exercice (`STAGNATION`, `EN BAISSE`…) → `QUE FAIRE ?`,
+  vers `/entrainement/stagnation` ou `/entrainement/surcharge-progressive`
+  selon le signal ;
+- la **charge suggérée** → `D'OÙ ÇA VIENT ?`, vers la surcharge progressive ;
+- le **récap de la semaine** → `POURQUOI 10 ?`, vers le nombre de séries par
+  muscle.
+
+**Le récap situe les séries par groupe** (22 octobre 2026). « 6 séries épaules »
+ne dit rien tout seul. Sous la silhouette, une ligne : *Repère : au moins
+10 séries par groupe et par semaine. Sous ce repère : épaules 6, biceps 4.*
+Trois garde-fous pour ne pas dire de bêtise : **seulement sur la semaine** (le
+repère est hebdomadaire, le comparer à un mois serait faux), seulement à partir
+du jeudi (un lundi soir, tout est sous le repère), et jamais sur une semaine
+vide. Du texte gris, pas une alerte : ça situe, ça ne reproche rien.
+
+**Le calculateur de disques** (22 octobre 2026). « 82,5 kg, c'est quoi de chaque
+côté ? » La question se pose à chaque changement de charge, et c'est la
+fonction standard de Strong comme de Hevy. `TS.chargerBarre()` vit dans
+`intelligence.js`, donc testée, et la page
+`/outils/calculateur-de-disques` l'utilise : les disques réellement disponibles se décochent, le pas de 2,5 kg
+est expliqué, et quand la charge ne tombe pas juste l'écart est **dit** au lieu
+d'être arrondi en silence. Le tableau des charges courantes se lit sans
+JavaScript.
+
+**L'onglet APPRENDRE mène à des pages** (22 octobre 2026). Six rubriques,
+c'étaient six portes et aucune réponse : sous la grille, les huit pages qu'on
+cherche vraiment en salle, en lien direct.
+
 **Les horaires de la séance** (22 octobre 2026). Une étiquette de plus dans le
 bandeau, à côté de `3 EXOS` et du volume : `19H05 → 20H32 · 1H27`. Personne ne
 la remplit. La **première série remplie** ouvre la séance, la dernière la

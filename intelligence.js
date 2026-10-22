@@ -798,6 +798,58 @@
     return { sessions: sessions, series: lues, ignorees: ignorees };
   }
 
+  // ------------------------------------------------------------------
+  // Charger la barre
+  // ------------------------------------------------------------------
+  // « 82,5 kg », c'est quoi de chaque cote ? La question se pose a chaque
+  // changement de charge, et tous les carnets concurrents repondent a cette
+  // question-la. On la calcule ici, dans le fichier teste, pour que la page
+  // /outils et le carnet donnent toujours le meme chiffre.
+  //
+  // Les disques vont par paire : on raisonne sur UN cote, et la barre se
+  // retranche d'abord. Tout passe en centiemes de kilo — 1,25 kg devient 125
+  // — parce qu'une addition de 2,5 et de 1,25 en virgule flottante finit par
+  // tomber a cote, et qu'un calculateur de charge qui dit 82,4999 ne sert a
+  // rien.
+  // Le jeu d'une salle francaise ordinaire, du plus lourd au plus leger.
+  var DISQUES = [25, 20, 15, 10, 5, 2.5, 1.25];
+  // Barre olympique, barre « femme », barre courte ou EZ.
+  var BARRES = [20, 15, 10];
+
+  function chargerBarre(cible, barre, dispo) {
+    var cent = function (x) { return Math.round(Number(x) * 100); };
+    var c = cent(cible), b = cent(barre == null ? 20 : barre);
+    var jeu = (dispo && dispo.length ? dispo : DISQUES)
+      .map(cent)
+      .filter(function (d) { return d > 0; })
+      .sort(function (x, y) { return y - x; });
+
+    if (!isFinite(c) || c <= 0) return { parCote: [], total: 0, ecart: 0, barre: b / 100, impossible: true };
+    // Une cible sous le poids de la barre n'est pas une charge : c'est une
+    // autre barre qu'il faut, et le dire vaut mieux que rendre un resultat
+    // faux.
+    if (c < b) return { parCote: [], total: b / 100, ecart: (c - b) / 100, barre: b / 100, impossible: true };
+
+    var reste = Math.floor((c - b) / 2);
+    var parCote = [];
+    // Glouton du plus lourd au plus leger : avec des disques qui se divisent
+    // les uns dans les autres (25, 20, 15, 10, 5, 2,5, 1,25) il donne le
+    // minimum de disques, et c'est ce qu'on veut porter.
+    jeu.forEach(function (d) {
+      while (reste >= d) { parCote.push(d / 100); reste -= d; }
+    });
+    var total = (b + parCote.reduce(function (a, d) { return a + cent(d); }, 0) * 2) / 100;
+    return {
+      parCote: parCote,
+      total: total,
+      // total moins cible. Zero : pile dessus. Negatif : on est en dessous de
+      // ca, parce que les disques ne descendent pas plus fin.
+      ecart: Math.round((total - c / 100) * 100) / 100,
+      barre: b / 100,
+      impossible: false
+    };
+  }
+
   return {
     TYPES: TYPES,
     TYPES_VALIDES: TYPES_VALIDES,
@@ -827,6 +879,9 @@
     performancePrecedente: performancePrecedente,
     pointsTopSet: pointsTopSet,
     detecterSignal: detecterSignal,
-    suggererCible: suggererCible
+    suggererCible: suggererCible,
+    DISQUES: DISQUES,
+    BARRES: BARRES,
+    chargerBarre: chargerBarre
   };
 });

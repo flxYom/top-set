@@ -26,6 +26,7 @@ const SW   = lireLF('../sw.js');
 const BRAISE = lireLF('../braise.js');
 const CFG  = lireLF('../vercel.json');
 const SQL  = lireLF('../supabase/schema.sql');
+const INTEL = lireLF('../intelligence.js');
 
 let pass = 0, fail = 0;
 function ok(label, cond, detail = ''){
@@ -1521,6 +1522,48 @@ ok('les horaires partent au cloud comme le reste de la journee',
    && /create or replace function public\.pousser_horaires/.test(SQL)
    && /grant  execute on function public\.pousser_horaires\(date, timestamptz, timestamptz\) to authenticated;/.test(SQL)
    && /revoke execute on function public\.pousser_horaires\(date, timestamptz, timestamptz\) from anon, public;/.test(SQL));
+
+// ---------------------------------------------------------------------------
+// 37. Ce que l'app sait, et ce qu'elle explique (22/10/2026)
+// « renforce les fonctionnalites, les visuels, les interliens, l'utilite ».
+// Audit du marche : Strong et Hevy notent sans jamais situer, et tous deux ont
+// un calculateur de disques que Top Set n'avait pas. Les pages d'Apprendre
+// existaient depuis six semaines sans qu'un seul chiffre de l'app y mene.
+// ---------------------------------------------------------------------------
+ok('un lien vers la page qui explique vit a cote du chiffre, pas en decoration',
+   /function lienSavoir\(href, mot\)\{/.test(SRC)
+   // Le signal d'un exercice : « STAGNATION » est un diagnostic, il mene a
+   // quelque chose.
+   && /lire:'\/entrainement\/stagnation'/.test(SRC)
+   && /lienSavoir\(vue\.lire, 'QUE FAIRE/.test(SRC)
+   // La suggestion de charge dit d'ou vient sa regle.
+   && /lienSavoir\('\/entrainement\/surcharge-progressive'/.test(SRC)
+   && /\.lien-savoir\{/.test(HTML));
+
+ok('le recap situe les series par groupe, et seulement sur la semaine',
+   /var REPERE_SERIES = 10;/.test(SRC)
+   && /function repereHebdo\(counts, worked\)\{/.test(SRC)
+   // Un lundi soir, tout est « sous le repere » : le dire serait idiot.
+   && /if \(state\.recapPeriod !== 'semaine' \|\| !worked\.length\) return '';/.test(SRC)
+   && /if \(jour < 3\) return '';/.test(SRC)
+   && /nombre-de-series-par-muscle/.test(SRC)
+   && /\.muscle-repere\{/.test(HTML));
+
+ok('le calculateur de disques fait le meme calcul que le carnet',
+   /function chargerBarre\(cible, barre, dispo\) \{/.test(INTEL)
+   && /chargerBarre: chargerBarre/.test(INTEL)
+   // Les centiemes de kilo : une addition de 2,5 et de 1,25 en virgule
+   // flottante finit par tomber a cote.
+   && /Math\.round\(Number\(x\) \* 100\)/.test(INTEL)
+   && existsSync(new URL('../outils/disques.js', import.meta.url))
+   && existsSync(new URL('../contenu/outils/calculateur-de-disques.html', import.meta.url))
+   // Et l'app y mene, sinon la page n'existe que pour Google.
+   && HTML.indexOf('href="/outils/calculateur-de-disques"') > -1);
+
+ok('l onglet Apprendre mene a des pages, pas seulement a six rubriques',
+   /class="apprendre-liste"/.test(HTML)
+   && (HTML.match(/\.apprendre-liste a\[href="\/[a-z-]+\/[a-z0-9-]+"\]/g) || []).length === 0
+   && (HTML.match(/<a href="\/(documentation|entrainement|outils)\//g) || []).length >= 6);
 
 console.log(`\n${pass} reussis, ${fail} echoues`);
 process.exit(fail ? 1 : 0);

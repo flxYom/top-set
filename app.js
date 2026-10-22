@@ -2023,7 +2023,9 @@
         +     ' data-poids="' + cible.poids + '" data-reps="' + esc(String(cible.reps)) + '" data-type=""'
         +     ' aria-label="Recopier la cible ' + esc(val) + '">↺</button>'
         + '</div>'
-        + '<div class="ex-cible-raison">' + esc(cible.raison) + '</div>'
+        + '<div class="ex-cible-raison">' + esc(cible.raison)
+        +   lienSavoir('/entrainement/surcharge-progressive', 'D\u2019OÙ ÇA VIENT\u00a0?')
+        + '</div>'
         + '</div>';
     }
     return html;
@@ -3753,6 +3755,30 @@
     return html + '</div><p class="cal-resume">' + resume + '</p>'
       + '<div class="cal-legende"><span class="faite"><i></i>faite</span><span class="prevue"><i></i>prévue</span></div>';
   }
+  // Les groupes sous le repere hebdomadaire, nommes avec leur compte. Rend
+  // une chaine vide des que la comparaison n'aurait pas de sens : autre
+  // periode, semaine vide, ou semaine en cours a peine commencee — un lundi
+  // soir, tout est « sous le repere », et le dire serait idiot.
+  var REPERE_SERIES = 10;
+  function repereHebdo(counts, worked){
+    if (state.recapPeriod !== 'semaine' || !worked.length) return '';
+    var auj = new Date();
+    var jour = (auj.getDay() + 6) % 7;        // 0 = lundi
+    if (jour < 3) return '';
+    var sous = worked.filter(function(g){
+      return g !== 'Cardio' && g !== 'Autre' && counts[g] < REPERE_SERIES;
+    });
+    if (!sous.length){
+      return '<div class="muscle-repere">Tous les groupes travaillés sont à '
+        + REPERE_SERIES + ' séries ou plus cette semaine.'
+        + lienSavoir('/entrainement/nombre-de-series-par-muscle', 'LE REPÈRE\u00a0?') + '</div>';
+    }
+    return '<div class="muscle-repere">Repère : au moins ' + REPERE_SERIES
+      + ' séries par groupe et par semaine. Sous ce repère : '
+      + sous.map(function(g){ return esc(g.toLowerCase()) + ' ' + counts[g]; }).join(', ') + '.'
+      + lienSavoir('/entrainement/nombre-de-series-par-muscle', 'POURQUOI 10\u00a0?') + '</div>';
+  }
+
   function renderRecap(){
     var data = computeRecap(state.recapPeriod);
     document.getElementById('recapLabel').textContent = data.label.toUpperCase();
@@ -3801,6 +3827,12 @@
     var note = pasTouche.length && worked.length
       ? '<div class="muscle-note">Pas touché : '+pasTouche.join(', ')+'.</div>'
       : '';
+    // Un carnet qui compte sans jamais situer ne sert qu'a moitie : « 6 series
+    // epaules » ne dit rien tout seul. Le repere des meta-analyses — au moins
+    // 10 series par groupe et par semaine — le situe, et la page qui le
+    // justifie est a un appui. Seulement sur la SEMAINE : le repere est
+    // hebdomadaire, le comparer a un mois serait faux. (22/10/2026)
+    note += repereHebdo(counts, worked);
     muscleEl.innerHTML = '<div class="muscle-panel">'
       + '<div class="muscle-title">CE QUE TU AS TRAVAILLÉ</div>'
       + '<div class="muscle-body">'+muscleMapSVG(sousC)+'<div class="muscle-legend">'+legend+note+'</div></div>'
@@ -3861,12 +3893,21 @@
     return seances.filter(function(j){ return j.date >= limite; });
   }
 
+  // Un lien vers la page qui explique la notion qu'on a SOUS LES YEUX. Jamais
+  // en decoration : il n'apparait qu'a cote d'un chiffre que l'app vient de
+  // sortir, pour qu'une question qui se pose dans la salle trouve sa reponse
+  // en un appui au lieu de finir dans un forum. (22/10/2026)
+  function lienSavoir(href, mot){
+    return '<a class="lien-savoir" href="' + href + '">' + (mot || 'POURQUOI\u00a0?')
+      + '<i aria-hidden="true">›</i></a>';
+  }
+
   var SIGNAUX = {
-    progressing:  { mot:'EN PROGRESSION', classe:'sig-vert' },
-    stable:       { mot:'STABLE',         classe:'sig-orange' },
-    stagnating:   { mot:'STAGNATION',     classe:'sig-orange' },
-    declining:    { mot:'EN BAISSE',      classe:'sig-rouge' },
-    insufficient_data: { mot:'PAS ASSEZ DE DONNÉES', classe:'sig-gris' }
+    progressing:  { mot:'EN PROGRESSION', classe:'sig-vert',  lire:'/entrainement/surcharge-progressive' },
+    stable:       { mot:'STABLE',         classe:'sig-orange', lire:'/entrainement/stagnation' },
+    stagnating:   { mot:'STAGNATION',     classe:'sig-orange', lire:'/entrainement/stagnation' },
+    declining:    { mot:'EN BAISSE',      classe:'sig-rouge', lire:'/entrainement/stagnation' },
+    insufficient_data: { mot:'PAS ASSEZ DE DONNÉES', classe:'sig-gris', lire:'/entrainement/suivre-sa-progression' }
   };
 
   function ouvrirExercice(nom, retour){
@@ -3908,6 +3949,8 @@
     html += '<div class="exo-signal ' + vue.classe + '">'
       + '<div class="exo-signal-tete"><span class="sig-point" aria-hidden="true"></span>' + vue.mot + '</div>'
       + '<div class="exo-signal-raison">' + esc(sig.raison) + '</div>'
+      // « STAGNATION » est un diagnostic : il doit mener a quelque chose.
+      + (vue.lire ? lienSavoir(vue.lire, 'QUE FAIRE\u00a0?') : '')
       + '</div>';
 
     // --- chiffres cles, sur tout l'historique

@@ -459,6 +459,38 @@ titre('Importer sans ecraser');
 }
 
 // ----------------------------------------------------------------
+titre('Charger la barre');
+{
+  const cote = (c, b) => TS.chargerBarre(c, b).parCote;
+  egal('100 kg sur une barre olympique : 25 + 15 de chaque cote', cote(100, 20), [25, 15]);
+  egal('82,5 kg descend jusqu au 1,25', cote(82.5, 20), [25, 5, 1.25]);
+  egal('140 kg empile deux 25', cote(140, 20), [25, 25, 10]);
+  egal('la barre seule ne demande aucun disque', cote(20, 20), []);
+  egal('une barre de 15 kg change tout le calcul', cote(47.5, 15), [15, 1.25]);
+  // Le minimum de disques, pas n importe quelle combinaison juste : c est ce
+  // qu on porte a la main.
+  ok('le glouton prend le moins de disques possible', cote(60, 20).length === 1);
+  // Ce qui ne se charge pas doit etre DIT, pas arrondi en silence.
+  const sous = TS.chargerBarre(15, 20);
+  ok('une cible sous la barre est declaree impossible', sous.impossible && sous.total === 20);
+  const impair = TS.chargerBarre(21.25, 20);
+  egal('une cible infaisable rend l ecart, pas un faux resultat', impair.ecart, -1.25);
+  egal('et elle ne sort pas un demi-disque', impair.parCote, []);
+  // La virgule flottante : 2,5 + 1,25 additionnes vingt fois doivent rester
+  // justes, sinon le calculateur annonce 82,4999.
+  egal('les totaux restent justes au centieme', TS.chargerBarre(77.5, 20).total, 77.5);
+  egal('et le detail avec', TS.chargerBarre(77.5, 20).parCote, [25, 2.5, 1.25]);
+  // Un pas de 2,5 kg au total : 78,75 n existe pas avec des disques par paire.
+  egal('une cible entre deux pas est annoncee en dessous', TS.chargerBarre(78.75, 20).ecart, -1.25);
+  // Un jeu de disques reduit — une petite salle, des disques pris.
+  egal('on peut lui donner les disques qu on a vraiment',
+    TS.chargerBarre(100, 20, [20, 10, 5]).parCote, [20, 20]);
+  egal('et il dit alors ce qui manque', TS.chargerBarre(100, 20, [20, 10, 5]).ecart, 0);
+  egal('les disques sont tries meme donnes en desordre',
+    TS.chargerBarre(100, 20, [5, 20, 10]).parCote, [20, 20]);
+}
+
+// ----------------------------------------------------------------
 titre('Relire le tableur exporte');
 {
   const csv = '\ufeffDate;Jour;Exercice;Groupe;Serie;Poids (kg);Repetitions;RPE;Repos (s);Volume (kg);Fait\r\n'

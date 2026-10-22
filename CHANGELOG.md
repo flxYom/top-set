@@ -9,6 +9,32 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ## [Unreleased]
 
+### Added — what the app knows, it now explains (2026-10-22)
+
+Market audit of 22 October: across the 2026 comparisons, the complaint that
+comes back most often about Strong and Hevy is that they log and count but never
+situate anything, and both ship a plate calculator. Top Set already had sourced
+pages — and not one figure in the app led to them.
+
+- **Plate calculator.** `TS.chargerBarre()` in `intelligence.js` (tested, so the
+  page and the logbook can never disagree) and a new page
+  `/outils/calculateur-de-disques`: the plates you actually have can be
+  unticked, the 2.5 kg step is explained, and when a load cannot be made the
+  gap is stated instead of silently rounded. The table of common loads reads
+  without JavaScript. Linked from the app's tools row and from the Apprendre
+  tab.
+- **The weekly recap situates sets per muscle group.** « 6 sets shoulders »
+  says nothing alone; under the silhouette, the reference from the
+  meta-analyses (at least 10 sets per group per week) and which groups are
+  under it. Week only, from Thursday on, never on an empty week — a reference
+  that would be false is worse than no reference.
+- **Three contextual links** from a figure to the page that explains it: an
+  exercise's signal → what to do about a plateau, the suggested load → where
+  the rule comes from, the weekly recap → why 10 sets. 44 px tall, next to the
+  figure, never decorative.
+- **The Apprendre tab leads to pages**, not only to six rubrics: the eight
+  pages people actually look for in the gym, linked directly.
+
 ### Changed — the legal pages say what the app actually does (2026-10-22)
 
 - **Privacy policy 3.3.** Friends and sharing had been live for weeks while the

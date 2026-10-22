@@ -197,6 +197,36 @@ width: if it overflows it takes the whole header row and the pill drops below;
 if it still overflows it tightens to 13 px. The measurement always happens in
 the narrow layout, otherwise the card would change shape on every render.
 
+**The app explains what it shows** (22 October 2026). Market audit of 22/10:
+Strong and Hevy log, count, and never situate anything — the complaint that
+comes back most often in comparisons. Top Set has had sourced pages for six
+weeks and **no figure in the app led to them**. Three discreet links
+(`.lien-savoir`, 44 px tall, next to the figure and never as decoration): an
+exercise's **signal** (`STAGNATION`, `EN BAISSE`…) → `QUE FAIRE ?`, pointing at
+`/entrainement/stagnation` or `/entrainement/surcharge-progressive` depending
+on the signal; the **suggested load** → `D'OÙ ÇA VIENT ?`; and the **weekly
+recap** → `POURQUOI 10 ?`.
+
+**The recap situates sets per muscle group** (22 October 2026). « 6 sets
+shoulders » says nothing on its own. Under the silhouette, one line: *Repère :
+au moins 10 séries par groupe et par semaine. Sous ce repère : épaules 6,
+biceps 4.* Three guards so it never says anything silly: **week only** (the
+reference is weekly; comparing it to a month would be false), only from
+Thursday on (on a Monday evening everything is below the mark), and never on an
+empty week. Grey text, not an alert: it situates, it does not scold.
+
+**The plate calculator** (22 October 2026). « 82.5 kg — what goes on each
+side? » The question comes up at every load change, and it is a standard
+feature in both Strong and Hevy. `TS.chargerBarre()` lives in
+`intelligence.js`, so it is tested, and `/outils/calculateur-de-disques` uses
+it: the plates you actually have can be unticked, the 2.5 kg step is explained,
+and when the load does not come out exactly the gap is **stated** instead of
+silently rounded. The table of common loads reads without JavaScript.
+
+**The APPRENDRE tab leads to pages** (22 October 2026). Six rubrics were six
+doors and no answer: under the grid, the eight pages you actually look for in
+the gym, linked directly.
+
 **Session start and end times** (22 October 2026). One more tag in the banner,
 next to `3 EXOS` and the volume: `19H05 → 20H32 · 1H27`. Nobody fills it in.
 The **first filled set** opens the session, the last one closes it; a validated
