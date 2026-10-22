@@ -54,7 +54,9 @@ c'est exactement à ça que sert ce repo pour l'instant.
   un exercice, une séance ou un récap part chez les amis qu'on choisit, en copie
   figée. Pas de fil, pas de compteurs, pas de classement, pas de story.
 - **Sa séance, dans son ordre.** Les exercices se déplacent à la poignée ou aux
-  flèches ; un superset se déplace d'un bloc.
+  flèches, ou d'un cran depuis le menu de leur carte ; un superset se déplace
+  d'un bloc. L'heure de début et l'heure de fin se posent toutes seules, sur la
+  première et la dernière série notées, et se corrigent d'un appui.
 - **Un mouvement, un historique.** Les abréviations de salle (`bench`, `RDL`,
   `OHP`…) partagent l'historique du nom entier tout seules, et le menu `⋯` de
   la carte fusionne ou sépare deux noms d'exercice à tout moment.

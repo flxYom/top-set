@@ -494,6 +494,10 @@
   // « __proto__ » ou « constructor » reste une cle comme les autres.
   function carte() { return Object.create(null); }
 
+  // Les champs qui vivent sur la journee elle-meme, a cote de ses exercices.
+  // Le titre a sa propre regle juste en dessous (il se tronque et se compte).
+  var CHAMPS_JOUR = ['cycle', 'commentaire', 'termine', 'debut', 'fin'];
+
   function fusionnerCarnets(local, entrant, fabrique) {
     var sortie = {};
     Object.keys(local || {}).forEach(function (ds) { sortie[ds] = local[ds]; });
@@ -571,10 +575,29 @@
       });
 
       var ajouterTitre = titreIn && !(jourLocal && typeof jourLocal.titre === 'string' && jourLocal.titre.trim());
-      if (!ajoutes.length && !ajouterTitre) return;
 
-      var jour = { date: ds, exercises: exosLocaux.concat(ajoutes) };
-      if (jourLocal && jourLocal.titre) jour.titre = jourLocal.titre;
+      // Ce qui appartient a la journee et non a ses exercices : le cycle, le
+      // mot, la validation, les horaires. La fusion reconstruisait la journee
+      // avec le titre pour seul bagage : ajouter un exercice a une journee
+      // faisait donc tomber son cycle et son mot, et une journee entrante
+      // arrivait sans les siens. Une fusion AJOUTE — elle n'a aucune raison
+      // d'effacer ce qui etait ecrit a cote. (22/10/2026)
+      var metaIn = {};
+      CHAMPS_JOUR.forEach(function (k) {
+        var vl = jourLocal ? jourLocal[k] : undefined;
+        var ve = jourIn[k];
+        if (vl === undefined || vl === null || vl === '') {
+          if (ve !== undefined && ve !== null && ve !== '') metaIn[k] = ve;
+        }
+      });
+      var ajouterMeta = Object.keys(metaIn).length > 0;
+      if (!ajoutes.length && !ajouterTitre && !ajouterMeta) return;
+
+      var jour = {};
+      if (jourLocal) Object.keys(jourLocal).forEach(function (k) { jour[k] = jourLocal[k]; });
+      jour.date = ds;
+      jour.exercises = exosLocaux.concat(ajoutes);
+      Object.keys(metaIn).forEach(function (k) { jour[k] = metaIn[k]; });
       if (ajouterTitre) { jour.titre = titreIn.slice(0, 60); bilan.titres++; }
 
       // Un superset dont un seul membre est arrive n'en est plus un.

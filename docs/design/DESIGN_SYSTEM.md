@@ -501,5 +501,31 @@ avant de le faire.
   Le diagnostic du stockage donne des tailles, des comptes et des dates ; jamais
   une valeur, jamais une clé de session. Un rapport qu'on peut envoyer sans
   réfléchir est un rapport qu'on envoie.
+- **Le panneau d'ordre reste, et la carte le double** (22/10). Décision du
+  08/10 maintenue — pas de glissement sur la carte — mais il ne trouvait pas le
+  panneau : « je t'avais demandé un bail pour changer l'ordre ». Le menu `⋯` de
+  la carte propose donc `▲ MONTER` / `▼ DESCENDRE`, sur le même chemin de
+  données (un superset se déplace d'un bloc). Deux portes vers le même geste,
+  dont une là où on est quand on y pense.
+- **Un nom d'exercice se mesure, il ne se compte pas en lettres** (22/10). Un
+  seuil en nombre de caractères ne dit rien de la largeur réelle — la police, la
+  pastille du groupe et la largeur de l'écran décident. `scrollWidth` contre
+  `clientWidth`, mesuré dans la disposition étroite, puis la ligne entière, puis
+  13 px. Aucune troncature : un nom coupé est un bug, pas un style.
+- **Les horaires d'une séance se posent toutes seules** (22/10). Même règle que
+  pour la sauvegarde : l'utilisateur ne doit rien avoir à faire pour que l'app
+  sache ce qu'elle a déjà sous la main. La première série remplie ouvre la
+  séance, la dernière la ferme ; seulement la journée du jour, et l'heure de
+  début ne se réécrit jamais. Une étiquette dans le bandeau, à côté des autres
+  — pas un bloc à part. Une heure corrigée à la main n'est pas remplacée par la
+  sauvegarde qui suit.
+- **Un récap montre la séance entière, pas seulement ce qui porte des chiffres**
+  (22/10). Cacher un exercice posé sans valeur faisait croire à une perte. Les
+  **chiffres**, eux, ne comptent que ce qui a été fait : un exercice vide
+  s'affiche, il ne se compte pas.
+- **Une fusion ajoute, elle n'efface rien à côté** (22/10). Reconstruire une
+  journée en n'y remettant que ce qu'on a pensé à nommer, c'est perdre le reste
+  en silence. Les champs de la journée se reprennent explicitement, et un
+  nouveau champ doit être ajouté à cette liste en même temps qu'il est créé.
 - **Description de l'interface** : [`DESIGN.md`](DESIGN.md), extrait du code le
   18/09. Ce fichier-ci garde les décisions et fait foi en cas d'écart.

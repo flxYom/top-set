@@ -424,6 +424,38 @@ titre('Importer sans ecraser');
     ex('x1', 'Squat', [se('s1', 100, '5'), { id: 'sv', poids: null, reps: '', rpe: null, repos: '' }])] } };
   egal('une serie vide de l autre page n est pas reprise',
     TS.fusionnerEcritures(local, vide, fab).bilan.series, 0);
+
+  // La fusion reconstruisait la journee avec le titre pour seul bagage :
+  // ajouter un exercice a une journee faisait tomber son cycle, son mot et sa
+  // validation. Une fusion AJOUTE. (22/10/2026)
+  const garni = {
+    '2026-09-01': { date: '2026-09-01', titre: 'Jambes', cycle: 'Prise de masse',
+      commentaire: 'Mal dormi', termine: '2026-09-01T19:30:00.000Z',
+      debut: '2026-09-01T17:00:00.000Z', fin: '2026-09-01T19:30:00.000Z',
+      exercises: [ex('x1', 'Squat', [se('s1', 100, '5')])] }
+  };
+  const apres = TS.fusionnerCarnets(garni, voisine, fab).sessions['2026-09-01'];
+  ok('une journee fusionnee garde son cycle, son mot et sa validation',
+    apres.cycle === 'Prise de masse' && apres.commentaire === 'Mal dormi'
+    && apres.termine === '2026-09-01T19:30:00.000Z');
+  ok('elle garde aussi ses horaires',
+    apres.debut === '2026-09-01T17:00:00.000Z' && apres.fin === '2026-09-01T19:30:00.000Z');
+  ok('et son titre, comme avant', apres.titre === 'Jambes');
+
+  // L'inverse : une journee que le carnet n'a pas encore arrive avec les
+  // siens. Un import ne doit pas les laisser au bord de la route.
+  const neuve = { '2026-09-20': { date: '2026-09-20', cycle: 'Sèche',
+    commentaire: 'Court mais propre', termine: '2026-09-20T20:00:00.000Z',
+    exercises: [ex('x9', 'Tractions', [se('s9', 0, '8')])] } };
+  const imp = TS.fusionnerCarnets({}, neuve, fab).sessions['2026-09-20'];
+  ok('une journee importee arrive avec son cycle, son mot et sa validation',
+    imp.cycle === 'Sèche' && imp.commentaire === 'Court mais propre'
+    && imp.termine === '2026-09-20T20:00:00.000Z');
+  // Et le local garde la main quand les deux ont quelque chose a dire.
+  const conflit = { '2026-09-20': { date: '2026-09-20', cycle: 'Force',
+    exercises: [ex('x9', 'Tractions', [se('s9', 0, '8')])] } };
+  egal('ce qui est deja ecrit ici n est jamais remplace',
+    TS.fusionnerCarnets(conflit, neuve, fab).sessions['2026-09-20'].cycle, 'Force');
 }
 
 // ----------------------------------------------------------------

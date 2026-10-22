@@ -54,7 +54,9 @@ repository is for right now.
   agreeing; an exercise, a session or a recap goes to the friends you pick, as a
   frozen copy. No feed, no counters, no ranking, no stories.
 - **Your session, in your order.** Reorder the exercises by dragging a handle
-  or with arrows; a superset moves as a block.
+  or with arrows, or one notch at a time from their card's menu; a superset
+  moves as a block. Start and end times are stamped on their own, from the first
+  and last logged set, and can be corrected in one tap.
 - **One movement, one history.** Gym shorthand (`bench`, `RDL`, `OHP`…) shares
   the full name's history on its own, and the card's `⋯` menu merges or
   separates two exercise names at any time.

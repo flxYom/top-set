@@ -182,6 +182,13 @@ alter table public.seances add column if not exists terminee timestamptz;
 -- rien a recalculer quand une seance bouge.
 alter table public.seances add column if not exists cycle text;
 
+-- Les horaires de la séance. L'app les pose toute seule : la première série
+-- remplie ouvre la séance, la dernière la ferme. « terminee » reste la
+-- validation — le moment où l'on dit « c'est fini » — et sert de fin quand
+-- elle existe. (22/10/2026)
+alter table public.seances add column if not exists debut timestamptz;
+alter table public.seances add column if not exists fin   timestamptz;
+
 do $$
 begin
   if not exists (
@@ -527,6 +534,35 @@ begin
 end;
 $$;
 
+-- Les horaires partent a part eux aussi, et ensemble : un debut sans sa fin
+-- ne veut rien dire. Deux valeurs, donc sa propre fonction — pousser_cycle et
+-- les autres n'en portent qu'une.
+create or replace function public.pousser_horaires(p_date date, p_debut timestamptz, p_fin timestamptz)
+returns timestamptz
+language plpgsql
+security invoker
+set search_path = public
+as $$
+declare
+  v_user uuid := auth.uid();
+  v_maj  timestamptz;
+begin
+  if v_user is null then
+    raise exception 'Aucune session : connexion requise.';
+  end if;
+
+  insert into public.seances (user_id, date, debut, fin)
+  values (v_user, p_date, p_debut, p_fin)
+  on conflict (user_id, date) do update
+    set debut = p_debut,
+        fin   = p_fin,
+        updated_at = now()
+  returning updated_at into v_maj;
+
+  return v_maj;
+end;
+$$;
+
 -- Le cycle et le mot partent a part, comme le titre et la fin : un appel qui
 -- echoue echoue seul, et la journee passe quand meme. La troncature est ici
 -- aussi, pas seulement dans l'app : le corps d'une requete ne se croit pas.
@@ -606,6 +642,8 @@ as $$
         'termine', s.terminee,
         'cycle', s.cycle,
         'commentaire', s.commentaire,
+        'debut', s.debut,
+        'fin', s.fin,
         'updatedAt', s.updated_at,
         'exercises', coalesce((
           select jsonb_agg(
@@ -722,6 +760,8 @@ revoke execute on function public.pousser_fin(date, timestamptz) from anon, publ
 revoke execute on function public.pousser_titre(date, text) from anon, public;
 grant  execute on function public.pousser_fin(date, timestamptz) to authenticated;
 grant  execute on function public.pousser_titre(date, text) to authenticated;
+revoke execute on function public.pousser_horaires(date, timestamptz, timestamptz) from anon, public;
+grant  execute on function public.pousser_horaires(date, timestamptz, timestamptz) to authenticated;
 revoke execute on function public.pousser_cycle(date, text) from anon, public;
 revoke execute on function public.pousser_commentaire(date, text) from anon, public;
 grant  execute on function public.pousser_cycle(date, text) to authenticated;
@@ -1486,6 +1526,8 @@ as $$
         'termine', s.terminee,
         'cycle', s.cycle,
         'commentaire', s.commentaire,
+        'debut', s.debut,
+        'fin', s.fin,
         'updatedAt', s.updated_at,
         'exercises', coalesce((
           select jsonb_agg(

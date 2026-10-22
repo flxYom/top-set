@@ -199,6 +199,37 @@ pleines de champs, et un glissement vertical dessus se confond avec le
 défilement. Dans la liste, seule la poignée prend le doigt (`touch-action:none`)
 — partout ailleurs, la feuille défile.
 
+**Et depuis la carte elle-même** (22 octobre 2026). Le panneau `⇅` range toute
+la séance ; quand la machine est prise, on pense à UN exercice, celui qu'on a
+sous les yeux. Son menu `⋯` propose donc `▲ MONTER DANS LA SÉANCE` et
+`▼ DESCENDRE DANS LA SÉANCE` — rien pour un exercice seul, rien pour monter le
+premier ni descendre le dernier. Le déplacement passe par le même chemin que la
+feuille (un superset se déplace d'un bloc), s'écrit tout de suite, et la vue
+suit l'exercice au lieu de le laisser partir hors de l'écran.
+
+**Un nom long reste lisible** (22 octobre 2026). L'en-tête est une ligne : le
+nom, la pastille du groupe, deux boutons. « Développé incliné haltères prise
+neutre » y était coupé en plein milieu. Le nom est maintenant **mesuré** —
+`scrollWidth` contre `clientWidth`, jamais un nombre de lettres, qui ne dit rien
+de la largeur réelle : s'il dépasse, il prend la ligne entière de l'en-tête et
+la pastille passe dessous ; s'il dépasse encore, il se resserre à 13 px. La
+mesure se fait toujours dans la disposition étroite, sinon la carte changerait
+de forme à chaque rendu.
+
+**Les horaires de la séance** (22 octobre 2026). Une étiquette de plus dans le
+bandeau, à côté de `3 EXOS` et du volume : `19H05 → 20H32 · 1H27`. Personne ne
+la remplit. La **première série remplie** ouvre la séance, la dernière la
+ferme ; une séance validée garde l'heure de sa validation comme fin. Trois
+garde-fous : seulement la journée du jour (remplir une séance d'il y a trois
+semaines ne doit pas lui coller l'heure de ce soir), seulement à partir d'une
+série remplie (poser des noms d'exercices à 14 h n'ouvre pas la séance), et
+**l'heure de début ne se réécrit jamais**. On touche l'étiquette pour corriger
+les deux heures ; une heure tapée à la main n'est pas remplacée par la
+sauvegarde qui suit (`persistDay(ds, true)`). La durée ne s'affiche que si elle
+veut dire quelque chose : jamais à l'envers, jamais au-delà de huit heures.
+Côté compte : colonnes `seances.debut` et `seances.fin`, fonction
+`pousser_horaires`, sa propre file d'envoi.
+
 **Le cycle d'entraînement** (10 octobre 2026, demandé par Kamil). « Lundi,
 pendant deux semaines, cycle force ; après, endurance. » Sous la date, une
 pastille dit le cycle en cours et l'ouvre : `FORCE`, `HYPERTROPHIE`,
@@ -235,6 +266,16 @@ d'une série et celui d'un exercice ; il manquait celui du jour — « mal dor
 `＋ UN MOT SUR LA SÉANCE` ouvre un champ de 500 caractères, la même borne que
 les autres commentaires, tenue aussi par la table. Le bouton ne s'affiche pas
 sur un jour vide.
+
+**Le récap d'une séance montre TOUS ses exercices** (22 octobre 2026). Il ne
+listait que ceux qui portaient des chiffres : on relisait une séance de six
+exercices et on n'en voyait que quatre — « faut que je clique dessus et je vois
+l'exo, mais sinon je vois pas ». Un exercice posé sans valeur notée existe bien
+dans le carnet ; il s'affiche maintenant avec `RIEN DE NOTÉ` en pointillés, et
+la séance se relit en entier. Les **chiffres**, eux, ne comptent que ce qui a
+été fait : `2 EXOS` quand deux des trois sont remplis, et une séance seulement
+prévue n'affiche pas quatre cases à zéro mais la phrase qui dit dans quel état
+elle est.
 
 **Duplication de série.** `+ SÉRIE` recopie la précédente : poids, reps, RPE,
 repos. Seul `fait` repart à zéro, et le commentaire ne se recopie pas. Sur cinq

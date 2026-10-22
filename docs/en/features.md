@@ -181,6 +181,34 @@ a sheet rather than on the card itself: cards are full of fields, and a vertical
 drag on one reads as scrolling. In the list only the handle takes the finger
 (`touch-action:none`) — everywhere else the sheet scrolls.
 
+**And from the card itself** (22 October 2026). The `⇅` sheet tidies the whole
+session; when the rack is taken you are thinking about ONE exercise, the one
+under your eyes. Its `⋯` menu therefore offers `▲ MONTER DANS LA SÉANCE` and
+`▼ DESCENDRE DANS LA SÉANCE` — nothing for a lone exercise, nothing to move the
+first one up or the last one down. The move goes through the same path as the
+sheet (a superset moves as a block), is written immediately, and the view
+follows the exercise instead of letting it leave the screen.
+
+**A long name stays readable** (22 October 2026). The header is one row: the
+name, the group pill, two buttons. « Développé incliné haltères prise neutre »
+was cut in the middle of itself. The name is now **measured** — `scrollWidth`
+against `clientWidth`, never a character count, which says nothing about real
+width: if it overflows it takes the whole header row and the pill drops below;
+if it still overflows it tightens to 13 px. The measurement always happens in
+the narrow layout, otherwise the card would change shape on every render.
+
+**Session start and end times** (22 October 2026). One more tag in the banner,
+next to `3 EXOS` and the volume: `19H05 → 20H32 · 1H27`. Nobody fills it in.
+The **first filled set** opens the session, the last one closes it; a validated
+session keeps its validation time as the end. Three guards: today's day only
+(filling in a session from three weeks ago must not stamp it with tonight's
+time), only from a filled set (putting exercise names down at 2 pm does not
+open the session), and **the start time is never rewritten**. Tap the tag to
+correct both times; a hand-typed time is not replaced by the save that follows
+(`persistDay(ds, true)`). The duration shows only when it means something:
+never backwards, never beyond eight hours. Account side: `seances.debut` and
+`seances.fin` columns, `pousser_horaires` function, its own send queue.
+
 **The training cycle** (2026-10-10, asked for by Kamil). « Monday, for two
 weeks, strength cycle; then endurance. » Under the date, a pill states the
 current cycle and opens it: `FORCE`, `HYPERTROPHIE`, `ENDURANCE`, or whatever
@@ -214,6 +242,15 @@ exercise's; the day's was missing — « slept badly », « first one since t
 break » belong to no set. Under the list, `＋ UN MOT SUR LA SÉANCE` opens a
 500-character field, the same bound as the other comments and held by the
 table too. The button does not show on an empty day.
+
+**A session's recap shows ALL of its exercises** (22 October 2026). It only
+listed the ones carrying numbers: you reread a six-exercise session and saw
+four — « I have to tap on it and then I see the exercise, otherwise I don't ».
+An exercise put down without a logged value does exist in the logbook; it now
+shows with a dashed `RIEN DE NOTÉ`, and the session reads in full. The
+**numbers** still count only what was done: `2 EXOS` when two of three are
+filled, and a session that was merely planned shows the sentence saying so
+instead of four tiles at zero.
 
 **Set duplication.** `+ SÉRIE` copies the previous set — weight, reps, RPE, rest.
 Only `fait` resets, and the comment is not copied. Five identical sets means

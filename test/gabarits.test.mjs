@@ -25,6 +25,7 @@ const HTML = lireLF('../index.html');
 const SW   = lireLF('../sw.js');
 const BRAISE = lireLF('../braise.js');
 const CFG  = lireLF('../vercel.json');
+const SQL  = lireLF('../supabase/schema.sql');
 
 let pass = 0, fail = 0;
 function ok(label, cond, detail = ''){
@@ -128,8 +129,12 @@ ok('les trois operations existent',
    SRC.indexOf('function reprendreCarnet(') > -1);
 ok('le carnet range est indexe par proprietaire', SRC.indexOf("'topset_carnet_' + id") > -1);
 ok('un rangement plus riche n est jamais ecrase', SRC.indexOf('deja.jours || 0) > jours') > -1);
+// Toutes les files, pas seulement les journees et les titres : le cycle, le
+// mot, la validation et les horaires du carnet qu'on range n'ont rien a faire
+// dans la file du compte qui arrive. (22/10/2026)
 ok('la file d envoi est remise a zero avec le carnet',
-   SRC.indexOf('m.sales = {}; m.titres = {}; m.depuis = null;') > -1);
+   ['m.sales = {}', 'm.titres = {}', 'm.cycles = {}', 'm.mots = {}',
+    'm.fins = {}', 'm.horaires = {}', 'm.depuis = null'].every(c => SRC.indexOf(c) > -1));
 
 // ---- a la connexion
 const CO = corps('function apresConnexion(', 'function majUI(');
@@ -1364,8 +1369,9 @@ ok('les reserves partagees portent le nom de leur proprietaire',
 // ---------------------------------------------------------------------------
 ok('une journee absente du carnet charge n est jamais envoyee',
    /function connueIci\(ds\)\{\n      return !!state\.sessions\[ds\];\n    \}/.test(SRC)
-   // Les cinq files : journees, titres, cycles/mots (pousserParDate) et fins.
-   && (SRC.match(/if \(!connueIci\(ds\)\) return;/g) || []).length === 4
+   // Les six files : journees, titres, cycles/mots (pousserParDate), fins et
+   // horaires.
+   && (SRC.match(/if \(!connueIci\(ds\)\) return;/g) || []).length === 5
    // Et la marque reste dans la file : la journee repartira quand on la
    // connaitra de nouveau.
    && /\/\/ La marque est lue AVANT l'envoi/.test(SRC));
@@ -1425,6 +1431,71 @@ ok('un compte peut redemander son carnet entier',
    && /tirerTout:function\(\)\{ return tirer\(true\); \}/.test(SRC)
    && /function majBoutonCompte\(\)\{/.test(SRC)
    && /Sync\.tirerTout\(\)\.then\(function\(n\)\{/.test(SRC));
+
+// ---------------------------------------------------------------------------
+// 36. La seance sous les doigts (22/10/2026)
+// Quatre demandes du meme jour : « quand j'ai un exercice je peux le changer
+// d'ordre dans ma seance », « un petit encart pour l'heure de debut et l'heure
+// de fin, mais un truc qui prend pas trop de place », « quand il est long a
+// ecrire je le vois pas en entier, il est coupe », « quand je regarde une
+// ancienne seance y'a pas tous les exos dans le recap ».
+// ---------------------------------------------------------------------------
+ok('un exercice se deplace depuis sa propre carte',
+   /data-action="monter"/.test(SRC) && /data-action="descendre"/.test(SRC)
+   && /function bougerExo\(exId, sens\)\{/.test(SRC)
+   && /function placeBloc\(ex\)\{/.test(SRC)
+   // Un superset se deplace d'un bloc entier : ce sont les unites de
+   // blocsDuJour qui comptent les places, jamais la liste a plat.
+   && (SRC.match(/var unites = blocsDuJour\(state\.sessions\[state\.selectedDay\]\);/g) || []).length === 4
+   // Et le panneau qui range toute la seance d'un coup reste la.
+   && /id="ordreBtn"/.test(HTML));
+
+ok('un nom trop long est mesure, pas devine au nombre de lettres',
+   /function majNomLong\(card\)\{/.test(SRC)
+   && /champ\.scrollWidth <= champ\.clientWidth \+ 1/.test(SRC)
+   // La mesure se fait toujours dans la disposition etroite : sinon le nom
+   // elargi tiendrait, la classe tomberait, et la carte changerait de forme a
+   // chaque rendu.
+   && avant(SRC, "card.classList.remove('nom-long');", "card.classList.add('nom-long');")
+   && /\.ex-card\.nom-long \.ex-name\{flex:1 0 100%/.test(HTML)
+   && /\.ex-card\.nom-serre \.ex-name\{font-size:13px/.test(HTML));
+
+ok('le recap montre tous les exercices de la seance, notes ou pas',
+   /var tous = day \? \(day\.exercises \|\| \[\]\)\.filter/.test(SRC)
+   && /var exos = tous\.filter\(function\(e\)\{ return seriesRemplies\(e\)\.length; \}\);/.test(SRC)
+   && /tous\.forEach\(function\(e\)\{/.test(SRC)
+   && /RIEN DE NOTÉ<\/span>/.test(SRC)
+   // Les chiffres, eux, ne comptent que ce qui a ete fait : quatre cases a
+   // zero ne valent pas la phrase qui dit dans quel etat est la seance.
+   && /statTile\(exos\.length, exos\.length > 1 \? 'EXOS' : 'EXO'\)/.test(SRC)
+   && /\.fiche-serie\.vide\{border-style:dashed/.test(HTML));
+
+ok('les horaires de la seance se posent toutes seules',
+   /function marquerHoraires\(ds\)\{/.test(SRC)
+   // Trois garde-fous : seulement la journee du jour, seulement a partir
+   // d'une serie remplie, et un debut qui ne se reecrit jamais.
+   && /if \(ds !== toDateStr\(new Date\(\)\)\) return;/.test(SRC)
+   && /if \(!day \|\| compterJour\(day\) < 1\) return;/.test(SRC)
+   && /if \(!day\.debut\) day\.debut = new Date\(\)\.toISOString\(\);/.test(SRC)
+   // Une heure corrigee a la main ne doit pas etre reecrite par la
+   // sauvegarde qui suit immediatement.
+   && /function persistDay\(ds, sansHoraire\)\{/.test(SRC)
+   && /if \(!sansHoraire\) marquerHoraires\(ds\);/.test(SRC)
+   && /persistDay\(ds, true\);/.test(SRC)
+   && /id="heuresSheet"/.test(HTML) && /id="heroHeures"/.test(SRC));
+
+ok('les horaires partent au cloud comme le reste de la journee',
+   /function pousserHoraires\(\)\{/.test(SRC)
+   && /c\.rpc\('pousser_horaires', \{/.test(SRC)
+   && /pousserHoraires\(\)\.catch\(function\(\)\{\}\)/.test(SRC)
+   && /marquerHoraires:marquerHoraires,/.test(SRC)
+   // Une base qui n'a pas encore les colonnes rend la journee sans les cles :
+   // celles d'ici restent au lieu de disparaitre au premier tirage.
+   && /\['debut', 'fin'\]\.forEach\(function\(k\)\{/.test(SRC)
+   && /add column if not exists debut timestamptz;/.test(SQL)
+   && /create or replace function public\.pousser_horaires/.test(SQL)
+   && /grant  execute on function public\.pousser_horaires\(date, timestamptz, timestamptz\) to authenticated;/.test(SQL)
+   && /revoke execute on function public\.pousser_horaires\(date, timestamptz, timestamptz\) from anon, public;/.test(SQL));
 
 console.log(`\n${pass} reussis, ${fail} echoues`);
 process.exit(fail ? 1 : 0);

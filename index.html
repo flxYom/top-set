@@ -251,6 +251,18 @@
   .hero-tags{position:relative;display:flex;flex-wrap:wrap;gap:7px;}
   .hero-tag{font-size:10px;font-weight:800;letter-spacing:.06em;padding:4px 7px;background:var(--ink);color:#0d0c0a;}
   .hero-tag.green{background:var(--green);}
+  /* Les horaires sont la seule etiquette qu'on touche : meme forme que les
+     autres, mais elle s'enfonce. */
+  .hero-heures{
+    font-family:var(--f-titre);line-height:1.2;
+    border:none;cursor:pointer;text-transform:uppercase;
+  }
+  .hero-heures:active{background:var(--orange);}
+  /* Les deux heures cote a cote : l'etiquette a gauche, le champ a droite. */
+  .heures-duo{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px 10px;align-items:center;margin-top:10px;}
+  .heures-duo .sheet-label{margin:0;}
+  .heures-duo .sheet-input{margin:0;}
+  .heures-duree{margin:8px 0 0;font-size:12px;font-weight:700;color:var(--dim);}
 
   .week-nav{display:flex;align-items:center;justify-content:space-between;gap:8px;}
   .icon-btn{
@@ -329,7 +341,7 @@
     background:var(--card-color,var(--orange));
     color:#0d0c0a;
     padding:5px 6px 5px 12px;
-    display:flex;align-items:center;gap:8px;
+    display:flex;align-items:center;gap:8px;flex-wrap:wrap;
   }
   .ex-name{
     flex:1;min-width:0;
@@ -341,6 +353,10 @@
   }
   .ex-name::placeholder{color:rgba(13,12,10,.55);font-weight:700;}
   .ex-name:focus{outline:2px solid #0d0c0a;outline-offset:2px;}
+  /* Un nom trop long pour sa ligne la prend en entier : la pastille et les
+     deux boutons passent dessous. Mesure dans app.js, jamais devine. */
+  .ex-card.nom-long .ex-name{flex:1 0 100%;order:-1;min-height:34px;}
+  .ex-card.nom-serre .ex-name{font-size:13px;letter-spacing:-.02em;}
   /* Le groupe : une pastille dans l'en-tete. Le menu natif est pose dessus,
      invisible — le telephone ouvre sa roue de choix habituelle. */
   .ex-groupe-chip{
@@ -762,6 +778,8 @@
     font-size:12px;font-weight:800;color:var(--ink);
   }
   .fiche-serie.fait{border-color:var(--green);}
+  /* Un exercice de la seance sans valeur notee : il existe, il le dit. */
+  .fiche-serie.vide{border-style:dashed;color:var(--dim);font-size:10.5px;letter-spacing:.07em;}
   .fiche-delta{margin-top:7px;font-size:11.5px;font-weight:700;line-height:1.4;color:var(--dim);}
   .fiche-delta b{font-weight:800;}
   .fiche-delta.hausse b{color:var(--green);}
@@ -2447,6 +2465,9 @@
     -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
   }
   .hero-tag.green{background:rgba(43,208,138,.18);color:#8af2c4;border-color:rgba(43,208,138,.4);}
+  .hero-heures{border:1px solid rgba(255,255,255,.3);}
+  .hero-heures:active{background:rgba(255,255,255,.2);}
+  .heures-duree{color:var(--ink3);font-family:var(--f-ui);}
 
   /* ---- Semaine ------------------------------------------------------------ */
   .icon-btn{border:1px solid var(--trait);border-radius:var(--r-m);background:var(--s1);color:var(--ink);box-shadow:none;}
@@ -3762,6 +3783,27 @@
     <input type="text" class="sheet-input" id="cycleLibre" maxlength="24" placeholder="Prise de masse, sèche, rééduc…" autocomplete="off">
     <button type="button" class="btn-sheet primary" id="cycleValider">ENREGISTRER</button>
     <button type="button" class="btn-sheet" id="cycleRetirer" hidden>RETIRER LE CYCLE DE CE JOUR</button>
+  </div>
+</div>
+
+<div class="sheet" id="heuresSheet" hidden>
+  <div class="sheet-card" role="dialog" aria-modal="true" aria-labelledby="heuresTitre">
+    <div class="sheet-head">
+      <h2 id="heuresTitre">HORAIRES DE LA SÉANCE</h2>
+      <button type="button" class="icon-btn" id="heuresClose" aria-label="Fermer">×</button>
+    </div>
+    <p class="sheet-note">L'app les note toute seule : ta première série remplie
+      ouvre la séance, la dernière la ferme. Corrige-les ici si tu étais à la
+      salle avant de commencer à noter.</p>
+    <div class="heures-duo">
+      <label class="sheet-label" for="heureDebut">DÉBUT</label>
+      <input type="time" class="sheet-input" id="heureDebut">
+      <label class="sheet-label" for="heureFin">FIN</label>
+      <input type="time" class="sheet-input" id="heureFin">
+    </div>
+    <p class="heures-duree" id="heuresDuree"></p>
+    <button type="button" class="btn-sheet primary" id="heuresValider">ENREGISTRER</button>
+    <button type="button" class="btn-sheet" id="heuresRetirer" hidden>RETIRER LES HORAIRES</button>
   </div>
 </div>
 

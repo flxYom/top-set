@@ -152,7 +152,8 @@ with the file's: an old backup imported by mistake erased months of sessions.
 `fusionnerCarnets()`, in `intelligence.js` and therefore tested, adds what is
 missing and never touches what is there:
 
-- a missing day arrives whole, with its title;
+- a missing day arrives whole, with its title, cycle, word, validation and
+  times;
 - in an existing day, an exercise is matched by id, or by name and filled sets —
   which is what lets the CSV, which has no ids, double nothing;
 - it is a multiset, not a set: two « Pompes × 20 » cards on the same day are two
@@ -166,7 +167,16 @@ n'avais pas) » — the second applies it, redoing the merge on the logbook as i
 is at that moment. Only the days that changed are sent to the account.
 Importing the same file twice adds nothing.
 
-**Titles, cycles, words, session validations and names now go out on their
+**A merge adds — it erases nothing beside it** (22 October 2026). The merge
+rebuilt the day with the title as its only luggage: adding an exercise to a day
+dropped its **cycle**, its **word** and its **validation**, and an incoming day
+arrived without its own. That touched three paths at once — importing a backup,
+the repair at startup, and the merge of two app pages writing to the same
+storage. The day's own fields (`cycle`, `commentaire`, `termine`, `debut`,
+`fin`) are now carried explicitly: what is already written here keeps the upper
+hand, what is missing is taken from the incoming day. Tested both ways.
+
+**Titles, cycles, words, validations, times and names now go out on their
 own.** `pousser()` returned early when no day had changed, so a renamed
 session, a validated session or a new exercise name waited for the next logged
 set — sometimes for days. The six queues are now checked together, the
@@ -179,6 +189,16 @@ the word live locally from now on; until `schema.sql` is re-run, the database
 returns the day **without** those keys, and the merge then keeps what is here.
 An up-to-date database returns `cycle:null`, and there we follow. Same rule as
 « session finished », and it is what lets the app ship before the SQL.
+
+**Session start and end times** (22 October 2026) follow exactly that path:
+`seances.debut` and `seances.fin` columns, a `pousser_horaires` function (two
+values, so its own queue and its own body — `pousserParDate` carries only one),
+and until the SQL is re-run the database returns the day without the keys and
+the phone's own are kept. They are stamped on their own: the first filled set
+opens the session, the last one closes it, and only on **today's** day —
+filling in a session from three weeks ago must not stamp it with tonight's
+time. They travel in the JSON backup too: the import's whitelist names them,
+or a restore would lose them.
 
 **The CSV imports back.** `lireCsvCarnet()` reads the exported CSV, and what
 Excel makes of it when it re-saves it: commas instead of semicolons, DD/MM/YYYY

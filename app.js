@@ -943,7 +943,11 @@
   // Le local d'abord, toujours, et immediatement : l'ecran ne doit jamais
   // attendre le reseau. La journee est ensuite marquee pour le cloud, si un
   // compte est connecte. Sans compte, la seconde ligne ne fait rien.
-  function persistDay(ds){
+  // « sansHoraire » : l'ecriture ne vient pas d'une serie notee mais de la
+  // correction des horaires elle-meme. Sans ca, l'heure de fin tapee a la
+  // main etait aussitot remplacee par l'heure qu'il est. (22/10/2026)
+  function persistDay(ds, sansHoraire){
+    if (!sansHoraire) marquerHoraires(ds);
     saveLocal();
     if (Sync) Sync.marquerSale(ds);
   }
@@ -1737,6 +1741,15 @@
     } else {
       tags = '<span class="hero-tag">RIEN DE NOTÉ</span>';
     }
+    // Les horaires au milieu des autres etiquettes : une de plus sur la meme
+    // ligne, pas un bloc a part. Rien tant que la seance n'a rien de note —
+    // une heure sur une journee vide ne veut rien dire.
+    if (nExos){
+      var hh = horairesTexte(ds);
+      tags += '<button type="button" class="hero-tag hero-heures" id="heroHeures"'
+        + ' aria-label="Horaires de la séance">'
+        + (hh ? esc(hh.toUpperCase()) : '＋ HORAIRES') + '</button>';
+    }
 
     var hero = document.getElementById('heroBand');
     hero.style.setProperty('--hero-color', heroColor);
@@ -2081,7 +2094,15 @@
     // dans quel etat on est, sans avoir a l'ouvrir.
     var rattacheA = (ex.nom && ex.nom.trim() && cleCanonique(ex.nom) !== cleExo(ex.nom))
       ? nomCanonique(ex.nom) : '';
+    // Deplacer l'exercice depuis sa propre carte. Le panneau ⇅ range toute la
+    // seance ; ici on en deplace UN, celui qu'on a sous les yeux au moment ou
+    // on s'apercoit que la machine est prise. Un exercice seul ne bouge pas.
+    var pl = placeBloc(ex);
+    var deplacer = (pl.i < 0 || pl.n < 2) ? ''
+      : (pl.i > 0 ? '<button type="button" class="ex-menu-item" data-action="monter" data-id="'+ eid +'">▲ MONTER DANS LA SÉANCE</button>' : '')
+      + (pl.i < pl.n - 1 ? '<button type="button" class="ex-menu-item" data-action="descendre" data-id="'+ eid +'">▼ DESCENDRE DANS LA SÉANCE</button>' : '');
     var menu = '<div class="ex-menu" role="group" aria-label="Actions sur l\'exercice">'
+      + deplacer
       + (auTemps || nomAuTemps(ex.nom) || cardioParDefaut(ex) || !series.some(serieRemplie)
           ? '<button type="button" class="ex-menu-item" data-action="mesure" data-id="'+ eid +'">'+libelleMesure(auTemps, cardioParDefaut(ex))+'</button>'
           : '')
@@ -2185,8 +2206,33 @@
     lacherFocus(card);
     var tmp = document.createElement('div');
     tmp.innerHTML = exerciseCardHTML(ex);
-    card.replaceWith(tmp.firstChild);
+    var neuve = tmp.firstChild;
+    card.replaceWith(neuve);
+    majNomLong(neuve);
     garderDefilement(y);
+  }
+  // Un nom qui ne tient pas sur sa ligne. L'en-tete est une seule ligne : le
+  // nom, la pastille du groupe et deux boutons. « Développé incliné haltères
+  // prise neutre » y etait coupe en plein milieu, et on ne pouvait plus le
+  // relire. On le MESURE — le nombre de lettres ne dit rien de la largeur
+  // reelle : s'il depasse, il prend la ligne entiere de l'en-tete ; s'il
+  // depasse encore, il se resserre. (22/10/2026)
+  function majNomLong(card){
+    if (!card || !card.querySelector) return;
+    var champ = card.querySelector('.ex-name');
+    if (!champ) return;
+    // La mesure se fait toujours dans la disposition etroite : sinon le nom
+    // elargi tiendrait, la classe tomberait, et la carte changerait de forme
+    // a chaque rendu.
+    card.classList.remove('nom-long');
+    card.classList.remove('nom-serre');
+    if (champ.scrollWidth <= champ.clientWidth + 1) return;
+    card.classList.add('nom-long');
+    if (champ.scrollWidth > champ.clientWidth + 1) card.classList.add('nom-serre');
+  }
+  function majNomsLongs(zone){
+    var cartes = (zone || document).querySelectorAll('.ex-card');
+    Array.prototype.forEach.call(cartes, function(c){ majNomLong(c); });
   }
   // Un champ qui a le focus ne doit pas disparaitre sous les doigts : sur
   // iPhone, Safari ferme alors le clavier en renvoyant la page tout en haut.
@@ -2277,6 +2323,16 @@
   function nomBloc(u){
     return u.map(function(e){ return normalizeName(e.nom || '') || 'Sans nom'; }).join(' + ');
   }
+  // Ou en est cet exercice dans l'ordre de la seance ? En unites
+  // deplacables : un superset compte pour une seule place.
+  function placeBloc(ex){
+    var unites = blocsDuJour(state.sessions[state.selectedDay]);
+    var pos = -1;
+    unites.forEach(function(u, k){
+      if (u.some(function(e){ return e && ex && e.id === ex.id; })) pos = k;
+    });
+    return { i:pos, n:unites.length };
+  }
   // Une ligne par exercice, et rien d'autre : ni series, ni poids. On vient
   // y ranger sa seance, pas la relire.
   function ordreListeHTML(day){
@@ -2323,6 +2379,26 @@
   function rendreOrdre(){
     var liste = document.getElementById('ordreListe');
     if (liste) liste.innerHTML = ordreListeHTML(state.sessions[state.selectedDay]);
+  }
+  // Le meme deplacement, mais demande depuis la carte : on repeint la seance
+  // au lieu de la liste du panneau, et on garde l'exercice sous les yeux —
+  // sinon il part se ranger quelque part hors de l'ecran.
+  function bougerExo(exId, sens){
+    var unites = blocsDuJour(state.sessions[state.selectedDay]);
+    var pos = -1;
+    unites.forEach(function(u, k){
+      if (u.some(function(e){ return e && e.id === exId; })) pos = k;
+    });
+    var cible = pos + sens;
+    if (pos < 0 || cible < 0 || cible >= unites.length) return;
+    var tmp = unites[pos]; unites[pos] = unites[cible]; unites[cible] = tmp;
+    appliquerOrdre(unites);
+    renderDayPanel(true);
+    renderBandeau();
+    var cartes = document.querySelectorAll('#exList .ex-card');
+    for (var i = 0; i < cartes.length; i++){
+      if (cartes[i].dataset.id === exId){ cartes[i].scrollIntoView({ block:'center' }); break; }
+    }
   }
   // Un seul exercice ne se range pas : le bouton ne s'affiche qu'a partir de
   // deux.
@@ -2485,6 +2561,33 @@
     if (v) choisirCycle(v);
   });
   document.getElementById('cycleRetirer').addEventListener('click', function(){ choisirCycle(''); });
+
+  // L'etiquette des horaires est refaite a chaque rendu du bandeau : l'ecoute
+  // tient sur la zone, pas sur le bouton.
+  document.getElementById('heroCorps').addEventListener('click', function(e){
+    if (e.target.closest('#heroHeures')) ouvrirHeures();
+  });
+  document.getElementById('heuresClose').addEventListener('click', fermerHeures);
+  document.getElementById('heuresSheet').addEventListener('click', function(e){
+    if (e.target === this) fermerHeures();
+  });
+  document.getElementById('heuresValider').addEventListener('click', function(){
+    var ds = state.selectedDay;
+    definirHoraires(ds,
+      isoDepuisHeure(ds, document.getElementById('heureDebut').value),
+      isoDepuisHeure(ds, document.getElementById('heureFin').value));
+    fermerHeures();
+    var h = horairesTexte(ds);
+    showToast(h ? 'Séance ' + h : 'Horaires retirés');
+  });
+  document.getElementById('heuresRetirer').addEventListener('click', function(){
+    var ds = state.selectedDay;
+    definirHoraires(ds, '', '');
+    fermerHeures();
+    // Une seance validee garde l'heure de sa validation : c'est un fait, pas
+    // un horaire saisi, et il n'y a aucune raison de le jeter.
+    showToast(horairesTexte(ds) ? 'Il reste l\'heure de validation' : 'Horaires retirés');
+  });
   document.getElementById('cycleLibre').addEventListener('keydown', function(e){
     if (e.key === 'Enter'){ e.preventDefault(); document.getElementById('cycleValider').click(); }
   });
@@ -2768,6 +2871,116 @@
     if (v) day.commentaire = v; else delete day.commentaire;
     persistDay(ds);
     if (typeof Sync !== 'undefined' && Sync.marquerCommentaire) Sync.marquerCommentaire(ds);
+  }
+
+  // ---------- l'heure de debut et l'heure de fin ----------
+  // Elles ne se demandent pas. Une seance commence a la premiere serie notee
+  // et finit a la derniere : l'app a les deux moments sous la main, c'est a
+  // elle de les retenir. On peut les corriger — on arrive a la salle avant de
+  // noter quoi que ce soit —, et l'heure de debut corrigee n'est jamais
+  // reecrite par l'horodatage. (22/10/2026)
+  function heureTexte(iso){
+    var d = iso ? new Date(iso) : null;
+    if (!d || isNaN(d.getTime())) return '';
+    return d.getHours() + 'h' + String(d.getMinutes()).padStart(2, '0');
+  }
+  // Ce que veut <input type="time"> : « HH:MM », en heure locale.
+  function heureChamp(iso){
+    var d = iso ? new Date(iso) : null;
+    if (!d || isNaN(d.getTime())) return '';
+    return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+  }
+  // Une heure tapee a la main se pose sur le jour AFFICHE, pas sur
+  // aujourd'hui : on corrige souvent une seance la veille au soir.
+  function isoDepuisHeure(ds, hhmm){
+    var m = /^(\d{1,2}):(\d{2})$/.exec(String(hhmm == null ? '' : hhmm).trim());
+    if (!m) return '';
+    var h = Number(m[1]), mi = Number(m[2]);
+    if (h > 23 || mi > 59) return '';
+    var j = fromDateStr(ds);
+    j.setHours(h, mi, 0, 0);
+    return j.toISOString();
+  }
+  function horairesDe(ds){
+    var day = state.sessions[ds];
+    if (!day) return null;
+    var debut = day.debut || '';
+    // Une seance validee a deja son point final : « termine » fait la fin.
+    var fin = day.fin || day.termine || '';
+    return (debut || fin) ? { debut:debut, fin:fin } : null;
+  }
+  // La duree n'est affichee que si elle veut dire quelque chose : deux heures
+  // a l'envers, ou une seance de onze heures parce qu'on a note une serie le
+  // soir, ne disent rien.
+  function dureeSeance(ds){
+    var h = horairesDe(ds);
+    if (!h || !h.debut || !h.fin) return '';
+    var ms = new Date(h.fin).getTime() - new Date(h.debut).getTime();
+    if (!(ms > 0) || ms > 8 * 3600000) return '';
+    var mn = Math.round(ms / 60000);
+    return mn < 60 ? mn + ' min' : Math.floor(mn / 60) + 'h' + String(mn % 60).padStart(2, '0');
+  }
+  function horairesTexte(ds){
+    var h = horairesDe(ds);
+    if (!h) return '';
+    var txt = (h.debut ? heureTexte(h.debut) : '?') + ' → ' + (h.fin ? heureTexte(h.fin) : '?');
+    var duree = dureeSeance(ds);
+    return duree ? txt + ' · ' + duree : txt;
+  }
+  // L'horodatage automatique, pose a chaque sauvegarde. Trois garde-fous :
+  // seulement la journee du jour (remplir une seance d'il y a trois semaines
+  // ne doit pas lui coller l'heure de ce soir), seulement a partir d'une
+  // serie remplie (poser des noms d'exercices a 14 h n'ouvre pas la seance),
+  // et le debut ne se reecrit jamais.
+  function marquerHoraires(ds){
+    if (ds !== toDateStr(new Date())) return;
+    var day = state.sessions[ds];
+    if (!day || compterJour(day) < 1) return;
+    var avant = day.fin || '', avantDebut = day.debut || '';
+    if (!day.debut) day.debut = new Date().toISOString();
+    day.fin = day.termine || new Date().toISOString();
+    // L'etiquette suit : la pose tombe une demi-seconde apres la frappe, bien
+    // apres le rendu du bandeau, et personne ne repasserait derriere.
+    if (ds === state.selectedDay && (avantDebut !== day.debut || avant !== day.fin)) {
+      majEtiquetteHoraires(ds);
+    }
+    // La minute suffit : sans ca, chaque lettre tapee relancerait un envoi.
+    if (avant.slice(0, 16) !== day.fin.slice(0, 16)
+        && typeof Sync !== 'undefined' && Sync.marquerHoraires) Sync.marquerHoraires(ds);
+  }
+  // L'etiquette seule, sans repeindre le bandeau : un rendu complet pendant la
+  // saisie reprendrait le focus au champ qu'on est en train de remplir.
+  function majEtiquetteHoraires(ds){
+    var b = document.getElementById('heroHeures');
+    if (!b) return;
+    var h = horairesTexte(ds);
+    b.textContent = h ? h.toUpperCase() : '＋ HORAIRES';
+  }
+  function definirHoraires(ds, debut, fin){
+    var day = getOrCreateDay(ds);
+    if (debut) day.debut = debut; else delete day.debut;
+    if (fin) day.fin = fin; else delete day.fin;
+    persistDay(ds, true);
+    if (typeof Sync !== 'undefined' && Sync.marquerHoraires) Sync.marquerHoraires(ds);
+  }
+  function rendreHeures(){
+    var ds = state.selectedDay;
+    var h = horairesDe(ds) || { debut:'', fin:'' };
+    document.getElementById('heureDebut').value = heureChamp(h.debut);
+    document.getElementById('heureFin').value = heureChamp(h.fin);
+    var d = dureeSeance(ds);
+    document.getElementById('heuresDuree').textContent = d ? 'Durée : ' + d : '';
+    document.getElementById('heuresRetirer').hidden = !horairesDe(ds);
+  }
+  function ouvrirHeures(){
+    rendreHeures();
+    document.getElementById('heuresSheet').hidden = false;
+  }
+  function fermerHeures(){
+    var el = document.getElementById('heuresSheet');
+    if (!el || el.hidden) return;
+    el.hidden = true;
+    renderBandeau();
   }
 
   // Combien de fois cette seance a-t-elle ete faite ? Deux seances sont « la
@@ -3212,7 +3425,15 @@
     var ds = state.seanceOuverte;
     if (!ds){ hote.innerHTML = ''; return; }
     var day = state.sessions[ds];
-    var exos = day ? (day.exercises || []).filter(function(e){ return seriesRemplies(e).length; }) : [];
+    // Tous les exercices de la seance, pas seulement ceux qui portent des
+    // chiffres. Un exercice pose sans valeur notee existait bien dans le
+    // carnet mais disparaissait du recap : on relisait une seance de six
+    // exercices et on n'en voyait que quatre. Il s'affiche, il dit qu'il n'a
+    // rien de note, et la seance se relit en entier. (22/10/2026)
+    var tous = day ? (day.exercises || []).filter(function(e){
+      return (e && e.nom && String(e.nom).trim()) || seriesRemplies(e).length;
+    }) : [];
+    var exos = tous.filter(function(e){ return seriesRemplies(e).length; });
     var d = fromDateStr(ds);
     var quand = DAY_NAMES[(d.getDay()+6)%7] + ' ' + d.getDate() + ' ' + MONTH_NAMES[d.getMonth()] + ' ' + d.getFullYear();
     var couleur = couleurGroupe(groupesPrincipaux(ds)[0]);
@@ -3234,27 +3455,30 @@
           ? '<div class="fiche-mot">«\u00a0' + esc(commentaireSeance(ds)) + '\u00a0»</div>' : '')
       + '</div>';
 
-    if (!exos.length){
-      var poses = day ? (day.exercises || []).length : 0;
-      html += '<div class="seances-vide">'
-        + (poses
-            ? 'Séance prévue : ' + poses + (poses > 1 ? ' exercices posés' : ' exercice posé') + ', aucune valeur notée.'
-            : 'Rien de noté ce jour-là.')
-        + '</div>';
+    if (!tous.length){
+      html += '<div class="seances-vide">Rien de noté ce jour-là.</div>';
       html += '<button type="button" class="btn-add" id="ficheModifier">MODIFIER CETTE SÉANCE</button>';
       hote.innerHTML = html;
       return;
     }
 
-    html += '<div class="fiche-stats" style="grid-template-columns:repeat(2,minmax(0,1fr));">'
-      + statTile(exos.length, exos.length > 1 ? 'EXOS' : 'EXO')
-      + statTile(compterJour(day), compterJour(day) > 1 ? 'SÉRIES' : 'SÉRIE')
-      + statTile(volumeTexte(dayVolume(ds)) || '—', 'VOLUME')
-      + statTile(fois + '×', fois > 1 ? 'FOIS CETTE SÉANCE' : 'PREMIÈRE FOIS')
-      + '</div>';
+    // Les chiffres disent ce qui a ete FAIT : une seance seulement prevue n'a
+    // pas de volume, et quatre cases a zero ne valent pas la phrase qui dit
+    // dans quel etat elle est.
+    if (exos.length){
+      html += '<div class="fiche-stats" style="grid-template-columns:repeat(2,minmax(0,1fr));">'
+        + statTile(exos.length, exos.length > 1 ? 'EXOS' : 'EXO')
+        + statTile(compterJour(day), compterJour(day) > 1 ? 'SÉRIES' : 'SÉRIE')
+        + statTile(volumeTexte(dayVolume(ds)) || '—', 'VOLUME')
+        + statTile(fois + '×', fois > 1 ? 'FOIS CETTE SÉANCE' : 'PREMIÈRE FOIS')
+        + '</div>';
+    } else {
+      html += '<div class="seances-vide">Séance prévue : ' + tous.length
+        + (tous.length > 1 ? ' exercices posés' : ' exercice posé') + ', aucune valeur notée.</div>';
+    }
 
     var faite = seanceFaite(ds);
-    exos.forEach(function(e){
+    tous.forEach(function(e){
       var series = seriesRemplies(e);
       var pesees = series.filter(function(s){ return typeof s.poids === 'number' && s.poids > 0; });
       var meilleure = pesees.length ? Math.max.apply(null, pesees.map(function(s){ return s.poids; })) : null;
@@ -3264,9 +3488,11 @@
         + '<div class="fiche-exo-nom">' + esc(normalizeName(e.nom) || 'Sans nom') + '<span class="fiche-exo-fleche">›</span></div>'
         + '<div class="fiche-exo-groupe">' + esc(clE.groupe + (clE.sous ? ' · ' + clE.sous : '')) + '</div>'
         + '<div class="fiche-series">'
-        + series.map(function(s){
-            return '<span class="fiche-serie' + (s.fait ? ' fait' : '') + '">' + esc(perfTexte(s)) + '</span>';
-          }).join('')
+        + (series.length
+            ? series.map(function(s){
+                return '<span class="fiche-serie' + (s.fait ? ' fait' : '') + '">' + esc(perfTexte(s)) + '</span>';
+              }).join('')
+            : '<span class="fiche-serie vide">RIEN DE NOTÉ</span>')
         + '</div>'
         + notesExo(e).map(function(n){ return '<div class="fiche-exo-note">«\u00a0' + esc(n) + '\u00a0»</div>'; }).join('')
         + (tenues.length
@@ -3274,7 +3500,7 @@
             : ligneProgression(e.nom, ds, meilleure))
         + '</button>'
         // A cote de la carte, pas dedans : la carte entiere ouvre l'exercice.
-        + (faite ? '<button type="button" class="btn-ajout-jour" data-ajout-jour="' + esc(e.id) + '">+ AJOUTER À MA SÉANCE DU JOUR</button>' : '');
+        + (faite && series.length ? '<button type="button" class="btn-ajout-jour" data-ajout-jour="' + esc(e.id) + '">+ AJOUTER À MA SÉANCE DU JOUR</button>' : '');
     });
 
     var meme = (ds === state.selectedDay);
@@ -3383,6 +3609,7 @@
       list.innerHTML = '<div class="empty-state">Aucun exercice noté pour ce jour.<br>Ajoute ta première série ci-dessous.</div>' + refaireHTML(ds);
     } else {
       list.innerHTML = exercisesHTML(exercises);
+      majNomsLongs(list);
     }
     garderDefilement(y);
     majBoutonFin(ds);
@@ -4277,6 +4504,7 @@
       // devient utile. Mis à jour ici, sans reconstruire la carte.
       majBlocPrecedent(card, ex);
       repeindreSeries(card, ex);
+      majNomLong(card);
       // Une abreviation connue se propose pendant la frappe : attendre de
       // quitter le champ, c'est deja trop tard, on est passe a la suite.
       var pourSyn = synonymeDe(t.value);
@@ -5594,6 +5822,12 @@
       return;
     }
 
+    var bougeBtn = e.target.closest('[data-action="monter"], [data-action="descendre"]');
+    if (bougeBtn){
+      bougerExo(bougeBtn.dataset.id, bougeBtn.dataset.action === 'monter' ? -1 : 1);
+      return;
+    }
+
     var menuBtn = e.target.closest('[data-action="menu-exo"]');
     if (menuBtn){
       var carteM = menuBtn.closest('.ex-card');
@@ -6505,6 +6739,11 @@
       if (typeof day.cycle === 'string' && day.cycle.trim()) clean[ds].cycle = day.cycle.trim().slice(0, CYCLE_MAX);
       if (typeof day.commentaire === 'string' && day.commentaire.trim()) clean[ds].commentaire = noteSure(day.commentaire.trim());
       if (typeof day.termine === 'string' && day.termine.trim()) clean[ds].termine = day.termine.trim().slice(0, 40);
+      // Les horaires voyagent avec le reste : une liste blanche qui les
+      // oublierait les perdrait a la premiere restauration.
+      ['debut', 'fin'].forEach(function(k){
+        if (typeof day[k] === 'string' && day[k].trim()) clean[ds][k] = day[k].trim().slice(0, 40);
+      });
       var n = compterJour(clean[ds]);
       if (n){ jours++; series += n; }
     });
@@ -8601,6 +8840,13 @@
       // reste. Une base à jour rend termine:null, et là, on suit.
       if (d && ('termine' in d)){ if (d.termine) j.termine = d.termine; }
       else if (state.sessions[ds] && state.sessions[ds].termine) j.termine = state.sessions[ds].termine;
+      // Les horaires suivent exactement la meme regle : une base qui n'a pas
+      // encore les colonnes rend la journee sans les cles, et ceux d'ici
+      // restent au lieu de disparaitre au premier tirage.
+      ['debut', 'fin'].forEach(function(k){
+        if (d && (k in d)){ if (d[k]) j[k] = d[k]; }
+        else if (state.sessions[ds] && state.sessions[ds][k]) j[k] = state.sessions[ds][k];
+      });
       return j;
     }
 
@@ -8670,6 +8916,7 @@
           .then(function(){ return pousserCycles().catch(function(){}); })
           .then(function(){ return pousserMots().catch(function(){}); })
           .then(function(){ return pousserFins().catch(function(){}); })
+          .then(function(){ return pousserHoraires().catch(function(){}); })
           .then(function(){ return dates.length; });
       }).then(function(n){
         enCours = false; echecs = 0; majUI();
@@ -8888,6 +9135,31 @@
       });
     }
 
+    // Les horaires partent par le meme chemin que la fin, mais a deux valeurs :
+    // pousserParDate n'en porte qu'une, donc cette file-ci a son corps.
+    function pousserHoraires(){
+      if (!user) return Promise.resolve();
+      var dates = Object.keys(lireMeta().horaires || {});
+      if (!dates.length) return Promise.resolve();
+      return client().then(function(c){
+        var chaine = Promise.resolve();
+        dates.forEach(function(ds){
+          chaine = chaine.then(function(){
+            if (!connueIci(ds)) return;
+            var j = state.sessions[ds] || {};
+            var jeton = jetonDe('horaires', ds);
+            return avecDelai(c.rpc('pousser_horaires', {
+              p_date:ds, p_debut:j.debut || null, p_fin:j.fin || null
+            })).then(function(r){
+              if (r.error) throw r.error;
+              liberer('horaires', ds, jeton);
+            });
+          });
+        });
+        return chaine;
+      });
+    }
+
     function pousserFins(){
       if (!user) return Promise.resolve();
       var dates = Object.keys(lireMeta().fins || {});
@@ -8913,6 +9185,13 @@
       if (!dispo()) return;
       var qf = marque();
       majMeta(function(m){ m.fins = m.fins || {}; m.fins[ds] = qf; });
+      if (user) planifier(2500);
+    }
+
+    function marquerHoraires(ds){
+      if (!dispo()) return;
+      var qh = marque();
+      majMeta(function(m){ m.horaires = m.horaires || {}; m.horaires[ds] = qh; });
       if (user) planifier(2500);
     }
 
@@ -9349,7 +9628,13 @@
       // La file d'envoi et le curseur appartiennent au carnet qu'on vient de
       // ranger : les garder ferait pousser les journees d'un compte vers
       // l'autre a la premiere synchro.
-      majMeta(function(m){ m.sales = {}; m.titres = {}; m.depuis = null; });
+      // Toutes les files, pas seulement les journees et les titres : le
+      // cycle, le mot, la validation et les horaires du carnet qu'on range
+      // n'ont rien a faire dans la file du compte qui arrive. (22/10/2026)
+      majMeta(function(m){
+        m.sales = {}; m.titres = {}; m.cycles = {}; m.mots = {};
+        m.fins = {}; m.horaires = {}; m.depuis = null;
+      });
     }
 
     function apresConnexion(){
@@ -9653,6 +9938,7 @@
 
     return {
       demarrer:demarrer, marquerSale:marquerSale, majUI:majUI, estAdmin:estAdmin,
+      marquerHoraires:marquerHoraires,
       // Le compte est la derniere reserve, et la seule qui survit au
       // telephone : « tout retelecharger » redemande le carnet entier, sans
       // le curseur des nouveautes. Les journees d'ici plus completes sont

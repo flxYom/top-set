@@ -9,6 +9,51 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ## [Unreleased]
 
+### Added — the session under your fingers (2026-10-22)
+
+- **Reordering an exercise from its own card.** The `⇅` sheet tidies the whole
+  session, but it was not found: « I had asked you for a thing to change an
+  exercise's order in my session. » An exercise's `⋯` menu now offers
+  `▲ MONTER DANS LA SÉANCE` and `▼ DESCENDRE DANS LA SÉANCE` — nothing for a
+  lone exercise, nothing to move the first up or the last down. Same data path
+  as the sheet (a superset moves as a block), written immediately, and the view
+  follows the exercise instead of letting it leave the screen.
+- **Session start and end times**, stamped on their own. One more tag in the
+  banner next to `3 EXOS`: `19H05 → 20H32 · 1H27`. Nobody fills it in — the
+  first filled set opens the session, the last closes it, and a validated
+  session keeps its validation time as the end. Three guards: today's day only,
+  only from a filled set (names put down at 2 pm do not open a session), and
+  the start time is never rewritten. Tap it to correct both times; a hand-typed
+  time is not replaced by the save that follows. New `seances.debut` /
+  `seances.fin` columns, `pousser_horaires` function, its own send queue, and a
+  database without the columns still erases nothing.
+
+### Fixed (2026-10-22)
+
+- **A long exercise name was cut in the middle of itself.** « When the exercise
+  is long to write I don't see it in full, it overflows and gets cut. » The
+  header is one row: name, group pill, two buttons. The name is now measured —
+  `scrollWidth` against `clientWidth`, never a character count — and takes the
+  whole header row when it overflows, tightening to 13 px if it still does. The
+  measurement always happens in the narrow layout, or the card would change
+  shape on every render.
+- **A session's recap hid part of the session.** It only listed exercises
+  carrying numbers: « when I look at an old session not all the exercises are
+  in the recap. » An exercise put down without a logged value does exist in the
+  logbook; it now shows with a dashed `RIEN DE NOTÉ`. The numbers still count
+  only what was done, and a session that was merely planned says so instead of
+  showing four tiles at zero.
+- **A merge dropped the day's cycle, word and validation.** `fusionnerCarnets`
+  rebuilt the day with the title as its only luggage, so adding an exercise to
+  a day erased what was written beside it — on three paths at once: importing a
+  backup, the repair at startup, and the merge of two app pages sharing one
+  storage. The day's fields (`cycle`, `commentaire`, `termine`, `debut`, `fin`)
+  are now carried explicitly, the local one keeping the upper hand. The import
+  whitelist names the new fields too, or a restore would lose them.
+- **Every send queue is emptied when accounts switch**, not just days and
+  titles: the cycle, word, validation and times of the logbook being parked had
+  no business in the arriving account's queue.
+
 ### Fixed (the destructive one)
 
 - **"The admin page says 38 sessions, I see none in my logbook."** The admin

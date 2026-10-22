@@ -163,7 +163,8 @@ celui du fichier : une vieille sauvegarde importée par erreur faisait disparaî
 des mois de séances. `fusionnerCarnets()`, dans `intelligence.js` et donc
 testée, ajoute ce qui manque et ne touche jamais à ce qui est là :
 
-- un jour absent arrive entier, avec son titre ;
+- un jour absent arrive entier, avec son titre, son cycle, son mot, sa
+  validation et ses horaires ;
 - dans un jour présent, un exercice est reconnu par son identifiant, ou par son
   nom et ses séries remplies — c'est ce qui permet au tableur, qui n'a pas
   d'identifiants, de ne rien doubler ;
@@ -178,7 +179,17 @@ tu n'avais pas) » — le second applique, en refaisant la fusion sur le carnet 
 cet instant. Seules les journées qui ont bougé repartent vers le compte.
 Réimporter deux fois le même fichier n'ajoute rien.
 
-**Titres, cycles, mots, fins de séance et noms partent même seuls.**
+**Une fusion ajoute — elle n'efface rien à côté** (22 octobre 2026). La fusion
+reconstruisait la journée avec le titre pour seul bagage : ajouter un exercice
+à une journée faisait tomber son **cycle**, son **mot** et sa **validation**,
+et une journée entrante arrivait sans les siens. Ça touchait trois chemins à la
+fois — l'import d'une sauvegarde, la réparation au démarrage, et la fusion de
+deux pages de l'app qui écrivent dans le même stockage. Les champs de la
+journée (`cycle`, `commentaire`, `termine`, `debut`, `fin`) sont maintenant
+repris explicitement : ce qui est déjà écrit ici garde la main, ce qui manque
+est pris à l'entrant. Testé dans les deux sens.
+
+**Titres, cycles, mots, fins, horaires et noms partent même seuls.**
 `pousser()` sortait quand aucune journée n'avait bougé : un titre changé, une
 séance validée ou un nom d'exercice attendaient alors la prochaine série
 notée, parfois des jours. Les six files sont maintenant regardées ensemble, le
@@ -191,6 +202,16 @@ mot vivent en local dès maintenant ; tant que `schema.sql` n'est pas repassé,
 la base rend la journée **sans** ces clés, et la fusion garde alors ce qui est
 ici. Une base à jour rend `cycle:null`, et là on suit. C'est la même règle que
 « séance terminée », et c'est ce qui permet de livrer l'app avant le SQL.
+
+**Les horaires de la séance** (22 octobre 2026) suivent exactement ce chemin :
+colonnes `seances.debut` et `seances.fin`, fonction `pousser_horaires` (deux
+valeurs, donc sa propre file et son propre corps — `pousserParDate` n'en porte
+qu'une), et tant que le SQL n'est pas repassé, la base rend la journée sans les
+clés et celles du téléphone restent. Elles se posent toutes seules : la
+première série remplie ouvre la séance, la dernière la ferme, et seulement sur
+la journée **du jour** — remplir une séance d'il y a trois semaines ne doit pas
+lui coller l'heure de ce soir. Elles voyagent aussi dans la sauvegarde JSON :
+la liste blanche de l'import les nomme, sinon une restauration les perdrait.
 
 **Le tableur se réimporte.** `lireCsvCarnet()` relit le CSV exporté, et ce
 qu'Excel en fait quand il le réenregistre : virgules au lieu de points-virgules,
