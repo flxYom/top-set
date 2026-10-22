@@ -82,6 +82,20 @@ The bounds live in the database, not in the form — `check` constraints on the
 kind, the status, the body length and the context size. You do not defend a table
 with JavaScript.
 
+**The storage state, optional** (22 October 2026). A checkbox, unticked by
+default, attaches the same text as `DIAGNOSTIC DU STOCKAGE` from the `⇅` panel:
+sizes, counts, dates, the sync state — never a logbook value, never a session
+key. For « I lost my sessions » it is the only thing that lets you answer
+something other than « which phone do you have? ». The body is cut to 4,000
+characters **before** sending, since the database is what decides: a feedback
+refused for an over-long diagnostic would be a feedback lost.
+
+**Without an account, email takes over** (22 October 2026). Sending from the app
+needs an account — that is what makes a reply possible and keeps bots out. But
+someone hitting a bug before they have an account must not be left with nothing:
+the `NOUS ÉCRIRE PAR EMAIL` button opens a draft prefilled with the same context
+(view, screen size, user agent, PWA flag).
+
 A trigger, `accuser_retour()`, copies every feedback into its author's thread,
 then adds an acknowledgement signed `systeme` rather than `admin` — nobody has
 read it yet. No policy lets anyone write a `systeme` message, administrator

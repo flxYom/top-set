@@ -692,8 +692,33 @@ ok('iPhone : la date du jour se lit, et une seule fois',
   ok('mesure d audience : le service worker ne la met jamais en cache',
      SW.indexOf("if (url.pathname.indexOf('/_vercel/') === 0) return;") > -1);
   const CONF = readFileSync(new URL('confidentialite.html', racine), 'utf8');
-  ok('mesure d audience : annoncee par la politique 3.2, et l app enregistre cette version',
-     CONF.indexOf('Version 3.2') > -1 && CONF.indexOf('Vercel Web Analytics') > -1 && SRC.indexOf("var VERSION_POLITIQUE = '3.2';") > -1);
+  ok('mesure d audience : annoncee par la politique, et l app enregistre sa version',
+     CONF.indexOf('Version 3.3') > -1 && CONF.indexOf('Vercel Web Analytics') > -1 && SRC.indexOf("var VERSION_POLITIQUE = '3.3';") > -1);
+
+  // Les pages legales doivent decrire l'app TELLE QU'ELLE EST. Les amis et le
+  // partage existaient depuis des semaines quand la politique affirmait encore
+  // que deux personnes sans lien de coaching ne voient rien l'une de l'autre :
+  // une phrase fausse dans une politique de confidentialite, ce n'est pas une
+  // coquille. (22/10/2026)
+  const CGU = readFileSync(new URL('cgu.html', racine), 'utf8');
+  ok('les pages legales decrivent les amis et le partage',
+     CONF.indexOf('Tes amis') > -1
+     && CONF.indexOf('copie figée') > -1
+     && CGU.indexOf('Les amis et le partage') > -1
+     // Et la phrase devenue fausse n'y est plus.
+     && CONF.indexOf('Deux personnes sans lien de coaching') === -1
+     // Ce que l'app fait vraiment : il faut que ce soit vrai dans les deux sens.
+     && HTML.indexOf('id="partageSheet"') > -1);
+  ok('la politique nomme les reserves locales, qui ne sortent pas du telephone',
+     CONF.indexOf('IndexedDB') > -1 && CONF.indexOf('secours locales') > -1
+     && SRC.indexOf("var IDB_NOM") > -1);
+  ok('le retour sait repondre meme sans compte, et peut joindre le diagnostic',
+     HTML.indexOf('id="retourMail"') > -1 && HTML.indexOf('id="retourDiag"') > -1
+     && /function lienMailRetour\(\)\{/.test(SRC)
+     && /function corpsRetour\(texte\)\{/.test(SRC)
+     // La base plafonne le corps a 4000 : on coupe avant d'etre refuse.
+     && /var RETOUR_MAX = 4000;/.test(SRC)
+     && SQL.indexOf('check (char_length(corps) between 1 and 4000)') > -1);
 }
 ok('sous-groupes : liste fermee, le nom tranche, et un choix a la main gagne',
    SRC.indexOf("'Bras':['Biceps','Triceps','Avant-bras'],") > -1

@@ -6975,6 +6975,35 @@
     };
   }
 
+  // Ce qui part vraiment : le texte, et l'etat du stockage si la case est
+  // cochee. La base plafonne le corps a 4000 caracteres — c'est elle qui
+  // tranche, donc on coupe ici plutot que de se faire refuser l'envoi.
+  var RETOUR_MAX = 4000;
+  function corpsRetour(texte){
+    var diag = document.getElementById('retourDiag');
+    if (!diag || !diag.checked) return texte.slice(0, RETOUR_MAX);
+    var bloc = '';
+    try { bloc = '\n\n--- ÉTAT DU STOCKAGE ---\n' + diagnosticTexte(''); }
+    catch(e){ bloc = '\n\n(le diagnostic du stockage a échoué : ' + e + ')'; }
+    var place = RETOUR_MAX - bloc.length;
+    if (place < 200) return (texte + bloc).slice(0, RETOUR_MAX);
+    return texte.slice(0, place) + bloc;
+  }
+
+  // Le meme retour, mais par email : pour qui n'a pas de compte. Le contexte
+  // part avec, puisque c'est lui qui permet de reproduire.
+  function lienMailRetour(){
+    var c = contexteRetour();
+    var corps = 'Raconte ici ce qui s\'est passé.\n\n'
+      + '--- pour pouvoir reproduire ---\n'
+      + 'Écran de l\'app : ' + c.vue + '\n'
+      + 'Taille d\'écran : ' + c.ecran + '\n'
+      + 'Navigateur : ' + c.nav + '\n'
+      + 'App installée : ' + (c.pwa ? 'oui' : 'non') + '\n';
+    return 'mailto:g.benint@gmail.com?subject=' + encodeURIComponent('Top Set — retour')
+         + '&body=' + encodeURIComponent(corps);
+  }
+
   function quandCourt(iso){
     var d = new Date(iso);
     if (isNaN(d)) return '';
@@ -7093,11 +7122,16 @@
     document.getElementById('retourMsg').hidden = true;
     majResteRetour();
     var env = document.getElementById('retourEnvoyer');
+    var mail = document.getElementById('retourMail');
     if (!Sync.estConnecte()){
       env.disabled = true;
-      msgRetour('warn', 'Il faut un compte pour envoyer un retour : c\'est ce qui nous permet de te répondre, et d\'éviter les envois automatiques.');
+      msgRetour('warn', 'Il faut un compte pour envoyer un retour depuis l\'app : c\'est ce qui nous permet de te répondre, et d\'éviter les envois automatiques. Sans compte, l\'email ci-dessous arrive au même endroit.');
+      // Un bug rencontre sans compte doit pouvoir etre raconte quand meme.
+      mail.href = lienMailRetour();
+      mail.hidden = false;
     } else {
       env.disabled = false;
+      mail.hidden = true;
     }
     chargerMesRetours();
     document.getElementById('retourVersConv').hidden = !Sync.estConnecte();
@@ -7126,8 +7160,10 @@
     if (!corps){ msgRetour('err', 'Écris quelque chose avant d\'envoyer.'); champ.focus(); return; }
     var btn = this, avant = btn.textContent;
     btn.disabled = true; btn.textContent = 'ENVOI…';
-    Sync.envoyerRetour(retourType, corps, contexteRetour()).then(function(){
+    Sync.envoyerRetour(retourType, corpsRetour(corps), contexteRetour()).then(function(){
       champ.value = '';
+      var dg = document.getElementById('retourDiag');
+      if (dg) dg.checked = false;
       majResteRetour();
       chargerMesRetours();
       // Le retour vient d'ouvrir une conversation, et la reponse y arrivera :
@@ -8622,7 +8658,13 @@
   // (l'editeur, Resend, OVH, et Claude qui n'a acces a rien). Elle retire la
   // promesse « aucune mesure d'audience » sans en ajouter une : le jour ou il
   // y en aura une, la page le dira avant, et la question se reposera ici.
-  var VERSION_POLITIQUE = '3.2';
+  //
+  // La 3.3 non plus, pour la meme raison : elle decrit les amis et le partage,
+  // ou rien ne part sans que la personne coche un destinataire et appuie sur
+  // envoyer. Elle corrige surtout une phrase devenue fausse (« deux personnes
+  // sans lien de coaching ne voient rien l'une de l'autre ») et nomme les
+  // reserves locales, qui ne sortent pas du telephone. (22/10/2026)
+  var VERSION_POLITIQUE = '3.3';
   var SYNC_KEY      = 'topset_sync';
 
   var Sync = (function(){

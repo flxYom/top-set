@@ -84,6 +84,21 @@ Les bornes sont dans la base, pas dans le formulaire : `check` sur le type, sur
 le statut, sur la longueur du corps et sur la taille du contexte. On ne défend pas
 une table avec du JavaScript.
 
+**L'état du stockage, en option** (22/10/2026). Une case à cocher, décochée par
+défaut, joint au retour le même texte que `DIAGNOSTIC DU STOCKAGE` du panneau
+`⇅` : des tailles, des comptes, des dates, l'état de la synchro — jamais une
+valeur du carnet, jamais une clé de session. Pour « j'ai perdu mes séances »,
+c'est la seule chose qui permet de répondre autre chose que « tu as quel
+téléphone ? ». Le corps est coupé à 4 000 caractères **avant** l'envoi, puisque
+c'est la base qui tranche : un retour refusé pour cause de diagnostic trop long
+serait un retour perdu.
+
+**Sans compte, l'email prend le relais** (22/10/2026). L'envoi depuis l'app
+demande un compte — c'est ce qui permet de répondre, et ce qui tient les robots
+dehors. Mais quelqu'un qui tombe sur un bug avant d'avoir un compte ne doit pas
+rester sans rien : le bouton `NOUS ÉCRIRE PAR EMAIL` ouvre un brouillon
+pré-rempli avec le même contexte (écran, taille, navigateur, PWA).
+
 **Anti-spam** (18/09/2026). Chaque envoi peut déclencher un email ; un script
 avec un compte valide pourrait donc inonder la file et la boîte mail. Un
 trigger `before insert` (`plafond_envois`) plafonne par heure : 10 retours

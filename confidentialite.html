@@ -34,7 +34,7 @@
   </a>
 <main>
   <h1>Politique de confidentialité</h1>
-  <p class="maj">Version 3.2 — 18 septembre 2026</p>
+  <p class="maj">Version 3.3 — 22 octobre 2026</p>
 
   <section>
     <h2>En une phrase</h2>
@@ -53,6 +53,13 @@
       d'audience » plus bas) : sans cookie, et sans rien de ton carnet. Si un
       autre traitement apparaît, cette page le dira avant qu'il commence, et sa
       version changera.
+    </p>
+    <p class="dim">
+      Version 3.3 : l'application permet maintenant de <strong>s'ajouter des
+      amis</strong> et de leur <strong>envoyer une séance</strong>. Rien ne part
+      sans que tu coches à qui, et un ami ne voit jamais ton carnet — seulement
+      ce que tu lui envoies. Les sections « Ce qu'un compte enregistre » et
+      « Qui voit quoi » le détaillent.
     </p>
   </section>
 
@@ -74,6 +81,18 @@
       de l'application pour en garder une copie.
     </p>
     <p>
+      Toujours sur ton appareil, l'application garde aussi des <strong>copies de
+      secours locales</strong> — une deuxième dans une autre mémoire du
+      navigateur (<em>IndexedDB</em>), un journal compact qui passe encore quand
+      la place manque, et ce qu'une synchronisation n'a pas pu trancher. Elles
+      servent à ne pas perdre une séance quand une lecture rate ou que deux
+      pages de l'app écrivent en même temps, et l'application les relit toute
+      seule au démarrage. Elles portent le compte à qui elles appartiennent :
+      une réserve laissée par un compte n'est jamais reprise par un autre, et
+      elles sont effacées quand on change de compte sur le téléphone. Vider les
+      données du site les efface aussi, comme le reste.
+    </p>
+    <p>
       <strong>Avec un compte</strong>, une copie est en plus enregistrée chez
       <strong>Supabase</strong>, notre hébergeur de base de données (serveurs situés
       dans l'Union européenne). Le téléphone garde sa copie : le compte ne la
@@ -92,9 +111,11 @@
     <ul>
       <li><strong>Ton compte</strong> : ton adresse email, et ton mot de passe sous une
           forme hachée que personne ne peut relire — l'éditeur non plus.</li>
-      <li><strong>Ton carnet</strong> : séances et leurs titres, exercices et leurs
-          commentaires, séries, charges, répétitions, durées, RPE, temps de repos,
-          exercices mémorisés.</li>
+      <li><strong>Ton carnet</strong> : séances et leurs titres, leur cycle, le mot
+          que tu écris sur une séance, l'heure où tu l'as commencée et finie, le
+          moment où tu l'as validée, les exercices et leurs commentaires, les
+          séries, charges, répétitions, durées, RPE, temps de repos, et les
+          exercices que tu as mémorisés.</li>
       <li><strong>Ton profil</strong> : ton pseudo si tu en choisis un, ta date
           d'inscription, la date de ta dernière ouverture de l'application et, si tu
           es coach, ton code d'invitation.</li>
@@ -108,6 +129,13 @@
           l'application est installée. Rien de ton carnet.</li>
       <li><strong>Le lien avec ton coach</strong> : qui suit qui, depuis quand, et
           s'il est actif.</li>
+      <li><strong>Tes amis</strong> : ton code d'invitation, qui a demandé qui,
+          quand, et si le lien est en attente, actif ou rompu.</li>
+      <li><strong>Ce que tu envoies à un ami</strong> : une <strong>copie figée</strong>
+          de la séance, du récap ou de l'exercice au moment de l'envoi — pas un
+          accès à ton carnet —, le mot qui l'accompagne si tu en mets un, la
+          liste de ceux à qui tu l'as envoyé, et leur réaction. Corriger ta
+          séance demain ne change pas ce qu'ils ont reçu.</li>
     </ul>
   </section>
 
@@ -126,8 +154,15 @@
           d'inscription et de dernière visite, le <em>nombre</em> de tes séances et la
           date de la dernière — jamais leur contenu —, tes retours et ta conversation
           avec l'équipe. Pas ton adresse email.</li>
-      <li><strong>Personne d'autre.</strong> Deux personnes sans lien de coaching ne
-          peuvent ni s'écrire ni voir quoi que ce soit l'une de l'autre.</li>
+      <li><strong>Tes amis</strong>, chacun seulement pour ce que tu lui as envoyé :
+          la copie figée, ton mot et ton pseudo. <strong>Jamais ton carnet</strong>,
+          jamais ton adresse email, jamais tes autres séances, et pas non plus ce
+          que tu as envoyé à quelqu'un d'autre. Rompre l'amitié arrête les
+          envois ; ce qui est déjà parti reste chez eux, comme un message.</li>
+      <li><strong>Personne d'autre.</strong> Sans lien de coaching ni amitié, deux
+          personnes ne peuvent ni s'écrire ni voir quoi que ce soit l'une de
+          l'autre. Et même entre amis, rien ne circule tant que tu n'as pas
+          coché un destinataire et appuyé sur envoyer.</li>
     </ul>
     <p class="dim">
       En dehors de l'application, l'éditeur administre la base chez Supabase et
@@ -148,6 +183,9 @@
       <li><strong>Les messages et les retours</strong> : l'exécution du service que tu
           demandes (article 6.1.b) — un message est enregistré pour pouvoir être
           remis et relu.</li>
+      <li><strong>Les amis et les partages</strong> : l'exécution du service que tu
+          demandes (article 6.1.b). Chaque envoi est un geste de ta part, pour des
+          destinataires que tu choisis un par un.</li>
       <li><strong>Les dates d'inscription et de dernière visite</strong> : l'intérêt
           légitime de l'éditeur (article 6.1.f) à savoir si l'application sert.</li>
     </ul>
@@ -246,6 +284,13 @@
       Signaler un bug est un geste qu'on garde ; savoir qui l'a signalé, non. Si un
       retour contient lui-même des informations personnelles, demande-nous de
       l'effacer aussi.
+    </p>
+    <p>
+      Les séances que tu as <strong>envoyées à des amis</strong> partent avec ton
+      compte : elles sont rattachées à toi, donc supprimer ton compte les efface,
+      y compris chez ceux qui les avaient reçues. Ce que des amis t'ont envoyé,
+      à l'inverse, leur appartient : tu peux ranger un partage reçu, et il
+      disparaît pour de bon quand son auteur l'efface ou supprime son compte.
     </p>
   </section>
 

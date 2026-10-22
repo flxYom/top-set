@@ -9,6 +9,40 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ## [Unreleased]
 
+### Changed — the legal pages say what the app actually does (2026-10-22)
+
+- **Privacy policy 3.3.** Friends and sharing had been live for weeks while the
+  policy still claimed that « two people without a coaching link can neither
+  write to each other nor see anything of each other ». A false sentence in a
+  privacy policy is not a typo. The policy now names: the friend code and who
+  asked whom; what a share contains (a frozen copy of a session, recap or
+  exercise, plus your word and the recipients' reactions) and what it does not
+  (any access to your logbook); the local backup reserves, IndexedDB included,
+  which belong to one account and never leave the device; and the day fields
+  the logbook gained since — cycle, the word on a session, its validation and
+  its start and end times. `VERSION_POLITIQUE` follows at 3.3; the existing
+  consents are not re-asked, since nothing here is processed without the person
+  acting (the reasoning is in the code, next to the constant).
+- **Terms of use 2.1.** New section 7, friends and sharing: the link needs both
+  sides, a friend never sees your logbook, a frozen copy stays with them if you
+  unfriend, and deleting your account erases what you had sent. Section 6 says
+  where a feedback's answer arrives.
+- **Legal notice.** Resend and the audience measurement were missing from the
+  list of providers, the editorial method is linked from the intellectual
+  property section, and « report a problem » points at the in-app feedback.
+- Three guards in `test/gabarits.test.mjs` so these pages cannot drift from the
+  app again, including one that fails if the sentence above comes back.
+
+### Added — feedback (2026-10-22)
+
+- **The storage state can be attached to a feedback**, unticked by default: the
+  same text as `DIAGNOSTIC DU STOCKAGE` — sizes, counts, dates, sync state,
+  never a logbook value. The body is cut to 4,000 characters before sending,
+  since that is the database's own bound.
+- **Without an account, `NOUS ÉCRIRE PAR EMAIL`** opens a draft prefilled with
+  the same context. Sending from the app still needs an account; hitting a bug
+  before you have one no longer leaves you with a disabled button.
+
 ### Added — the session under your fingers (2026-10-22)
 
 - **Reordering an exercise from its own card.** The `⇅` sheet tidies the whole
