@@ -1,0 +1,135 @@
+-- ===================================================================
+-- Top Set — L'HEURE DE DEBUT ET L'HEURE DE FIN D'UNE SEANCE
+--
+-- A coller dans l'editeur SQL de Supabase, projet TOP SET, puis RUN.
+-- Rien n'est efface : on ajoute deux colonnes et une fonction.
+-- Tu peux le relancer autant de fois que tu veux, ca ne change rien.
+-- Il s'arrete tout seul s'il est lance sur le projet Yom Nutrition.
+--
+-- L'app marche DEJA sans ce fichier : les horaires sont gardees sur le
+-- telephone. Tant qu'il n'est pas passe, elles ne suivent simplement
+-- pas d'un appareil a l'autre.
+-- ===================================================================
+
+do $$
+begin
+  if to_regclass('public.aliments_ciqual') is not null
+     or to_regclass('public.user_journal') is not null then
+    raise exception 'Mauvais projet Supabase : cette base est celle de Yom Nutrition. Change de projet en haut a gauche, puis relance ce fichier.';
+  end if;
+end $$;
+
+-- -------------------------------------------------------------------
+-- 1. Les deux colonnes.
+--    « terminee » existait deja : c'est la VALIDATION, le moment ou on
+--    dit « c'est fini ». « debut » et « fin » sont les horaires de la
+--    seance, posees par l'app sur la premiere et la derniere serie.
+-- -------------------------------------------------------------------
+alter table public.seances add column if not exists debut timestamptz;
+alter table public.seances add column if not exists fin   timestamptz;
+
+-- -------------------------------------------------------------------
+-- 2. L'envoi. Deux valeurs d'un coup : un debut sans sa fin ne veut
+--    rien dire. Comme les autres, elle n'ecrit que pour la personne
+--    connectee — jamais pour quelqu'un d'autre.
+-- -------------------------------------------------------------------
+create or replace function public.pousser_horaires(p_date date, p_debut timestamptz, p_fin timestamptz)
+returns timestamptz
+language plpgsql
+security invoker
+set search_path = public
+as $$
+declare
+  v_user uuid := auth.uid();
+  v_maj  timestamptz;
+begin
+  if v_user is null then
+    raise exception 'Aucune session : connexion requise.';
+  end if;
+
+  insert into public.seances (user_id, date, debut, fin)
+  values (v_user, p_date, p_debut, p_fin)
+  on conflict (user_id, date) do update
+    set debut = p_debut,
+        fin   = p_fin,
+        updated_at = now()
+  returning updated_at into v_maj;
+
+  return v_maj;
+end;
+$$;
+
+revoke execute on function public.pousser_horaires(date, timestamptz, timestamptz) from anon, public;
+grant  execute on function public.pousser_horaires(date, timestamptz, timestamptz) to authenticated;
+
+-- -------------------------------------------------------------------
+-- 3. La lecture. Les deux horaires repartent avec la journee, sinon
+--    elles resteraient sur le telephone qui les a posees.
+-- -------------------------------------------------------------------
+create or replace function public.tirer_jours(p_depuis timestamptz default null)
+returns jsonb
+language sql
+security invoker
+stable
+set search_path = public
+as $$
+  select coalesce(jsonb_object_agg(d.jour_date, d.contenu), '{}'::jsonb)
+  from (
+    select
+      s.date::text as jour_date,
+      jsonb_build_object(
+        'date', s.date::text,
+        'titre', s.titre,
+        'termine', s.terminee,
+        'cycle', s.cycle,
+        'commentaire', s.commentaire,
+        'debut', s.debut,
+        'fin', s.fin,
+        'updatedAt', s.updated_at,
+        'exercises', coalesce((
+          select jsonb_agg(
+            jsonb_build_object(
+              'id', e.id,
+              'nom', e.nom,
+              'groupe', e.groupe,
+              'repos', coalesce(e.repos, ''),
+              'bloc', e.bloc,
+              'note', e.note,
+              'series', coalesce((
+                select jsonb_agg(
+                  jsonb_build_object(
+                    'id',    se.id,
+                    'poids', se.poids,
+                    'reps',  coalesce(se.reps, ''),
+                    'rpe',   se.rpe,
+                    'repos', coalesce(se.repos, ''),
+                    'type',  se.type,
+                    'fait',  se.fait,
+                    'note',  se.note,
+                    'vitesse', se.vitesse,
+                    'inclinaison', se.inclinaison
+                  ) order by se.ordre)
+                from public.series se where se.user_id = e.user_id and se.exercice_id = e.id
+              ), '[]'::jsonb)
+            ) order by e.ordre)
+          from public.exercices e where e.user_id = s.user_id and e.seance_id = s.id
+        ), '[]'::jsonb)
+      ) as contenu
+    from public.seances s
+    where s.user_id = auth.uid()
+      and (p_depuis is null or s.updated_at > p_depuis)
+  ) d;
+$$;
+
+revoke execute on function public.tirer_jours(timestamptz) from anon, public;
+grant  execute on function public.tirer_jours(timestamptz) to authenticated;
+
+-- -------------------------------------------------------------------
+-- 4. Verification. Deux lignes attendues : debut et fin.
+--    Si tu vois les deux, c'est bon, il n'y a rien d'autre a faire.
+-- -------------------------------------------------------------------
+select column_name, data_type
+from information_schema.columns
+where table_schema = 'public' and table_name = 'seances'
+  and column_name in ('debut', 'fin')
+order by column_name;
