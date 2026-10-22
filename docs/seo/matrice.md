@@ -2,7 +2,7 @@
 
 > Ne pas modifier à la main : éditer `sujets.json` puis lancer `node docs/seo/matrice.mjs`.
 
-83 sujets étudiés — 19 sélectionnés, 9 fusionnés dans une autre page, 3 exclus.
+84 sujets étudiés — 20 sélectionnés, 9 fusionnés dans une autre page, 3 exclus.
 
 Pondération : demand ×2, relevance ×1.5, competition ×1.5, opportunity ×1.5, product ×1.5, authority ×1, sources ×1, linking ×1 ; note = somme pondérée / 55 × 100.
 
@@ -23,74 +23,75 @@ Pondération : demand ×2, relevance ×1.5, competition ×1.5, opportunity ×1.5
 | 13 | Temps de repos entre les séries | temps de repos musculation | progression | guide | 5 | 5 | 1 | 3 | 4 | 4 | 4 | 5 | **78** | PUBLISHED | /entrainement/temps-de-repos | faible |
 | 14 | L'échec musculaire | échec musculaire | intensite | guide | 4 | 5 | 2 | 3 | 5 | 3 | 5 | 4 | **77** | PUBLISHED | /documentation/echec-musculaire | faible |
 | 15 | Tableau RPE → % du 1RM | tableau rpe pourcentage | intensite | outil | 5 | 4 | 2 | 3 | 4 | 3 | 5 | 5 | **77** | PUBLISHED | /outils/tableau-rpe | faible |
-| 16 | Tableau des pourcentages du 1RM | pourcentage 1rm | charge | outil | 5 | 4 | 2 | 3 | 4 | 4 | 5 | 4 | **76** | IDEA | /outils/pourcentages-1rm | faible |
-| 17 | Progresser au développé couché | progresser développé couché | exercices | guide | 5 | 4 | 2 | 3 | 3 | 3 | 5 | 5 | **75** | IDEA | /entrainement/progresser-developpe-couche | faible |
-| 18 | Exemple de carnet d'entraînement rempli | exemple carnet d'entraînement musculation | suivi | guide | 5 | 3 | 3 | 4 | 3 | 2 | 4 | 5 | **74** | MERGE | /entrainement/suivre-sa-progression | faible |
-| 19 | Formules d'estimation du 1RM | formule epley | charge | définition | 4 | 3 | 3 | 4 | 4 | 4 | 4 | 4 | **74** | MERGE | /documentation/1rm-musculation | faible |
-| 20 | La planche (gainage) : combien de temps | planche abdos combien de temps | exercices | exercice | 5 | 4 | 2 | 3 | 3 | 3 | 4 | 5 | **74** | PUBLISHED | /exercices/planche-gainage | faible |
-| 21 | L'autorégulation | autorégulation musculation | intensite | définition | 5 | 1 | 4 | 4 | 4 | 3 | 4 | 5 | **73** | IDEA | /documentation/autoregulation | faible |
-| 22 | Progresser au soulevé de terre | comment progresser au soulevé de terre | exercices | guide | 5 | 3 | 3 | 3 | 3 | 3 | 4 | 5 | **73** | IDEA | /entrainement/progresser-souleve-de-terre | faible |
-| 23 | Modèle de carnet de musculation (Excel / CSV) | carnet de musculation excel | suivi | outil | 5 | 4 | 3 | 4 | 2 | 1 | 3 | 5 | **72** | PUBLISHED | /outils/modele-carnet-musculation | faible |
-| 24 | Combien de fois s'entraîner par semaine | fréquence entraînement musculation | progression | guide | 3 | 5 | 2 | 3 | 4 | 5 | 4 | 3 | **72** | IDEA | /entrainement/frequence | faible |
-| 25 | Sortir d'une stagnation | stagnation musculation | progression | guide | 5 | 3 | 2 | 3 | 4 | 2 | 5 | 5 | **72** | PUBLISHED | /entrainement/stagnation | faible |
-| 26 | Le record personnel (PR) | pr musculation | charge | définition | 5 | 2 | 4 | 4 | 3 | 1 | 4 | 5 | **71** | IDEA | /documentation/record-personnel | faible |
-| 27 | Tester son 1RM sans se blesser | comment tester son 1rm | charge | guide | 4 | 3 | 3 | 3 | 4 | 4 | 4 | 4 | **71** | IDEA | /entrainement/tester-son-1rm | moyen |
-| 28 | Programmer top set + back-off | top set back off programme | top-set | guide | 5 | 2 | 4 | 4 | 3 | 2 | 3 | 5 | **71** | MERGE | /documentation/top-set-musculation | faible |
-| 29 | Développé couché | développé couché | exercices | exercice | 4 | 5 | 1 | 2 | 4 | 3 | 5 | 4 | **70** | PUBLISHED | /exercices/developpe-couche | faible |
-| 30 | La périodisation | périodisation musculation | progression | guide | 4 | 3 | 3 | 3 | 4 | 5 | 4 | 3 | **70** | IDEA | /entrainement/periodisation | faible |
-| 31 | À quelle vitesse progresser | progression musculation 3 mois | progression | guide | 4 | 3 | 3 | 3 | 3 | 3 | 4 | 5 | **70** | IDEA | /entrainement/vitesse-de-progression | moyen |
-| 32 | Soulevé de terre | soulevé de terre | exercices | exercice | 4 | 5 | 1 | 2 | 4 | 3 | 5 | 4 | **70** | IDEA | /exercices/souleve-de-terre | faible |
-| 33 | Squat | squat musculation | exercices | exercice | 4 | 5 | 1 | 2 | 4 | 3 | 5 | 4 | **70** | IDEA | /exercices/squat | faible |
-| 34 | Le volume d'entraînement (définition) | volume musculation définition | progression | définition | 4 | 3 | 2 | 3 | 4 | 5 | 4 | 4 | **70** | MERGE | /entrainement/nombre-de-series-par-muscle | faible |
-| 35 | Intensité vs effort | intensité musculation | intensite | définition | 4 | 2 | 3 | 3 | 4 | 4 | 5 | 4 | **69** | IDEA | /documentation/intensite-musculation | faible |
-| 36 | Progresser au squat | comment progresser au squat | exercices | guide | 5 | 2 | 3 | 3 | 3 | 3 | 4 | 5 | **69** | IDEA | /entrainement/progresser-squat | faible |
-| 37 | Les séries d'échauffement (montée en charge) | série d'échauffement musculation | top-set | guide | 4 | 3 | 3 | 3 | 3 | 4 | 4 | 4 | **69** | IDEA | /entrainement/series-echauffement | faible |
-| 38 | Calculateur 1RM par RPE | calculateur 1rm rpe | charge | outil | 5 | 3 | 2 | 3 | 3 | 3 | 3 | 5 | **68** | MERGE | /outils/calculateur-1rm | faible |
-| 39 | L'hypertrophie musculaire | hypertrophie musculaire | progression | définition | 3 | 5 | 1 | 2 | 4 | 5 | 5 | 3 | **68** | IDEA | /documentation/hypertrophie-musculaire | faible |
-| 40 | Le deload | deload musculation | progression | guide | 4 | 4 | 2 | 3 | 4 | 3 | 4 | 3 | **67** | IDEA | /entrainement/deload | faible |
-| 41 | La série effective | série effective musculation | progression | définition | 4 | 1 | 4 | 4 | 4 | 3 | 4 | 4 | **67** | IDEA | /documentation/serie-effective | faible |
-| 42 | Calcul du tonnage | calcul tonnage musculation | charge | outil | 5 | 2 | 3 | 3 | 3 | 2 | 4 | 5 | **67** | IDEA | /outils/calculateur-tonnage | faible |
-| 43 | Tractions | tractions musculation | exercices | exercice | 4 | 5 | 2 | 2 | 3 | 2 | 4 | 4 | **67** | IDEA | /exercices/tractions | faible |
-| 44 | La méthode 5/3/1 de Wendler | 5/3/1 wendler | programmes | guide | 4 | 3 | 3 | 4 | 3 | 1 | 4 | 4 | **66** | IDEA | /entrainement/wendler-531 | faible |
-| 45 | Application de musculation gratuite | application musculation gratuite | suivi | page produit | 5 | 5 | 1 | 2 | 2 | 1 | 3 | 5 | **65** | MERGE | /carnet-de-musculation | faible |
-| 46 | Force ou hypertrophie | force ou hypertrophie | progression | guide | 4 | 2 | 3 | 3 | 4 | 4 | 4 | 3 | **65** | IDEA | /entrainement/force-ou-hypertrophie | faible |
-| 47 | Combien pèse la barre ? | combien pèse la barre développé couché | exercices | définition | 4 | 3 | 4 | 4 | 2 | 1 | 3 | 4 | **65** | PUBLISHED | /documentation/poids-de-la-barre | faible |
-| 48 | Programme débutant en salle | programme musculation débutant | programmes | guide | 3 | 5 | 1 | 2 | 3 | 3 | 5 | 4 | **65** | IDEA | /entrainement/programme-debutant | moyen |
-| 49 | Les types de séries | types de séries musculation | top-set | définition | 4 | 1 | 4 | 3 | 4 | 2 | 5 | 4 | **65** | MERGE | /documentation/top-set-musculation | faible |
-| 50 | Programme full body | full body programme musculation | programmes | guide | 3 | 5 | 1 | 2 | 3 | 3 | 4 | 4 | **64** | IDEA | /entrainement/full-body | faible |
-| 51 | Split ou full body | split ou full body | programmes | guide | 3 | 3 | 2 | 3 | 4 | 4 | 4 | 3 | **63** | IDEA | /entrainement/split-ou-full-body | faible |
-| 52 | Amplitude complète ou partielle | amplitude musculation | progression | définition | 3 | 3 | 3 | 4 | 4 | 3 | 3 | 2 | **62** | IDEA | /documentation/amplitude | faible |
-| 53 | Hip thrust | hip thrust | exercices | exercice | 3 | 5 | 2 | 2 | 3 | 3 | 3 | 3 | **62** | IDEA | /exercices/hip-thrust | faible |
-| 54 | Quelle charge est « normale » ? | max développé couché homme | charge | guide | 4 | 4 | 2 | 2 | 3 | 2 | 3 | 4 | **62** | IDEA | /entrainement/normes-de-force | moyen |
-| 55 | Programme push pull legs | push pull legs programme | programmes | guide | 3 | 5 | 1 | 2 | 3 | 2 | 4 | 4 | **62** | IDEA | /entrainement/push-pull-legs | faible |
-| 56 | Développé militaire | développé militaire | exercices | exercice | 4 | 4 | 1 | 2 | 3 | 2 | 4 | 4 | **61** | IDEA | /exercices/developpe-militaire | faible |
-| 57 | Le drop set (série dégressive) | drop set musculation | top-set | définition | 3 | 4 | 3 | 3 | 3 | 2 | 4 | 2 | **61** | IDEA | /documentation/drop-set | faible |
-| 58 | Le tempo d'exécution | tempo musculation | progression | définition | 3 | 4 | 2 | 3 | 3 | 4 | 3 | 2 | **60** | IDEA | /documentation/tempo | faible |
-| 59 | La méthode 5x5 | méthode 5x5 musculation | programmes | guide | 3 | 3 | 3 | 3 | 3 | 1 | 3 | 4 | **59** | IDEA | /entrainement/methode-5x5 | faible |
-| 60 | Soulevé de terre roumain | soulevé de terre roumain | exercices | exercice | 3 | 4 | 2 | 2 | 3 | 2 | 4 | 3 | **58** | IDEA | /exercices/souleve-de-terre-roumain | faible |
-| 61 | S'échauffer avant la musculation | échauffement musculation | progression | guide | 3 | 4 | 1 | 2 | 3 | 4 | 3 | 3 | **57** | IDEA | /entrainement/echauffement | faible |
-| 62 | Programme half body | half body programme | programmes | guide | 3 | 4 | 2 | 2 | 2 | 2 | 3 | 4 | **57** | IDEA | /entrainement/half-body | faible |
-| 63 | RPE musculation vs échelle de Borg | echelle rpe borg | intensite | définition | 3 | 3 | 3 | 3 | 3 | 3 | 3 | 2 | **57** | MERGE | /documentation/rpe-musculation | faible |
-| 64 | Dips | dips musculation | exercices | exercice | 3 | 4 | 2 | 2 | 3 | 2 | 3 | 3 | **56** | IDEA | /exercices/dips | faible |
-| 65 | L'entraînement pyramidal | pyramide musculation | top-set | définition | 3 | 3 | 3 | 3 | 2 | 2 | 3 | 3 | **56** | IDEA | /documentation/pyramide | faible |
-| 66 | Rowing barre | rowing barre | exercices | exercice | 3 | 4 | 2 | 2 | 3 | 2 | 3 | 3 | **56** | IDEA | /exercices/rowing-barre | faible |
-| 67 | Le superset | superset musculation | top-set | définition | 3 | 3 | 3 | 2 | 2 | 2 | 3 | 4 | **56** | IDEA | /documentation/superset | faible |
-| 68 | Développé incliné | développé incliné | exercices | exercice | 3 | 4 | 2 | 2 | 2 | 2 | 3 | 3 | **55** | IDEA | /exercices/developpe-incline | faible |
-| 69 | Fentes | fentes bulgares | exercices | exercice | 3 | 4 | 2 | 2 | 2 | 2 | 3 | 3 | **55** | IDEA | /exercices/fentes | faible |
-| 70 | Journal d'entraînement | journal d'entraînement | suivi | page produit | 4 | 3 | 2 | 2 | 2 | 1 | 2 | 5 | **55** | MERGE | /carnet-de-musculation | faible |
-| 71 | Mal au dos au soulevé de terre | mal au dos soulevé de terre | recuperation | guide | 3 | 4 | 3 | 2 | 2 | 2 | 2 | 2 | **53** | RETIRED |  | élevé |
-| 72 | Douleur à l'épaule au développé couché | douleur épaule développé couché | recuperation | guide | 3 | 4 | 3 | 2 | 2 | 2 | 2 | 2 | **53** | RETIRED |  | élevé |
-| 73 | Le rest-pause | rest pause musculation | top-set | définition | 3 | 2 | 3 | 3 | 3 | 2 | 3 | 2 | **52** | IDEA | /documentation/rest-pause | faible |
-| 74 | Suivre ses clients en tant que coach | application coach musculation | suivi | page produit | 4 | 1 | 2 | 2 | 2 | 1 | 3 | 5 | **50** | IDEA | /coachs | faible |
-| 75 | Sommeil et musculation | sommeil musculation | recuperation | guide | 2 | 2 | 3 | 3 | 3 | 5 | 2 | 1 | **50** | IDEA | /entrainement/sommeil | moyen |
-| 76 | Protéines : combien par jour | combien de protéines par jour musculation | nutrition | guide | 2 | 4 | 1 | 2 | 3 | 5 | 2 | 1 | **49** | IDEA | /nutrition/proteines-par-jour | moyen |
-| 77 | Curl biceps | curl biceps | exercices | exercice | 2 | 4 | 2 | 2 | 2 | 2 | 2 | 2 | **47** | IDEA | /exercices/curl-biceps | faible |
-| 78 | La créatine | créatine | nutrition | guide | 2 | 5 | 0 | 1 | 2 | 5 | 2 | 1 | **45** | IDEA | /nutrition/creatine | moyen |
-| 79 | Prise de masse | prise de masse | nutrition | guide | 2 | 5 | 0 | 1 | 2 | 3 | 2 | 2 | **45** | IDEA | /nutrition/prise-de-masse | moyen |
-| 80 | Extension triceps | extension triceps | exercices | exercice | 2 | 3 | 2 | 2 | 2 | 2 | 2 | 2 | **44** | IDEA | /exercices/extension-triceps | faible |
-| 81 | Presse à cuisses | presse à cuisse | exercices | exercice | 2 | 3 | 2 | 2 | 2 | 2 | 2 | 2 | **44** | IDEA | /exercices/presse-a-cuisses | faible |
-| 82 | La sèche | sèche musculation | nutrition | guide | 2 | 4 | 1 | 1 | 2 | 3 | 2 | 2 | **44** | IDEA | /nutrition/seche | moyen |
-| 83 | Courbatures | courbatures après sport | recuperation | guide | 2 | 4 | 1 | 1 | 2 | 3 | 2 | 1 | **41** | IDEA | /entrainement/courbatures | moyen |
+| 16 | Calculateur de disques (charger la barre) | calculateur de disques musculation | charge | outil | 5 | 3 | 2 | 4 | 4 | 3 | 5 | 5 | **76** | PUBLISHED | /outils/calculateur-de-disques | faible |
+| 17 | Tableau des pourcentages du 1RM | pourcentage 1rm | charge | outil | 5 | 4 | 2 | 3 | 4 | 4 | 5 | 4 | **76** | IDEA | /outils/pourcentages-1rm | faible |
+| 18 | Progresser au développé couché | progresser développé couché | exercices | guide | 5 | 4 | 2 | 3 | 3 | 3 | 5 | 5 | **75** | IDEA | /entrainement/progresser-developpe-couche | faible |
+| 19 | Exemple de carnet d'entraînement rempli | exemple carnet d'entraînement musculation | suivi | guide | 5 | 3 | 3 | 4 | 3 | 2 | 4 | 5 | **74** | MERGE | /entrainement/suivre-sa-progression | faible |
+| 20 | Formules d'estimation du 1RM | formule epley | charge | définition | 4 | 3 | 3 | 4 | 4 | 4 | 4 | 4 | **74** | MERGE | /documentation/1rm-musculation | faible |
+| 21 | La planche (gainage) : combien de temps | planche abdos combien de temps | exercices | exercice | 5 | 4 | 2 | 3 | 3 | 3 | 4 | 5 | **74** | PUBLISHED | /exercices/planche-gainage | faible |
+| 22 | L'autorégulation | autorégulation musculation | intensite | définition | 5 | 1 | 4 | 4 | 4 | 3 | 4 | 5 | **73** | IDEA | /documentation/autoregulation | faible |
+| 23 | Progresser au soulevé de terre | comment progresser au soulevé de terre | exercices | guide | 5 | 3 | 3 | 3 | 3 | 3 | 4 | 5 | **73** | IDEA | /entrainement/progresser-souleve-de-terre | faible |
+| 24 | Modèle de carnet de musculation (Excel / CSV) | carnet de musculation excel | suivi | outil | 5 | 4 | 3 | 4 | 2 | 1 | 3 | 5 | **72** | PUBLISHED | /outils/modele-carnet-musculation | faible |
+| 25 | Combien de fois s'entraîner par semaine | fréquence entraînement musculation | progression | guide | 3 | 5 | 2 | 3 | 4 | 5 | 4 | 3 | **72** | IDEA | /entrainement/frequence | faible |
+| 26 | Sortir d'une stagnation | stagnation musculation | progression | guide | 5 | 3 | 2 | 3 | 4 | 2 | 5 | 5 | **72** | PUBLISHED | /entrainement/stagnation | faible |
+| 27 | Le record personnel (PR) | pr musculation | charge | définition | 5 | 2 | 4 | 4 | 3 | 1 | 4 | 5 | **71** | IDEA | /documentation/record-personnel | faible |
+| 28 | Tester son 1RM sans se blesser | comment tester son 1rm | charge | guide | 4 | 3 | 3 | 3 | 4 | 4 | 4 | 4 | **71** | IDEA | /entrainement/tester-son-1rm | moyen |
+| 29 | Programmer top set + back-off | top set back off programme | top-set | guide | 5 | 2 | 4 | 4 | 3 | 2 | 3 | 5 | **71** | MERGE | /documentation/top-set-musculation | faible |
+| 30 | Développé couché | développé couché | exercices | exercice | 4 | 5 | 1 | 2 | 4 | 3 | 5 | 4 | **70** | PUBLISHED | /exercices/developpe-couche | faible |
+| 31 | La périodisation | périodisation musculation | progression | guide | 4 | 3 | 3 | 3 | 4 | 5 | 4 | 3 | **70** | IDEA | /entrainement/periodisation | faible |
+| 32 | À quelle vitesse progresser | progression musculation 3 mois | progression | guide | 4 | 3 | 3 | 3 | 3 | 3 | 4 | 5 | **70** | IDEA | /entrainement/vitesse-de-progression | moyen |
+| 33 | Soulevé de terre | soulevé de terre | exercices | exercice | 4 | 5 | 1 | 2 | 4 | 3 | 5 | 4 | **70** | IDEA | /exercices/souleve-de-terre | faible |
+| 34 | Squat | squat musculation | exercices | exercice | 4 | 5 | 1 | 2 | 4 | 3 | 5 | 4 | **70** | IDEA | /exercices/squat | faible |
+| 35 | Le volume d'entraînement (définition) | volume musculation définition | progression | définition | 4 | 3 | 2 | 3 | 4 | 5 | 4 | 4 | **70** | MERGE | /entrainement/nombre-de-series-par-muscle | faible |
+| 36 | Intensité vs effort | intensité musculation | intensite | définition | 4 | 2 | 3 | 3 | 4 | 4 | 5 | 4 | **69** | IDEA | /documentation/intensite-musculation | faible |
+| 37 | Progresser au squat | comment progresser au squat | exercices | guide | 5 | 2 | 3 | 3 | 3 | 3 | 4 | 5 | **69** | IDEA | /entrainement/progresser-squat | faible |
+| 38 | Les séries d'échauffement (montée en charge) | série d'échauffement musculation | top-set | guide | 4 | 3 | 3 | 3 | 3 | 4 | 4 | 4 | **69** | IDEA | /entrainement/series-echauffement | faible |
+| 39 | Calculateur 1RM par RPE | calculateur 1rm rpe | charge | outil | 5 | 3 | 2 | 3 | 3 | 3 | 3 | 5 | **68** | MERGE | /outils/calculateur-1rm | faible |
+| 40 | L'hypertrophie musculaire | hypertrophie musculaire | progression | définition | 3 | 5 | 1 | 2 | 4 | 5 | 5 | 3 | **68** | IDEA | /documentation/hypertrophie-musculaire | faible |
+| 41 | Le deload | deload musculation | progression | guide | 4 | 4 | 2 | 3 | 4 | 3 | 4 | 3 | **67** | IDEA | /entrainement/deload | faible |
+| 42 | La série effective | série effective musculation | progression | définition | 4 | 1 | 4 | 4 | 4 | 3 | 4 | 4 | **67** | IDEA | /documentation/serie-effective | faible |
+| 43 | Calcul du tonnage | calcul tonnage musculation | charge | outil | 5 | 2 | 3 | 3 | 3 | 2 | 4 | 5 | **67** | IDEA | /outils/calculateur-tonnage | faible |
+| 44 | Tractions | tractions musculation | exercices | exercice | 4 | 5 | 2 | 2 | 3 | 2 | 4 | 4 | **67** | IDEA | /exercices/tractions | faible |
+| 45 | La méthode 5/3/1 de Wendler | 5/3/1 wendler | programmes | guide | 4 | 3 | 3 | 4 | 3 | 1 | 4 | 4 | **66** | IDEA | /entrainement/wendler-531 | faible |
+| 46 | Application de musculation gratuite | application musculation gratuite | suivi | page produit | 5 | 5 | 1 | 2 | 2 | 1 | 3 | 5 | **65** | MERGE | /carnet-de-musculation | faible |
+| 47 | Force ou hypertrophie | force ou hypertrophie | progression | guide | 4 | 2 | 3 | 3 | 4 | 4 | 4 | 3 | **65** | IDEA | /entrainement/force-ou-hypertrophie | faible |
+| 48 | Combien pèse la barre ? | combien pèse la barre développé couché | exercices | définition | 4 | 3 | 4 | 4 | 2 | 1 | 3 | 4 | **65** | PUBLISHED | /documentation/poids-de-la-barre | faible |
+| 49 | Programme débutant en salle | programme musculation débutant | programmes | guide | 3 | 5 | 1 | 2 | 3 | 3 | 5 | 4 | **65** | IDEA | /entrainement/programme-debutant | moyen |
+| 50 | Les types de séries | types de séries musculation | top-set | définition | 4 | 1 | 4 | 3 | 4 | 2 | 5 | 4 | **65** | MERGE | /documentation/top-set-musculation | faible |
+| 51 | Programme full body | full body programme musculation | programmes | guide | 3 | 5 | 1 | 2 | 3 | 3 | 4 | 4 | **64** | IDEA | /entrainement/full-body | faible |
+| 52 | Split ou full body | split ou full body | programmes | guide | 3 | 3 | 2 | 3 | 4 | 4 | 4 | 3 | **63** | IDEA | /entrainement/split-ou-full-body | faible |
+| 53 | Amplitude complète ou partielle | amplitude musculation | progression | définition | 3 | 3 | 3 | 4 | 4 | 3 | 3 | 2 | **62** | IDEA | /documentation/amplitude | faible |
+| 54 | Hip thrust | hip thrust | exercices | exercice | 3 | 5 | 2 | 2 | 3 | 3 | 3 | 3 | **62** | IDEA | /exercices/hip-thrust | faible |
+| 55 | Quelle charge est « normale » ? | max développé couché homme | charge | guide | 4 | 4 | 2 | 2 | 3 | 2 | 3 | 4 | **62** | IDEA | /entrainement/normes-de-force | moyen |
+| 56 | Programme push pull legs | push pull legs programme | programmes | guide | 3 | 5 | 1 | 2 | 3 | 2 | 4 | 4 | **62** | IDEA | /entrainement/push-pull-legs | faible |
+| 57 | Développé militaire | développé militaire | exercices | exercice | 4 | 4 | 1 | 2 | 3 | 2 | 4 | 4 | **61** | IDEA | /exercices/developpe-militaire | faible |
+| 58 | Le drop set (série dégressive) | drop set musculation | top-set | définition | 3 | 4 | 3 | 3 | 3 | 2 | 4 | 2 | **61** | IDEA | /documentation/drop-set | faible |
+| 59 | Le tempo d'exécution | tempo musculation | progression | définition | 3 | 4 | 2 | 3 | 3 | 4 | 3 | 2 | **60** | IDEA | /documentation/tempo | faible |
+| 60 | La méthode 5x5 | méthode 5x5 musculation | programmes | guide | 3 | 3 | 3 | 3 | 3 | 1 | 3 | 4 | **59** | IDEA | /entrainement/methode-5x5 | faible |
+| 61 | Soulevé de terre roumain | soulevé de terre roumain | exercices | exercice | 3 | 4 | 2 | 2 | 3 | 2 | 4 | 3 | **58** | IDEA | /exercices/souleve-de-terre-roumain | faible |
+| 62 | S'échauffer avant la musculation | échauffement musculation | progression | guide | 3 | 4 | 1 | 2 | 3 | 4 | 3 | 3 | **57** | IDEA | /entrainement/echauffement | faible |
+| 63 | Programme half body | half body programme | programmes | guide | 3 | 4 | 2 | 2 | 2 | 2 | 3 | 4 | **57** | IDEA | /entrainement/half-body | faible |
+| 64 | RPE musculation vs échelle de Borg | echelle rpe borg | intensite | définition | 3 | 3 | 3 | 3 | 3 | 3 | 3 | 2 | **57** | MERGE | /documentation/rpe-musculation | faible |
+| 65 | Dips | dips musculation | exercices | exercice | 3 | 4 | 2 | 2 | 3 | 2 | 3 | 3 | **56** | IDEA | /exercices/dips | faible |
+| 66 | L'entraînement pyramidal | pyramide musculation | top-set | définition | 3 | 3 | 3 | 3 | 2 | 2 | 3 | 3 | **56** | IDEA | /documentation/pyramide | faible |
+| 67 | Rowing barre | rowing barre | exercices | exercice | 3 | 4 | 2 | 2 | 3 | 2 | 3 | 3 | **56** | IDEA | /exercices/rowing-barre | faible |
+| 68 | Le superset | superset musculation | top-set | définition | 3 | 3 | 3 | 2 | 2 | 2 | 3 | 4 | **56** | IDEA | /documentation/superset | faible |
+| 69 | Développé incliné | développé incliné | exercices | exercice | 3 | 4 | 2 | 2 | 2 | 2 | 3 | 3 | **55** | IDEA | /exercices/developpe-incline | faible |
+| 70 | Fentes | fentes bulgares | exercices | exercice | 3 | 4 | 2 | 2 | 2 | 2 | 3 | 3 | **55** | IDEA | /exercices/fentes | faible |
+| 71 | Journal d'entraînement | journal d'entraînement | suivi | page produit | 4 | 3 | 2 | 2 | 2 | 1 | 2 | 5 | **55** | MERGE | /carnet-de-musculation | faible |
+| 72 | Mal au dos au soulevé de terre | mal au dos soulevé de terre | recuperation | guide | 3 | 4 | 3 | 2 | 2 | 2 | 2 | 2 | **53** | RETIRED |  | élevé |
+| 73 | Douleur à l'épaule au développé couché | douleur épaule développé couché | recuperation | guide | 3 | 4 | 3 | 2 | 2 | 2 | 2 | 2 | **53** | RETIRED |  | élevé |
+| 74 | Le rest-pause | rest pause musculation | top-set | définition | 3 | 2 | 3 | 3 | 3 | 2 | 3 | 2 | **52** | IDEA | /documentation/rest-pause | faible |
+| 75 | Suivre ses clients en tant que coach | application coach musculation | suivi | page produit | 4 | 1 | 2 | 2 | 2 | 1 | 3 | 5 | **50** | IDEA | /coachs | faible |
+| 76 | Sommeil et musculation | sommeil musculation | recuperation | guide | 2 | 2 | 3 | 3 | 3 | 5 | 2 | 1 | **50** | IDEA | /entrainement/sommeil | moyen |
+| 77 | Protéines : combien par jour | combien de protéines par jour musculation | nutrition | guide | 2 | 4 | 1 | 2 | 3 | 5 | 2 | 1 | **49** | IDEA | /nutrition/proteines-par-jour | moyen |
+| 78 | Curl biceps | curl biceps | exercices | exercice | 2 | 4 | 2 | 2 | 2 | 2 | 2 | 2 | **47** | IDEA | /exercices/curl-biceps | faible |
+| 79 | La créatine | créatine | nutrition | guide | 2 | 5 | 0 | 1 | 2 | 5 | 2 | 1 | **45** | IDEA | /nutrition/creatine | moyen |
+| 80 | Prise de masse | prise de masse | nutrition | guide | 2 | 5 | 0 | 1 | 2 | 3 | 2 | 2 | **45** | IDEA | /nutrition/prise-de-masse | moyen |
+| 81 | Extension triceps | extension triceps | exercices | exercice | 2 | 3 | 2 | 2 | 2 | 2 | 2 | 2 | **44** | IDEA | /exercices/extension-triceps | faible |
+| 82 | Presse à cuisses | presse à cuisse | exercices | exercice | 2 | 3 | 2 | 2 | 2 | 2 | 2 | 2 | **44** | IDEA | /exercices/presse-a-cuisses | faible |
+| 83 | La sèche | sèche musculation | nutrition | guide | 2 | 4 | 1 | 1 | 2 | 3 | 2 | 2 | **44** | IDEA | /nutrition/seche | moyen |
+| 84 | Courbatures | courbatures après sport | recuperation | guide | 2 | 4 | 1 | 1 | 2 | 3 | 2 | 1 | **41** | IDEA | /entrainement/courbatures | moyen |
 
 ## Signaux et notes, sujet par sujet
 
@@ -213,6 +214,14 @@ Pondération : demand ×2, relevance ×1.5, competition ×1.5, opportunity ×1.5
 - **Demande** : autocomplétion : pourcentage, powerlifting, rir, excel, force
 - **Concurrence** : DDG FR : 6 calculateurs (nabfit, athletepath, afitpilot, na-coaching, ironflow…) ; la plupart sans source de la table utilisée
 - **Notes** : Dire d'où vient la table, et que ce n'est qu'une moyenne.
+
+### Calculateur de disques (charger la barre) — 76 (PUBLISHED)
+
+- **Requête** : calculateur de disques musculation · variantes : calcul disques barre musculation, combien de disques de chaque côté, comment charger une barre de musculation, disques barre 100 kg, calculateur plaques musculation
+- **Intention** : outil · **page parente** : /documentation/poids-de-la-barre
+- **Demande** : question posée à chaque changement de charge, et fonction standard de Strong et Hevy ; recherche FR du 22/10/2026 : presque aucun résultat francophone natif
+- **Concurrence** : recherche FR : des calculateurs multi-outils traduits (calculover, arvo) et une app iOS ; aucune page française native avec des sources. Peu concurrentiel, à la différence du 1RM
+- **Notes** : Faire mieux : les disques réellement disponibles (décochables), le pas de 2,5 kg expliqué, l'écart annoncé quand la charge ne tombe pas juste, le tableau des charges courantes lisible sans JavaScript, et le même calcul que le carnet (TS.chargerBarre, testé).
 
 ### Tableau des pourcentages du 1RM — 76 (IDEA)
 

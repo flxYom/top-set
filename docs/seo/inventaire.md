@@ -20,6 +20,7 @@ Statuts : IDEA → RESEARCHED → PLANNED/SELECTED → DRAFT → PUBLISHED → N
 | /entrainement/temps-de-repos | progression | informationnelle | temps de repos musculation | PUBLISHED | — | 2026-09-11 |
 | /documentation/echec-musculaire | intensite | informationnelle | échec musculaire | PUBLISHED | — | 2026-09-11 |
 | /outils/tableau-rpe | intensite | outil | tableau rpe pourcentage | PUBLISHED | — | 2026-09-11 |
+| /outils/calculateur-de-disques | charge | outil | calculateur de disques musculation | PUBLISHED | — | 2026-10-22 |
 | /exercices/planche-gainage | exercices | informationnelle | planche abdos combien de temps | PUBLISHED | — | 2026-09-11 |
 | /outils/modele-carnet-musculation | suivi | transactionnelle | carnet de musculation excel | PUBLISHED | — | 2026-09-11 |
 | /entrainement/stagnation | progression | informationnelle | stagnation musculation | PUBLISHED | — | 2026-09-11 |
