@@ -223,6 +223,18 @@ it: the plates you actually have can be unticked, the 2.5 kg step is explained,
 and when the load does not come out exactly the gap is **stated** instead of
 silently rounded. The table of common loads reads without JavaScript.
 
+**Plates in the open set** (14 November 2026). The question comes up in front
+of the bar, not in front of a web page. In the open set's tools, a plate-shaped
+button shows a line under the set: `BARRE 20 · 25 + 5 + 1,25 par côté`. It
+follows the weight as you type it and when you tap `−` / `+`. When the load
+cannot be made with paired plates, it says so: `25 + 2,5 + 1,25 par côté =
+77,5 kg, il manque 0,5`. Tapping the line switches the bar (20, 15, 10, 25 kg)
+and the app remembers it for that exercise, on that phone. **On demand only**,
+remembered per exercise for the session: for dumbbells or a machine the
+question is meaningless, and a line saying « below the bar's weight » on every
+set would be noise. The computation is `TS.chargerBarre()`, the same as the
+page, so the two can never disagree. No line on timed or cardio exercises.
+
 **The APPRENDRE tab leads to pages** (22 October 2026). Six rubrics were six
 doors and no answer: under the grid, the eight pages you actually look for in
 the gym, linked directly.

@@ -9,6 +9,22 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ## [Unreleased]
 
+### Added — the gym, not the web page (2026-11-14)
+
+Benchmark of 14 November (`docs/audits/benchmark-2026-11-14.md`): what Strong,
+Hevy, Setgraph, Alpha Progression, Fitbod and Boostcamp do that Top Set did not,
+ranked by the mission's priorities (speed during the session first, looks
+last). The items below are that list, delivered in order.
+
+- **Plates in the open set.** A plate-shaped button in the open set's tools
+  shows `BARRE 20 · 25 + 5 + 1,25 par côté` under the set; it follows the
+  weight as it is typed or stepped, states what cannot be loaded (`… = 77,5 kg,
+  il manque 0,5`) instead of rounding, and a tap on the line switches the bar
+  (20 / 15 / 10 / 25 kg), remembered per exercise on the phone
+  (`reglages.barres`). On demand only, because for dumbbells or a machine the
+  question has no meaning. Same `TS.chargerBarre()` as the public calculator.
+  Not shown on timed or cardio exercises.
+
 ### Added — what the app knows, it now explains (2026-10-22)
 
 Market audit of 22 October: across the 2026 comparisons, the complaint that

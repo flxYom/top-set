@@ -527,5 +527,14 @@ avant de le faire.
   journée en n'y remettant que ce qu'on a pensé à nommer, c'est perdre le reste
   en silence. Les champs de la journée se reprennent explicitement, et un
   nouveau champ doit être ajouté à cette liste en même temps qu'il est créé.
+- **Une information qui n'a pas toujours de sens se demande, elle ne s'impose
+  pas** (14/11). Les disques de chaque côté n'ont de sens que sur une barre :
+  pour des haltères ou une machine, une ligne permanente dirait « sous le poids
+  de la barre » sur chaque série. Donc un bouton dans les outils de la série
+  ouverte, et une ligne qui n'apparaît qu'à la demande — mais qui reste pour
+  tout l'exercice une fois demandée, pour ne pas la redemander à chaque série.
+  La ligne entière est le bouton qui change de barre : 44 px, pas une puce de
+  30. Le chiffre en Bricolage, le reste en texte courant ; `BARRE 20` en
+  étiquette grise, comme les autres étiquettes.
 - **Description de l'interface** : [`DESIGN.md`](DESIGN.md), extrait du code le
   18/09. Ce fichier-ci garde les décisions et fait foi en cas d'écart.

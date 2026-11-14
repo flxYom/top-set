@@ -247,6 +247,20 @@ est expliqué, et quand la charge ne tombe pas juste l'écart est **dit** au lie
 d'être arrondi en silence. Le tableau des charges courantes se lit sans
 JavaScript.
 
+**Les disques dans la série ouverte** (14 novembre 2026). La question se pose
+devant la barre, pas devant une page web. Dans les outils de la série ouverte,
+un bouton en forme de disque fait apparaître une ligne sous la série :
+`BARRE 20 · 25 + 5 + 1,25 par côté`. Elle suit le poids pendant qu'on le tape
+et quand on touche `−` / `+`. Quand la charge ne se fait pas avec des disques
+par paire, elle le dit : `25 + 2,5 + 1,25 par côté = 77,5 kg, il manque 0,5`.
+Un appui sur la ligne change de barre (20, 15, 10, 25 kg) et l'app s'en
+souvient pour cet exercice, sur ce téléphone. **Sur demande seulement**, et
+mémorisé par exercice le temps de la séance : pour des haltères ou une machine
+la question n'a pas de sens, et une ligne qui dirait « sous le poids de la
+barre » sur chaque série serait du bruit. Le calcul est celui de
+`TS.chargerBarre()`, le même que la page : les deux ne peuvent pas répondre
+deux choses différentes. Pas de ligne sur un exercice au temps ni en cardio.
+
 **L'onglet APPRENDRE mène à des pages** (22 octobre 2026). Six rubriques,
 c'étaient six portes et aucune réponse : sous la grille, les huit pages qu'on
 cherche vraiment en salle, en lien direct.

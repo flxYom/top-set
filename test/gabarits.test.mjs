@@ -784,7 +784,7 @@ ok('chrono libre : une heure de depart gardee, pas un compteur qui tourne',
 // exos, desactiver activer le chrono et personnaliser des reglages simples. »
 ok('reglages : par defaut l app est en mode simple, et rien n est efface',
    SRC.indexOf('var REGLAGES_DEFAUT = { chronoAuto:true, btnChrono:false, champRepos:false, rpe:false, ecranAllume:true,') > -1
-   && SRC.indexOf('nomsLibres:false, couleurs:{} };') > -1
+   && SRC.indexOf('nomsLibres:false, couleurs:{}, barres:{} };') > -1
    && /document\.body\.classList\.toggle\('sans-rpe', !reglages\.rpe\);/.test(SRC)
    && /body\.sans-rpe \.serie-rpe,/.test(HTML)
    && /body\.sans-repos-champ \.serie-repos-champ\{display:none;\}/.test(HTML)
@@ -1564,6 +1564,32 @@ ok('l onglet Apprendre mene a des pages, pas seulement a six rubriques',
    /class="apprendre-liste"/.test(HTML)
    && (HTML.match(/\.apprendre-liste a\[href="\/[a-z-]+\/[a-z0-9-]+"\]/g) || []).length === 0
    && (HTML.match(/<a href="\/(documentation|entrainement|outils)\//g) || []).length >= 6);
+
+console.log('\n== 38. Le benchmark du 14/11 : la salle, pas la page web ==');
+ok('les disques se demandent depuis la serie ouverte, et seulement sur des kilos',
+   /data-action="disques"/.test(SRC)
+   // Pas au temps : la planche n'a pas de barre a charger.
+   && /\(auTemps \? '' : '<button type="button" class="serie-outil'\+\(disques\?' actif':''\)\+'" data-action="disques"/.test(SRC)
+   && /var disques = !auTemps && !!disquesVisibles\[ex\.id\];/.test(SRC)
+   // Le meme calcul que la page publique, jamais un second.
+   && /TS\.chargerBarre\(poids, barre\)/.test(SRC)
+   && !/function chargerBarre/.test(SRC));
+ok('ce qui ne se charge pas est dit, pas arrondi',
+   /il manque ' \+ formatWeight\(Math\.abs\(r\.ecart\)\)/.test(SRC)
+   && /Sous le poids de la barre/.test(SRC));
+ok('la ligne suit le poids tape et les pas − / +',
+   /if \(field === 'poids'\) majDisques\(t\.closest\('\.ex-card'\), found\.exercise\);/.test(SRC)
+   && /majDisques\(stepBtn\.closest\('\.ex-card'\), found\.exercise\);/.test(SRC));
+ok('la barre choisie ne vit que dans les reglages du telephone, parmi quatre connues',
+   /var BARRES_CHOIX = \[20, 15, 10, 25\];/.test(SRC)
+   && /barres:\{\}/.test(SRC)
+   && /if \(BARRES_CHOIX\.indexOf\(Number\(lu\.barres\[nom\]\)\) > -1\) r\.barres\[nom\] = Number\(lu\.barres\[nom\]\);/.test(SRC)
+   // Un choix n'est jamais ecrit dans la seance : la synchro n'a rien a en faire.
+   && !/serie\.barre|\.barre = /.test(SRC));
+ok('la ligne des disques a sa taille de cible et ne s affiche que sur la serie ouverte',
+   /\.serie-disques\{[^}]*min-height:44px/.test(HTML)
+   && /\.serie-card\.ouverte \.serie-disques\{display:flex;\}/.test(HTML)
+   && /\.serie-disques\{border:1px solid var\(--trait\)/.test(HTML));
 
 console.log(`\n${pass} reussis, ${fail} echoues`);
 process.exit(fail ? 1 : 0);

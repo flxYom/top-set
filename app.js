@@ -16,11 +16,14 @@
   // vit dans ce telephone et ne monte pas dans le compte.
   var CLE_REGLAGES = 'topset_reglages';
   var REGLAGES_DEFAUT = { chronoAuto:true, btnChrono:false, champRepos:false, rpe:false, ecranAllume:true,
-                          nomsLibres:false, couleurs:{} };
+                          nomsLibres:false, couleurs:{}, barres:{} };
+  // Les barres qu'on peut choisir pour le calcul des disques : l'olympique,
+  // la courte, la legere, celle de competition avec ses colliers.
+  var BARRES_CHOIX = [20, 15, 10, 25];
   var reglages = (function(){
     var r = {};
     Object.keys(REGLAGES_DEFAUT).forEach(function(k){
-      r[k] = (k === 'couleurs') ? {} : REGLAGES_DEFAUT[k];
+      r[k] = (k === 'couleurs' || k === 'barres') ? {} : REGLAGES_DEFAUT[k];
     });
     try {
       var lu = JSON.parse(localStorage.getItem(CLE_REGLAGES) || 'null');
@@ -30,6 +33,14 @@
             if (lu.couleurs && typeof lu.couleurs === 'object'){
               Object.keys(lu.couleurs).forEach(function(g){
                 if (/^#[0-9a-f]{6}$/i.test(String(lu.couleurs[g]))) r.couleurs[g] = String(lu.couleurs[g]);
+              });
+            }
+          } else if (k === 'barres'){
+            // La barre choisie par exercice, pour les disques : une des
+            // quatre connues, sinon on repart sur 20 kg.
+            if (lu.barres && typeof lu.barres === 'object'){
+              Object.keys(lu.barres).forEach(function(nom){
+                if (BARRES_CHOIX.indexOf(Number(lu.barres[nom])) > -1) r.barres[nom] = Number(lu.barres[nom]);
               });
             }
           } else if (typeof lu[k] === 'boolean') r[k] = lu[k];
@@ -1875,6 +1886,60 @@
 
   var ICONE_NOTE = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"></path></svg>';
   var ICONE_SUPPR = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"></path></svg>';
+  // Un disque vu de face : le trou au milieu le distingue d'un simple rond.
+  var ICONE_DISQUE = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="3"></circle></svg>';
+
+  // ---------- les disques de la serie ouverte (14/11/2026) ----------
+  // « 82,5 kg, c'est quoi de chaque cote ? » se pose devant la barre, pas
+  // devant une page web. Le calcul est celui de intelligence.js, le meme que
+  // /outils/calculateur-de-disques : la page et le carnet ne peuvent pas
+  // repondre deux choses differentes. Sur demande seulement : pour des
+  // halteres ou une machine, la question n'a pas de sens, et une ligne qui
+  // dirait « sous le poids de la barre » sur chaque serie serait du bruit.
+  // L'etat « je veux voir les disques » est un etat d'ecran, par exercice.
+  var disquesVisibles = {};
+  function barreDe(ex){
+    var cle = ex && ex.nom ? cleCanonique(ex.nom) : '';
+    var b = cle && reglages.barres[cle];
+    return BARRES_CHOIX.indexOf(b) > -1 ? b : 20;
+  }
+  function choisirBarre(ex, barre){
+    var cle = ex && ex.nom ? cleCanonique(ex.nom) : '';
+    if (!cle) return;
+    if (barre === 20) delete reglages.barres[cle]; else reglages.barres[cle] = barre;
+    garderReglages();
+  }
+  // Le texte de la ligne : les disques d'un cote, du plus lourd au plus
+  // leger, et ce qui ne se charge pas est dit, jamais arrondi en silence.
+  function texteDisques(poids, barre){
+    if (typeof poids !== 'number' || isNaN(poids) || poids <= 0) return 'Entre un poids, barre comprise';
+    var r = TS.chargerBarre(poids, barre);
+    if (r.impossible) return 'Sous le poids de la barre (' + formatWeight(barre) + ' kg)';
+    if (!r.parCote.length) return 'La barre seule';
+    var txt = '<b>' + r.parCote.map(formatWeight).join(' + ') + '</b> par côté';
+    if (r.ecart !== 0) txt += ' = ' + formatWeight(r.total) + ' kg, il manque ' + formatWeight(Math.abs(r.ecart));
+    return txt;
+  }
+  function disquesLigneHTML(s, ex){
+    var barre = barreDe(ex);
+    return '<button type="button" class="serie-disques" data-action="barre" data-serie-id="' + esc(s.id) + '"'
+      + ' aria-label="Disques de chaque côté, barre de ' + formatWeight(barre) + ' kg. Appuyer pour changer de barre">'
+      + '<span class="serie-disques-barre">BARRE ' + formatWeight(barre) + '</span>'
+      + '<span class="serie-disques-txt">' + texteDisques(s.poids, barre) + '</span>'
+      + '</button>';
+  }
+  // Les lignes d'une carte suivent le poids tape et la barre choisie, sans
+  // reconstruire la carte : le champ garde le focus.
+  function majDisques(card, ex){
+    if (!card || !ex) return;
+    var barre = barreDe(ex);
+    card.querySelectorAll('.serie-disques').forEach(function(l){
+      var s = (ex.series || []).filter(function(x){ return x.id === l.dataset.serieId; })[0];
+      if (!s) return;
+      l.querySelector('.serie-disques-barre').textContent = 'BARRE ' + formatWeight(barre);
+      l.querySelector('.serie-disques-txt').innerHTML = texteDisques(s.poids, barre);
+    });
+  }
 
   function noteSerieHTML(s, num){
     return '<div class="serie-note-ligne">'
@@ -1890,6 +1955,7 @@
     var num = idx + 1;
     var sid = esc(s.id);
     var cardio = auTemps && estCardio(ex);
+    var disques = !auTemps && !!disquesVisibles[ex.id];
     var typeCourant = s.type || '';
     var typeOptions = TYPE_LABELS.map(function(p){
       return '<option value="'+p[0]+'"'+(typeCourant===p[0]?' selected':'')+'>'+p[1]+'</option>';
@@ -1948,9 +2014,12 @@
       +   pas
       +   '<label class="serie-repos-champ"><span>REPOS</span>'
       +     '<input type="text" inputmode="numeric" enterkeyhint="done" class="serie-repos" placeholder="90" data-field="repos" data-serie-id="'+ sid +'" aria-label="Repos après la série '+num+', en secondes" value="'+esc(s.repos||'')+'"></label>'
+      // Les disques, seulement la ou il y a des kilos : pas au temps, pas en cardio.
+      +   (auTemps ? '' : '<button type="button" class="serie-outil'+(disques?' actif':'')+'" data-action="disques" data-serie-id="'+ sid +'" aria-pressed="'+(disques?'true':'false')+'" aria-label="Voir les disques à mettre de chaque côté">'+ICONE_DISQUE+'</button>')
       +   '<button type="button" class="serie-outil'+(s.note?' actif':'')+'" data-action="note-serie" data-serie-id="'+ sid +'" aria-label="Commentaire sur la série '+num+'">'+ICONE_NOTE+'</button>'
       +   '<button type="button" class="serie-outil serie-del" data-action="del-serie" data-serie-id="'+ sid +'" aria-label="Supprimer la série '+num+'">'+ICONE_SUPPR+'</button>'
       + '</div>'
+      + (disques ? disquesLigneHTML(s, ex) : '')
       + (s.note ? noteSerieHTML(s, num) : '')
       + '</div>';
   }
@@ -4521,6 +4590,7 @@
       if (field === 'poids' || field === 'reps' || field === 'duree' || field === 'minutes'){
         majEtoilesRecord(t.closest('.ex-card'));
       }
+      if (field === 'poids') majDisques(t.closest('.ex-card'), found.exercise);
 
       scheduleSave(state.selectedDay);
       renderBandeau();
@@ -4673,8 +4743,44 @@
     found.serie.poids = val;
     var input = exListEl.querySelector('.serie-poids[data-serie-id="'+found.serie.id+'"]');
     if (input) input.value = poidsAffiche(val);
+    majDisques(stepBtn.closest('.ex-card'), found.exercise);
     scheduleSave(state.selectedDay, true);
     renderBandeau();
+    e.stopPropagation();
+  });
+
+  // Les disques de chaque cote : le bouton les montre ou les range pour tout
+  // l'exercice ; la ligne elle-meme change de barre. Rien n'est reconstruit
+  // autour : la ligne s'ajoute ou part de la serie ouverte, les autres
+  // series la recevront quand elles s'ouvriront.
+  exListEl.addEventListener('click', function(e){
+    var b = e.target.closest('[data-action="disques"], [data-action="barre"]');
+    if (!b) return;
+    var found = findSerie(getOrCreateDay(state.selectedDay), b.dataset.serieId);
+    if (!found) return;
+    var ex = found.exercise;
+    var card = b.closest('.ex-card');
+    if (b.dataset.action === 'barre'){
+      var i = BARRES_CHOIX.indexOf(barreDe(ex));
+      choisirBarre(ex, BARRES_CHOIX[(i + 1) % BARRES_CHOIX.length]);
+      majDisques(card, ex);
+      e.stopPropagation();
+      return;
+    }
+    disquesVisibles[ex.id] = !disquesVisibles[ex.id];
+    var voir = disquesVisibles[ex.id];
+    card.querySelectorAll('.serie-card').forEach(function(ligne){
+      var s = (ex.series || []).filter(function(x){ return x.id === ligne.dataset.serieId; })[0];
+      var deja = ligne.querySelector('.serie-disques');
+      var bouton = ligne.querySelector('[data-action="disques"]');
+      if (bouton){ bouton.classList.toggle('actif', voir); bouton.setAttribute('aria-pressed', voir ? 'true' : 'false'); }
+      if (!voir){ if (deja) deja.remove(); return; }
+      if (deja || !s) return;
+      var tmp = document.createElement('div');
+      tmp.innerHTML = disquesLigneHTML(s, ex);
+      var outils = ligne.querySelector('.serie-outils');
+      if (outils) outils.insertAdjacentElement('afterend', tmp.firstChild);
+    });
     e.stopPropagation();
   });
 
