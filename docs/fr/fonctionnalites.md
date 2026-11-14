@@ -344,6 +344,19 @@ disques. Pas au temps, pas en cardio, pas deux fois sur le même exercice. Le
 menu `⋯` se recalcule à l'ouverture et quand le nom change : ce qu'il propose
 dépend des chiffres qu'on vient de taper.
 
+**La charge suggérée sans RPE : la double progression** (14 novembre 2026).
+Sans RPE, `TS.suggererCible()` ne parlait que si la tendance montait déjà — et
+la colonne RPE est rangée par défaut, donc presque personne ne voyait de
+suggestion. Désormais, sans RPE : sous 6 reps, le pas classique (mêmes reps, un
+cran de plus) ; à partir de 6 reps, la double progression — même charge et une
+rep de plus jusqu'au haut de la fourchette (8–12 en hypertrophie, 15–20 en
+endurance), puis un cran de plus et retour au bas. La fourchette suit le cycle
+déclaré quand il y en a un, sinon celle où tombe le top set. Un top set qui
+baisse depuis trois séances n'a pas de suggestion : c'est le signal de
+l'exercice qui parle. La suggestion porte sa méthode (`lineaire` / `double`) et
+sa raison, et le bloc `SUGGÉRÉ` de la carte l'affiche comme avant. Le bloc « la
+prochaine fois » dans le bilan de fin de séance et la fiche reste à faire.
+
 **Duplication de série.** `+ SÉRIE` recopie la précédente : poids, reps, RPE,
 repos. Seul `fait` repart à zéro, et le commentaire ne se recopie pas. Sur cinq
 séries identiques, tu en saisis une et tu appuies quatre fois. La ligne s'ajoute

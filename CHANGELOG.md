@@ -33,6 +33,19 @@ last). The items below are that list, delivered in order.
   steps the empty bar already covers, and drops the empty bar for dumbbells
   (16 tests). The `⋯` menu is now rebuilt when it opens and when the name
   changes (`menuExoHTML`), so what it offers matches what was just typed.
+- **A suggested load without RPE: double progression.** `TS.suggererCible()`
+  used to stay silent without RPE unless the trend was already rising — and
+  the RPE column is off by default, so most people never saw a suggestion.
+  Now, without RPE: under 6 reps the classic linear step (same reps, one
+  increment up); from 6 reps on, double progression — same load and one more
+  rep up to the top of the range (8–12 hypertrophy, 15–20 endurance), then one
+  increment up and back to the bottom. The range follows the training cycle
+  when one is set (third parameter), else the band the top set falls in. A top
+  set that has been declining for three sessions gets no suggestion: the
+  exercise signal speaks instead. Each suggestion names its method and reason;
+  the card's existing `SUGGÉRÉ` block shows it as before (9 tests). The
+  « la prochaine fois » block in the end-of-session bilan and the session
+  sheet is still to come.
 
 ### Added — what the app knows, it now explains (2026-10-22)
 

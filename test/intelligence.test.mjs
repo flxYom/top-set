@@ -239,7 +239,22 @@ titre('Cible suggeree');
   egal('RPE 10 : on garde la charge', echec.poids, 70);
   egal('RPE 10 : une rep de moins', echec.reps, 4);
 
-  egal('sans RPE et sans tendance : rien', TS.suggererCible([j('2026-09-09', 70, '5')]), null);
+  // Sans RPE (14/11/2026) : sous 6 reps, lineaire ; au-dessus, double progression.
+  const lin = TS.suggererCible([j('2026-09-09', 70, '5')]);
+  egal('sans RPE, 70 x 5 : un cran de plus a reps egales (lineaire)', [lin.poids, lin.reps, lin.methode], [72.5, 5, 'lineaire']);
+  const dbl = TS.suggererCible([j('2026-09-09', 60, '10')]);
+  egal('sans RPE, 60 x 10 : meme charge, une rep de plus (double progression)', [dbl.poids, dbl.reps, dbl.methode], [60, 11, 'double']);
+  const haut = TS.suggererCible([j('2026-09-09', 60, '12')]);
+  egal('sans RPE, 60 x 12 : haut de la fourchette, on monte et on repart de 8', [haut.poids, haut.reps], [62.5, 8]);
+  const endu = TS.suggererCible([j('2026-09-09', 40, '20')]);
+  egal('sans RPE, 40 x 20 : haut de l endurance, on monte et on repart de 15', [endu.poids, endu.reps], [42.5, 15]);
+  const cyF = TS.suggererCible([j('2026-09-09', 80, '8')], undefined, 'Force');
+  egal('en cycle force, 80 x 8 reste lineaire', [cyF.poids, cyF.reps], [82.5, 8]);
+  const cyH = TS.suggererCible([j('2026-09-09', 70, '5')], undefined, 'Hypertrophie');
+  egal('en cycle hypertrophie, 70 x 5 : une rep de plus vers la fourchette', [cyH.poids, cyH.reps], [70, 6]);
+  ok('la raison nomme la double progression', /[Dd]ouble progression/.test(dbl.raison) && /[Dd]ouble progression/.test(haut.raison));
+  egal('sans RPE et en baisse depuis trois seances : rien, le signal parle',
+       TS.suggererCible([j('2026-08-26', 80, '5'), j('2026-09-02', 75, '5'), j('2026-09-09', 70, '5')]), null);
 
   const tendance = TS.suggererCible([
     j('2026-08-26', 65, '5'), j('2026-09-02', 67.5, '5'), j('2026-09-09', 70, '5')

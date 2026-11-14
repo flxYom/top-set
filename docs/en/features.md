@@ -311,6 +311,19 @@ or cardio exercises, never twice on the same exercise. The `⋯` menu is
 recomputed when it opens and when the name changes: what it offers depends on
 the figures just typed.
 
+**The suggested load without RPE: double progression** (14 November 2026).
+Without RPE, `TS.suggererCible()` only spoke when the trend was already
+rising — and the RPE column is off by default, so almost nobody saw a
+suggestion. Now, without RPE: under 6 reps the classic step (same reps, one
+increment up); from 6 reps on, double progression — same load and one more rep
+up to the top of the range (8–12 hypertrophy, 15–20 endurance), then one
+increment up and back to the bottom. The range follows the declared cycle when
+there is one, else the band the top set falls in. A top set declining for three
+sessions gets no suggestion: the exercise signal speaks instead. The suggestion
+carries its method (`lineaire` / `double`) and reason, and the card's `SUGGÉRÉ`
+block shows it as before. The « next time » block in the end-of-session bilan
+and the session sheet is still to come.
+
 **Set duplication.** `+ SÉRIE` copies the previous set — weight, reps, RPE, rest.
 Only `fait` resets, and the comment is not copied. Five identical sets means
 typing one and tapping four times. The row is added to the card without

@@ -412,7 +412,27 @@
   //   pas de RPE  on s'appuie sur la tendance  -> +1 increment si ca progresse
   var INCREMENT = 2.5;
 
-  function suggererCible(seances, increment) {
+  // Sans RPE, la double progression (14/11/2026) : a charge egale, une
+  // repetition de plus a chaque seance, jusqu'au haut de la fourchette ; la,
+  // on monte la charge d'un cran et on repart du bas. Les bornes suivent le
+  // cycle quand il est connu (force, hypertrophie, endurance), sinon la
+  // fourchette ou tombe le top set. Sous 6 repetitions, la progression
+  // classique est lineaire : memes repetitions, un cran de plus — ajouter
+  // une rep a un triple n'est pas ce qu'on fait en force.
+  var FOURCHETTES_REPS = {
+    force: { bas: 3, haut: 5 },
+    hypertrophie: { bas: 8, haut: 12 },
+    endurance: { bas: 15, haut: 20 }
+  };
+  function fourchettePour(reps, cycle) {
+    var c = String(cycle || '').toLowerCase();
+    if (FOURCHETTES_REPS[c]) return FOURCHETTES_REPS[c];
+    if (reps <= 5) return FOURCHETTES_REPS.force;
+    if (reps <= 12) return FOURCHETTES_REPS.hypertrophie;
+    return FOURCHETTES_REPS.endurance;
+  }
+
+  function suggererCible(seances, increment, cycle) {
     var pas = (typeof increment === 'number' && increment > 0) ? increment : INCREMENT;
     var prec = performancePrecedente(seances, null);
     if (!prec || !prec.topSet) return null;
@@ -424,14 +444,37 @@
 
     var rpe = rpeDe(top);
     var sig = detecterSignal(seances);
+    var base = { poids: poids, reps: reps, rpe: rpe, date: prec.date };
 
     if (rpe === null) {
-      if (sig.signal !== 'progressing') return null;
+      // Un top set qui baisse depuis trois seances : ce n'est pas le moment
+      // de pousser. Le signal de l'exercice dit quoi faire, pas la cible.
+      if (sig.signal === 'declining') return null;
+      var f = fourchettePour(reps, cycle);
+      if (f === FOURCHETTES_REPS.force) {
+        return {
+          poids: Math.round((poids + pas) * 100) / 100,
+          reps: reps,
+          base: base,
+          methode: 'lineaire',
+          raison: 'Pas de RPE noté : à ' + reps + ' rep' + (reps > 1 ? 's' : '') + ', la progression classique est un cran de plus à répétitions égales.'
+        };
+      }
+      if (reps >= f.haut) {
+        return {
+          poids: Math.round((poids + pas) * 100) / 100,
+          reps: f.bas,
+          base: base,
+          methode: 'double',
+          raison: 'Double progression : ' + reps + ' reps, c’est le haut de la fourchette. Monte la charge et repars de ' + f.bas + '.'
+        };
+      }
       return {
-        poids: Math.round((poids + pas) * 100) / 100,
-        reps: reps,
-        base: { poids: poids, reps: reps, rpe: null, date: prec.date },
-        raison: 'Pas de RPE noté, mais ton top set progresse : une petite hausse est raisonnable.'
+        poids: poids,
+        reps: reps + 1,
+        base: base,
+        methode: 'double',
+        raison: 'Double progression : même charge, une rep de plus, jusqu’à ' + f.haut + '.'
       };
     }
     if (rpe <= 8) {
