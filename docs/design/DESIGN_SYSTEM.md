@@ -536,5 +536,15 @@ avant de le faire.
   La ligne entière est le bouton qui change de barre : 44 px, pas une puce de
   30. Le chiffre en Bricolage, le reste en texte courant ; `BARRE 20` en
   étiquette grise, comme les autres étiquettes.
+- **Un menu dit ce qui est possible maintenant, pas ce qui l'était au rendu**
+  (14/11). `△ ÉCHAUFFEMENT POUR 100 KG` dépend du poids qu'on vient de taper ;
+  un menu figé au dernier rendu aurait proposé la charge d'il y a trois
+  minutes. Le menu `⋯` se recalcule à l'ouverture et quand le nom change. Même
+  règle pour tout ce qui y entrera : son contenu vient des données, jamais d'un
+  état d'écran gardé à part.
+- **Un échauffement s'arrondit en dessous** (14/11). Une montée à 85 % tombe sur
+  le pas de 2,5 kg inférieur, jamais supérieur : 86 kg avant 100 n'est plus un
+  échauffement. Et quand on ne connaît pas la charge de travail, on ne propose
+  rien — pas une charge inventée.
 - **Description de l'interface** : [`DESIGN.md`](DESIGN.md), extrait du code le
   18/09. Ce fichier-ci garde les décisions et fait foi en cas d'écart.

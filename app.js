@@ -2140,6 +2140,25 @@
     });
   }
 
+  // La charge qu'on s'apprete a travailler, pour en deduire l'echauffement :
+  // la premiere serie de travail deja chiffree aujourd'hui ; sinon la cible
+  // suggeree ; sinon le top set de la derniere fois. Null quand on ne sait
+  // rien — on ne propose pas d'echauffer une charge inventee. (14/11/2026)
+  function chargeDeTravail(ex, p){
+    var series = (ex && ex.series) || [];
+    for (var i = 0; i < series.length; i++){
+      var s = series[i];
+      if (TS.typeSerie(s) === TS.TYPES.ECHAUFFEMENT) continue;
+      if (typeof s.poids === 'number' && s.poids > 0) return s.poids;
+    }
+    if (p === undefined) p = precedentDe(ex);
+    if (!p) return null;
+    var cible = TS.suggererCible(p.seances);
+    if (cible && cible.poids > 0) return cible.poids;
+    var top = p.prec && p.prec.topSet;
+    return (top && typeof top.poids === 'number' && top.poids > 0) ? top.poids : null;
+  }
+
   // Le HTML du bloc et des series est produit a un seul endroit : le rendu
   // initial et la mise a jour en direct ne peuvent pas diverger.
   function majBlocPrecedent(card, ex){
@@ -2147,6 +2166,52 @@
     var zone = card.querySelector('.ex-prev-zone');
     if (!zone) return;
     zone.innerHTML = blocPrecedentHTML(ex);
+  }
+
+  // Un menu plutot que trois gros boutons en bas de chaque carte : ils
+  // servent rarement, et prenaient autant de place qu'une serie.
+  // Se tromper de nom arrive, et la question « c'est le meme exercice ? »
+  // ne se posait qu'une fois, pendant la frappe. Elle vit maintenant dans le
+  // menu de la carte, aussi longtemps que l'exercice existe — et elle dit
+  // dans quel etat on est, sans avoir a l'ouvrir.
+  // Le contenu se recalcule a l'ouverture du menu et quand le nom change :
+  // ce qu'il propose depend des chiffres du jour (l'echauffement) et de
+  // l'historique (le rattachement), qui bougent pendant qu'on remplit.
+  function menuExoHTML(ex, p){
+    var series = ex.series || [];
+    var auTemps = estAuTemps(ex);
+    var eid = esc(ex.id);
+    var rattacheA = (ex.nom && ex.nom.trim() && cleCanonique(ex.nom) !== cleExo(ex.nom))
+      ? nomCanonique(ex.nom) : '';
+    // Deplacer l'exercice depuis sa propre carte. Le panneau ⇅ range toute la
+    // seance ; ici on en deplace UN, celui qu'on a sous les yeux au moment ou
+    // on s'apercoit que la machine est prise. Un exercice seul ne bouge pas.
+    // L'echauffement d'un appui, pour la charge qu'on va travailler : les
+    // chiffres du jour d'abord, sinon la cible suggeree, sinon la derniere
+    // fois. Pas au temps, et pas deux fois.
+    var charge = auTemps || series.some(function(s){ return TS.typeSerie(s) === TS.TYPES.ECHAUFFEMENT; })
+      ? null : chargeDeTravail(ex, p);
+    var echauffer = charge === null ? ''
+      : '<button type="button" class="ex-menu-item" data-action="echauffement" data-id="'+ eid +'">△ ÉCHAUFFEMENT POUR ' + esc(formatWeight(charge)) + ' KG</button>';
+    var pl = placeBloc(ex);
+    var deplacer = (pl.i < 0 || pl.n < 2) ? ''
+      : (pl.i > 0 ? '<button type="button" class="ex-menu-item" data-action="monter" data-id="'+ eid +'">▲ MONTER DANS LA SÉANCE</button>' : '')
+      + (pl.i < pl.n - 1 ? '<button type="button" class="ex-menu-item" data-action="descendre" data-id="'+ eid +'">▼ DESCENDRE DANS LA SÉANCE</button>' : '');
+    return echauffer
+      + deplacer
+      + (auTemps || nomAuTemps(ex.nom) || cardioParDefaut(ex) || !series.some(serieRemplie)
+          ? '<button type="button" class="ex-menu-item" data-action="mesure" data-id="'+ eid +'">'+libelleMesure(auTemps, cardioParDefaut(ex))+'</button>'
+          : '')
+      + (ex.nom && ex.nom.trim()
+          ? '<button type="button" class="ex-menu-item" data-action="fusion" data-id="'+ eid +'">'
+            + (rattacheA ? '⇄ RATTACHÉ À « ' + esc(rattacheA.toUpperCase()) + ' »'
+                         : '⇄ C\'EST LE MÊME EXERCICE QUE…') + '</button>'
+          : '')
+      + '<button type="button" class="ex-menu-item danger ex-del" data-id="'+ eid +'">✕ SUPPRIMER L\'EXERCICE</button>';
+  }
+  function majMenuExo(card, ex){
+    var menu = card && card.querySelector('.ex-menu');
+    if (menu) menu.innerHTML = menuExoHTML(ex);
   }
 
   function exerciseCardHTML(ex){
@@ -2157,33 +2222,7 @@
     var auTemps = estAuTemps(ex);
     var p = precedentDe(ex);
     var eid = esc(ex.id);
-    // Un menu plutot que trois gros boutons en bas de chaque carte : ils
-    // servent rarement, et prenaient autant de place qu'une serie.
-    // Se tromper de nom arrive, et la question « c'est le meme exercice ? »
-    // ne se posait qu'une fois, pendant la frappe. Elle vit maintenant dans le
-    // menu de la carte, aussi longtemps que l'exercice existe — et elle dit
-    // dans quel etat on est, sans avoir a l'ouvrir.
-    var rattacheA = (ex.nom && ex.nom.trim() && cleCanonique(ex.nom) !== cleExo(ex.nom))
-      ? nomCanonique(ex.nom) : '';
-    // Deplacer l'exercice depuis sa propre carte. Le panneau ⇅ range toute la
-    // seance ; ici on en deplace UN, celui qu'on a sous les yeux au moment ou
-    // on s'apercoit que la machine est prise. Un exercice seul ne bouge pas.
-    var pl = placeBloc(ex);
-    var deplacer = (pl.i < 0 || pl.n < 2) ? ''
-      : (pl.i > 0 ? '<button type="button" class="ex-menu-item" data-action="monter" data-id="'+ eid +'">▲ MONTER DANS LA SÉANCE</button>' : '')
-      + (pl.i < pl.n - 1 ? '<button type="button" class="ex-menu-item" data-action="descendre" data-id="'+ eid +'">▼ DESCENDRE DANS LA SÉANCE</button>' : '');
-    var menu = '<div class="ex-menu" role="group" aria-label="Actions sur l\'exercice">'
-      + deplacer
-      + (auTemps || nomAuTemps(ex.nom) || cardioParDefaut(ex) || !series.some(serieRemplie)
-          ? '<button type="button" class="ex-menu-item" data-action="mesure" data-id="'+ eid +'">'+libelleMesure(auTemps, cardioParDefaut(ex))+'</button>'
-          : '')
-      + (ex.nom && ex.nom.trim()
-          ? '<button type="button" class="ex-menu-item" data-action="fusion" data-id="'+ eid +'">'
-            + (rattacheA ? '⇄ RATTACHÉ À « ' + esc(rattacheA.toUpperCase()) + ' »'
-                         : '⇄ C\'EST LE MÊME EXERCICE QUE…') + '</button>'
-          : '')
-      + '<button type="button" class="ex-menu-item danger ex-del" data-id="'+ eid +'">✕ SUPPRIMER L\'EXERCICE</button>'
-      + '</div>';
+    var menu = '<div class="ex-menu" role="group" aria-label="Actions sur l\'exercice">' + menuExoHTML(ex, p) + '</div>';
     // Sans historique, la colonne de la derniere fois n'aurait que des tirets :
     // elle laisse sa place aux chiffres du jour.
     return '<div class="ex-card'+(p ? '' : ' sans-prec')+'" style="--card-color:'+color+'" data-id="'+ eid +'" data-mode="'+modeCarte(ex, auTemps)+'">'
@@ -4617,6 +4656,7 @@
       // devient utile. Mis à jour ici, sans reconstruire la carte.
       majBlocPrecedent(card, ex);
       repeindreSeries(card, ex);
+      majMenuExo(card, ex);
       majNomLong(card);
       // Une abreviation connue se propose pendant la frappe : attendre de
       // quitter le champ, c'est deja trop tard, on est passe a la suite.
@@ -5822,6 +5862,33 @@
   });
 
   exListEl.addEventListener('click', function(e){
+    // Les series d'echauffement se posent AVANT la premiere serie de travail,
+    // typees echauffement : elles ne comptent ni pour les records ni pour le
+    // top set. La premiere s'ouvre ; la serie de travail garde ses chiffres.
+    var echBtn = e.target.closest('[data-action="echauffement"]');
+    if (echBtn){
+      var dayE = getOrCreateDay(state.selectedDay);
+      var exE = findExercise(dayE, echBtn.dataset.id);
+      if (!exE) return;
+      var chargeE = chargeDeTravail(exE);
+      var montee = chargeE === null ? [] : TS.seriesEchauffement(chargeE, barreDe(exE));
+      if (!montee.length){ showToast('Rien à échauffer sous cette charge'); return; }
+      if (!exE.series) exE.series = [];
+      var neuves = montee.map(function(m){
+        return { id:genSerieId(), poids:m.poids, reps:String(m.reps), rpe:null,
+                 repos:exE.repos || '', type:TS.TYPES.ECHAUFFEMENT, fait:false };
+      });
+      var ou = 0;
+      while (ou < exE.series.length && TS.typeSerie(exE.series[ou]) === TS.TYPES.ECHAUFFEMENT) ou++;
+      exE.series.splice.apply(exE.series, [ou, 0].concat(neuves));
+      serieOuverte[exE.id] = neuves[0].id;
+      scheduleSave(state.selectedDay, true);
+      repeindreCarte(echBtn.closest('.ex-card'), exE);
+      renderBandeau();
+      showToast(neuves.length + (neuves.length > 1 ? ' séries d’échauffement' : ' série d’échauffement') + ' avant ' + formatWeight(chargeE) + ' kg');
+      return;
+    }
+
     var mesBtn = e.target.closest('[data-action="mesure"]');
     if (mesBtn){
       var dayM = getOrCreateDay(state.selectedDay);
@@ -5981,6 +6048,10 @@
     if (menuBtn){
       var carteM = menuBtn.closest('.ex-card');
       var ouvert = carteM.classList.toggle('menu-ouvert');
+      if (ouvert){
+        var exMenu = findExercise(getOrCreateDay(state.selectedDay), menuBtn.dataset.id);
+        if (exMenu) majMenuExo(carteM, exMenu);
+      }
       menuBtn.setAttribute('aria-expanded', ouvert ? 'true' : 'false');
       return;
     }

@@ -294,6 +294,23 @@ shows with a dashed `RIEN DE NOTÉ`, and the session reads in full. The
 filled, and a session that was merely planned shows the sentence saying so
 instead of four tiles at zero.
 
+**Warm-up sets in one tap** (14 November 2026). Strong has always done it: in
+the exercise's `⋯` menu, `△ ÉCHAUFFEMENT POUR 100 KG` places the classic ramp
+in front of the first working set — the empty bar × 8, then 50 % × 5, 70 % × 3
+and 85 % × 2 —, each set typed **warm-up** (so outside records and top set),
+the first one open. The load comes from the first working set with a weight
+today, else from the suggested target, else from last time's top set; when
+nothing is known the menu offers nothing rather than warming up an invented
+load. The computation is `TS.seriesEchauffement(charge, barre, pas)` in
+`intelligence.js`: weights fall on the 2.5 kg step **below**, never above (86 kg
+before 100 is no longer a warm-up); a step that does not exceed the bar is
+already done by the empty bar, a step that reaches the load is no longer one,
+two steps at the same weight are one, and below the bar's weight (dumbbells)
+there is no empty bar. The bar is the one chosen for the plates. Not on timed
+or cardio exercises, never twice on the same exercise. The `⋯` menu is
+recomputed when it opens and when the name changes: what it offers depends on
+the figures just typed.
+
 **Set duplication.** `+ SÉRIE` copies the previous set — weight, reps, RPE, rest.
 Only `fait` resets, and the comment is not copied. Five identical sets means
 typing one and tapping four times. The row is added to the card without

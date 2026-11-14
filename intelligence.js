@@ -460,6 +460,50 @@
   }
 
   // ------------------------------------------------------------------
+  // Series d'echauffement (14/11/2026)
+  // ------------------------------------------------------------------
+  // La montee classique avant une charge de travail : la barre vide, puis
+  // 50, 70 et 85 % de la charge, de moins en moins de repetitions. Rien de
+  // plus savant — c'est ce que l'on fait en salle, et ce que Strong propose
+  // d'un appui. Les poids sont arrondis AU PAS EN DESSOUS (2,5 kg par defaut,
+  // le plus petit saut avec des disques par paire), jamais au-dessus : un
+  // echauffement a 86 kg avant 100 n'est plus un echauffement.
+  //
+  // Une marche qui ne depasse pas la barre est deja faite par la barre vide ;
+  // une marche qui atteint la charge de travail n'en est plus une ; deux
+  // marches au meme poids n'en font qu'une. Sous le poids de la barre (des
+  // halteres, une machine), pas de « barre vide » : les pourcentages seuls.
+  var PALIERS_ECHAUFFEMENT = [
+    { part: 0.5, reps: 5 },
+    { part: 0.7, reps: 3 },
+    { part: 0.85, reps: 2 }
+  ];
+  var REPS_BARRE_VIDE = 8;
+
+  function seriesEchauffement(charge, barre, pas) {
+    var c = Number(charge);
+    var b = (typeof barre === 'number' && barre >= 0) ? barre : 20;
+    var p = (typeof pas === 'number' && pas > 0) ? pas : INCREMENT;
+    if (!isFinite(c) || c <= 0) return [];
+    var out = [];
+    var vus = {};
+    function ajouter(poids, reps) {
+      var k = Math.round(poids * 100);
+      if (vus[k]) return;
+      vus[k] = 1;
+      out.push({ poids: Math.round(poids * 100) / 100, reps: reps });
+    }
+    if (b > 0 && c > b) ajouter(b, REPS_BARRE_VIDE);
+    PALIERS_ECHAUFFEMENT.forEach(function (m) {
+      var poids = Math.floor((c * m.part) / p + 1e-9) * p;
+      if (poids <= 0 || poids >= c) return;
+      if (b > 0 && c > b && poids <= b) return;
+      ajouter(poids, m.reps);
+    });
+    return out;
+  }
+
+  // ------------------------------------------------------------------
   // Importer sans ecraser
   // ------------------------------------------------------------------
   // Un import AJOUTE ce qui manque et ne touche jamais a ce qui est deja la.
@@ -880,6 +924,7 @@
     pointsTopSet: pointsTopSet,
     detecterSignal: detecterSignal,
     suggererCible: suggererCible,
+    seriesEchauffement: seriesEchauffement,
     DISQUES: DISQUES,
     BARRES: BARRES,
     chargerBarre: chargerBarre

@@ -459,6 +459,29 @@ titre('Importer sans ecraser');
 }
 
 // ----------------------------------------------------------------
+titre('Series d echauffement');
+{
+  const e = (c, b, p) => TS.seriesEchauffement(c, b, p).map(s => s.poids + 'x' + s.reps);
+  egal('100 kg : barre vide, 50, 70, 85 %', e(100, 20), ['20x8', '50x5', '70x3', '85x2']);
+  egal('82,5 kg : chaque marche tombe sur le pas de 2,5 kg, en dessous', e(82.5, 20), ['20x8', '40x5', '57.5x3', '70x2']);
+  egal('30 kg : les marches sous la barre sont deja faites par la barre vide', e(30, 20), ['20x8', '25x2']);
+  // 20 kg sur une barre de 20, c est la barre vide — mais c est surtout un
+  // haltere de 20 kg, bien plus courant : les pourcentages.
+  egal('20 kg : lu comme un haltere, les pourcentages seuls', e(20, 20), ['10x5', '12.5x3', '15x2']);
+  egal('un haltere de 15 kg : pas de barre vide, les pourcentages seuls', e(15, 20), ['7.5x5', '10x3', '12.5x2']);
+  egal('une barre de 15 kg (42 kg tombe a 40, jamais a 42,5)', e(60, 15), ['15x8', '30x5', '40x3', '50x2']);
+  egal('un pas de 5 kg (salle sans petits disques)', e(100, 20, 5), ['20x8', '50x5', '70x3', '85x2']);
+  egal('un pas de 5 kg arrondit en dessous, jamais au-dessus', e(82.5, 20, 5), ['20x8', '40x5', '55x3', '70x2']);
+  egal('sans charge, rien', e(null, 20), []);
+  egal('une charge illisible, rien', e('abc', 20), []);
+  egal('une charge negative, rien', e(-50, 20), []);
+  ok('aucune marche n atteint la charge de travail', TS.seriesEchauffement(22.5, 20).every(s => s.poids < 22.5));
+  ok('jamais deux marches au meme poids', (() => { const l = e(27.5, 20); return new Set(l.map(x => x.split('x')[0])).size === l.length; })());
+  ok('le pas par defaut est l increment du carnet (2,5 kg)',
+     TS.seriesEchauffement(81, 20).every(s => Math.abs(s.poids / 2.5 - Math.round(s.poids / 2.5)) < 1e-9));
+}
+
+// ---------------------------------------------------------------- 25
 titre('Charger la barre');
 {
   const cote = (c, b) => TS.chargerBarre(c, b).parCote;

@@ -1586,6 +1586,22 @@ ok('la barre choisie ne vit que dans les reglages du telephone, parmi quatre con
    && /if \(BARRES_CHOIX\.indexOf\(Number\(lu\.barres\[nom\]\)\) > -1\) r\.barres\[nom\] = Number\(lu\.barres\[nom\]\);/.test(SRC)
    // Un choix n'est jamais ecrit dans la seance : la synchro n'a rien a en faire.
    && !/serie\.barre|\.barre = /.test(SRC));
+ok('l echauffement se pose devant la serie de travail, type echauffement, jamais deux fois',
+   /data-action="echauffement"/.test(SRC)
+   && /function seriesEchauffement\(charge, barre, pas\) \{/.test(INTEL)
+   && /seriesEchauffement: seriesEchauffement/.test(INTEL)
+   // Arrondi en dessous : floor, pas round.
+   && /Math\.floor\(\(c \* m\.part\) \/ p \+ 1e-9\) \* p/.test(INTEL)
+   && /type:TS\.TYPES\.ECHAUFFEMENT, fait:false/.test(SRC)
+   && /while \(ou < exE\.series\.length && TS\.typeSerie\(exE\.series\[ou\]\) === TS\.TYPES\.ECHAUFFEMENT\) ou\+\+;/.test(SRC)
+   && /series\.some\(function\(s\)\{ return TS\.typeSerie\(s\) === TS\.TYPES\.ECHAUFFEMENT; \}\)\s*\? null : chargeDeTravail\(ex, p\)/.test(SRC));
+ok('le menu de la carte se recalcule a l ouverture et quand le nom change',
+   /function menuExoHTML\(ex, p\)\{/.test(SRC)
+   && /function majMenuExo\(card, ex\)\{/.test(SRC)
+   && /if \(exMenu\) majMenuExo\(carteM, exMenu\);/.test(SRC)
+   && /repeindreSeries\(card, ex\);\n\s*majMenuExo\(card, ex\);/.test(SRC)
+   // Et il n y a qu un seul endroit qui ecrit les entrees du menu.
+   && (SRC.match(/data-action="fusion" data-id=/g) || []).length === 1);
 ok('la ligne des disques a sa taille de cible et ne s affiche que sur la serie ouverte',
    /\.serie-disques\{[^}]*min-height:44px/.test(HTML)
    && /\.serie-card\.ouverte \.serie-disques\{display:flex;\}/.test(HTML)

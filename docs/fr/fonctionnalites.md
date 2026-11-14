@@ -326,6 +326,24 @@ la séance se relit en entier. Les **chiffres**, eux, ne comptent que ce qui a
 prévue n'affiche pas quatre cases à zéro mais la phrase qui dit dans quel état
 elle est.
 
+**Les séries d'échauffement d'un appui** (14 novembre 2026). Strong le fait
+depuis toujours : dans le menu `⋯` de l'exercice, `△ ÉCHAUFFEMENT POUR 100 KG`
+pose la montée classique devant la première série de travail — la barre vide
+× 8, puis 50 % × 5, 70 % × 3 et 85 % × 2 —, chaque série typée **échauffement**
+(donc hors records et hors top set), la première ouverte. La charge vient de la
+première série de travail chiffrée aujourd'hui, sinon de la cible suggérée,
+sinon du top set de la dernière fois ; quand on ne sait rien, le menu ne propose
+rien plutôt que d'échauffer une charge inventée. Le calcul est
+`TS.seriesEchauffement(charge, barre, pas)` dans `intelligence.js` : les poids
+tombent sur le pas de 2,5 kg **en dessous**, jamais au-dessus (86 kg avant 100
+n'est plus un échauffement) ; une marche qui ne dépasse pas la barre est déjà
+faite par la barre vide, une marche qui atteint la charge n'en est plus une,
+deux marches au même poids n'en font qu'une, et sous le poids de la barre (des
+haltères) il n'y a pas de barre vide. La barre est celle choisie pour les
+disques. Pas au temps, pas en cardio, pas deux fois sur le même exercice. Le
+menu `⋯` se recalcule à l'ouverture et quand le nom change : ce qu'il propose
+dépend des chiffres qu'on vient de taper.
+
 **Duplication de série.** `+ SÉRIE` recopie la précédente : poids, reps, RPE,
 repos. Seul `fait` repart à zéro, et le commentaire ne se recopie pas. Sur cinq
 séries identiques, tu en saisis une et tu appuies quatre fois. La ligne s'ajoute

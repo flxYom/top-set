@@ -24,6 +24,15 @@ last). The items below are that list, delivered in order.
   (`reglages.barres`). On demand only, because for dumbbells or a machine the
   question has no meaning. Same `TS.chargerBarre()` as the public calculator.
   Not shown on timed or cardio exercises.
+- **Warm-up sets in one tap.** `△ ÉCHAUFFEMENT POUR 100 KG` in the exercise's
+  `⋯` menu inserts the classic ramp before the first working set (empty bar × 8,
+  50 % × 5, 70 % × 3, 85 % × 2), each typed warm-up, the first one open. The
+  load is today's first working weight, else the suggested target, else last
+  time's top set — nothing is proposed when nothing is known.
+  `TS.seriesEchauffement()` rounds to the 2.5 kg step below, never above, skips
+  steps the empty bar already covers, and drops the empty bar for dumbbells
+  (16 tests). The `⋯` menu is now rebuilt when it opens and when the name
+  changes (`menuExoHTML`), so what it offers matches what was just typed.
 
 ### Added — what the app knows, it now explains (2026-10-22)
 
