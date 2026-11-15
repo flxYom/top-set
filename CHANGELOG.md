@@ -9,6 +9,26 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ## [Unreleased]
 
+### Changed — one type scale (2026-11-15)
+
+The visual foundation the September audit asked for and nobody had built. All
+in the `<style id="refonte">` layer; no screen, no data, no behaviour changes.
+
+- **Six sizes, three weights, three tracking values.** Tokens `--t-1` to
+  `--t-6` (11 / 13 / 15 / 18 / 24 / 40 px); every original rule with a pixel
+  size is remapped to the nearest step, 400 / 700 / 800 as the only weights
+  (800 kept for headings and numbers from 18 px up), tracking `.08em` on 11 px
+  labels, `.04em` on other capitals, `-.02em` on headings, none elsewhere.
+  Measured at 375 px on the session screen: 14 sizes → 6, 20 tracking values →
+  4, no text under 11 px on any tab. The iOS 16 px guard is untouched, and the
+  notebook's search field, which sat at 14 px and made Safari zoom, moves to
+  16 px. Fluid sizes (session name, full-screen numbers) and the iOS-style
+  bottom bar keep their own rules, on purpose.
+- Guard: `test/gabarits.test.mjs` § 39 refuses any pixel font size in the
+  redesign layer other than the iOS 16 px, and any weight outside the three.
+- Decisions: `docs/design/DESIGN_SYSTEM.md` § 3, with what remains open (lower
+  case labels, which is a rewrite of `app.js` strings, not CSS).
+
 ### Added — the gym, not the web page (2026-11-14)
 
 Benchmark of 14 November (`docs/audits/benchmark-2026-11-14.md`): what Strong,

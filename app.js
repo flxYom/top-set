@@ -1713,8 +1713,8 @@
       + '<path d="M161 156 h-9 l1 22 h7 z" ' + zone('Mollets') + trait + '></path>';
     return '<svg class="muscle-svg" width="150" height="161" viewBox="0 0 190 206" fill="none" role="img" aria-label="Muscles travaillés sur la période, de face et de dos">'
       + face + dos
-      + '<text x="45" y="204" text-anchor="middle" fill="#a39b8f" font-size="9" font-weight="700" letter-spacing="1">FACE</text>'
-      + '<text x="145" y="204" text-anchor="middle" fill="#a39b8f" font-size="9" font-weight="700" letter-spacing="1">DOS</text>'
+      + '<text x="45" y="204" text-anchor="middle" fill="#a39b8f" font-size="11" font-weight="700" letter-spacing="1">FACE</text>'
+      + '<text x="145" y="204" text-anchor="middle" fill="#a39b8f" font-size="11" font-weight="700" letter-spacing="1">DOS</text>'
       + '</svg>';
   }
 

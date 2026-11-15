@@ -97,6 +97,16 @@ the page is gone, 86 KB less on every load. Decisions, sources and what was
 ruled out (Pinterest, Canva), in French:
 [`docs/design/direction-refonte-2026-09.md`](../design/direction-refonte-2026-09.md).
 
+**The type scale (15 November 2026).** Six sizes (11, 13, 15, 18, 24 and
+40 px), three weights (400 for text, 700 for anything strong, 800 for headings
+and numbers) and three tracking values, set in one block of the redesign layer:
+every text takes the nearest step to its original size, of which there were 29,
+from 8 to 42 px. Measured at 375 px, the session screen goes from 14 sizes to 6
+and no text drops below 11 px on any of the four tabs. Input fields keep their
+16 px (Safari zooms below that, and the notebook's search field, which was at
+14, now gets it too); the session name and the full-screen numbers keep their
+fluid size. Steps and exceptions, in French: `DESIGN_SYSTEM.md`, section 3.
+
 **The tab lens, muscle-group colours, waiting states (September 2026).** Under
 the active tab sits a piece of glass (`#ongletLoupe`, placed by `placerLoupe()`
 on every `montrerVue`): a highlight on top, a barely visible light rim.

@@ -651,7 +651,8 @@ ok('TERMINER MA SEANCE apparait des la premiere serie notee, sans attendre un re
 ok('audit UI/UX : plus d emoji dans le signal d un exercice, un point dessine a la place',
    !/pastille:'/.test(SRC) && /<span class="sig-point" aria-hidden="true"><\/span>/.test(SRC) && /\.sig-point\{/.test(HTML));
 ok('audit UI/UX : les libelles ne descendent plus sous 11 px, les commandes segmentees font 44 px',
-   /\.recap-section-title,\.recap-freq,\.bilan-tag,\.bilan-bloc-tete,\s*\.serie-repos-champ > span,\.bilan-tuile span\{font-size:11px;\}/.test(HTML)
+   /\.recap-section-title,\.recap-freq,\.bilan-tag,\.bilan-bloc-tete,\s*\.serie-repos-champ > span,\.bilan-tuile span\{font-size:var\(--t-1\);\}/.test(HTML)
+   && /--t-1:11px;/.test(HTML)
    && /\.seg-btn\{min-height:44px;\}/.test(HTML) && /\.fin-revoir\{min-height:44px;/.test(HTML));
 ok('audit UI/UX : le texte tertiaire passe 4,5:1 sur les surfaces',
    /--ink3:#8d867b;/.test(HTML));
@@ -1606,6 +1607,24 @@ ok('la ligne des disques a sa taille de cible et ne s affiche que sur la serie o
    /\.serie-disques\{[^}]*min-height:44px/.test(HTML)
    && /\.serie-card\.ouverte \.serie-disques\{display:flex;\}/.test(HTML)
    && /\.serie-disques\{border:1px solid var\(--trait\)/.test(HTML));
+
+console.log('\n== 39. L echelle typographique (15/11) : six tailles, trois graisses ==');
+// La couche de refonte ne pose plus de taille en pixels : elle prend une marche
+// de l'echelle. Seules exceptions, les champs de la garde iOS a 16 px.
+const REFONTE = HTML.slice(HTML.indexOf('<style id="refonte">'));
+ok('les six marches sont definies, de 11 a 40 px',
+   /:root\{--t-1:11px;--t-2:13px;--t-3:15px;--t-4:18px;--t-5:24px;--t-6:40px;\}/.test(REFONTE));
+const pxRefonte = [...REFONTE.matchAll(/font-size:([\d.]+)px/g)].map(m => m[1]).filter(v => v !== '16');
+ok('aucune taille en pixels hors echelle dans la refonte (16 px reste pour les champs iOS)',
+   pxRefonte.length === 0, pxRefonte.join(' '));
+const graissesRefonte = [...new Set([...REFONTE.matchAll(/font-weight:(\d+)/g)].map(m => m[1]))].sort();
+ok('trois graisses dans la refonte : 400, 700, 800',
+   graissesRefonte.join(',') === '400,700,800', graissesRefonte.join(','));
+ok('le bloc de l echelle vient apres la garde iOS et garde la marche basse des cartes etroites',
+   REFONTE.indexOf('Echelle typographique') > -1
+   && /@container \(max-width:310px\)\{\s*\.btn-add-serie,\.btn-add-note,\.btn-chrono,\.btn-comme-avant\{font-size:var\(--t-1\)/.test(REFONTE));
+ok('le champ de recherche du carnet fait 16 px : Safari ne zoome pas dedans',
+   /\.carnet-rech-champ\{[^}]*font-size:16px/.test(REFONTE));
 
 console.log(`\n${pass} reussis, ${fail} echoues`);
 process.exit(fail ? 1 : 0);

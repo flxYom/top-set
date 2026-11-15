@@ -102,13 +102,43 @@ Les chiffres des compteurs du chargement sont en `tabular-nums`.
 - 1RM estimé arrondi au demi-kilo ;
 - un `»` ne part plus seul à la ligne (espace insécable).
 
-**À décider (phase 2)** :
-- une échelle de six tailles au plus (il y en a 29 aujourd'hui), avec
-  11 px minimum pour un libellé ;
-- trois graisses ;
-- `tabular-nums` sur tous les chiffres de performance ;
-- des libellés et des boutons en minuscules, les capitales réservées à
-  quelques étiquettes courtes.
+**Échelle (décidée le 15/11/2026).** Six tailles, trois graisses, trois
+interlettrages, posés dans le bloc « Échelle typographique » de la couche de
+refonte : chaque texte prend la marche la plus proche de sa taille d'origine.
+Mesuré à 375 px sur l'écran de séance, avant → après : 14 tailles → 6,
+graisses 400/500/700/800 → 400/700/800, 20 interlettrages → 4 ; plus aucun
+texte sous 11 px sur les quatre onglets.
+
+| Jeton | Taille | Sert à |
+|---|---|---|
+| `--t-1` | 11 px | les étiquettes : sur-titres, pastilles, en-têtes de colonnes, légendes |
+| `--t-2` | 13 px | le texte courant, les boutons secondaires, les lignes de liste, les entrées du menu `⋯` |
+| `--t-3` | 15 px | le texte fort : noms, boutons principaux, valeurs de liste |
+| `--t-4` | 18 px | les chiffres de série, les titres de feuille, les numéros du calendrier |
+| `--t-5` | 24 px | les titres d'écran, le logo, les compteurs |
+| `--t-6` | 40 px | les deux grands chiffres (volume de la semaine, du bilan) |
+
+Hors échelle, et assumés : les champs de la garde iOS (16 px, Safari zoome en
+dessous — le champ de recherche du carnet y passe aussi, il était à 14), le
+nom de la séance et les chiffres du plein écran (`clamp()`, ils suivent la
+largeur), la barre du bas (copie d'iOS, 400 au repos, 700 pour l'onglet actif).
+
+- Graisses : **400** pour le texte, **700** pour ce qui est fort (étiquettes,
+  boutons, noms), **800** pour les titres et les chiffres à partir de `--t-4`.
+  Avant, 800 était dans 138 déclarations sur 177 : quand tout est gras, rien ne
+  ressort.
+- Interlettrage : `.08em` sur les étiquettes de 11 px, `.04em` sur les autres
+  capitales, `-.02em` sur les titres, rien ailleurs. Les signes (chevron,
+  crayon) n'en ont pas.
+- Une taille nouvelle se prend dans l'échelle. Une taille qui change se change
+  dans ce bloc, pas dans les règles d'origine. La garde
+  `test/gabarits.test.mjs` § 39 refuse toute taille en pixels dans la refonte
+  en dehors des 16 px d'iOS, et toute graisse hors des trois.
+
+**Reste à décider** : des libellés et des boutons en minuscules, les capitales
+réservées à quelques étiquettes courtes. 53 % des textes de l'écran de séance
+sont en capitales, écrits tels quels dans `app.js` : ce n'est pas un réglage de
+CSS, c'est une réécriture de l'identité, à trancher avec lui.
 
 Contrainte existante : aucune règle ne change la taille des champs de saisie
 listés dans la garde iOS. En dessous de 16 px, Safari zoome.

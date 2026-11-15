@@ -2412,7 +2412,7 @@
   .bilan-volume-num,.barre-compteurs b,.retour-seance,.btn-add,.btn-fin,.topbar-tab,.seg-btn,
   .btn-sheet,.ex-cible-val,.stat-tile,.volume-block,.recap-label,.seance-carte,.fiche-tete,
   .exo-record,.bilan-tuile b,.hero-tag,.day-panel-header h2{font-family:var(--f-titre);}
-  .vue-tete h2{font-family:var(--f-titre);letter-spacing:-.02em;}
+  .vue-tete h2{font-family:var(--f-titre);letter-spacing:-.02em;font-size:var(--t-5);}
   .vue-sous-titre{font-family:var(--f-ui);color:var(--ink3);}
   input,select,textarea,button{font-family:inherit;}
   :focus-visible{outline:2px solid var(--orange);outline-offset:2px;}
@@ -2431,13 +2431,13 @@
   .brand{align-items:center;gap:8px;padding-bottom:4px;}
   .brand-mark{
     background:none;border:0;box-shadow:none;padding:0 2px;
-    font-size:23px;letter-spacing:-.04em;align-items:center;
+    font-size:var(--t-5);letter-spacing:-.02em;align-items:center;
   }
   .brand-mark .wm-top{color:var(--ink);}
   .brand-mark .wm-set{color:var(--orange);}
   .brand-mark .wm-app{
     align-self:center;top:0;margin-left:7px;
-    font-family:var(--f-ui);font-size:9.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+    font-family:var(--f-ui);font-size:var(--t-1);font-weight:700;letter-spacing:.08em;text-transform:uppercase;
     color:var(--dim);background:var(--s2);border:1px solid var(--trait);border-radius:6px;padding:3px 6px;
   }
   .brand-btn,.brand-btn.msg,.brand-btn.profil{
@@ -2454,7 +2454,7 @@
   .topbar-tab{
     display:flex;align-items:center;justify-content:center;gap:8px;
     min-height:42px;border:0;border-radius:12px;background:transparent;box-shadow:none;
-    color:var(--dim);font-size:12px;font-weight:700;letter-spacing:.06em;
+    color:var(--dim);font-size:var(--t-2);font-weight:700;letter-spacing:.04em;
   }
   .topbar-tab.active{background:var(--s3);color:var(--ink);box-shadow:inset 0 0 0 1px var(--trait2);}
   .topbar-tab .onglet-ico{width:20px;height:20px;flex:none;}
@@ -2469,7 +2469,7 @@
     .topbar-inner{max-width:560px;margin:0 auto;background:none;border:0;padding:0;gap:0;}
     .topbar-tab{
       position:relative;flex-direction:column;gap:4px;min-height:52px;padding:4px 0 2px;
-      font-family:var(--f-ui);font-size:10.5px;font-weight:600;letter-spacing:.02em;
+      font-family:var(--f-ui);font-size:var(--t-1);font-weight:700;letter-spacing:0;
       background:none;box-shadow:none;
     }
     .topbar-tab .onglet-ico{width:24px;height:24px;}
@@ -2515,10 +2515,10 @@
     box-shadow:var(--relief);padding:16px 16px 14px;
   }
   .hero-voile{background:linear-gradient(185deg,rgba(12,11,10,.2) 0%,rgba(12,11,10,.68) 54%,rgba(12,11,10,.95) 100%);}
-  .hero-kicker{font-family:var(--f-ui);font-size:11px;font-weight:700;letter-spacing:.16em;color:var(--dim);}
+  .hero-kicker{font-family:var(--f-ui);font-size:var(--t-1);font-weight:700;letter-spacing:.08em;color:var(--dim);}
   .hero-tags{gap:6px;}
   .hero-tag{
-    border-radius:999px;padding:5px 11px;font-size:11px;font-weight:700;letter-spacing:.06em;
+    border-radius:999px;padding:5px 11px;font-size:var(--t-1);font-weight:700;letter-spacing:.08em;
     background:rgba(255,255,255,.1);color:var(--ink);border:1px solid rgba(255,255,255,.14);
     -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
   }
@@ -2530,16 +2530,16 @@
   /* ---- Semaine ------------------------------------------------------------ */
   .icon-btn{border:1px solid var(--trait);border-radius:var(--r-m);background:var(--s1);color:var(--ink);box-shadow:none;}
   .btn-today{border:1px solid var(--trait);border-radius:999px;background:var(--s1);box-shadow:none;letter-spacing:.08em;}
-  .week-label{font-size:15px;letter-spacing:-.01em;}
-  .cal-jour,.cal-entete{font-family:var(--f-ui);font-weight:600;color:var(--ink3);}
+  .week-label{font-size:var(--t-3);letter-spacing:0;}
+  .cal-jour,.cal-entete{font-family:var(--f-ui);font-weight:700;color:var(--ink3);}
   .cal-case{border:1px solid var(--trait);border-radius:12px;background:var(--s1);}
   .cal-case.auj{border-color:var(--orange);box-shadow:inset 0 0 0 1px var(--orange);}
-  .badge{border:1px solid var(--trait);border-radius:999px;background:var(--s1);font-family:var(--f-ui);font-weight:600;}
+  .badge{border:1px solid var(--trait);border-radius:999px;background:var(--s1);font-family:var(--f-ui);font-weight:700;}
   .badge i{border-radius:50%;}
   /* La date est passee au-dessus du nom de la seance, en petit : elle situe,
      elle ne titre plus. Elle n'est plus ecrite deux fois de suite. */
   .day-panel-header h2{
-    font-family:var(--f-ui);font-size:11px;font-weight:700;letter-spacing:.16em;
+    font-family:var(--f-ui);font-size:var(--t-1);font-weight:700;letter-spacing:.08em;
     color:var(--dim);text-transform:uppercase;
   }
 
@@ -2586,7 +2586,7 @@
   .serie-num{border:1px solid var(--trait);border-radius:var(--r-s);background:var(--s2);}
   .serie-poids,.serie-reps,.serie-duree,.serie-cardio{
     border:1px solid transparent;border-radius:var(--r-s);background:var(--s2);
-    font-size:18px;font-weight:700;
+    font-size:var(--t-4);font-weight:800;
   }
   .serie-poids:focus,.serie-reps:focus,.serie-duree:focus,.serie-cardio:focus,.serie-rpe:focus,.serie-repos:focus{
     outline:none;border-color:var(--orange);box-shadow:0 0 0 3px rgba(255,92,56,.22);
@@ -2611,7 +2611,7 @@
     border:0;border-radius:16px;
     background:linear-gradient(180deg,#ff6c48,#ff4f2b);color:#160803;
     box-shadow:var(--lueur), inset 0 1px 0 rgba(255,255,255,.28);
-    letter-spacing:.07em;
+    letter-spacing:.04em;
   }
   .btn-add:active,.btn-sheet.primary:active{box-shadow:0 6px 16px -10px rgba(255,92,56,.7), inset 0 1px 0 rgba(255,255,255,.28);}
   .btn-fin{
@@ -2694,7 +2694,7 @@
   .sheet{background:rgba(6,5,4,.62);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);}
   .sheet-card{border:1px solid var(--trait2);border-radius:var(--r-xl);background:var(--s1);box-shadow:0 30px 80px -24px rgba(0,0,0,.85);}
   .sheet-head{background:var(--s1);}
-  .sheet-head h2{font-size:19px;letter-spacing:-.01em;}
+  .sheet-head h2{font-size:var(--t-4);letter-spacing:-.02em;}
   .sheet-stat,.sheet-msg{border-width:1px;border-radius:var(--r-m);}
   .sheet-note{border-left-width:2px;}
   .sheet-input,.sheet-paste{border:1px solid var(--trait);border-radius:12px;background:var(--s2);}
@@ -2720,7 +2720,7 @@
   /* ---- Barres flottantes ----------------------------------------------------------------- */
   .toast{
     border:1px solid var(--trait2);border-radius:999px;background:var(--s3);color:var(--ink);
-    box-shadow:0 14px 34px -14px rgba(0,0,0,.8);font-family:var(--f-ui);font-weight:600;
+    box-shadow:0 14px 34px -14px rgba(0,0,0,.8);font-family:var(--f-ui);font-weight:700;
   }
   .haut-btn{border:1px solid var(--trait2);border-radius:50%;background:var(--s2);color:var(--ink);box-shadow:0 12px 28px -12px rgba(0,0,0,.8);}
   .haut-btn:active{box-shadow:none;transform:scale(.94);}
@@ -2886,7 +2886,7 @@
     .topbar-tab,.bulle-onglet{
       display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
       min-height:54px;padding:4px 0 3px;box-sizing:border-box;
-      font-family:var(--f-ui);font-size:11px;font-weight:500;line-height:1.2;letter-spacing:0;color:#ececec;
+      font-family:var(--f-ui);font-size:var(--t-1);font-weight:400;line-height:1.2;letter-spacing:0;color:#ececec;
     }
     .topbar-tab span,.bulle-onglet span{display:block;text-transform:lowercase;}
     .topbar-tab span::first-letter,.bulle-onglet span::first-letter{text-transform:uppercase;}
@@ -2979,8 +2979,8 @@
   .col-prec-lien,.seance-creer-label,.cal-jour,.cal-entete,
   .stat-label,.fiche-exo-groupe,.exo-groupe,.exo-bloc-titre,.volume-label,.heat-title,
   .muscle-title,.muscle-note,.recap-section-title,.recap-freq,.bilan-tag,.bilan-bloc-tete,
-  .serie-repos-champ > span,.bilan-tuile span{font-size:11px;}
-  .serie-card[data-type] .serie-num{font-size:11px;}
+  .serie-repos-champ > span,.bilan-tuile span{font-size:var(--t-1);}
+  .serie-card[data-type] .serie-num{font-size:var(--t-1);}
 
   /* Les chiffres de performance ne dansent pas d'une ligne a l'autre. */
   .serie-prec,.recap-value,.stat-num,.exo-record-poids,.bilan-tuile b,.bilan-volume-num,
@@ -3009,7 +3009,7 @@
      nom, la seule chose qu'on lit sur cet ecran. */
   @media (max-width:359px){
     .ordre-ligne{grid-template-columns:32px minmax(0,1fr) auto;gap:6px;}
-    .ordre-poignee{font-size:17px;}
+    .ordre-poignee{font-size:var(--t-4);}
     /* A 320 px, le nom et le cycle cote a cote laissaient six lettres
        chacun : ils passent l'un sous l'autre. */
     .day-panel-header{flex-wrap:wrap;gap:6px;}
@@ -3078,15 +3078,15 @@
   .fs-points i{width:6px;height:6px;border-radius:3px;background:var(--trait2);transition:width .25s;}
   .fs-points i.on{width:20px;background:var(--orange);}
   .fs-titre{margin-top:18px;flex:none;}
-  .fs-eyebrow{margin:0;font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--ink3);}
+  .fs-eyebrow{margin:0;font-size:var(--t-1);font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);}
   .fs-nom{margin:6px 0 0;font-family:var(--f-titre);font-size:clamp(24px, 8vw, 30px);font-weight:800;letter-spacing:-.02em;line-height:1.05;text-wrap:balance;}
   .fs-chip{
     display:inline-block;margin-top:10px;padding:5px 10px;border-radius:999px;
-    font-size:11px;font-weight:700;letter-spacing:.1em;color:var(--c);
+    font-size:var(--t-1);font-weight:700;letter-spacing:.08em;color:var(--c);
     background:color-mix(in srgb, var(--c) 16%, transparent);
   }
   .fs-faites{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px;flex:none;}
-  .fs-faites span{font-size:12px;padding:6px 10px;border-radius:10px;background:rgba(29,27,25,.6);color:var(--dim);font-variant-numeric:tabular-nums;}
+  .fs-faites span{font-size:var(--t-2);padding:6px 10px;border-radius:10px;background:rgba(29,27,25,.6);color:var(--dim);font-variant-numeric:tabular-nums;}
   .fs-faites b{color:var(--ok);margin-left:4px;}
   .fs-pile{position:relative;margin-top:16px;display:flex;flex-direction:column;gap:12px;flex:none;}
   .fs-carte{
@@ -3094,14 +3094,14 @@
     background:rgba(21,20,18,.62);-webkit-backdrop-filter:blur(18px) saturate(1.2);backdrop-filter:blur(18px) saturate(1.2);
   }
   .fs-carte-tete{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:4px 10px;}
-  .fs-num{font-size:15px;font-weight:700;flex:none;}
-  .fs-avant{font-size:12px;color:var(--ink3);white-space:nowrap;}
+  .fs-num{font-size:var(--t-3);font-weight:700;flex:none;}
+  .fs-avant{font-size:var(--t-2);color:var(--ink3);white-space:nowrap;}
   .fs-champ{margin-top:14px;}
-  .fs-label{display:block;font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--ink3);}
+  .fs-label{display:block;font-size:var(--t-1);font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);}
   .fs-ligne{display:grid;grid-template-columns:56px minmax(0,1fr) 56px;align-items:center;gap:8px;margin-top:6px;}
   .fs-pm{
     height:56px;border-radius:18px;border:0;background:rgba(39,36,31,.8);color:var(--ink);
-    font-size:26px;font-weight:500;display:grid;place-items:center;touch-action:manipulation;
+    font-size:var(--t-5);font-weight:400;display:grid;place-items:center;touch-action:manipulation;
   }
   .fs-pm:active{transform:scale(.94);background:var(--s3);}
   .fs-val{
@@ -3109,21 +3109,21 @@
     display:flex;align-items:baseline;justify-content:center;gap:4px;font-family:var(--f-titre);
   }
   .fs-val b{font-size:clamp(44px, 15vw, 58px);font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums;line-height:64px;}
-  .fs-val small{font-size:16px;font-weight:600;color:var(--ink3);}
+  .fs-val small{font-size:var(--t-3);font-weight:700;color:var(--ink3);}
   .fs-rpe{display:flex;gap:6px;margin-top:8px;}
-  .fs-puce{flex:1;min-height:44px;border-radius:12px;border:0;background:rgba(29,27,25,.8);color:var(--dim);font-weight:600;font-size:15px;}
+  .fs-puce{flex:1;min-height:44px;border-radius:12px;border:0;background:rgba(29,27,25,.8);color:var(--dim);font-weight:700;font-size:var(--t-3);}
   .fs-puce.on{background:var(--ink);color:var(--bg);}
   .fs-deux{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;}
   .fs-deux .fs-champ{margin-top:10px;}
   .fs-deux .fs-ligne{grid-template-columns:40px minmax(0,1fr) 40px;gap:4px;margin-top:0;}
-  .fs-deux .fs-pm{height:44px;border-radius:14px;font-size:22px;}
+  .fs-deux .fs-pm{height:44px;border-radius:14px;font-size:var(--t-5);}
   .fs-deux .fs-val{height:56px;flex-direction:column;align-items:center;justify-content:center;gap:2px;}
   .fs-deux .fs-val b{font-size:clamp(24px, 8vw, 32px);line-height:1;}
-  .fs-deux .fs-val small{font-size:10px;letter-spacing:.1em;text-transform:uppercase;}
+  .fs-deux .fs-val small{font-size:var(--t-1);letter-spacing:.08em;text-transform:uppercase;}
   .fs-ss-tete{display:flex;align-items:center;gap:10px;}
-  .fs-ss-tete b{font-size:16px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-  .fs-ss-tete span:last-child{margin-left:auto;font-size:12px;color:var(--ink3);flex:none;}
-  .fs-lettre{flex:none;width:30px;height:30px;border-radius:10px;display:grid;place-items:center;background:var(--orange);color:#140805;font-weight:800;font-size:13px;}
+  .fs-ss-tete b{font-size:var(--t-3);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .fs-ss-tete span:last-child{margin-left:auto;font-size:var(--t-2);color:var(--ink3);flex:none;}
+  .fs-lettre{flex:none;width:30px;height:30px;border-radius:10px;display:grid;place-items:center;background:var(--orange);color:#140805;font-weight:700;font-size:var(--t-2);}
   .fs-ss{padding-top:14px;}
   .fs-ss.actif{border-color:rgba(255,92,56,.55);}
   .fs-ss.actif .fs-ss-tete{margin-top:0;}
@@ -3133,11 +3133,11 @@
   .fs-bas{margin-top:auto;padding-top:16px;display:flex;flex-direction:column;gap:10px;flex:none;}
   .fs-cta{
     min-height:60px;border:0;border-radius:20px;background:var(--orange);color:#140805;
-    font-family:var(--f-ui);font-weight:800;font-size:16px;letter-spacing:.06em;box-shadow:var(--lueur);
+    font-family:var(--f-ui);font-weight:700;font-size:var(--t-3);letter-spacing:.04em;box-shadow:var(--lueur);
   }
   .fs-cta.secondaire{background:var(--ink);color:var(--bg);box-shadow:none;}
   .fs-cta:active{transform:scale(.98);}
-  .fs-ghost{min-height:48px;border-radius:16px;border:1px solid var(--trait2);background:rgba(12,11,10,.35);color:var(--dim);font-weight:600;font-size:14px;}
+  .fs-ghost{min-height:48px;border-radius:16px;border:1px solid var(--trait2);background:rgba(12,11,10,.35);color:var(--dim);font-weight:700;font-size:var(--t-3);}
   .fs-fini{margin-top:24px;text-align:center;color:var(--dim);}
   .fs-fini p{margin:0;}
   /* Le repos : un anneau qui se remplit jusqu au repos vise, puis passe au vert. */
@@ -3152,11 +3152,11 @@
   .fs-temps{text-align:center;}
   .fs-temps b{display:block;font-family:var(--f-titre);font-size:clamp(52px, 18vw, 68px);font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums;line-height:1;}
   .fs-anneau.pret .fs-temps b{color:var(--ok);}
-  .fs-temps small{display:block;margin-top:8px;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink3);font-weight:600;}
-  .fs-note{margin:16px 0 0;font-size:13px;font-weight:600;color:var(--ok);text-align:center;}
+  .fs-temps small{display:block;margin-top:8px;font-size:var(--t-1);letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);font-weight:700;}
+  .fs-note{margin:16px 0 0;font-size:var(--t-2);font-weight:700;color:var(--ok);text-align:center;}
   /* Pendant un repos, la suite se lit, elle ne se remplit pas : on la reglera
      sur l ecran de saisie, une fois le repos fini (20/09). */
-  .fs-suite{margin:14px 0 0;font-size:14px;color:var(--dim);text-align:center;}
+  .fs-suite{margin:14px 0 0;font-size:var(--t-3);color:var(--dim);text-align:center;}
   /* L icone de la carte qui ouvre le plein ecran. */
   .ex-focus-btn{
     flex:none;width:44px;height:44px;display:flex;align-items:center;justify-content:center;
@@ -3202,7 +3202,7 @@
   }
   .cl-mode{
     flex:1;min-height:44px;border:0;border-radius:12px;background:transparent;color:var(--dim);
-    font-family:var(--f-ui);font-weight:800;font-size:12px;letter-spacing:.1em;
+    font-family:var(--f-ui);font-weight:700;font-size:var(--t-2);letter-spacing:.04em;
   }
   .cl-mode[aria-pressed="true"]{background:var(--ink);color:var(--bg);}
   .cl-anneau{margin-top:min(8vh, 52px);}
@@ -3211,13 +3211,13 @@
   .cl-choix{display:flex;gap:8px;justify-content:center;margin-top:28px;flex:none;}
   .cl-duree{
     flex:1;min-height:48px;border-radius:14px;border:1px solid var(--trait2);background:rgba(23,21,18,.7);
-    color:var(--ink);font-family:var(--f-titre);font-weight:800;font-size:16px;font-variant-numeric:tabular-nums;
+    color:var(--ink);font-family:var(--f-titre);font-weight:800;font-size:var(--t-4);font-variant-numeric:tabular-nums;
   }
   .cl-duree[aria-pressed="true"]{border-color:var(--orange);color:var(--orange);}
   .cl-pas{display:flex;gap:10px;justify-content:center;margin-top:10px;flex:none;}
   .cl-pas button{
     flex:1;min-height:46px;border-radius:14px;border:1px solid var(--trait2);background:rgba(23,21,18,.7);
-    color:var(--ink);font-family:var(--f-ui);font-weight:800;font-size:14px;
+    color:var(--ink);font-family:var(--f-ui);font-weight:700;font-size:var(--t-3);
   }
   .cl-bas{margin-top:auto;padding-top:16px;display:flex;gap:10px;flex:none;}
   .cl-bas .fs-cta{flex:1;}
@@ -3227,7 +3227,7 @@
   .reg-groupe{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:52px;border-bottom:1px solid var(--line);}
   .reg-groupe-nom{
     display:flex;align-items:center;gap:10px;min-width:0;
-    font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    font-size:var(--t-3);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   }
   .reg-groupe-nom i{flex:none;width:20px;height:20px;border-radius:6px;background:var(--c);}
   .reg-nuancier{display:flex;gap:6px;flex:none;}
@@ -3236,8 +3236,8 @@
   }
   .reg-teinte[aria-pressed="true"]{border-color:var(--ink);}
   .reg-bascule{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 0;border-bottom:1px solid var(--line);text-align:left;width:100%;background:none;border-left:0;border-right:0;border-top:0;color:var(--ink);font-family:var(--f-ui);}
-  .reg-bascule b{display:block;font-size:14px;font-weight:700;}
-  .reg-bascule small{display:block;margin-top:3px;font-size:11.5px;font-weight:500;color:var(--dim);line-height:1.4;}
+  .reg-bascule b{display:block;font-size:var(--t-3);font-weight:700;}
+  .reg-bascule small{display:block;margin-top:3px;font-size:var(--t-1);font-weight:400;color:var(--dim);line-height:1.4;}
   .reg-temoin{
     flex:none;position:relative;width:52px;height:31px;border-radius:16px;
     background:var(--s3);border:1px solid var(--line);
@@ -3254,11 +3254,11 @@
      de couleur se serrent pour que la ligne d un groupe tienne. */
   @media (max-width:359px){
     .brand{gap:6px;}
-    .brand-mark{min-width:0;font-size:20px;}
+    .brand-mark{min-width:0;font-size:var(--t-4);}
     .brand-mark .wm-app{display:none;}
     .brand-btn,.brand-btn.msg,.brand-btn.profil{width:40px;height:40px;}
     .brand-btn svg{width:18px;height:18px;}
-    .reg-groupe-nom{font-size:13px;gap:8px;}
+    .reg-groupe-nom{font-size:var(--t-2);gap:8px;}
     .reg-nuancier{gap:4px;}
     .reg-teinte{width:26px;height:26px;}
   }
@@ -3271,7 +3271,7 @@
   .carnet-rech-champ{
     width:100%;min-height:46px;
     border:1px solid var(--trait);border-radius:var(--r-m);background:var(--s2);color:var(--ink);
-    font-family:inherit;font-size:14px;font-weight:700;padding:0 13px;
+    font-family:inherit;font-size:16px;font-weight:700;padding:0 13px;
     appearance:none;-webkit-appearance:none;
   }
   .carnet-rech-champ::-webkit-search-cancel-button{-webkit-appearance:none;}
@@ -3285,20 +3285,20 @@
     font-family:inherit;
   }
   .rech-exo i{flex:none;width:9px;height:9px;border-radius:50%;background:var(--c,var(--dim));}
-  .rech-exo-nom{flex:1;min-width:0;font-size:13.5px;font-weight:800;}
+  .rech-exo-nom{flex:1;min-width:0;font-size:var(--t-2);font-weight:700;}
   .rech-exo-info{
-    flex:none;font-size:11px;font-weight:700;color:var(--dim);
-    letter-spacing:.02em;font-variant-numeric:tabular-nums;
+    flex:none;font-size:var(--t-1);font-weight:700;color:var(--dim);
+    letter-spacing:0;font-variant-numeric:tabular-nums;
   }
   .rech-vide{
     padding:14px;border:1px dashed var(--trait2);border-radius:var(--r-m);
-    font-size:13px;line-height:1.5;color:var(--dim);text-align:center;
+    font-size:var(--t-2);line-height:1.5;color:var(--dim);text-align:center;
   }
   #calVues{margin-bottom:12px;}
 
   /* Le schema du recap : de face et de dos, et le detail sous chaque groupe. */
   .muscle-svg{flex:none;}
-  .muscle-sous{display:flex;flex-wrap:wrap;gap:2px 10px;margin:-4px 0 2px 22px;font-size:12px;color:var(--dim);}
+  .muscle-sous{display:flex;flex-wrap:wrap;gap:2px 10px;margin:-4px 0 2px 22px;font-size:var(--t-2);color:var(--dim);}
   .muscle-sous b{color:var(--ink);font-weight:700;font-variant-numeric:tabular-nums;}
   @media (max-width:380px){ .muscle-body{flex-direction:column;align-items:stretch;} .muscle-svg{align-self:center;} }
 
@@ -3318,6 +3318,114 @@
     .stat-tile{min-width:0;padding-left:8px;padding-right:4px;}
     .stats-row .stat-label{letter-spacing:0;}
   }
+  /* ---- Echelle typographique (15/11/2026) ----------------------------- */
+  /* Six tailles, trois graisses, trois interlettrages : chaque texte de
+     l'app prend la marche la plus proche de sa taille d'origine (29 tailles
+     avant, de 8 a 42 px). Les champs de la garde iOS ne sont jamais touches.
+     --t-1 etiquette 11 / --t-2 texte 13 / --t-3 fort 15 / --t-4 chiffre 18 /
+     --t-5 titre 24 / --t-6 grand chiffre 40. Graisses : 400 texte, 700 fort,
+     800 titres et chiffres (a partir de --t-4). Interlettrage : .08em sur les
+     etiquettes de 11 px, .04em sur les autres capitales, -.02em sur les
+     titres, rien ailleurs. Une taille qui change se change ici, pas en bas. */
+  :root{--t-1:11px;--t-2:13px;--t-3:15px;--t-4:18px;--t-5:24px;--t-6:40px;}
+  .accueil-ou,.admin-action,.admin-badge,.admin-bloc h3,.admin-carte-tete,.admin-ctx,
+  .admin-filtre,.admin-ligne-chiffres,.admin-tuile-lib,.alias-non,.apprendre-sous,.badge,
+  .bilan-bloc-note,.bilan-sens,.brand-badge,.btn-mot u,.btn-today,.bulle-quand,.bulle-tag,
+  .cal-legende,.coach-code-aide,.coache-action,.coache-badge,.coache-chiffres,.compteur-fil,
+  .conv-compte,.conv-jour,.conv-quand,.conv-role,.cycle-choix i,.ex-cible-raison,.exo-jour-date,
+  .exo-jour-note,.exo-note,.exo-periode,.exo-record-reps,.fiche-cycle,.fiche-defaut,
+  .fiche-delta,.fiche-quand,.fiche-serie.vide,.fin-faite-heure,.fin-faite-tag,.heat-legend,
+  .lect-date,.lect-serie,.legal-footer .sep,.legal-footer a,.legal-footer button,.lien-savoir,
+  .muscle-repere,.notif-quand,.notif-type,.ordre-fleche,.outil-lien span,.outils-planning-tete,
+  .pg-qui span,.pg-serie,.pg-sous,.recap-chart-empty,.recap-name .chev,.repos-mot,.retour-diag,
+  .retour-mien-tete,.retour-quand,.retour-reste,.retour-type,.seance-badge,.seance-chiffres,
+  .seance-chip,.seance-quand,.seance-tete-cycle,.seg-btn,.serie-disques-barre,.sheet-label,
+  .suggest-tete,.superset-tag,.vue-sous-titre{font-size:var(--t-1);}
+  .accueil-marque .wm-app,.accueil-sous,.admin-corps,.admin-ligne-nom,.admin-vide,.alias-choix,
+  .alias-prompt .alias-question,.alias-prompt p,.apprendre-carte span,.apprendre-liste span,
+  .apprendre-note,.attente-texte,.barre-passer,.bilan-alerte,.bilan-date,.bilan-ligne b,
+  .bilan-ligne span,.bilan-sous,.bilan-volume-unite,.btn-add-serie,.btn-add-note,
+  .btn-ajout-jour,.btn-chrono,.btn-comme-avant,.btn-mot,.btn-mot q,.btn-ordre,.btn-partage,
+  .btn-recap-jour,.btn-refaire-quoi,.btn-refaire-titre,.btn-reprendre,.btn-retour,.btn-sheet,
+  .btn-superset,.bulle-corps,.cal-resume,.coach-etat,.conv-aide,.conv-apercu,.conv-ferme,
+  .conv-qui,.cycle-champ,.cycle-choix,.empty-state,.ex-menu-item,
+  .ex-prev-note,.fiche-exo-note,.lect-note,.exo-jour-serie,.exo-signal-raison,.exo-signal-tete,
+  .fiche-mot,.fiche-serie,.fil-vide,.fin-revoir,.heures-duree,.lect-nom,.lien-discret,
+  .mot-champ,.muscle-name,.muscle-val,.notif-corps,.ordre-nom i,.pg-ami,.pg-ami .pg-avatar,
+  .pg-demande,.pg-exo-nom,.pg-groupe,.pg-ligne,.pg-mot,.pg-quoi,.recap-label,.recap-name,
+  .retour-mien-corps,.retour-seance,.seance-crayon,.seance-exos,.seance-quand,.seances-cible,
+  .seances-vide,.serie-disques,.serie-note-fleche,.serie-num,.serie-prec,.serie-unite,
+  .sheet-check,.sheet-etat,.sheet-msg,.sheet-note,.sheet-stat,.suggest-btn,.toast,.vue-tete p{font-size:var(--t-2);}
+  .accueil-titre,.admin-tete h2,.apprendre-carte strong,.apprendre-liste strong,
+  .apprendre-tete p,.barre-compteurs,.barre-defile,.bilan-mot,.btn-add,.btn-chrono.en-cours,
+  .btn-fin,.cal-case .cal-num,.coache-nom,.col-prec-lien i,.conv-fil .bulle-corps,.conv-nom,
+  .ex-card[data-mode="temps"] .step-btn,.ex-card[data-mode="cardio"] .step-btn,.ex-cible-copie,
+  .ex-cible-val,.exo-record-poids,.fiche-exo-nom,.loader-texte,.outil-lien strong,.pg-avatar,
+  .pg-chiffre b,.pg-qui b,.recap-value,.seance-exos,.seance-tete-nom s,.seance-titre,
+  .serie-disques-txt b,.volume-unit{font-size:var(--t-3);}
+  .bilan-tuile b,.cal-num,.conv-avatar,.ex-menu-btn,.exo-jour-fleche,.fiche-titre-champ,
+  .icon-btn,.pg-ranger,.pg-titre,.seance-fleche,.serie-check,.step-btn{font-size:var(--t-4);}
+  .accueil-marque,.admin-tuile-val,.apprendre-tete h2,.barre-compteurs b,.bilan-question,
+  .bilan-titre,.brand-btn,.exo-nom,.fiche-titre,.repos-temps,.retour-fleche,.stat-num{font-size:var(--t-5);}
+  .bilan-volume-num,.volume-num{font-size:var(--t-6);}
+  .attente-texte,.barre-passer{font-weight:400;}
+  .accueil-marque .wm-app,.accueil-ou,.accueil-titre,.admin-action,.admin-badge,.admin-bloc h3,
+  .admin-carte-tete,.admin-filtre,.admin-tete h2,.admin-tuile-lib,.alias-choix,.alias-non,
+  .alias-prompt .alias-question,.apprendre-carte strong,.apprendre-liste strong,.apprendre-sous,
+  .barre-compteurs,.barre-defile,.bilan-bloc-tete,.bilan-ligne b,.bilan-sens,.bilan-tag,
+  .bilan-tuile span,.bilan-volume-unite,.brand-badge,.brand-mark .wm-app,.btn-add,
+  .btn-add-serie,.btn-add-note,.btn-ajout-jour,.btn-chrono,.btn-comme-avant,.btn-fin,.btn-mot,
+  .btn-ordre,.btn-partage,.btn-recap-jour,.btn-refaire-quoi,.btn-reprendre,.btn-retour,
+  .btn-sheet,.btn-superset,.btn-today,.bulle-tag,.cal-entete,.cal-jour,.coache-action,
+  .coache-badge,.coache-nom,.col-prec-lien,.compteur-fil,.conv-compte,.conv-jour,.conv-nom,
+  .conv-role,.cycle-champ,.cycle-choix,.ex-cible-copie,.ex-cible-tag,.ex-cible-val,
+  .ex-groupe-chip,.ex-menu-item,.ex-prev-tete,.exo-bloc-titre,.exo-groupe,.exo-jour-date,
+  .exo-jour-serie,.exo-periode,.exo-record-poids,.exo-record-reps,.exo-signal-tete,.fiche-cycle,
+  .fiche-exo-groupe,.fiche-exo-nom,.fiche-quand,.fiche-serie,.fin-faite-tag,.fin-revoir,
+  .heat-title,.hero-kicker,.hero-tag,.lect-date,.lect-nom,.lien-discret,.lien-savoir,
+  .loader-texte,.muscle-title,.muscle-val,.notif-type,.ordre-nom b,.ordre-nom i,
+  .outil-lien strong,.outils-planning-tete,.pg-avatar,.pg-chiffre,.pg-exo-nom,
+  .pg-jour-date,.pg-exo-groupe,.pg-label,.pg-ligne i,.pg-qui b,.pg-quoi,.pg-reaction,.pg-rompre,
+  .pg-serie,.recap-label,.recap-section-title,.recap-value,.repos-mot,.retour-diag,
+  .retour-mien-tete,.retour-seance,.retour-type,.seance-badge,.seance-chip,.seance-creer-label,
+  .seance-quand,.seance-tete-cycle,.seance-titre,.seg-btn,.serie-disques,.serie-disques-barre,
+  .serie-disques-txt b,.serie-note-fleche,.serie-num,.serie-prec,.serie-repos-champ > span,
+  .serie-unite,.series-tete,.sheet-etat,.sheet-label,.sheet-stat,.stat-label,.suggest-tete,
+  .superset-tag,.toast,.topbar-tab,.volume-label,.volume-unit,.vue-sous-titre,.week-label{font-weight:700;}
+  .accueil-titre,.apprendre-liste strong,.ex-cible-val,.exo-record-poids,.seance-titre{letter-spacing:0;}
+  .admin-tete h2,.apprendre-carte strong,.bilan-volume-unite,.btn-add,
+  .btn-add-serie,.btn-add-note,.btn-ajout-jour,.btn-chrono,.btn-comme-avant,.btn-fin,.btn-mot,
+  .btn-ordre,.btn-partage,.btn-recap-jour,.btn-refaire-quoi,.btn-reprendre,.btn-retour,
+  .btn-sheet,.btn-superset,.cycle-choix,.ex-menu-item,.exo-signal-tete,.fin-revoir,
+  .lien-discret,.outil-lien strong,.recap-label,.retour-seance,.seance-quand,
+  .serie-disques-txt b,.serie-num,.sheet-head h2,.sheet-stat,.topbar-tab,.week-label{letter-spacing:.04em;}
+  .accueil-ou,.admin-action,.admin-badge,.admin-bloc h3,.admin-carte-tete,.admin-filtre,
+  .admin-tuile-lib,.alias-non,.apprendre-sous,.bilan-bloc-tete,.bilan-sens,.bilan-tag,
+  .bilan-tuile span,.btn-mot u,.btn-today,.bulle-quand,.bulle-tag,.cal-entete,.cal-jour,
+  .coache-action,.coache-badge,.col-prec-lien,.conv-jour,.conv-role,.cycle-choix i,
+  .ex-cible-tag,.ex-groupe-chip,.ex-prev-tete,.exo-bloc-titre,.exo-groupe,.exo-jour-date,
+  .exo-periode,.exo-record-reps,.fiche-cycle,.fiche-exo-groupe,.fiche-quand,.fiche-serie.vide,
+  .fin-faite-tag,.heat-title,.hero-kicker,.hero-tag,.lect-date,
+  .legal-footer a,.legal-footer button,.lien-savoir,.muscle-title,.notif-type,.ordre-nom b,
+  .outils-planning-tete,.pg-chiffre,.pg-jour-date,.pg-exo-groupe,.pg-label,.pg-ligne i,
+  .pg-reaction,.pg-rompre,.pg-sous,.recap-freq,.recap-section-title,.repos-mot,.retour-diag,
+  .retour-mien-tete,.retour-type,.seance-badge,.seance-chiffres,.seance-chip,
+  .seance-creer-label,.seance-quand,.seance-tete-cycle,.seg-btn,
+  .serie-card[data-type] .serie-num,.serie-disques-barre,.serie-repos-champ > span,.series-tete,
+  .sheet-label,.stat-label,.suggest-tete,.superset-tag,.volume-label,.vue-sous-titre{letter-spacing:.08em;}
+  .accueil-marque,.apprendre-tete h2,.barre-compteurs b,.bilan-question,.bilan-titre,
+  .bilan-tuile b,.bilan-volume-num,.brand-mark,.day-panel-header h2,.exo-nom,.fiche-titre,
+  .seance-tete-nom,.stat-num,.volume-num,.vue-tete h2{letter-spacing:-.02em;}
+  /* Dans une carte etroite (superset a 320 px), les trois boutons de la ligne
+     redescendent d'une marche, comme avant : sinon ils debordent. */
+  @container (max-width:310px){
+    .btn-add-serie,.btn-add-note,.btn-chrono,.btn-comme-avant{font-size:var(--t-1);letter-spacing:.04em;}
+  }
+  /* Mesure a 375 px apres la pose de l'echelle : la date de la derniere fois
+     (« 8 NOV. ») depassait sa colonne de 2 px avec .08em ; le chevron et le
+     crayon, eux, sont des signes, pas des mots. */
+  .col-prec-lien{letter-spacing:0;padding:0 2px;}
+  .col-prec-lien i,.seance-crayon{letter-spacing:0;}
 </style>
 </head>
 

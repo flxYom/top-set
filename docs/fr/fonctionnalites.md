@@ -106,6 +106,17 @@ deux images d'ambiance générées avec Higgsfield (Seedream 5 Lite), en WebP de
 chargement. Les choix, les sources et ce qui a été écarté (Pinterest, Canva) :
 [`docs/design/direction-refonte-2026-09.md`](../design/direction-refonte-2026-09.md).
 
+**L'échelle typographique (15 novembre 2026).** Six tailles (11, 13, 15, 18,
+24 et 40 px), trois graisses (400 pour le texte, 700 pour ce qui est fort, 800
+pour les titres et les chiffres) et trois interlettrages, posés d'un bloc dans
+la couche de refonte : chaque texte prend la marche la plus proche de sa
+taille d'origine, qui en comptait 29 de 8 à 42 px. Mesuré à 375 px, l'écran de
+séance passe de 14 tailles à 6 et plus aucun texte ne descend sous 11 px sur
+les quatre onglets. Les champs de saisie gardent leurs 16 px (Safari zoome en
+dessous, et le champ de recherche du carnet, qui était à 14, y passe aussi) ;
+le nom de la séance et les chiffres du plein écran gardent leur taille fluide.
+Le détail des marches et des exceptions : `DESIGN_SYSTEM.md`, section 3.
+
 **La loupe des onglets, les couleurs des groupes, les attentes (septembre
 2026).** Sous l'onglet actif, une pièce de verre (`#ongletLoupe`, placée par
 `placerLoupe()` à chaque `montrerVue`) : un reflet en haut, un liseré clair à
