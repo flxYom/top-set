@@ -119,6 +119,13 @@ folded), the set number, the hero tag and the calendar cell lose their border,
 and both the dot grid behind the app and the concrete texture of the volume
 block (35 KB of base64) are gone.
 
+**Mechanics (15 November 2026).** No more grey browser flash on touch: every
+button darkens while pressed (tabs keep their own feedback, the loupe), and a
+long press no longer opens the iOS selection callout. The sheet arrives instead
+of appearing: the scrim fades in, the card rises 18 px; the card's ⋯ menu
+settles from below like the summary does. Everything stops with "reduce
+motion".
+
 **The tab lens, muscle-group colours, waiting states (September 2026).** Under
 the active tab sits a piece of glass (`#ongletLoupe`, placed by `placerLoupe()`
 on every `montrerVue`): a highlight on top, a barely visible light rim.

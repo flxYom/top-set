@@ -1644,5 +1644,16 @@ ok('les boutons d action sont en aplat : plus de degrade sur ajouter, terminer, 
    !/\.btn-add,\.btn-sheet\.primary\{[^}]*gradient/.test(REFONTE) && !/\.btn-fin\{[^}]*gradient/.test(REFONTE)
    && !/\.retour-seance\{[^}]*gradient/.test(REFONTE) && !/\.accueil-marque\{[^}]*gradient/.test(REFONTE));
 
+console.log('\n== 41. La mecanique (15/11) : le toucher repond, les surfaces arrivent ==');
+ok('plus de flash gris du navigateur au toucher', /\*\{-webkit-tap-highlight-color:transparent;\}/.test(REFONTE));
+ok('un retour de pression universel sur les boutons, hors onglets',
+   /button:active:not\(:disabled\):not\(\.topbar-tab\):not\(\.bulle-onglet\)\{filter:brightness\(\.86\);\}/.test(REFONTE));
+ok('la feuille arrive : voile en fondu, carte qui monte',
+   /@keyframes feuille-voile\{/.test(REFONTE) && /@keyframes feuille-monte\{/.test(REFONTE)
+   && /\.sheet\{animation:feuille-voile/.test(REFONTE) && /\.sheet-card\{animation:feuille-monte/.test(REFONTE));
+ok('le menu de la carte se pose avec l animation du bilan', /\.ex-card\.menu-ouvert \.ex-menu\{animation:poser/.test(REFONTE) && /@keyframes poser\{/.test(HTML));
+ok('tout s arrete avec « reduire les animations »',
+   /prefers-reduced-motion:reduce\)\{\s*\.sheet,\.sheet-card,\.ex-card\.menu-ouvert \.ex-menu\{animation:none;\}/.test(REFONTE));
+
 console.log(`\n${pass} reussis, ${fail} echoues`);
 process.exit(fail ? 1 : 0);

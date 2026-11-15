@@ -3421,6 +3421,21 @@
 :root{--r-xs:6px;}
 .btn-comme-avant,.btn-ajout-jour,.coach-code,.fin-faite,.conv-ferme{border-style:solid;}
 .serie-card[data-type="echauffement"] .serie-num{border-color:var(--trait2);}
+/* ---- Mecanique (15/11/2026) : le toucher repond, les surfaces arrivent ---- */
+/* Plus de flash gris du navigateur au toucher : chaque bouton a son propre retour. */
+*{-webkit-tap-highlight-color:transparent;}
+button{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;}
+/* Un retour de pression universel, instantane. Les onglets ont le leur (la loupe). */
+button:active:not(:disabled):not(.topbar-tab):not(.bulle-onglet){filter:brightness(.86);}
+/* La feuille arrive : le voile en fondu, la carte monte de 18 px. Le menu de la carte se pose comme un resultat. */
+.sheet{animation:feuille-voile .2s ease both;}
+.sheet-card{animation:feuille-monte .3s cubic-bezier(.2,.9,.3,1) both;}
+@keyframes feuille-voile{from{opacity:0;}to{opacity:1;}}
+@keyframes feuille-monte{from{opacity:0;transform:translateY(18px) scale(.985);}to{opacity:1;transform:none;}}
+.ex-card.menu-ouvert .ex-menu{animation:poser .18s ease both;}
+@media (prefers-reduced-motion:reduce){
+  .sheet,.sheet-card,.ex-card.menu-ouvert .ex-menu{animation:none;}
+}
 </style>
 </head>
 

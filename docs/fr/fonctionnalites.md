@@ -130,6 +130,13 @@ valeurs éparses repliées), le numéro de série, le tag du hero et la case du
 calendrier perdent leur bordure, et la trame de points derrière l'application
 comme la texture béton du bloc volume (35 ko de base64) disparaissent.
 
+**La mécanique (15 novembre 2026).** Plus de flash gris du navigateur au
+toucher : chaque bouton s'assombrit tant qu'il est pressé (les onglets gardent
+leur propre retour, la loupe), et un appui long n'ouvre plus la bulle de
+sélection d'iOS. La feuille arrive au lieu d'apparaître : le voile en fondu, la
+carte qui monte de 18 px ; le menu ⋯ de la carte se pose depuis le bas comme le
+bilan. Tout s'arrête avec « réduire les animations ».
+
 **La loupe des onglets, les couleurs des groupes, les attentes (septembre
 2026).** Sous l'onglet actif, une pièce de verre (`#ongletLoupe`, placée par
 `placerLoupe()` à chaque `montrerVue`) : un reflet en haut, un liseré clair à

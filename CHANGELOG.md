@@ -9,6 +9,15 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ## [Unreleased]
 
+### Changed — touch answers, surfaces arrive (2026-11-15)
+
+- No more grey browser flash on touch: every button darkens while pressed
+  instead (tabs keep their own feedback, the loupe). Buttons no longer show
+  the iOS text callout on long press.
+- The sheet arrives: the scrim fades in, the card rises 18 px. The card's
+  ⋯ menu settles from below like a result. Everything stops with "reduce
+  motion". Service worker v67, gabarits §41.
+
 ### Changed — fewer reliefs, one family of edges (2026-11-15)
 
 - The glow only stays under the buttons that commit: ADD, RESUME and the
