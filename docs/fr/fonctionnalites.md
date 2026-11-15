@@ -117,6 +117,19 @@ dessous, et le champ de recherche du carnet, qui était à 14, y passe aussi) ;
 le nom de la séance et les chiffres du plein écran gardent leur taille fluide.
 Le détail des marches et des exceptions : `DESIGN_SYSTEM.md`, section 3.
 
+**La sobriété (15 novembre 2026).** Chaque relief ne garde qu'un rôle. La
+lueur orange ne reste que sous les boutons qui engagent (ajouter, reprendre, le
+bouton plein écran) et la verte sous TERMINER ; les boutons sont en aplat, les
+dégradés restent aux teintes de groupe, au voile du hero et au halo de la page.
+Le flou ne reste que sur la loupe des onglets, la barre iOS, la topbar bureau
+et les cartes plein écran. Les pointillés ne signalent plus qu'un emplacement
+vide : ajouter une série devient un bouton plein teinté d'orange, les autres
+(note, superset, partager, comme avant, suggestion, cycle) des boutons
+fantômes. Les rayons passent par cinq jetons (6, 10, 14, 20 et 26 px, 38
+valeurs éparses repliées), le numéro de série, le tag du hero et la case du
+calendrier perdent leur bordure, et la trame de points derrière l'application
+comme la texture béton du bloc volume (35 ko de base64) disparaissent.
+
 **La loupe des onglets, les couleurs des groupes, les attentes (septembre
 2026).** Sous l'onglet actif, une pièce de verre (`#ongletLoupe`, placée par
 `placerLoupe()` à chaque `montrerVue`) : un reflet en haut, un liseré clair à

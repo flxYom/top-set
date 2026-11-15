@@ -107,6 +107,18 @@ and no text drops below 11 px on any of the four tabs. Input fields keep their
 14, now gets it too); the session name and the full-screen numbers keep their
 fluid size. Steps and exceptions, in French: `DESIGN_SYSTEM.md`, section 3.
 
+**Sobriety (15 November 2026).** Each relief keeps one role. The orange glow
+only stays under the buttons that commit (add, resume, the full-screen button)
+and the green one under FINISH; buttons are flat colour, gradients stay for the
+group tints, the hero veil and the page halo. Blur only remains on the tab
+loupe, the iOS bar, the desktop topbar and the full-screen cards. Dashed
+borders now only mark an empty slot: add-set becomes a tinted solid button,
+the others (note, superset, share, as before, suggestion, cycle) ghost buttons.
+Radii go through five tokens (6, 10, 14, 20 and 26 px, 38 stray values
+folded), the set number, the hero tag and the calendar cell lose their border,
+and both the dot grid behind the app and the concrete texture of the volume
+block (35 KB of base64) are gone.
+
 **The tab lens, muscle-group colours, waiting states (September 2026).** Under
 the active tab sits a piece of glass (`#ongletLoupe`, placed by `placerLoupe()`
 on every `montrerVue`): a highlight on top, a barely visible light rim.

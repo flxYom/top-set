@@ -1626,5 +1626,23 @@ ok('le bloc de l echelle vient apres la garde iOS et garde la marche basse des c
 ok('le champ de recherche du carnet fait 16 px : Safari ne zoome pas dedans',
    /\.carnet-rech-champ\{[^}]*font-size:16px/.test(REFONTE));
 
+console.log('\n== 40. La sobriete (15/11) : moins de reliefs, une seule famille de bords ==');
+ok('plus de texture beton : ni --img-concrete ni .volume-tex, dans la page comme dans app.js',
+   !HTML.includes('img-concrete') && !HTML.includes('volume-tex') && !SRC.includes('volume-tex'));
+ok('plus de trame de points derriere l application',
+   !/\.app\{[^}]*background-image/.test(HTML));
+const lueurs = (REFONTE.match(/box-shadow:var\(--lueur\)/g) || []).length;
+ok('la lueur ne reste que sous quatre regles : ajouter, reprendre (x2), CTA plein ecran', lueurs === 4, String(lueurs));
+const pointilles = (REFONTE.match(/dashed/g) || []).length;
+ok('un seul pointille dans la refonte, le carnet vide ; les autres emplacements vides viennent de la base', pointilles === 1, String(pointilles));
+const rayonsPx = [...new Set([...REFONTE.matchAll(/border-radius:(\d+px)(?=[;}])/g)].map(m => m[1]))].filter(v => !['3px','4px','5px','999px'].includes(v));
+ok('les rayons de la refonte passent par les jetons --r-xs/--r-s/--r-m/--r-l/--r-xl', rayonsPx.length === 0, rayonsPx.join(' '));
+ok('le jeton --r-xs vaut 6 px', /--r-xs:6px/.test(REFONTE));
+const flous = (REFONTE.match(/backdrop-filter:[^;]*blur\(/g) || []).length / 2;
+ok('cinq regles de flou au plus : loupe, barre iOS, topbar bureau, cartes plein ecran', flous <= 5, String(flous));
+ok('les boutons d action sont en aplat : plus de degrade sur ajouter, terminer, reprendre, la marque',
+   !/\.btn-add,\.btn-sheet\.primary\{[^}]*gradient/.test(REFONTE) && !/\.btn-fin\{[^}]*gradient/.test(REFONTE)
+   && !/\.retour-seance\{[^}]*gradient/.test(REFONTE) && !/\.accueil-marque\{[^}]*gradient/.test(REFONTE));
+
 console.log(`\n${pass} reussis, ${fail} echoues`);
 process.exit(fail ? 1 : 0);

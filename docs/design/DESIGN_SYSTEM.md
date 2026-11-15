@@ -148,15 +148,33 @@ listés dans la garde iOS. En dessous de 16 px, Safari zoome.
 La profondeur vient des surfaces (`--s1` → `--s3`), pas des bordures épaisses
 ni des ombres décalées.
 
-**Salle noire, en plus sobre (décision du 13/09/2026).** On garde la refonte,
-mais on réduit ce qui est devenu systématique :
-- les dégradés ;
-- les lueurs ;
-- le flou ;
-- les boutons en pointillés ;
-- les points de fond.
+**Salle noire, en plus sobre (décidé le 13/09/2026, posé le 15/11/2026).**
+On garde la refonte, mais chaque relief n'a plus qu'un rôle :
+- **la lueur** (`--lueur`) ne reste que sous les boutons qui engagent :
+  AJOUTER (`.btn-add`, `.btn-sheet.primary`), REPRENDRE (`.retour-seance`) et
+  le CTA plein écran (`.fs-cta`) ; TERMINER garde sa lueur verte. Plus de lueur
+  sous la tête de fiche, la marque d'accueil, l'icône plein écran ou le bloc
+  volume ;
+- **les dégradés** restent aux teintes de groupe (`.ex-head`, `.seance-tete`),
+  au voile du hero et au halo de la page. Les boutons sont en aplat
+  (`var(--orange)`, `var(--ok)`, `var(--yellow)`) ;
+- **le flou** ne reste que là où il porte : la loupe des onglets, la barre iOS,
+  la topbar bureau et les cartes plein écran. Plus de flou sur le tag du hero,
+  le voile de la feuille ni la saisie du convertisseur ;
+- **les pointillés** ne disent plus qu'une chose : un emplacement vide (série
+  d'échauffement, fiche vide, carnet vide, séances vides). Les boutons
+  (ajouter une série, une note, un superset, partager, comme avant, suggestion,
+  cycle) sont pleins : orange teinté pour la série, fantôme `--trait` pour les
+  autres ;
+- **les rayons** passent par cinq jetons : `--r-xs` 6 (chips), `--r-s` 10,
+  `--r-m` 14, `--r-l` 20, `--r-xl` 26, plus 999px et 50 %. Les 12/16/18 px
+  épars de la refonte ont été repliés dessus (38 règles) ;
+- **trois éléments sans bordure** : le numéro de série, le tag du hero, la case
+  du calendrier (le jour courant garde son contour orange) ;
+- **la trame de points** derrière l'application et **la texture béton** du bloc
+  volume (35 ko de base64) sont supprimées.
 
-Le détail sera tranché en phase 2.
+Garde : gabarits §40.
 
 **Le verre : une seule exception, la loupe des onglets** (décision du
 13/09/2026). Aucun nouvel élément en verre ailleurs.

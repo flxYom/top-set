@@ -3905,7 +3905,7 @@
     }
 
     var vol = formatVolume(data.totalVolume);
-    volEl.innerHTML = '<div class="volume-block"><div class="volume-tex"></div><div class="volume-inner">'
+    volEl.innerHTML = '<div class="volume-block"><div class="volume-inner">'
       + '<div style="display:flex;flex-direction:column;gap:3px;">'
       +   '<span class="volume-label">VOLUME LEVÉ</span>'
       +   '<div style="display:flex;align-items:baseline;gap:5px;"><span class="volume-num">'+vol.num+'</span><span class="volume-unit">'+vol.unit+'</span></div>'

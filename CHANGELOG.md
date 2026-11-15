@@ -9,6 +9,25 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ## [Unreleased]
 
+### Changed — fewer reliefs, one family of edges (2026-11-15)
+
+- The glow only stays under the buttons that commit: ADD, RESUME and the
+  full-screen CTA (FINISH keeps its green one). Gone from the sheet header,
+  the home mark, the full-screen icon and the volume block.
+- Buttons are flat colour instead of gradients; group tints, the hero veil and
+  the page halo stay.
+- Blur only where it carries: the tab loupe, the iOS bar, the desktop topbar
+  and the full-screen cards. The hero tag, the sheet scrim and the converter
+  input lose theirs.
+- Dashed borders now mean one thing, an empty slot (warm-up set, empty sheet,
+  empty notebook). Add-set is a tinted solid button, add-note, superset, share,
+  as-before, suggestion and cycle are ghost buttons.
+- Border radii fold onto five tokens (6/10/14/20/26 px); 38 stray values in
+  the redesign layer were replaced. Set number, hero tag and calendar cell lose
+  their border.
+- The dot grid behind the app and the concrete texture of the volume block
+  (35 KB of base64) are removed. Service worker v66, gabarits §40.
+
 ### Changed — one type scale (2026-11-15)
 
 The visual foundation the September audit asked for and nobody had built. All
