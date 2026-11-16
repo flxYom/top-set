@@ -9,6 +9,29 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ## [Unreleased]
 
+### Added — bodyweight and measurements (2026-11-16)
+
+- One weigh-in per day: a date, a weight and, optionally, waist, arm and
+  thigh in cm. PROGRÈS ends with it, after everything else: a single
+  quiet line (`+ NOTER MON POIDS DU CORPS`) until the first weigh-in, then a
+  neutral card — last weight, change since the last weigh-in before the
+  period (never green or orange: gaining can be the goal), and the curve of
+  the period. The sheet corrects a day from its history and deletes in two
+  taps. An exercise page adds one line, `1RM estimé : 1,25 × ton poids du
+  corps`, when a weigh-in lies within 90 days of its last session; without
+  one, nothing changes. The rules (`peseeProche`, `forceRelative`,
+  `evolutionPoids`) live in `intelligence.js` with 16 tests.
+- Stored locally under `topset_pesees` and, with an account, in a new
+  `pesees` table: owner-only RLS and no coach policy (unlike sessions), no
+  admin function reads it, bounds in the table (20–400 kg, 10–300 cm), a
+  push that skips bad dates and out-of-range values instead of failing.
+  Never part of a share or of the text for an AI. Same collection sync,
+  account switch and JSON backup as templates. Privacy policy 3.4 says
+  what is stored and who sees it. SQL in `supabase/modeles-et-pesees.txt`
+  (section 16), tested on PGlite (`test-rls.mjs` §16); the paste file was
+  also run twice over the production schema. Service worker v80,
+  gabarits §54.
+
 ### Added — session templates (2026-11-16)
 
 - Save any session as a named template ("Push A"), optionally filed in a

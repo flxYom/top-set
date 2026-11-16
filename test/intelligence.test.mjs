@@ -656,6 +656,32 @@ titre('Sur une periode : progression et records battus (16/11/2026)');
 }
 
 // ----------------------------------------------------------------
+console.log('\n== Poids du corps (16/11/2026) ==');
+{
+  const P = [{ date: '2026-09-01', poids: 84 }, { date: '2026-10-01', poids: 82.6 }, { date: '2026-10-20', poids: 82 },
+             { date: '2026-11-03', poids: 81.4 }, { date: '2026-11-10', poids: 81.9 },
+             { date: '2026-11-12', poids: 0 }, { date: 'hier', poids: 80 }, { date: '2026-11-13', poids: 81, supprime: true }];
+  egal('la pesee la plus proche, apres comme avant', TS.peseeProche(P, '2026-11-05').date, '2026-11-03');
+  egal('a egalite de distance, celle d avant', TS.peseeProche([{ date: '2026-11-01', poids: 80 }, { date: '2026-11-05', poids: 82 }], '2026-11-03').poids, 80);
+  egal('rien a moins de 90 jours : pas de pesee', TS.peseeProche(P, '2027-06-01'), null);
+  egal('la limite se regle', TS.peseeProche(P, '2026-11-20', 5), null);
+  egal('un poids nul, une date illisible, une pierre tombale sont ignores', TS.peseeProche(P, '2026-11-13').date, '2026-11-10');
+  egal('120 kg pour 80 kg : 1,5 fois', TS.forceRelative(120, 80), 1.5);
+  egal('arrondi au centieme', TS.forceRelative(100, 81.4), 1.23);
+  egal('sans poids du corps : rien', TS.forceRelative(100, null), null);
+  const e = TS.evolutionPoids(P, '2026-11-01', '2026-11-30');
+  egal('le dernier de la periode', e.dernier.poids, 81.9);
+  egal('compare au dernier d avant la periode', e.reference.date, '2026-10-20');
+  egal('l ecart au dixieme', e.ecart, -0.1);
+  egal('les points de la periode, dans l ordre', e.points.join(','), '81.4,81.9');
+  const vide = TS.evolutionPoids(P, '2026-12-01', '2026-12-31');
+  egal('une periode sans pesee n a ni dernier ni ecart', vide.dernier === null && vide.ecart === null, true);
+  egal('mais garde la derniere connue', vide.dernierConnu.poids, 81.9);
+  const debut = TS.evolutionPoids(P.slice(0, 2), '2026-01-01', '2026-12-31');
+  egal('sans rien avant : compare a la premiere de la periode', debut.ecart, -1.4);
+  egal('une seule pesee : pas d ecart', TS.evolutionPoids([{ date: '2026-11-03', poids: 81 }], '2026-11-01', '2026-11-30').ecart, null);
+}
+// ----------------------------------------------------------------
 console.log('\n' + '='.repeat(52));
 if (echecs.length) {
   console.log(passes + ' tests passes, ' + echecs.length + ' ECHEC(S) :');

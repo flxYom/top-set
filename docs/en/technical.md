@@ -138,10 +138,10 @@ cd supabase/test && npm install && npm test
 `test-rls.mjs` attacks the rules from the `authenticated` role, as the browser
 would: writes, replaying a day without duplicates, isolation between users, the
 coach link, messaging, notifications, anonymous visitors, cascade on account
-deletion, session templates (§15).
+deletion, session templates (§15), bodyweight (§16).
 
-**Small collections (2026-11-16).** Session templates follow the account by
-one shared rule, written once in `Sync` (`COLLECTIONS`): marked items are
+**Small collections (2026-11-16).** Session templates and weigh-ins follow
+the account by one shared rule, written once in `Sync` (`COLLECTIONS`): marked items are
 pushed, and the mark only drops once the server agrees and the item has not
 changed; the account's version replaces unmarked items; local-only items are
 marked and go next time. The account is re-read at every launch, then at most

@@ -698,7 +698,7 @@ ok('iPhone : la date du jour se lit, et une seule fois',
      SW.indexOf("if (url.pathname.indexOf('/_vercel/') === 0) return;") > -1);
   const CONF = readFileSync(new URL('confidentialite.html', racine), 'utf8');
   ok('mesure d audience : annoncee par la politique, et l app enregistre sa version',
-     CONF.indexOf('Version 3.3') > -1 && CONF.indexOf('Vercel Web Analytics') > -1 && SRC.indexOf("var VERSION_POLITIQUE = '3.3';") > -1);
+     CONF.indexOf('Version 3.4') > -1 && CONF.indexOf('Vercel Web Analytics') > -1 && SRC.indexOf("var VERSION_POLITIQUE = '3.4';") > -1);
 
   // Les pages legales doivent decrire l'app TELLE QU'ELLE EST. Les amis et le
   // partage existaient depuis des semaines quand la politique affirmait encore
@@ -1858,11 +1858,11 @@ ok('les collections se tirent avant l envoi, et partent avec les journees',
    /\.then\(function\(\)\{ return tirerCollections\(tout\); \}\)\s*\.then\(pousser\)/.test(SRC)
    && /\.then\(function\(\)\{ return pousserCollections\(\); \}\)/.test(SRC) && /&& !collEnAttente\(\)\) return Promise\.resolve\(0\);/.test(SRC));
 ok('un carnet par compte : les modeles et leur file suivent le proprietaire',
-   /modeles:  lesModeles\(\),\s*coll:     m\.coll \|\| \{\},/.test(SRC) && /remplacerModeles\(p\.modeles \|\| \{\}\);/.test(SRC)
+   /modeles:  lesModeles\(\),[\s\S]{0,80}coll:     m\.coll \|\| \{\},/.test(SRC) && /remplacerModeles\(p\.modeles \|\| \{\}\);/.test(SRC)
    && /remplacerModeles\(\{\}\);/.test(SRC) && /m\.depuis = null; m\.coll = \{\};/.test(SRC));
 ok('la sauvegarde JSON porte les modeles, l import ajoute ceux qui manquent',
-   /modeles:modelesVivants\(\) \};/.test(SRC) && /function modelesAbsents\(liste\)/.test(SRC));
-ok('le panneau existe et se ferme avec les autres', /id="modeleSheet"/.test(HTML) && /'iaSheet', 'modeleSheet'\]/.test(SRC));
+   /modeles:modelesVivants\(\)[,\s}]/.test(SRC) && /function modelesAbsents\(liste\)/.test(SRC));
+ok('le panneau existe et se ferme avec les autres', /id="modeleSheet"/.test(HTML) && /'iaSheet', 'modeleSheet'[\],]/.test(SRC));
 ok('son CSS est dans la couche refonte', REFONTE.includes('.modeles-jour{') && REFONTE.includes('.modele-ligne{'));
 // Vu a 320 px le 16/11 : sans borne, le resume d'un modele au nom long
 // faisait defiler toute la page de cote.
@@ -1879,6 +1879,46 @@ ok('le resume d un modele ne pousse jamais la page', REFONTE.includes('.btn-mode
      && !/security definer/i.test(bloc));
   ok('le fichier a coller porte la garde Yom Nutrition et la meme section',
      /aliments_ciqual/.test(T) && T.includes('15. LES MODÈLES DE SÉANCE') && T.includes('create or replace function public.tirer_modeles()'));
+}
+
+console.log('\n== 54. Poids du corps (16/11) ==');
+ok('les pesees vivent sous topset_pesees, bornees comme en base',
+   /var PESEES_KEY = 'topset_pesees';/.test(SRC) && /var kg = borneMesure\(p\.poids, 20, 400, 100\);/.test(SRC)
+   && /borneMesure\(p\[m\.cle\], 10, 300, 10\)/.test(SRC));
+ok('les calculs viennent d intelligence.js', /TS\.evolutionPoids\(liste, debut, fin\)/.test(SRC) && /TS\.peseeProche\(peseesVivantes\(\), derniere\.date\)/.test(SRC)
+   && /TS\.forceRelative\(rm, pc\.poids\)/.test(SRC));
+ok('PROGRES finit par le poids, apres COPIER POUR UNE IA', /id="recapIA">COPIER POUR UNE IA<\/button>\s*<div id="recapPoids"><\/div>\s*<\/section>/.test(HTML));
+ok('sans pesee, une seule ligne', /if \(!liste\.length\)\{\s*return '<button type="button" class="poids-vide" data-action="pesee">/.test(SRC));
+ok('une variation de poids s ecrit en neutre', /\.poids-ecart\{[^}]*color:var\(--ink\)/.test(REFONTE) && !/poids-ecart[^{]*\.(hausse|baisse)/.test(REFONTE));
+ok('la synchro des pesees passe par la regle commune', /pesees: \{\s*pousser:'pousser_pesees', tirer:'tirer_pesees', arg:'p_pesees'/.test(SRC));
+ok('un carnet par compte : les pesees suivent leur proprietaire',
+   /pesees:   lesPesees\(\),/.test(SRC) && /remplacerPesees\(p\.pesees \|\| \{\}\);/.test(SRC) && /remplacerPesees\(\{\}\);/.test(SRC));
+ok('la sauvegarde JSON les porte, l import ajoute les jours absents',
+   /modeles:modelesVivants\(\), pesees:peseesVivantes\(\) \};/.test(SRC) && /function peseesAbsentes\(liste\)/.test(SRC));
+{
+  // Les deux blocs doivent exister (une garde qui lit du vide passe toujours).
+  const ia = corps('function texteSeanceIA', 'function ouvrirIA');
+  const partages = corps('function instantaneExercice', 'function serieTexte');
+  ok('jamais dans un partage ni pour une IA',
+     ia.length > 500 && /function textePeriodeIA/.test(ia) && partages.length > 500 && /function instantaneRecap/.test(partages)
+     && !/peseesVivantes|lesPesees|blocPoids/.test(ia + partages));
+}
+ok('le panneau existe et se ferme avec les autres', /id="peseeSheet"/.test(HTML) && /'modeleSheet', 'peseeSheet'\]/.test(SRC));
+ok('aucune taille de police sur les champs du panneau (garde iOS)', !/\.pesee-(duo|trio) \.sheet-input[^{]*\{[^}]*font-size/.test(REFONTE));
+{
+  const S = lireLF('../supabase/schema.sql');
+  const bloc = (S.split('16. LE POIDS DU CORPS')[1] || '');
+  const T = lireLF('../supabase/modeles-et-pesees.txt');
+  ok('schema.sql : la table pesees, sa RLS, une seule policy (la sienne)',
+     /create table if not exists public\.pesees/.test(bloc) && /alter table public\.pesees enable row level security;/.test(bloc)
+     && (bloc.match(/create policy/g) || []).length === 1 && /using \(auth\.uid\(\) = user_id\) with check \(auth\.uid\(\) = user_id\)/.test(bloc));
+  ok('schema.sql : aucune fonction pesees en SECURITY DEFINER, anon n a rien',
+     !/security definer/i.test(bloc) && /revoke all on public\.pesees from anon;/.test(bloc)
+     && /revoke execute on function public\.pousser_pesees\(jsonb\) from anon, public;/.test(bloc));
+  ok('le fichier a coller porte aussi la section 16', T.includes('16. LE POIDS DU CORPS') && T.includes('create or replace function public.tirer_pesees()'));
+  const CONF = lireLF('../confidentialite.html');
+  ok('la politique dit ce qui est stocke, et que le coach ne le voit pas',
+     /Ton poids du corps<\/strong>, si tu le notes/.test(CONF) && /tes modèles de séance ni ton poids du corps/.test(CONF));
 }
 
 console.log(`\n${pass} reussis, ${fail} echoues`);

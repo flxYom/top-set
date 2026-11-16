@@ -1574,5 +1574,49 @@ console.log('\n== 15. Les modeles de seance : chacun les siens ==');
   await db.query(`delete from public.modeles where user_id = $1 and nom ~ '^m[0-9]+$'`, [A]);
 }
 
+// ------------------------------------------------------------------------
+console.log('\n== 16. Le poids du corps : son auteur, et personne d autre ==');
+{
+  const A = '16161616-1616-4616-8616-161616161601';
+  const B = '16161616-1616-4616-8616-161616161602';
+  await db.query(`insert into auth.users (id, email) values ($1, 'p1@exemple.fr'), ($2, 'p2@exemple.fr')
+                  on conflict do nothing`, [A, B]);
+  await as(A, `select public.pousser_pesees($1::jsonb)`, [JSON.stringify([
+    { date: '2026-11-01', poids: 82.456, taille: 84, bras: 38.25, cuisse: 900 },
+    { date: '2026-11-03', poids: 81.9 },
+    { date: '2026-02-30', poids: 80 },
+    { date: '2099-01-01', poids: 80 },
+    { date: '1999-12-31', poids: 80 },
+    { date: '2026-11-04', poids: 12 },
+    { date: '2026-11-05', poids: '81' },
+    'pas un objet'
+  ])]);
+  const a = (await as(A, `select public.tirer_pesees() p`)).rows[0].p;
+  ok('seules les deux pesees valides sont gardees', a.length === 2, JSON.stringify(a.map(p => p.date)));
+  const p1 = a.find(p => p.date === '2026-11-01');
+  ok('le poids est arrondi au centieme, la mesure au dixieme', p1 && Number(p1.poids) === 82.46 && Number(p1.bras) === 38.3, JSON.stringify(p1));
+  ok('une mesure hors bornes est ignoree, pas la pesee', p1 && p1.cuisse === null && Number(p1.taille) === 84);
+  ok('B ne lit aucune pesee de A', (await as(B, `select public.tirer_pesees() p`)).rows[0].p.length === 0);
+  ok('ni en lisant la table', (await as(B, `select count(*)::int n from public.pesees`)).rows[0].n === 0);
+  await refuse('B ne peut pas ecrire une pesee au nom de A',
+    () => as(B, `insert into public.pesees (user_id, date, poids) values ($1, '2026-11-10', 80)`, [A]));
+  await refuse('anon ne pousse pas de pesee', () => asAnon(`select public.pousser_pesees('[]'::jsonb)`));
+  await refuse('anon ne lit pas de pesee', () => asAnon(`select public.tirer_pesees()`));
+  await refuse('la table refuse 500 kg, meme en direct',
+    () => as(A, `update public.pesees set poids = 500 where date = '2026-11-03'`));
+  await refuse('et une pesee sans poids qui n est pas une pierre tombale',
+    () => as(A, `update public.pesees set poids = null where date = '2026-11-03'`));
+  await refuse('plus de 2000 pesees en un envoi est refuse',
+    () => as(A, `select public.pousser_pesees($1::jsonb)`, [JSON.stringify(Array.from({ length: 2001 }, () => ({ date: '2026-11-03', poids: 80 })))]));
+  // Corriger le meme jour remplace ; supprimer laisse une pierre tombale.
+  await as(A, `select public.pousser_pesees($1::jsonb)`, [JSON.stringify([{ date: '2026-11-03', poids: 81.5 }, { date: '2026-11-01', supprime: true, poids: 82 }])]);
+  const b = (await as(A, `select public.tirer_pesees() p`)).rows[0].p;
+  ok('une seconde pesee le meme jour remplace la premiere', Number(b.find(p => p.date === '2026-11-03').poids) === 81.5 && b.length === 2);
+  const tomb = b.find(p => p.date === '2026-11-01');
+  ok('une pesee supprimee revient en pierre tombale, sans aucune valeur', tomb && tomb.supprime === true && tomb.poids === null && tomb.taille === null);
+  ok('aucune policy d un coach ou d un admin sur les pesees ni les modeles',
+     (await db.query(`select count(*)::int n from pg_policies where schemaname = 'public' and tablename in ('pesees', 'modeles')`)).rows[0].n === 2);
+}
+
 console.log(`\n${pass} reussis, ${fail} echoues`);
 process.exit(fail ? 1 : 0);

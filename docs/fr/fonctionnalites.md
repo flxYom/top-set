@@ -650,6 +650,20 @@ dernière fois, qui se lit et ne recopie rien :
   semaine d'avant) et `↺ REFAIRE MA DERNIÈRE SÉANCE` si ce n'est pas la même,
   avec leur titre ; tout se recopie par `selectionnerSeance`.
 
+**Le poids du corps (16/11/2026).** Une pesée par jour : une date, un poids et,
+si on veut, les tours de taille, de bras et de cuisse. PROGRÈS finit par elle,
+après tout le reste : une seule ligne discrète (`+ NOTER MON POIDS DU
+CORPS`) tant qu'il n'y a pas de pesée, puis une carte neutre — le dernier poids,
+l'écart depuis la dernière pesée d'avant la période, et la courbe de la période.
+Neutre parce qu'une variation de poids n'est ni un progrès ni un recul : on
+peut vouloir en prendre. Le panneau corrige un jour depuis l'historique et
+supprime en deux appuis. La fiche d'un exercice ajoute une ligne,
+`1RM estimé : 1,25 × ton poids du corps`, quand une pesée date de moins de
+90 jours de sa dernière séance (`TS.peseeProche`, `TS.forceRelative`) ; sans
+pesée, elle ne change pas. Les pesées vivent sous `topset_pesees`, suivent le
+compte (table `pesees`) sans qu'un coach ni l'équipe puissent les lire, et ne
+partent ni dans un partage ni dans le texte pour une IA.
+
 **Les modèles de séance (16/11/2026).** Le dernier bouton de la fiche d'une
 séance, `ENREGISTRER COMME MODÈLE`, la garde sous un nom (« Push A ») et, si on
 veut, dans un dossier. Le même nom remplace le modèle existant, ce que le

@@ -279,6 +279,20 @@ de retirer : sur chaque ligne de TOUS et en tête de la fiche. La page vide
 de SUIVIS est une carte pleine, pas un emplacement en pointillés : c'est une
 invitation, avec un bouton vers TOUS. Garde : gabarits §43.
 
+**Le poids du corps — 16/11/2026.** Tout en bas de PROGRÈS, après les
+partages : rien au-dessus ne bouge. Sans pesée, une seule ligne discrète
+(`.poids-vide`, 48 px, filet `--trait`, texte `--dim`) — pas de pointillés,
+la refonte n'en garde qu'un, le carnet vide ; avec, une carte `.poids-carte`
+pleine largeur, fond `--s1`, rayon `--r-l` : titre en sous-titre de l'app,
+`+ PESÉE` en orange à droite, le poids en `--f-titre` `--t-5` 800, la date
+en `--t-2` gris, l'écart en `--t-2` 700 **blanc cassé** — jamais vert ni
+orange, une prise de poids peut être le but —, et la courbe des exercices
+suivis tracée en `--ink`. Le panneau aligne date et poids sur deux colonnes,
+range les mensurations dans un `<details>` replié, et liste l'historique en
+lignes de 48 px avec une corbeille à part qui se confirme en rouge erreur.
+Dans la fiche d'un exercice, la force relative est une ligne `--t-2` grise,
+le multiple en blanc. Garde : gabarits §54.
+
 **Les modèles de séance — 16/11/2026.** Un modèle se lance comme on refait
 une séance : même carte que `REFAIRE` (`.btn-refaire.btn-modele`, verbe
 orange en `--t-1` 800, résumé gris sur une ligne coupée), sous ces boutons,

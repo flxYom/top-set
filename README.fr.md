@@ -52,6 +52,9 @@ c'est exactement à ça que sert ce repo pour l'instant.
   la séance précédente et n'écrase jamais ce qui est déjà saisi. Une séance se
   garde comme modèle (« Push A », rangé en dossier) et se relance d'un appui
   sur un jour vide, avec les charges de ta dernière fois.
+- **Son poids du corps, pour soi.** Une pesée par jour, des mensurations si on
+  veut, sa courbe en bas de PROGRÈS et la force relative dans la fiche d'un
+  exercice. Personne d'autre ne la voit, pas même son coach.
 - **Envoyer ses perfs à un ami.** On devient amis par un code, des deux côtés ;
   un exercice, une séance ou un récap part chez les amis qu'on choisit, en copie
   figée. Pas de fil, pas de compteurs, pas de classement, pas de story.

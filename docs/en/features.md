@@ -595,6 +595,19 @@ read and copies nothing:
   before) and `↺ REFAIRE MA DERNIÈRE SÉANCE` when it is a different one, with
   their title; everything is copied by `selectionnerSeance`.
 
+**Bodyweight (2026-11-16).** One weigh-in per day: a date, a weight and,
+optionally, waist, arm and thigh. PROGRÈS ends with it, after everything else:
+a single quiet line (`+ NOTER MON POIDS DU CORPS`) until the first weigh-in,
+then a neutral card — the last weight, the change since the last weigh-in
+before the period, and the period's curve. Neutral because a weight change is
+neither progress nor setback: gaining can be the goal. The sheet corrects a
+day from its history and deletes in two taps. An exercise page adds one line,
+`1RM estimé : 1,25 × ton poids du corps`, when a weigh-in lies within 90 days
+of its last session (`TS.peseeProche`, `TS.forceRelative`); without one, it is
+unchanged. Weigh-ins live under `topset_pesees`, follow the account (`pesees`
+table) where neither a coach nor the team can read them, and never go into a
+share or the text for an AI.
+
 **Session templates (2026-11-16).** The last button of a session's page,
 `ENREGISTRER COMME MODÈLE`, saves it under a name ("Push A") and, optionally,
 in a folder. The same name replaces the existing template, which the sheet

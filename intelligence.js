@@ -1040,6 +1040,58 @@
     };
   }
 
+  // ------------------------------------------------------------------
+  // Poids du corps (16/11/2026)
+  // ------------------------------------------------------------------
+  // Une pesee : { date:'AAAA-MM-JJ', poids:kg }. Ce qui n'en est pas une
+  // (poids absent, nul ou hors de 20-400 kg, date mal formee, pierre
+  // tombale) est ignore sans bruit.
+  function peseeValide(p) {
+    return !!p && !p.supprime && typeof p.poids === 'number' && p.poids >= 20 && p.poids <= 400
+      && /^\d{4}-\d{2}-\d{2}$/.test(String(p.date));
+  }
+  function peseesTriees(pesees) {
+    return (pesees || []).filter(peseeValide).slice().sort(function (a, b) {
+      return a.date < b.date ? -1 : (a.date > b.date ? 1 : 0);
+    });
+  }
+  // La pesee la plus proche d'une date, avant ou apres, a 90 jours au plus :
+  // la force relative d'un record de mars ne se calcule pas avec le poids
+  // d'octobre. A egalite, celle d'avant gagne : c'est celle qu'on connaissait.
+  function peseeProche(pesees, date, maxJours) {
+    var lim = (typeof maxJours === 'number' && maxJours >= 0) ? maxJours : 90;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(date))) return null;
+    var j0 = jourEpoque(date), meilleure = null, ecart = Infinity;
+    peseesTriees(pesees).forEach(function (p) {
+      var e = Math.abs(jourEpoque(p.date) - j0);
+      if (e < ecart) { ecart = e; meilleure = p; }
+    });
+    return ecart <= lim ? meilleure : null;
+  }
+  // Combien de fois son poids du corps : 120 kg pour 80 kg font 1,5.
+  function forceRelative(charge, poidsCorps) {
+    if (typeof charge !== 'number' || !(charge > 0) || typeof poidsCorps !== 'number' || !(poidsCorps > 0)) return null;
+    return Math.round(charge / poidsCorps * 100) / 100;
+  }
+  // Sur une periode : la derniere pesee de la periode, comparee a la
+  // derniere d'avant la periode (sinon a la premiere de la periode). Les
+  // points sont ceux de la periode, dans l'ordre ; dernierConnu sert quand
+  // la periode n'a aucune pesee.
+  function evolutionPoids(pesees, debut, fin) {
+    var toutes = peseesTriees(pesees);
+    var dans = toutes.filter(function (p) { return p.date >= debut && p.date <= fin; });
+    var avant = toutes.filter(function (p) { return p.date < debut; });
+    var dernier = dans.length ? dans[dans.length - 1] : null;
+    var reference = avant.length ? avant[avant.length - 1] : (dans.length > 1 ? dans[0] : null);
+    return {
+      dernier: dernier,
+      reference: reference,
+      ecart: (dernier && reference) ? Math.round((dernier.poids - reference.poids) * 10) / 10 : null,
+      points: dans.map(function (p) { return p.poids; }),
+      dernierConnu: toutes.length ? toutes[toutes.length - 1] : null
+    };
+  }
+
   return {
     TYPES: TYPES,
     TYPES_VALIDES: TYPES_VALIDES,
@@ -1076,6 +1128,9 @@
     chargerBarre: chargerBarre,
     regularite: regularite,
     progressionTopSet: progressionTopSet,
-    recordsBattus: recordsBattus
+    recordsBattus: recordsBattus,
+    peseeProche: peseeProche,
+    forceRelative: forceRelative,
+    evolutionPoids: evolutionPoids
   };
 });

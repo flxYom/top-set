@@ -2878,3 +2878,148 @@ revoke execute on function public.pousser_modeles(jsonb) from anon, public;
 revoke execute on function public.tirer_modeles()        from anon, public;
 grant  execute on function public.pousser_modeles(jsonb) to authenticated;
 grant  execute on function public.tirer_modeles()        to authenticated;
+
+
+-- ============================================================================
+-- 16. LE POIDS DU CORPS (16/11/2026)
+-- ============================================================================
+-- Une pesée par jour : un poids, et en option les tours de taille, de bras et
+-- de cuisse. C'est une donnée qui peut toucher à la santé : elle n'est lue que
+-- par son auteur. Aucune policy coach ici, contrairement aux séances — un
+-- coach ne voit pas les pesées de son coaché, et aucune fonction
+-- d'administration ne les lit.
+create table if not exists public.pesees (
+  user_id    uuid not null references auth.users (id) on delete cascade,
+  date       date not null,
+  poids      numeric(5,2),
+  taille     numeric(4,1),
+  bras       numeric(4,1),
+  cuisse     numeric(4,1),
+  supprime   boolean not null default false,
+  updated_at timestamptz not null default now(),
+  primary key (user_id, date)
+);
+
+alter table public.pesees drop constraint if exists pesees_poids_borne;
+alter table public.pesees add  constraint pesees_poids_borne
+  check (poids is null or poids between 20 and 400);
+alter table public.pesees drop constraint if exists pesees_mesures_bornes;
+alter table public.pesees add  constraint pesees_mesures_bornes
+  check ((taille is null or taille between 10 and 300)
+     and (bras   is null or bras   between 10 and 300)
+     and (cuisse is null or cuisse between 10 and 300));
+-- Une pesée a un poids ; seule une pierre tombale n'en a pas.
+alter table public.pesees drop constraint if exists pesees_poids_present;
+alter table public.pesees add  constraint pesees_poids_present
+  check (supprime or poids is not null);
+alter table public.pesees drop constraint if exists pesees_date_bornee;
+alter table public.pesees add  constraint pesees_date_bornee
+  check (date >= date '2000-01-01');
+
+alter table public.pesees enable row level security;
+
+drop policy if exists "Chacun gere ses pesees" on public.pesees;
+create policy "Chacun gere ses pesees"
+  on public.pesees for all
+  using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+revoke all on public.pesees from anon;
+grant select, insert, update, delete on public.pesees to authenticated;
+
+-- Un nombre venu du client, dans ses bornes, sinon rien : une valeur hors
+-- bornes est ignorée au lieu de faire échouer tout l'envoi.
+create or replace function public.pesee_nombre(v jsonb, lo numeric, hi numeric, decimales int)
+returns numeric
+language sql
+immutable
+set search_path = public
+as $$
+  select case when jsonb_typeof(v) = 'number' and (v #>> '{}')::numeric between lo and hi
+              then round((v #>> '{}')::numeric, decimales) end;
+$$;
+
+create or replace function public.pousser_pesees(p_pesees jsonb)
+returns timestamptz
+language plpgsql
+security invoker
+set search_path = public
+as $$
+declare
+  v_user  uuid := auth.uid();
+  v_liste jsonb := coalesce(p_pesees, '[]'::jsonb);
+  v_p     jsonb;
+  v_date  date;
+  v_sup   boolean;
+  v_poids numeric;
+begin
+  if v_user is null then
+    raise exception 'Aucune session : connexion requise.';
+  end if;
+  if jsonb_typeof(v_liste) <> 'array' or jsonb_array_length(v_liste) > 2000 then
+    raise exception 'Envoi de pesées invalide.';
+  end if;
+
+  delete from public.pesees
+   where user_id = v_user and supprime and updated_at < now() - interval '180 days';
+
+  for v_p in select * from jsonb_array_elements(v_liste)
+  loop
+    continue when jsonb_typeof(v_p) <> 'object'
+      or coalesce(v_p ->> 'date', '') !~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}$';
+    begin
+      v_date := (v_p ->> 'date')::date;
+    exception when others then
+      continue;   -- un 30 février n'est pas une date
+    end;
+    -- Ni avant 2000, ni à l'avance (demain toléré : les fuseaux).
+    continue when v_date < date '2000-01-01' or v_date > current_date + 1;
+    v_sup   := coalesce(v_p -> 'supprime' = 'true'::jsonb, false);
+    v_poids := public.pesee_nombre(v_p -> 'poids', 20, 400, 2);
+    continue when not v_sup and v_poids is null;
+
+    insert into public.pesees (user_id, date, poids, taille, bras, cuisse, supprime, updated_at)
+    values (v_user, v_date,
+            case when v_sup then null else v_poids end,
+            case when v_sup then null else public.pesee_nombre(v_p -> 'taille', 10, 300, 1) end,
+            case when v_sup then null else public.pesee_nombre(v_p -> 'bras',   10, 300, 1) end,
+            case when v_sup then null else public.pesee_nombre(v_p -> 'cuisse', 10, 300, 1) end,
+            v_sup, now())
+    on conflict (user_id, date) do update
+      set poids      = excluded.poids,
+          taille     = excluded.taille,
+          bras       = excluded.bras,
+          cuisse     = excluded.cuisse,
+          supprime   = excluded.supprime,
+          updated_at = now();
+  end loop;
+
+  return now();
+end;
+$$;
+
+create or replace function public.tirer_pesees()
+returns jsonb
+language sql
+security invoker
+stable
+set search_path = public
+as $$
+  select coalesce(jsonb_agg(jsonb_build_object(
+           'date',     p.date,
+           'poids',    p.poids,
+           'taille',   p.taille,
+           'bras',     p.bras,
+           'cuisse',   p.cuisse,
+           'supprime', p.supprime,
+           'maj',      p.updated_at
+         ) order by p.date), '[]'::jsonb)
+  from public.pesees p
+  where p.user_id = auth.uid();
+$$;
+
+revoke execute on function public.pesee_nombre(jsonb, numeric, numeric, int) from anon, public;
+revoke execute on function public.pousser_pesees(jsonb) from anon, public;
+revoke execute on function public.tirer_pesees()        from anon, public;
+grant  execute on function public.pesee_nombre(jsonb, numeric, numeric, int) to authenticated;
+grant  execute on function public.pousser_pesees(jsonb) to authenticated;
+grant  execute on function public.tirer_pesees()        to authenticated;

@@ -4051,6 +4051,183 @@
       + '</div>';
   }
 
+  // ---------- le poids du corps (16/11/2026) ----------
+  // Une pesee par jour : une date, un poids et, si on veut, les tours de
+  // taille, de bras et de cuisse. Rien n'est demande : sans pesee, PROGRES
+  // finit par une seule ligne pour en noter une, et rien d'autre ne change.
+  // Elles vivent ici (topset_pesees) et, avec un compte, suivent le compte
+  // (table pesees). Personne d'autre ne les lit, pas meme un coach, et elles
+  // ne partent ni dans un partage ni dans le texte pour une IA.
+  var PESEES_KEY = 'topset_pesees';
+  var MESURES = [{ cle:'taille', label:'TOUR DE TAILLE' }, { cle:'bras', label:'TOUR DE BRAS' }, { cle:'cuisse', label:'TOUR DE CUISSE' }];
+  var pesees = null;   // date -> pesee, chargees au premier usage
+  // Pas « nombreBorne » : ce nom est deja pris (vitesse et inclinaison du
+  // cardio), et une seconde declaration remplacerait la premiere partout.
+  function borneMesure(v, min, max, pas){
+    var n = typeof v === 'number' ? v : parseFloat(String(v == null ? '' : v).replace(',', '.'));
+    if (!isFinite(n) || n < min || n > max) return null;
+    return Math.round(n * pas) / pas;
+  }
+  // Les bornes de la base : 20 a 400 kg au centieme, 10 a 300 cm au dixieme.
+  function peseeSure(p){
+    if (!p || typeof p !== 'object' || !/^\d{4}-\d{2}-\d{2}$/.test(String(p.date || ''))) return null;
+    var s = { date:String(p.date), maj:(typeof p.maj === 'string' ? p.maj.slice(0, 40) : '') };
+    if (p.supprime){ s.supprime = true; return s; }
+    var kg = borneMesure(p.poids, 20, 400, 100);
+    if (kg === null) return null;
+    s.poids = kg;
+    MESURES.forEach(function(m){ var v = borneMesure(p[m.cle], 10, 300, 10); if (v !== null) s[m.cle] = v; });
+    return s;
+  }
+  function lesPesees(){
+    if (pesees) return pesees;
+    pesees = {};
+    var brut = null;
+    try { brut = JSON.parse(localStorage.getItem(PESEES_KEY) || 'null'); } catch (err) { brut = null; }
+    if (brut && typeof brut === 'object'){
+      Object.keys(brut).forEach(function(k){ var p = peseeSure(brut[k]); if (p) pesees[p.date] = p; });
+    }
+    return pesees;
+  }
+  function savePesees(){
+    try { localStorage.setItem(PESEES_KEY, JSON.stringify(lesPesees())); } catch (err) {}
+  }
+  function remplacerPesees(lot){
+    pesees = {};
+    Object.keys(lot || {}).forEach(function(k){ var p = peseeSure(lot[k]); if (p) pesees[p.date] = p; });
+    savePesees();
+  }
+  function peseesVivantes(){
+    var toutes = lesPesees();
+    return Object.keys(toutes).sort().map(function(k){ return toutes[k]; }).filter(function(p){ return !p.supprime; });
+  }
+  function marquerPesee(date){
+    if (typeof Sync !== 'undefined' && Sync.marquerColl) Sync.marquerColl('pesees', date);
+  }
+  function enregistrerPesee(date, poids, mesures){
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(date || ''))) return { erreur:'Choisis une date.' };
+    if (date > toDateStr(addDays(new Date(), 1))) return { erreur:'Une pesée ne se note pas à l\'avance.' };
+    var brut = { date:date, poids:poids, maj:new Date().toISOString() };
+    MESURES.forEach(function(m){ brut[m.cle] = (mesures || {})[m.cle]; });
+    var p = peseeSure(brut);
+    if (!p) return { erreur:'Un poids entre 20 et 400 kg, par exemple 80,5.' };
+    lesPesees()[date] = p;
+    savePesees();
+    marquerPesee(date);
+    return { pesee:p };
+  }
+  function supprimerPesee(date){
+    if (!lesPesees()[date]) return;
+    lesPesees()[date] = { date:date, supprime:true, maj:new Date().toISOString() };
+    savePesees();
+    marquerPesee(date);
+  }
+  function kgTexte(n){ return formatWeight(Math.round(n * 10) / 10); }
+
+  // En bas de PROGRES, apres tout le reste. Une variation de poids n'est ni
+  // bonne ni mauvaise (on peut vouloir en prendre) : elle s'ecrit en neutre.
+  function blocPoids(debut, fin){
+    var liste = peseesVivantes();
+    if (!liste.length){
+      return '<button type="button" class="poids-vide" data-action="pesee">+ NOTER MON POIDS DU CORPS</button>';
+    }
+    var ev = TS.evolutionPoids(liste, debut, fin);
+    var p = ev.dernier || ev.dernierConnu;
+    var ecart = '';
+    if (ev.ecart !== null){
+      ecart = '<span class="poids-ecart">' + (ev.ecart === 0 ? 'Stable' : (ev.ecart > 0 ? '+' : '−') + kgTexte(Math.abs(ev.ecart)) + ' kg')
+        + ' depuis le ' + esc(jourCourt(ev.reference.date)) + '</span>';
+    }
+    return '<button type="button" class="poids-carte" data-action="pesee">'
+      + '<span class="poids-tete"><span>POIDS DU CORPS</span><span class="poids-plus">+ PESÉE</span></span>'
+      + '<span class="poids-valeur">' + esc(kgTexte(p.poids)) + '<small> kg</small></span>'
+      + '<span class="poids-quand">' + (ev.dernier ? 'le ' : 'dernière pesée le ') + esc(jourCourt(p.date)) + '</span>'
+      + ecart
+      + (ev.points.length > 1 ? sparkline(ev.points) : '')
+      + '</button>';
+  }
+  document.getElementById('recapPoids').addEventListener('click', function(e){
+    if (e.target.closest('[data-action="pesee"]')) ouvrirPesee();
+  });
+
+  // Le panneau des pesees : noter, corriger (une ligne de l'historique
+  // remonte dans le formulaire), supprimer en deux appuis.
+  var peseeSheet = document.getElementById('peseeSheet');
+  function msgPesee(kind, texte){
+    var el = document.getElementById('peseeMsg');
+    el.className = 'sheet-msg' + (kind ? ' ' + kind : '');
+    el.textContent = texte || '';
+    el.hidden = !texte;
+  }
+  function remplirPesee(date){
+    var p = lesPesees()[date];
+    var vivante = p && !p.supprime;
+    document.getElementById('peseeDate').value = date;
+    document.getElementById('peseePoids').value = vivante ? String(p.poids).replace('.', ',') : '';
+    MESURES.forEach(function(m){
+      document.getElementById('pesee-' + m.cle).value = (vivante && p[m.cle] != null) ? String(p[m.cle]).replace('.', ',') : '';
+    });
+    document.getElementById('peseeMesures').open = !!(vivante && MESURES.some(function(m){ return p[m.cle] != null; }));
+    document.getElementById('peseeEnregistrer').textContent = vivante ? 'CORRIGER LA PESÉE DU ' + jourCourt(date).toUpperCase() : 'ENREGISTRER LA PESÉE';
+  }
+  function rendreHistoriquePesees(){
+    var liste = peseesVivantes().slice(-30).reverse();
+    document.getElementById('peseeListe').innerHTML = liste.length
+      ? '<div class="sheet-label espace">DERNIÈRES PESÉES</div>' + liste.map(function(p){
+          var mes = MESURES.filter(function(m){ return p[m.cle] != null; }).map(function(m){
+            return m.label.replace('TOUR DE ', '').toLowerCase() + ' ' + String(p[m.cle]).replace('.', ',');
+          }).join(' · ');
+          return '<div class="pesee-ligne">'
+            + '<button type="button" class="pesee-corriger" data-corriger="' + esc(p.date) + '">'
+            +   '<span class="pesee-date">' + esc(jourCourt(p.date)) + '</span>'
+            +   '<b>' + esc(kgTexte(p.poids)) + ' kg</b>'
+            +   (mes ? '<span class="pesee-mes">' + esc(mes) + ' cm</span>' : '')
+            + '</button>'
+            + '<button type="button" class="pesee-suppr" data-suppr-pesee="' + esc(p.date) + '" aria-label="Supprimer la pesée du ' + esc(jourCourt(p.date)) + '">' + ico('corbeille', true) + '</button>'
+            + '</div>';
+        }).join('')
+      : '';
+  }
+  function ouvrirPesee(){
+    msgPesee('', '');
+    remplirPesee(toDateStr(new Date()));
+    rendreHistoriquePesees();
+    peseeSheet.hidden = false;
+  }
+  function fermerPesee(){ peseeSheet.hidden = true; }
+  document.getElementById('peseeDate').addEventListener('change', function(){
+    if (/^\d{4}-\d{2}-\d{2}$/.test(this.value)) remplirPesee(this.value);
+  });
+  peseeSheet.addEventListener('click', function(e){
+    if (e.target === this || e.target.closest('#peseeClose')){ fermerPesee(); return; }
+    var corr = e.target.closest('[data-corriger]');
+    if (corr){ msgPesee('', ''); remplirPesee(corr.dataset.corriger); return; }
+    var sup = e.target.closest('[data-suppr-pesee]');
+    if (sup){
+      if (!sup.classList.contains('armed')){
+        sup.classList.add('armed');
+        sup.setAttribute('aria-label', 'Confirmer la suppression');
+        sup.innerHTML = 'SUPPRIMER\u00a0?';
+        return;
+      }
+      supprimerPesee(sup.dataset.supprPesee);
+      rendreHistoriquePesees();
+      remplirPesee(document.getElementById('peseeDate').value || toDateStr(new Date()));
+      if (state.view === 'recap') renderRecap();
+      showToast('Pesée supprimée');
+      return;
+    }
+    if (e.target.closest('#peseeEnregistrer')){
+      var mesures = {};
+      MESURES.forEach(function(m){ mesures[m.cle] = document.getElementById('pesee-' + m.cle).value; });
+      var r = enregistrerPesee(document.getElementById('peseeDate').value, document.getElementById('peseePoids').value, mesures);
+      if (r.erreur){ msgPesee('err', r.erreur); return; }
+      fermerPesee();
+      if (state.view === 'recap') renderRecap();
+      showToast('Pesée notée : ' + kgTexte(r.pesee.poids) + ' kg');
+    }
+  });
+
   function renderRecap(){
     var data = computeRecap(state.recapPeriod);
     document.getElementById('recapLabel').textContent = data.label.toUpperCase();
@@ -4066,6 +4243,7 @@
       document.getElementById('recapHeatmap').innerHTML = '';
       document.getElementById('recapRegularite').innerHTML = '';
       document.getElementById('recapAnnee').innerHTML = '';
+      document.getElementById('recapPoids').innerHTML = '';
       groupsEl.innerHTML = '<div class="empty-state">' + attente() + '</div>';
       return;
     }
@@ -4083,6 +4261,7 @@
     document.getElementById('recapHeatmap').innerHTML = renderHeatmap(data.startStr, data.endStr);
     document.getElementById('recapRegularite').innerHTML = blocRegularite();
     document.getElementById('recapAnnee').innerHTML = lienAnnee();
+    document.getElementById('recapPoids').innerHTML = blocPoids(data.startStr, data.endStr);
 
     var counts = groupCountsIn(data.startStr, data.endStr);
     var sousC = sousCountsIn(data.startStr, data.endStr);
@@ -4482,6 +4661,12 @@
       + statTile(reps || '—', 'Meilleures reps')
       + statTile(volumeTexte(volume) || '—', 'Volume total')
       + '</div>';
+    // La force relative, seulement avec une pesee a moins de 90 jours de la
+    // derniere seance : sans pesee, la fiche ne change pas. (16/11/2026)
+    var pc = rm === null ? null : TS.peseeProche(peseesVivantes(), derniere.date);
+    var fr = pc ? TS.forceRelative(rm, pc.poids) : null;
+    if (fr) html += '<div class="exo-relatif">1RM estimé\u00a0: <b>' + String(fr).replace('.', ',') + '\u00a0×</b> ton poids du corps'
+      + ' (' + esc(kgTexte(pc.poids)) + '\u00a0kg le ' + esc(jourCourt(pc.date)) + ')</div>';
     }
 
     // --- courbe
@@ -7906,7 +8091,7 @@
              sessions:state.sessions, customExercises:customExercises,
              // Ajoute le 16/11/2026 : un fichier plus ancien n'a simplement
              // pas la cle, et l'import l'ignore.
-             modeles:modelesVivants() };
+             modeles:modelesVivants(), pesees:peseesVivantes() };
   }
   function backupJSON(){ return JSON.stringify(backupPayload(), null, 2); }
   function backupFilename(){ return 'topset-' + toDateStr(new Date()) + '.json'; }
@@ -8082,7 +8267,9 @@
     var mods = Array.isArray(data.modeles) ? data.modeles
       : ((data.modeles && typeof data.modeles === 'object') ? Object.keys(data.modeles).map(function(k){ return data.modeles[k]; }) : []);
     mods = mods.slice(0, MODELES_MAX).map(modeleSur).filter(function(m){ return m && !m.supprime && m.exercises.length; });
-    return { sessions:clean, jours:jours, series:series, customExercises:custom, modeles:mods };
+    var pes = (Array.isArray(data.pesees) ? data.pesees : []).slice(0, 20000).map(peseeSure)
+      .filter(function(p){ return p && !p.supprime; });
+    return { sessions:clean, jours:jours, series:series, customExercises:custom, modeles:mods, pesees:pes };
   }
 
   // Un fichier JSON de Top Set, ou le tableur qu'il exporte. Les deux passent
@@ -8120,7 +8307,12 @@
       return !(ici[m.id] && !ici[m.id].supprime) && !modeleDuNom(m.nom);
     });
   }
-  function resumeImport(b, perso, mods){
+  // Les pesees d'un jour ou l'on n'en a pas. Celle qu'on a deja reste.
+  function peseesAbsentes(liste){
+    var ici = lesPesees();
+    return (liste || []).filter(function(p){ return !(ici[p.date] && !ici[p.date].supprime); });
+  }
+  function resumeImport(b, perso, mods, pes){
     var parts = [];
     var jours = b.dates.length;
     if (b.series){
@@ -8136,6 +8328,7 @@
     if (b.titres) parts.push(b.titres + (b.titres > 1 ? ' titres de séance' : ' titre de séance'));
     if (perso) parts.push(perso + (perso > 1 ? ' exercices mémorisés' : ' exercice mémorisé'));
     if (mods) parts.push(mods + (mods > 1 ? ' modèles de séance' : ' modèle de séance'));
+    if (pes) parts.push(pes + (pes > 1 ? ' pesées' : ' pesée'));
     return parts.join(', ');
   }
 
@@ -8148,9 +8341,10 @@
     var essai = TS.fusionnerCarnets(state.sessions, parsed.sessions, fabriqueId);
     var perso = customAbsents(parsed.customExercises).length;
     var mods = modelesAbsents(parsed.modeles).length;
+    var pes = peseesAbsentes(parsed.pesees).length;
     var contenu = parsed.jours + (parsed.jours > 1 ? ' jours' : ' jour') + ', ' +
                   parsed.series + (parsed.series > 1 ? ' séries' : ' série');
-    if (!essai.bilan.exercices && !essai.bilan.titres && !perso && !mods){
+    if (!essai.bilan.exercices && !essai.bilan.titres && !perso && !mods && !pes){
       disarmImport();
       sheetMsg('ok', 'Le fichier contient ' + contenu + ' — tout est déjà dans ton carnet. Rien à ajouter.');
       return;
@@ -8160,7 +8354,7 @@
     btn.classList.add('armed');
     btn.textContent = 'CONFIRMER L\'AJOUT';
     sheetMsg('warn', 'Le fichier contient ' + contenu + '. À ajouter : ' +
-      resumeImport(essai.bilan, perso, mods) + '. Rien de ce que tu as déjà ne sera modifié.');
+      resumeImport(essai.bilan, perso, mods, pes) + '. Rien de ce que tu as déjà ne sera modifié.');
   }
 
   // Second temps. La fusion est refaite sur le carnet de CET instant : entre
@@ -8175,6 +8369,9 @@
     var modsNeufs = modelesAbsents(parsed.modeles);
     modsNeufs.forEach(function(m){ lesModeles()[m.id] = m; marquerModele(m.id); });
     if (modsNeufs.length) saveModeles();
+    var pesNeuves = peseesAbsentes(parsed.pesees);
+    pesNeuves.forEach(function(p){ lesPesees()[p.date] = p; marquerPesee(p.date); });
+    if (pesNeuves.length) savePesees();
     if (absents.length){
       saveCustom();
       rebuildLower();
@@ -8192,7 +8389,7 @@
     disarmImport();
     document.getElementById('dataPaste').value = '';
     refreshSheet();
-    sheetMsg('ok', 'Ajouté : ' + resumeImport(r.bilan, absents.length, modsNeufs.length) + '. Rien n\'a été remplacé.');
+    sheetMsg('ok', 'Ajouté : ' + resumeImport(r.bilan, absents.length, modsNeufs.length, pesNeuves.length) + '. Rien n\'a été remplacé.');
     showToast('Ajouté à ton carnet');
   }
 
@@ -8291,7 +8488,7 @@
 
   // Ouvrir une page depuis une feuille, c'est quitter la feuille.
   function fermerFeuilles(){
-    ['dataSheet', 'profilSheet', 'retourSheet', 'partageSheet', 'iaSheet', 'modeleSheet'].forEach(function(id){
+    ['dataSheet', 'profilSheet', 'retourSheet', 'partageSheet', 'iaSheet', 'modeleSheet', 'peseeSheet'].forEach(function(id){
       var el = document.getElementById(id);
       if (el) el.hidden = true;
     });
@@ -10009,7 +10206,12 @@
   // envoyer. Elle corrige surtout une phrase devenue fausse (« deux personnes
   // sans lien de coaching ne voient rien l'une de l'autre ») et nomme les
   // reserves locales, qui ne sortent pas du telephone. (22/10/2026)
-  var VERSION_POLITIQUE = '3.3';
+  //
+  // La 3.4 non plus : les modeles de seance et les pesees sont notes par la
+  // personne elle-meme, et rien ne se note sans qu'elle tape un poids. Ils
+  // ne sont lus que par leur auteur — ni coach, ni amis, ni equipe.
+  // (16/11/2026)
+  var VERSION_POLITIQUE = '3.4';
   var SYNC_KEY      = 'topset_sync';
 
   var Sync = (function(){
@@ -10636,6 +10838,22 @@
                                  supprime:x.supprime, maj:x.maj }) : null;
         },
         sauver:function(){ saveModeles(); repeindreSiJourVide(); }
+      },
+      pesees: {
+        pousser:'pousser_pesees', tirer:'tirer_pesees', arg:'p_pesees',
+        local:function(){ return lesPesees(); },
+        cle:function(o){ return o.date; },
+        versServeur:function(o){
+          return { date:o.date, poids:o.supprime ? null : o.poids, taille:o.taille == null ? null : o.taille,
+                   bras:o.bras == null ? null : o.bras, cuisse:o.cuisse == null ? null : o.cuisse, supprime:!!o.supprime };
+        },
+        depuisServeur:function(x){
+          if (!x) return null;
+          var n = function(v){ return v == null ? null : Number(v); };
+          return peseeSure({ date:x.date, poids:n(x.poids), taille:n(x.taille), bras:n(x.bras), cuisse:n(x.cuisse),
+                             supprime:x.supprime, maj:x.maj });
+        },
+        sauver:function(){ savePesees(); if (state.view === 'recap') renderRecap(); }
       }
     };
     var collAbsente = {};
@@ -11108,6 +11326,7 @@
           depuis:   m.depuis || null,
           // Les collections suivent leur proprietaire, avec leur file d'envoi.
           modeles:  lesModeles(),
+          pesees:   lesPesees(),
           coll:     m.coll || {},
           jours:    jours,
           range_le: new Date().toISOString()
@@ -11124,6 +11343,7 @@
       customExercises = (p.custom && typeof p.custom === 'object') ? p.custom : {};
       saveLocal(); saveCustom(); rebuildLower(); populateDatalist();
       remplacerModeles(p.modeles || {});
+      remplacerPesees(p.pesees || {});
       majMeta(function(m){
         m.sales  = p.sales  || {};
         m.titres = p.titres || {};
@@ -11147,6 +11367,7 @@
       viderStockageCarnet();
       saveLocal(); saveCustom(); rebuildLower(); populateDatalist();
       remplacerModeles({});
+      remplacerPesees({});
       // La file d'envoi et le curseur appartiennent au carnet qu'on vient de
       // ranger : les garder ferait pousser les journees d'un compte vers
       // l'autre a la premiere synchro.

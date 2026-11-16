@@ -52,6 +52,9 @@ repository is for right now.
   and never overwrites what you have already entered. A session can be kept as
   a template ("Push A", filed in a folder) and relaunched in one tap on an
   empty day, with your last-time weights.
+- **Your bodyweight, for you.** One weigh-in a day, measurements if you want,
+  its curve at the bottom of PROGRÈS and relative strength on an exercise
+  page. Nobody else sees it, not even your coach.
 - **Send your numbers to a friend.** Friends are made by a code, both sides
   agreeing; an exercise, a session or a recap goes to the friends you pick, as a
   frozen copy. No feed, no counters, no ranking, no stories.

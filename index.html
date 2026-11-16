@@ -3675,6 +3675,43 @@ a.ex-menu-item{display:flex;align-items:center;text-decoration:none;}
 .modele-ligne span{grid-column:1;font-size:var(--t-2);color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .modele-ligne .ico{grid-column:2;grid-row:1 / span 2;color:var(--dim);}
 .modele-ligne:active{border-color:var(--orange);}
+
+/* ---------- Le poids du corps (16/11/2026) ----------
+   Tout en bas de PROGRES. Sans pesee, une seule ligne discrete (pas de
+   pointilles : la refonte n'en garde qu'un, le carnet vide) ; avec,
+   une carte neutre : une variation de poids n'est ni un progres ni un recul,
+   donc ni vert ni orange. La courbe reprend celle des exercices suivis. */
+.poids-vide{display:flex;align-items:center;justify-content:center;width:100%;min-height:48px;margin-top:18px;
+  border:1px solid var(--trait);border-radius:var(--r-m);background:none;color:var(--dim);
+  font:700 var(--t-2)/1.2 var(--f-ui);letter-spacing:.06em;}
+.poids-carte{--c:var(--ink);display:flex;flex-direction:column;align-items:flex-start;gap:4px;width:100%;margin-top:18px;
+  padding:14px 16px;border:1px solid var(--trait);border-radius:var(--r-l);background:var(--s1);color:var(--ink);text-align:left;}
+.poids-tete{display:flex;justify-content:space-between;align-items:center;width:100%;
+  font:700 var(--t-1)/1 var(--f-ui);letter-spacing:.12em;color:var(--dim);}
+.poids-plus{color:var(--orange);letter-spacing:.08em;}
+.poids-valeur{font:800 var(--t-5)/1.05 var(--f-titre);letter-spacing:-.02em;font-variant-numeric:tabular-nums;}
+.poids-valeur small{font:700 var(--t-2)/1 var(--f-ui);color:var(--dim);letter-spacing:0;}
+.poids-quand{font-size:var(--t-2);color:var(--dim);}
+.poids-ecart{font:700 var(--t-2)/1.3 var(--f-ui);color:var(--ink);font-variant-numeric:tabular-nums;}
+.poids-carte .suivi-spark{margin-top:6px;}
+.poids-carte:active,.poids-vide:active{border-color:var(--orange);}
+.pesee-duo{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;}
+.pesee-duo .sheet-input,.pesee-trio .sheet-input{width:100%;min-width:0;}
+.pesee-mesures{margin-top:12px;}
+.pesee-mesures summary{display:flex;align-items:center;min-height:44px;cursor:pointer;
+  font:700 var(--t-1)/1 var(--f-ui);letter-spacing:.12em;color:var(--dim);}
+.pesee-trio{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;}
+.pesee-ligne{display:flex;align-items:stretch;gap:8px;margin-top:8px;}
+.pesee-corriger{flex:1;min-width:0;display:flex;flex-wrap:wrap;align-items:baseline;column-gap:10px;row-gap:2px;
+  min-height:48px;padding:8px 12px;border:1px solid var(--trait);border-radius:var(--r-m);background:var(--s2);color:var(--ink);text-align:left;}
+.pesee-date{font-size:var(--t-2);color:var(--dim);min-width:4.5em;}
+.pesee-corriger b{font:700 var(--t-3)/1.2 var(--f-ui);font-variant-numeric:tabular-nums;}
+.pesee-mes{flex-basis:100%;font-size:var(--t-1);color:var(--dim);}
+.pesee-suppr{flex:none;min-width:48px;padding:0 10px;border:1px solid var(--trait);border-radius:var(--r-m);background:none;color:var(--dim);
+  font:800 var(--t-1)/1 var(--f-ui);letter-spacing:.06em;}
+.pesee-suppr.armed{background:var(--erreur);border-color:var(--erreur);color:#1a0508;}
+.exo-relatif{margin-top:8px;font-size:var(--t-2);color:var(--dim);}
+.exo-relatif b{color:var(--ink);font-variant-numeric:tabular-nums;}
 </style>
 </head>
 
@@ -3839,6 +3876,7 @@ a.ex-menu-item{display:flex;align-items:center;text-decoration:none;}
     <div class="recap-groups" id="recapGroups"></div>
     <button type="button" class="btn-partage" id="recapPartager"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 15V3.5M7.5 8L12 3.5 16.5 8M5 13.5v6h14v-6"/></svg>PARTAGER CE RÉCAP</button>
     <button type="button" class="btn-partage" id="recapIA">COPIER POUR UNE IA</button>
+    <div id="recapPoids"></div>
   </section>
 
   <section class="view" id="view-apprendre" hidden>
@@ -4266,6 +4304,46 @@ a.ex-menu-item{display:flex;align-items:center;text-decoration:none;}
         dernière fois.
       </p>
     </div>
+  </div>
+</div>
+
+<!-- Le poids du corps (16/11/2026) : une pesee par jour, des mensurations
+     en option. Rien de tout ca ne part dans un partage. -->
+<div class="sheet" id="peseeSheet" hidden>
+  <div class="sheet-card" role="dialog" aria-modal="true" aria-labelledby="peseeTitre">
+    <div class="sheet-head">
+      <h2 id="peseeTitre">POIDS DU CORPS</h2>
+      <button type="button" class="icon-btn" id="peseeClose" aria-label="Fermer"><svg class="ico seul" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+    <div class="pesee-duo">
+      <div>
+        <label class="sheet-label" for="peseeDate">DATE</label>
+        <input type="date" class="sheet-input" id="peseeDate">
+      </div>
+      <div>
+        <label class="sheet-label" for="peseePoids">POIDS (KG)</label>
+        <input type="text" inputmode="decimal" class="sheet-input" id="peseePoids" placeholder="80,5" autocomplete="off" enterkeyhint="done">
+      </div>
+    </div>
+    <details class="pesee-mesures" id="peseeMesures">
+      <summary>MENSURATIONS (FACULTATIF)</summary>
+      <div class="pesee-trio">
+        <div><label class="sheet-label" for="pesee-taille">TAILLE (CM)</label>
+          <input type="text" inputmode="decimal" class="sheet-input" id="pesee-taille" autocomplete="off" enterkeyhint="done"></div>
+        <div><label class="sheet-label" for="pesee-bras">BRAS (CM)</label>
+          <input type="text" inputmode="decimal" class="sheet-input" id="pesee-bras" autocomplete="off" enterkeyhint="done"></div>
+        <div><label class="sheet-label" for="pesee-cuisse">CUISSE (CM)</label>
+          <input type="text" inputmode="decimal" class="sheet-input" id="pesee-cuisse" autocomplete="off" enterkeyhint="done"></div>
+      </div>
+    </details>
+    <p class="sheet-msg" id="peseeMsg" hidden></p>
+    <button type="button" class="btn-sheet primary" id="peseeEnregistrer">ENREGISTRER LA PESÉE</button>
+    <div id="peseeListe"></div>
+    <p class="sheet-note">
+      Une pesée par jour : en noter une autre le même jour la corrige. Avec un
+      compte, tes pesées suivent ton compte ; personne d'autre ne les voit, pas
+      même ton coach, et elles ne partent dans aucun partage.
+    </p>
   </div>
 </div>
 

@@ -144,10 +144,10 @@ cd supabase/test && npm install && npm test
 `test-rls.mjs` attaque les règles depuis le rôle `authenticated`, comme le
 ferait le navigateur : écriture, journée rejouée sans doublon, isolation entre
 utilisateurs, lien coach, messagerie, notifications, visiteur anonyme, cascade à
-la suppression du compte, modèles de séance (§15).
+la suppression du compte, modèles de séance (§15), poids du corps (§16).
 
-**Les petites collections (16/11/2026).** Les modèles de séance suivent le
-compte par une règle commune, écrite une fois dans `Sync` (`COLLECTIONS`) : ce
+**Les petites collections (16/11/2026).** Les modèles de séance et les pesées
+suivent le compte par une règle commune, écrite une fois dans `Sync` (`COLLECTIONS`) : ce
 qui est marqué ici part au prochain envoi, et la marque ne tombe qu'une fois le
 serveur d'accord et l'objet inchangé ; ce que le compte renvoie remplace ce qui
 n'est pas marqué ; ce qui n'existe qu'ici est marqué et part au tour suivant.
