@@ -938,6 +938,75 @@
   }
 
   // ------------------------------------------------------------------
+  // Le materiel d'un exercice (16/11/2026)
+  // ------------------------------------------------------------------
+  // « 82,5 kg, c'est quoi de chaque cote ? » n'a de sens que pour une barre.
+  // Pour des halteres, la question est « lesquels je prends » ; pour un
+  // vis-a-vis, « combien de chaque cote » ; pour une poulie ou une machine a
+  // pile, il n'y a rien a calculer ; pour des dips lestes, « quels disques a
+  // la ceinture ». Le poids note est, par defaut, tout ce qu'on deplace : les
+  // deux halteres, les deux cotes du vis-a-vis. Les variantes « par main » et
+  // « par bras » servent a qui note le poids d'un seul cote.
+  var OUTILS = ['barre', 'halteres', 'halteres-main', 'haltere', 'pile', 'visavis', 'visavis-bras', 'machine', 'lest'];
+  function nomSimple(nom) {
+    return String(nom == null ? '' : nom).toLowerCase()
+      .replace(/[àâä]/g, 'a').replace(/[éèêë]/g, 'e').replace(/[îï]/g, 'i')
+      .replace(/[ôö]/g, 'o').replace(/[ùûü]/g, 'u').replace(/ç/g, 'c')
+      .replace(/[^a-z0-9]+/g, ' ').trim();
+  }
+  // Le materiel le plus probable d'apres le nom, et la barre si c'en est une.
+  // L'ordre compte : « ecarte a la poulie » est un vis-a-vis avant d'etre une
+  // poulie, « developpe couche smith machine » une barre avant une machine.
+  var REGLES_OUTIL = [
+    [/\bvis a vis\b|crossover|\becartes? a la poulie\b|\bcroise/, 'visavis'],
+    [/\bsmith\b|\bguidee?\b/, 'barre'],
+    [/\bpoulie\b|\bcables?\b|\bcorde\b|pec ?deck|butterfly|\btirage (vertical|horizontal|nuque)\b|face pull|leg (curl|extension)|\bmachine\b|chest press|pulldown|lat pull/, 'pile'],
+    [/\bpresse\b|leg press|hack squat|t ?bar|belt squat|convergente?/, 'machine'],
+    [/\bdips\b|\btractions?\b|pull ?ups?|chin ?ups?|\blestee?s?\b|\bpompes\b/, 'lest'],
+    [/goblet|pull ?over|curl concentre|extension triceps (nuque|unilaterale)|kettlebell/, 'haltere'],
+    [/\bhalteres?\b|dumbbells?|\bdb\b|curl marteau|\barnold\b|elevations? (laterales?|frontales?)|\boiseau\b|kickback|\bfentes?\b/, 'halteres']
+  ];
+  function outilParDefaut(nom) {
+    var n = nomSimple(nom);
+    for (var i = 0; i < REGLES_OUTIL.length; i++) {
+      if (REGLES_OUTIL[i][0].test(n)) return { outil: REGLES_OUTIL[i][1], barre: 20 };
+    }
+    // Une barre EZ, ou ce qu'on y fait d'habitude : 10 kg plutot que 20.
+    return { outil: 'barre', barre: /\bez\b|barre au front|curl pupitre/.test(n) ? 10 : 20 };
+  }
+  // Ce que veut dire un poids pour un materiel. Rien n'est arrondi en
+  // silence : ce que les disques ne font pas est rendu dans « ecart ».
+  function chargerOutil(poids, outil, barre) {
+    var p = Number(poids);
+    var o = OUTILS.indexOf(outil) > -1 ? outil : 'barre';
+    var deux = function (x) { return Math.round(x * 100) / 100; };
+    if (o === 'barre') {
+      var rb = chargerBarre(p, barre);
+      rb.outil = o;
+      return rb;
+    }
+    if (!isFinite(p) || p < 0) return { outil: o, impossible: true };
+    if (o === 'machine') {
+      // Une machine a disques : pas de barre a compter, les disques se
+      // repartissent des deux cotes du chariot.
+      var rm = chargerBarre(p, 0);
+      rm.outil = o;
+      return rm;
+    }
+    if (o === 'lest') {
+      // Le lest a la ceinture : les disques qui font le poids entier.
+      if (p === 0) return { outil: o, disques: [], total: 0, ecart: 0, impossible: false };
+      var rl = chargerBarre(p * 2, 0);
+      return { outil: o, disques: rl.parCote, total: deux(rl.total / 2), ecart: deux(rl.ecart / 2), impossible: rl.impossible };
+    }
+    if (o === 'pile') return { outil: o, total: deux(p), impossible: !(p > 0) };
+    var parSeul = o === 'halteres-main' || o === 'visavis-bras' || o === 'haltere';
+    var nombre = o === 'haltere' ? 1 : 2;
+    var unite = parSeul ? p : p / 2;
+    return { outil: o, nombre: nombre, parUnite: deux(unite), total: deux(unite * nombre), impossible: !(p > 0) };
+  }
+
+  // ------------------------------------------------------------------
   // Sur une periode : la progression et les records battus (16/11/2026)
   // ------------------------------------------------------------------
   // La progression d'un exercice : le top set de la premiere seance contre
@@ -1126,6 +1195,9 @@
     DISQUES: DISQUES,
     BARRES: BARRES,
     chargerBarre: chargerBarre,
+    OUTILS: OUTILS,
+    outilParDefaut: outilParDefaut,
+    chargerOutil: chargerOutil,
     regularite: regularite,
     progressionTopSet: progressionTopSet,
     recordsBattus: recordsBattus,

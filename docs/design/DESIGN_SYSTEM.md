@@ -279,6 +279,16 @@ de retirer : sur chaque ligne de TOUS et en tête de la fiche. La page vide
 de SUIVIS est une carte pleine, pas un emplacement en pointillés : c'est une
 invitation, avec un bouton vers TOUS. Garde : gabarits §43.
 
+**La charge selon le matériel — 16/11/2026.** La ligne `.serie-disques` ne
+change ni de place ni de hauteur (44 px) : seule son étiquette suit le matériel
+(`BARRE 20`, `HALTÈRES`, `POULIE`, `VIS-À-VIS`, `MACHINE`, `LEST`) et le chiffre
+en gras dit quoi prendre. Le bouton d'outil garde son trait de 18 px et change
+d'icône : disque, haltère, poulie. Un appui remplace la ligne par
+`.serie-outil-choix`, au même endroit et dans la même carte `--s1` : des puces
+de 40 px qui passent à la ligne, la courante en orange sur un fond teinté à
+12 %, d'abord le matériel, puis, s'il en a, sa variante. Le choix se referme de
+lui-même ; au repos rien n'est plus haut qu'avant. Garde : gabarits §57.
+
 **L'image d'une séance — 16/11/2026.** Une story 1080 × 1920 sur le fond
 `--bg`, alignée à gauche sur une marge de 90 px, tout entre 200 et 1 720 px
 (Instagram couvre le haut et le bas). En haut la date en orange `--t-1`

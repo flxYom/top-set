@@ -9,6 +9,24 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ## [Unreleased]
 
+### Changed — the plate line follows the equipment (2026-11-16)
+
+- The load line of the open set keeps its place and size but now speaks
+  for the exercise's equipment: plates per side for a bar, `2 haltères de
+  10 kg` for dumbbells, `2,5 kg de chaque côté` at a cable crossover, the
+  stack weight on a pulley or selectorised machine, plates per side without
+  a bar on a plate-loaded machine (leg press, hack squat), plates on the
+  belt for weighted dips and pull-ups. The tool button shows a disc, a
+  dumbbell or a pulley accordingly.
+- The equipment is guessed from the name (`TS.outilParDefaut`, 22 tests:
+  « haltères », « poulie », « presse », « dips », Smith stays a bar, an EZ
+  bar starts at 10 kg, an unknown name stays a 20 kg bar as before). A tap
+  on the line replaces it, in place, with a two-step choice: the equipment,
+  then its variant (bar weight, or whether the noted weight is both
+  dumbbells or one). The choice is kept per exercise on this phone; a bar
+  chosen before keeps working. Warm-up sets only count a bar for a bar.
+  Service worker v83, gabarits §57.
+
 ### Fixed — an update shows on the first relaunch (2026-11-16)
 
 - The page always came from the network but `app.js` came from the service

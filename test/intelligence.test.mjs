@@ -682,6 +682,35 @@ console.log('\n== Poids du corps (16/11/2026) ==');
   egal('une seule pesee : pas d ecart', TS.evolutionPoids([{ date: '2026-11-03', poids: 81 }], '2026-11-01', '2026-11-30').ecart, null);
 }
 // ----------------------------------------------------------------
+console.log('\n== Le materiel d un exercice (16/11/2026) ==');
+{
+  const o = n => TS.outilParDefaut(n).outil;
+  egal('un developpe couche est a la barre, de 20 kg', JSON.stringify(TS.outilParDefaut('Développé couché')), '{"outil":"barre","barre":20}');
+  egal('aux halteres des que le nom le dit', o('Développé incliné haltères'), 'halteres');
+  egal('le curl marteau et les elevations laterales aussi', o('Curl marteau') + ' ' + o('Élévations latérales'), 'halteres halteres');
+  egal('un seul haltere pour le goblet squat', o('Goblet squat'), 'haltere');
+  egal('l ecarte a la poulie est un vis-a-vis, pas une poulie', o('Écarté à la poulie') + ' ' + o('Cable crossover'), 'visavis visavis');
+  egal('les poulies et les machines a pile', [o('Tirage vertical'), o('Extension triceps poulie haute'), o('Leg curl'), o('Adducteurs à la machine'), o('Pec deck')].join(' '), 'pile pile pile pile pile');
+  egal('le smith reste une barre, malgre « machine »', o('Développé couché Smith machine'), 'barre');
+  egal('la presse et le hack squat sont des machines a disques', o('Presse à cuisses') + ' ' + o('Hack squat'), 'machine machine');
+  egal('dips et tractions : au poids du corps, avec ou sans lest', o('Dips') + ' ' + o('Tractions lestées'), 'lest lest');
+  egal('la barre EZ part a 10 kg', TS.outilParDefaut('Curl barre EZ').barre + ' ' + TS.outilParDefaut('Barre au front').barre, '10 10');
+  egal('un nom inconnu reste a la barre', o('Mon exercice maison'), 'barre');
+  egal('la barre : les disques par cote, comme avant', TS.chargerOutil(100, 'barre', 20).parCote.join('+'), '25+15');
+  const h = TS.chargerOutil(20, 'halteres');
+  egal('20 kg aux halteres : deux de 10', h.nombre + 'x' + h.parUnite, '2x10');
+  egal('note par main : deux de 20, 40 en tout', TS.chargerOutil(20, 'halteres-main').total, 40);
+  egal('5 kg au vis-a-vis : 2,5 de chaque cote', TS.chargerOutil(5, 'visavis').parUnite, 2.5);
+  egal('par bras : 5 de chaque cote, 10 en tout', TS.chargerOutil(5, 'visavis-bras').total, 10);
+  egal('une machine a disques n a pas de barre a retirer', TS.chargerOutil(100, 'machine').parCote.join('+'), '25+25');
+  const l = TS.chargerOutil(17.5, 'lest');
+  egal('17,5 kg de lest : 15 + 2,5 a la ceinture', l.disques.join('+') + ' ' + l.ecart, '15+2.5 0');
+  egal('le lest qui ne se fait pas pile le dit', TS.chargerOutil(1, 'lest').ecart, -1);
+  egal('sans lest : au poids du corps', TS.chargerOutil(0, 'lest').disques.length, 0);
+  egal('la pile : rien a calculer, le poids tel quel', TS.chargerOutil(35, 'pile').total, 35);
+  egal('un outil inconnu retombe sur la barre', TS.chargerOutil(60, 'trampoline', 20).outil, 'barre');
+}
+// ----------------------------------------------------------------
 console.log('\n' + '='.repeat(52));
 if (echecs.length) {
   console.log(passes + ' tests passes, ' + echecs.length + ' ECHEC(S) :');

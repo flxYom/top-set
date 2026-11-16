@@ -33,7 +33,7 @@
   // vit dans ce telephone et ne monte pas dans le compte.
   var CLE_REGLAGES = 'topset_reglages';
   var REGLAGES_DEFAUT = { chronoAuto:true, btnChrono:false, champRepos:false, rpe:false, ecranAllume:true,
-                          nomsLibres:false, couleurs:{}, barres:{}, suivis:[], objectifSemaine:3 };
+                          nomsLibres:false, couleurs:{}, barres:{}, outils:{}, suivis:[], objectifSemaine:3 };
   // Au plus quarante exercices suivis dans PROGRES : au-dela, « suivre » ne
   // veut plus rien dire.
   var SUIVIS_MAX = 40;
@@ -43,7 +43,7 @@
   var reglages = (function(){
     var r = {};
     Object.keys(REGLAGES_DEFAUT).forEach(function(k){
-      r[k] = (k === 'couleurs' || k === 'barres') ? {} : (k === 'suivis' ? [] : REGLAGES_DEFAUT[k]);
+      r[k] = (k === 'couleurs' || k === 'barres' || k === 'outils') ? {} : (k === 'suivis' ? [] : REGLAGES_DEFAUT[k]);
     });
     try {
       var lu = JSON.parse(localStorage.getItem(CLE_REGLAGES) || 'null');
@@ -61,6 +61,14 @@
             if (lu.barres && typeof lu.barres === 'object'){
               Object.keys(lu.barres).forEach(function(nom){
                 if (BARRES_CHOIX.indexOf(Number(lu.barres[nom])) > -1) r.barres[nom] = Number(lu.barres[nom]);
+              });
+            }
+          } else if (k === 'outils'){
+            // Le materiel choisi par exercice (16/11/2026) : un des outils
+            // connus d'intelligence.js, sinon on le devine au nom.
+            if (lu.outils && typeof lu.outils === 'object'){
+              Object.keys(lu.outils).forEach(function(nom){
+                if (TS.OUTILS.indexOf(lu.outils[nom]) > -1) r.outils[nom] = lu.outils[nom];
               });
             }
           } else if (k === 'suivis'){
@@ -1979,16 +1987,105 @@
   // dirait « sous le poids de la barre » sur chaque serie serait du bruit.
   // L'etat « je veux voir les disques » est un etat d'ecran, par exercice.
   var disquesVisibles = {};
-  function barreDe(ex){
-    var cle = ex && ex.nom ? cleCanonique(ex.nom) : '';
-    var b = cle && reglages.barres[cle];
-    return BARRES_CHOIX.indexOf(b) > -1 ? b : 20;
+  // ---------- le materiel de l'exercice (16/11/2026) ----------
+  // La ligne parle selon le materiel : disques par cote pour une barre ou une
+  // machine a disques, « 2 halteres de 10 kg », « 2,5 kg de chaque cote » au
+  // vis-a-vis, la pile d'une poulie, les disques du lest a la ceinture. Le
+  // materiel se devine au nom (TS.outilParDefaut : « halteres », « poulie »,
+  // « presse »…) ; un appui sur la ligne le change, pour toutes les seances de
+  // l'exercice. Une barre choisie avant ce jour (reglages.barres) reste une
+  // barre. Comme la barre, c'est un reglage de ce telephone.
+  function cleOutil(ex){ return ex && ex.nom ? cleCanonique(ex.nom) : ''; }
+  function outilDe(ex){
+    var cle = cleOutil(ex);
+    var auto = TS.outilParDefaut(((ex && ex.nom) || '') + ' ' + ((ex && ex.nom && nomCanonique(ex.nom)) || ''));
+    var choisi = cle && reglages.outils[cle];
+    var barreChoisie = cle && reglages.barres[cle];
+    var outil = TS.OUTILS.indexOf(choisi) > -1 ? choisi : (BARRES_CHOIX.indexOf(barreChoisie) > -1 ? 'barre' : auto.outil);
+    return { outil:outil, barre:BARRES_CHOIX.indexOf(barreChoisie) > -1 ? barreChoisie : auto.barre };
   }
-  function choisirBarre(ex, barre){
-    var cle = ex && ex.nom ? cleCanonique(ex.nom) : '';
+  // La barre a compter dans l'echauffement : aucune hors de la barre.
+  function barreDe(ex){
+    var o = outilDe(ex);
+    return o.outil === 'barre' ? o.barre : 0;
+  }
+  function choisirOutil(ex, code){
+    var cle = cleOutil(ex);
     if (!cle) return;
-    if (barre === 20) delete reglages.barres[cle]; else reglages.barres[cle] = barre;
+    var m = /^barre:(\d+)$/.exec(code || '');
+    var outil = m ? 'barre' : code;
+    if (TS.OUTILS.indexOf(outil) < 0) return;
+    reglages.outils[cle] = outil;
+    if (m && BARRES_CHOIX.indexOf(Number(m[1])) > -1) reglages.barres[cle] = Number(m[1]);
     garderReglages();
+  }
+  // Deux temps, pour tenir dans la carte : le materiel, puis, pour la barre,
+  // les halteres et le vis-a-vis, sa variante (le poids de la barre, ou ce
+  // que veut dire le poids note).
+  var CHOIX_OUTILS = [
+    { code:'barre', label:'BARRE' }, { code:'halteres', label:'2 HALTÈRES' }, { code:'haltere', label:'1 HALTÈRE' },
+    { code:'pile', label:'POULIE' }, { code:'visavis', label:'VIS-À-VIS' }, { code:'machine', label:'MACHINE' },
+    { code:'lest', label:'LEST' }
+  ];
+  var VARIANTES_OUTIL = {
+    barre:    { titre:'LA BARRE', choix:[{ code:'barre:20', label:'20 KG' }, { code:'barre:15', label:'15 KG' }, { code:'barre:10', label:'10 KG' }, { code:'barre:25', label:'25 KG' }] },
+    halteres: { titre:'LE POIDS NOTÉ', choix:[{ code:'halteres', label:'LES DEUX' }, { code:'halteres-main', label:'UN SEUL' }] },
+    visavis:  { titre:'LE POIDS NOTÉ', choix:[{ code:'visavis', label:'LES DEUX CÔTÉS' }, { code:'visavis-bras', label:'UN CÔTÉ' }] }
+  };
+  function familleOutil(outil){ return outil === 'halteres-main' ? 'halteres' : (outil === 'visavis-bras' ? 'visavis' : outil); }
+  var OUTIL_ETIQUETTE = { halteres:'HALTÈRES', 'halteres-main':'HALTÈRES', haltere:'HALTÈRE', pile:'POULIE',
+                          visavis:'VIS-À-VIS', 'visavis-bras':'VIS-À-VIS', machine:'MACHINE', lest:'LEST' };
+  function etiquetteOutil(o){ return o.outil === 'barre' ? 'BARRE ' + formatWeight(o.barre) : OUTIL_ETIQUETTE[o.outil]; }
+  var ICONE_HALTERE = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M3.5 9.5v5M6.5 7v10M17.5 7v10M20.5 9.5v5M6.5 12h11"></path></svg>';
+  var ICONE_POULIE = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="6" r="3"></circle><path d="M12 9v5"></path><rect x="8" y="14" width="8" height="7" rx="1.5"></rect></svg>';
+  function iconeOutil(outil){
+    if (outil === 'halteres' || outil === 'halteres-main' || outil === 'haltere') return ICONE_HALTERE;
+    if (outil === 'pile' || outil === 'visavis' || outil === 'visavis-bras') return ICONE_POULIE;
+    return ICONE_DISQUE;
+  }
+  // Le texte, selon le materiel. Ce que les disques ne font pas est dit.
+  function texteOutil(poids, o){
+    if (o.outil === 'barre') return texteDisques(poids, o.barre);
+    var vide = typeof poids !== 'number' || isNaN(poids) || poids <= 0;
+    var fw = formatWeight, t;
+    if (o.outil === 'lest'){
+      if (vide) return 'Au poids du corps, sans lest';
+      var rl = TS.chargerOutil(poids, 'lest');
+      t = '<b>' + rl.disques.map(fw).join(' + ') + '</b> à la ceinture';
+      if (rl.ecart !== 0) t += ' = ' + fw(rl.total) + ' kg, il manque ' + fw(Math.abs(rl.ecart));
+      return t;
+    }
+    if (vide) return 'Entre un poids';
+    var r = TS.chargerOutil(poids, o.outil);
+    if (o.outil === 'machine'){
+      if (!r.parCote.length) return 'Le chariot seul';
+      t = '<b>' + r.parCote.map(fw).join(' + ') + '</b> par côté, sans le chariot';
+      if (r.ecart !== 0) t += ' = ' + fw(r.total) + ' kg, il manque ' + fw(Math.abs(r.ecart));
+      return t;
+    }
+    if (o.outil === 'pile') return '<b>' + fw(r.total) + ' kg</b> sur la pile';
+    if (o.outil === 'haltere') return '<b>1 haltère de ' + fw(r.parUnite) + ' kg</b>';
+    if (o.outil === 'halteres') return '<b>2 haltères de ' + fw(r.parUnite) + ' kg</b>';
+    if (o.outil === 'halteres-main') return '<b>2 haltères de ' + fw(r.parUnite) + ' kg</b>, ' + fw(r.total) + ' kg en tout';
+    if (o.outil === 'visavis') return '<b>' + fw(r.parUnite) + ' kg</b> de chaque côté';
+    return '<b>' + fw(r.parUnite) + ' kg</b> de chaque côté, ' + fw(r.total) + ' kg en tout';
+  }
+  // Le choix du materiel prend la place de la ligne, le temps d'un appui.
+  function puceOutil(s, c, ici, niveau){
+    return '<button type="button" class="serie-outil-puce' + (ici ? ' actif' : '') + '" data-action="choisir-outil" data-niveau="' + niveau + '"'
+      + ' data-outil="' + c.code + '" data-serie-id="' + esc(s.id) + '" aria-pressed="' + (ici ? 'true' : 'false') + '">' + c.label + '</button>';
+  }
+  function choixOutilHTML(s, ex){
+    var o = outilDe(ex), famille = familleOutil(o.outil), actuel = o.outil === 'barre' ? 'barre:' + o.barre : o.outil;
+    var v = VARIANTES_OUTIL[famille];
+    return '<div class="serie-outil-choix" data-serie-id="' + esc(s.id) + '" role="group" aria-label="Le matériel de cet exercice">'
+      + '<p class="serie-outil-choix-titre">LE MATÉRIEL, POUR TOUTES SES SÉANCES</p>'
+      + '<div class="serie-outil-choix-liste">'
+      + CHOIX_OUTILS.map(function(c){ return puceOutil(s, c, c.code === famille, 'type'); }).join('')
+      + '</div>'
+      + (v ? '<p class="serie-outil-choix-titre espace">' + v.titre + '</p><div class="serie-outil-choix-liste">'
+           + v.choix.map(function(c){ return puceOutil(s, c, c.code === actuel, 'variante'); }).join('') + '</div>' : '')
+      + '</div>';
   }
   // Le texte de la ligne : les disques d'un cote, du plus lourd au plus
   // leger, et ce qui ne se charge pas est dit, jamais arrondi en silence.
@@ -2002,24 +2099,25 @@
     return txt;
   }
   function disquesLigneHTML(s, ex){
-    var barre = barreDe(ex);
-    return '<button type="button" class="serie-disques" data-action="barre" data-serie-id="' + esc(s.id) + '"'
-      + ' aria-label="Disques de chaque côté, barre de ' + formatWeight(barre) + ' kg. Appuyer pour changer de barre">'
-      + '<span class="serie-disques-barre">BARRE ' + formatWeight(barre) + '</span>'
-      + '<span class="serie-disques-txt">' + texteDisques(s.poids, barre) + '</span>'
+    var o = outilDe(ex);
+    return '<button type="button" class="serie-disques" data-action="outil-choix" data-serie-id="' + esc(s.id) + '"'
+      + ' aria-label="La charge, ' + esc(etiquetteOutil(o).toLowerCase()) + '. Appuyer pour changer de matériel">'
+      + '<span class="serie-disques-barre">' + etiquetteOutil(o) + '</span>'
+      + '<span class="serie-disques-txt">' + texteOutil(s.poids, o) + '</span>'
       + '</button>';
   }
-  // Les lignes d'une carte suivent le poids tape et la barre choisie, sans
-  // reconstruire la carte : le champ garde le focus.
+  // Les lignes d'une carte suivent le poids tape et le materiel choisi, sans
+  // reconstruire la carte : le champ garde le focus. L'icone du bouton suit.
   function majDisques(card, ex){
     if (!card || !ex) return;
-    var barre = barreDe(ex);
+    var o = outilDe(ex);
     card.querySelectorAll('.serie-disques').forEach(function(l){
       var s = (ex.series || []).filter(function(x){ return x.id === l.dataset.serieId; })[0];
       if (!s) return;
-      l.querySelector('.serie-disques-barre').textContent = 'BARRE ' + formatWeight(barre);
-      l.querySelector('.serie-disques-txt').innerHTML = texteDisques(s.poids, barre);
+      l.querySelector('.serie-disques-barre').textContent = etiquetteOutil(o);
+      l.querySelector('.serie-disques-txt').innerHTML = texteOutil(s.poids, o);
     });
+    card.querySelectorAll('[data-action="disques"]').forEach(function(b){ b.innerHTML = iconeOutil(o.outil); });
   }
 
   function noteSerieHTML(s, num){
@@ -2096,7 +2194,7 @@
       +   '<label class="serie-repos-champ"><span>REPOS</span>'
       +     '<input type="text" inputmode="numeric" enterkeyhint="done" class="serie-repos" placeholder="90" data-field="repos" data-serie-id="'+ sid +'" aria-label="Repos après la série '+num+', en secondes" value="'+esc(s.repos||'')+'"></label>'
       // Les disques, seulement la ou il y a des kilos : pas au temps, pas en cardio.
-      +   (auTemps ? '' : '<button type="button" class="serie-outil'+(disques?' actif':'')+'" data-action="disques" data-serie-id="'+ sid +'" aria-pressed="'+(disques?'true':'false')+'" aria-label="Voir les disques à mettre de chaque côté">'+ICONE_DISQUE+'</button>')
+      +   (auTemps ? '' : '<button type="button" class="serie-outil'+(disques?' actif':'')+'" data-action="disques" data-serie-id="'+ sid +'" aria-pressed="'+(disques?'true':'false')+'" aria-label="Voir la charge : disques, haltères ou poulie">'+iconeOutil(outilDe(ex).outil)+'</button>')
       +   '<button type="button" class="serie-outil'+(s.note?' actif':'')+'" data-action="note-serie" data-serie-id="'+ sid +'" aria-label="Commentaire sur la série '+num+'">'+ICONE_NOTE+'</button>'
       +   '<button type="button" class="serie-outil serie-del" data-action="del-serie" data-serie-id="'+ sid +'" aria-label="Supprimer la série '+num+'">'+ICONE_SUPPR+'</button>'
       + '</div>'
@@ -5390,15 +5488,33 @@
   // autour : la ligne s'ajoute ou part de la serie ouverte, les autres
   // series la recevront quand elles s'ouvriront.
   exListEl.addEventListener('click', function(e){
-    var b = e.target.closest('[data-action="disques"], [data-action="barre"]');
+    var b = e.target.closest('[data-action="disques"], [data-action="outil-choix"], [data-action="choisir-outil"]');
     if (!b) return;
     var found = findSerie(getOrCreateDay(state.selectedDay), b.dataset.serieId);
     if (!found) return;
     var ex = found.exercise;
     var card = b.closest('.ex-card');
-    if (b.dataset.action === 'barre'){
-      var i = BARRES_CHOIX.indexOf(barreDe(ex));
-      choisirBarre(ex, BARRES_CHOIX[(i + 1) % BARRES_CHOIX.length]);
+    var tmp;
+    // La ligne s'efface devant le choix du materiel, a la meme place.
+    if (b.dataset.action === 'outil-choix'){
+      tmp = document.createElement('div');
+      tmp.innerHTML = choixOutilHTML(found.serie, ex);
+      b.parentNode.replaceChild(tmp.firstChild, b);
+      e.stopPropagation();
+      return;
+    }
+    if (b.dataset.action === 'choisir-outil'){
+      var boite = b.closest('.serie-outil-choix');
+      var code = b.dataset.outil, avant = outilDe(ex);
+      // Un materiel qui a des variantes reste ouvert sur elles ; le materiel
+      // en cours, une variante ou un materiel sans variante referme le choix.
+      var resteOuvert = b.dataset.niveau === 'type' && code !== familleOutil(avant.outil) && !!VARIANTES_OUTIL[code];
+      if (b.dataset.niveau === 'type' && code === familleOutil(avant.outil)) code = null;
+      else if (code === 'barre') code = 'barre:' + avant.barre;
+      if (code) choisirOutil(ex, code);
+      tmp = document.createElement('div');
+      tmp.innerHTML = resteOuvert ? choixOutilHTML(found.serie, ex) : disquesLigneHTML(found.serie, ex);
+      boite.parentNode.replaceChild(tmp.firstChild, boite);
       majDisques(card, ex);
       e.stopPropagation();
       return;

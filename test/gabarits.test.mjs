@@ -789,7 +789,7 @@ ok('chrono libre : une heure de depart gardee, pas un compteur qui tourne',
 // exos, desactiver activer le chrono et personnaliser des reglages simples. »
 ok('reglages : par defaut l app est en mode simple, et rien n est efface',
    SRC.indexOf('var REGLAGES_DEFAUT = { chronoAuto:true, btnChrono:false, champRepos:false, rpe:false, ecranAllume:true,') > -1
-   && SRC.indexOf('nomsLibres:false, couleurs:{}, barres:{}, suivis:[], objectifSemaine:3 };') > -1
+   && SRC.indexOf('nomsLibres:false, couleurs:{}, barres:{}, outils:{}, suivis:[], objectifSemaine:3 };') > -1
    && /document\.body\.classList\.toggle\('sans-rpe', !reglages\.rpe\);/.test(SRC)
    && /body\.sans-rpe \.serie-rpe,/.test(HTML)
    && /body\.sans-repos-champ \.serie-repos-champ\{display:none;\}/.test(HTML)
@@ -1680,7 +1680,7 @@ ok('le choix de page SUIVIS / TOUS, avec ses comptes',
    && /data-page="suivis" aria-pressed="false">SUIVIS<span class="seg-compte" id="recapNbSuivis">/.test(HTML)
    && /data-page="tous" aria-pressed="false">TOUS<span class="seg-compte" id="recapNbTous">/.test(HTML));
 ok('les suivis sont un reglage local, lu sans doublon et borne',
-   /couleurs:\{\}, barres:\{\}, suivis:\[\], objectifSemaine:3 \}/.test(SRC) && /var SUIVIS_MAX = 40;/.test(SRC)
+   /couleurs:\{\}, barres:\{\},( outils:\{\},)? suivis:\[\], objectifSemaine:3 \}/.test(SRC) && /var SUIVIS_MAX = 40;/.test(SRC)
    && /k === 'suivis' \? \[\] : REGLAGES_DEFAUT\[k\]/.test(SRC)
    && /r\.suivis\.indexOf\(nom\) < 0 && r\.suivis\.length < SUIVIS_MAX/.test(SRC));
 ok('sans exercice suivi on arrive sur TOUS, sinon sur SUIVIS',
@@ -1946,6 +1946,18 @@ console.log('\n== 56. Une mise a jour se voit des la premiere reouverture (16/11
   ok('le service worker precharge ces memes adresses',
      !!v && SW.includes("'app.js?v=" + v + "',") && SW.includes("'intelligence.js?v=" + v + "',") && !/\n\s*'app\.js',/.test(SW));
 }
+
+console.log('\n== 57. Le materiel d un exercice (16/11) ==');
+ok('le materiel vient d intelligence.js, devine au nom puis choisi', /TS\.outilParDefaut\(/.test(SRC) && /TS\.chargerOutil\(poids, o\.outil\)/.test(SRC)
+   && /reglages\.outils\[cle\] = outil;/.test(SRC));
+ok('une barre choisie avant reste une barre', /BARRES_CHOIX\.indexOf\(barreChoisie\) > -1 \? 'barre' : auto\.outil/.test(SRC));
+ok('l echauffement ne compte une barre que pour une barre', /function barreDe\(ex\)\{\s*var o = outilDe\(ex\);\s*return o\.outil === 'barre' \? o\.barre : 0;/.test(SRC));
+ok('la ligne garde sa place : meme bouton, meme classe, le choix la remplace',
+   /class="serie-disques" data-action="outil-choix"/.test(SRC) && /b\.parentNode\.replaceChild\(tmp\.firstChild, b\);/.test(SRC));
+ok('le choix en deux temps : le materiel, puis sa variante', /var VARIANTES_OUTIL = \{/.test(SRC) && /data-niveau="' \+ niveau \+ '"/.test(SRC));
+ok('le bouton prend l icone de l outil', /iconeOutil\(outilDe\(ex\)\.outil\)/.test(SRC));
+ok('le choix n apparait que dans la serie ouverte', REFONTE.includes('.serie-card.ouverte .serie-outil-choix{display:block;}'));
+ok('les reglages relisent les outils connus et eux seuls', /if \(TS\.OUTILS\.indexOf\(lu\.outils\[nom\]\) > -1\) r\.outils\[nom\] = lu\.outils\[nom\];/.test(SRC));
 
 console.log(`\n${pass} reussis, ${fail} echoues`);
 process.exit(fail ? 1 : 0);

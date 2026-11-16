@@ -595,6 +595,18 @@ read and copies nothing:
   before) and `↺ REFAIRE MA DERNIÈRE SÉANCE` when it is a different one, with
   their title; everything is copied by `selectionnerSeance`.
 
+**The load by equipment (2026-11-16).** The plate line of the open set keeps
+its place but speaks for the exercise's equipment: plates per side for a bar,
+`2 haltères de 10 kg` for dumbbells, `2,5 kg de chaque côté` at a cable
+crossover, the stack weight on a pulley or selectorised machine, plates per side
+with no bar on a plate-loaded machine (leg press, hack squat), and plates on the
+belt for weighted dips or pull-ups. The button shows a disc, a dumbbell or a
+pulley. The equipment is guessed from the name (`TS.outilParDefaut`); an unknown
+name stays a 20 kg bar, as before. A tap on the line replaces it, in place, with
+a two-step choice: the equipment, then its variant — the bar weight, or what the
+noted weight means (both dumbbells or one). The choice holds for every session
+of the exercise, on this phone; a bar chosen before keeps working.
+
 **A session as an image (2026-11-16).** `PARTAGER EN IMAGE`, at the bottom of
 a session's page and after `FERMER` in the summary (no button moves), draws a
 1080 × 1920 story on the phone: date and title at the top, the muscle

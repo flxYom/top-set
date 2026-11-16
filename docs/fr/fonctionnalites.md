@@ -650,6 +650,19 @@ dernière fois, qui se lit et ne recopie rien :
   semaine d'avant) et `↺ REFAIRE MA DERNIÈRE SÉANCE` si ce n'est pas la même,
   avec leur titre ; tout se recopie par `selectionnerSeance`.
 
+**La charge selon le matériel (16/11/2026).** La ligne des disques de la série
+ouverte garde sa place, mais parle selon le matériel de l'exercice : les disques
+par côté pour une barre, `2 haltères de 10 kg` aux haltères, `2,5 kg de chaque
+côté` au vis-à-vis, le poids de la pile pour une poulie ou une machine à pile,
+les disques par côté sans barre pour une machine à disques (presse, hack squat),
+et les disques à la ceinture pour des dips ou des tractions lestés. Le bouton
+prend l'icône d'un disque, d'un haltère ou d'une poulie. Le matériel se devine au
+nom (`TS.outilParDefaut`) ; un nom inconnu reste une barre de 20 kg, comme avant.
+Un appui sur la ligne la remplace, au même endroit, par le choix du matériel, en
+deux temps : le matériel, puis sa variante — le poids de la barre, ou ce que veut
+dire le poids noté (les deux haltères ou un seul). Le choix vaut pour toutes les
+séances de l'exercice, sur ce téléphone ; une barre choisie avant reste la sienne.
+
 **L'image d'une séance (16/11/2026).** `PARTAGER EN IMAGE`, en bas de la fiche
 d'une séance et après `FERMER` dans le bilan (aucun bouton ne change de place),
 dessine sur le téléphone une story de 1080 × 1920 : la date et le titre en
