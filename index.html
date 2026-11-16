@@ -3526,6 +3526,15 @@ button:active:not(:disabled):not(.topbar-tab):not(.bulle-onglet){filter:brightne
   font-style:normal;font-size:var(--t-3);font-weight:800;letter-spacing:-.01em;white-space:nowrap;
   font-variant-numeric:tabular-nums;color:var(--ink);
 }
+/* ---- La silhouette d'une seance (16/11/2026) : fiche et bilan ---- */
+/* Le meme schema que le recap, pour un seul jour. Dans la fiche, une carte
+   comme celle du recap ; dans le bilan, un bloc comme les autres. */
+.muscles-jour{display:flex;flex-direction:column;gap:10px;padding:12px 13px 14px;border:1px solid var(--trait);}
+.muscles-jour-titre{font-family:var(--f-ui);font-size:var(--t-1);font-weight:700;letter-spacing:.08em;color:var(--dim);}
+.fiche-muscles{border-radius:var(--r-xl);background:var(--s1);}
+.bilan-muscles{border-radius:var(--r-m);padding:9px 11px 11px;}
+.bilan-muscles .muscle-svg{width:124px;height:auto;}
+.bilan-muscles .muscle-legend{gap:6px;}
 </style>
 </head>
 

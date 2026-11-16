@@ -1683,7 +1683,7 @@
   // zone. Un muscle travaille prend la couleur de son groupe ; un groupe note
   // « sans precision » allume toutes ses zones, plus pales. Geometrique,
   // comme le reste de la marque : pas un planche d'anatomie.
-  function muscleMapSVG(sous){
+  function muscleMapSVG(sous, libelle){
     function zone(nom){
       var g = PARENT_SOUS[nom] || nom;
       var c = (g && reglages.couleurs[g]) || GROUP_COLORS[g] || '#8a8275';
@@ -1737,7 +1737,7 @@
       + '<path d="M160 116 h-10 l1 32 h10 z" ' + zone('Ischios') + trait + '></path>'
       + '<path d="M129 156 h9 l-1 22 h-7 z" ' + zone('Mollets') + trait + '></path>'
       + '<path d="M161 156 h-9 l1 22 h7 z" ' + zone('Mollets') + trait + '></path>';
-    return '<svg class="muscle-svg" width="150" height="161" viewBox="0 0 190 206" fill="none" role="img" aria-label="Muscles travaillés sur la période, de face et de dos">'
+    return '<svg class="muscle-svg" width="150" height="161" viewBox="0 0 190 206" fill="none" role="img" aria-label="' + esc(libelle || 'Muscles travaillés sur la période, de face et de dos') + '">'
       + face + dos
       + '<text x="45" y="204" text-anchor="middle" fill="#a39b8f" font-size="11" font-weight="700" letter-spacing="1">FACE</text>'
       + '<text x="145" y="204" text-anchor="middle" fill="#a39b8f" font-size="11" font-weight="700" letter-spacing="1">DOS</text>'
@@ -3657,6 +3657,7 @@
         + statTile(volumeTexte(dayVolume(ds)) || '—', 'VOLUME')
         + statTile(fois + '×', fois > 1 ? 'FOIS CETTE SÉANCE' : 'PREMIÈRE FOIS')
         + '</div>';
+      html += musclesDuJour(ds, 'fiche-muscles');
     } else {
       html += '<div class="seances-vide">Séance prévue : ' + tous.length
         + (tous.length > 1 ? ' exercices posés' : ' exercice posé') + ', aucune valeur notée.</div>';
@@ -3962,6 +3963,32 @@
       + lienSavoir('/entrainement/nombre-de-series-par-muscle', 'POURQUOI 10\u00a0?') + '</div>';
   }
 
+  // La legende du schema : un groupe par ligne avec son nombre de series, et
+  // sous chaque groupe le detail de ses muscles. Partagee par le recap, la
+  // fiche d'une seance et le bilan.
+  function legendeMuscles(counts, sousC){
+    return GROUPS.filter(function(g){ return counts[g]; }).map(function(g){
+      var detail = (SOUS_GROUPES[g] || []).filter(function(s){ return sousC[s]; }).map(function(s){
+        return '<span>' + s + ' <b>' + sousC[s] + '</b></span>';
+      });
+      if (sousC[g] && detail.length) detail.push('<span>sans précision <b>' + sousC[g] + '</b></span>');
+      return '<div class="muscle-row"><span class="muscle-sw" style="background:'+couleurGroupe(g)+'"></span>'
+        + '<span class="muscle-name">'+g+'</span><span class="muscle-val">'+counts[g]+'</span></div>'
+        + (detail.length ? '<div class="muscle-sous">' + detail.join('') + '</div>' : '');
+    }).join('');
+  }
+  // La silhouette d'un seul jour (16/11/2026) : ce que la seance a travaille,
+  // dans sa fiche et dans le bilan. Rien quand aucune serie n'est notee.
+  function musclesDuJour(ds, classe){
+    var counts = groupCountsIn(ds, ds), sousC = sousCountsIn(ds, ds);
+    if (!Object.keys(counts).length) return '';
+    return '<div class="muscles-jour ' + (classe || '') + '">'
+      + '<div class="muscles-jour-titre">MUSCLES TRAVAILLÉS</div>'
+      + '<div class="muscle-body">' + muscleMapSVG(sousC, 'Muscles travaillés pendant cette séance, de face et de dos')
+      + '<div class="muscle-legend">' + legendeMuscles(counts, sousC) + '</div></div>'
+      + '</div>';
+  }
+
   function renderRecap(){
     var data = computeRecap(state.recapPeriod);
     document.getElementById('recapLabel').textContent = data.label.toUpperCase();
@@ -3995,16 +4022,7 @@
     var sousC = sousCountsIn(data.startStr, data.endStr);
     var worked = GROUPS.filter(function(g){ return counts[g]; });
     var idle = GROUPS.filter(function(g){ return !counts[g] && g !== 'Autre' && g !== 'Cardio'; });
-    // Sous chaque groupe, le detail de ses muscles.
-    var legend = worked.map(function(g){
-      var detail = (SOUS_GROUPES[g] || []).filter(function(s){ return sousC[s]; }).map(function(s){
-        return '<span>' + s + ' <b>' + sousC[s] + '</b></span>';
-      });
-      if (sousC[g] && detail.length) detail.push('<span>sans précision <b>' + sousC[g] + '</b></span>');
-      return '<div class="muscle-row"><span class="muscle-sw" style="background:'+couleurGroupe(g)+'"></span>'
-        + '<span class="muscle-name">'+g+'</span><span class="muscle-val">'+counts[g]+'</span></div>'
-        + (detail.length ? '<div class="muscle-sous">' + detail.join('') + '</div>' : '');
-    }).join('');
+    var legend = legendeMuscles(counts, sousC);
     if (!worked.length) legend = '<div class="muscle-name" style="color:var(--dim)">Rien sur cette période.</div>';
     var pasTouche = idle.map(function(g){ return g.toLowerCase(); });
     var note = pasTouche.length && worked.length
@@ -6778,6 +6796,8 @@
       +   '<div class="bilan-tuile"><b>' + b.exos + '</b><span>' + (b.exos > 1 ? 'EXOS' : 'EXO') + '</span></div>'
       +   '<div class="bilan-tuile' + (b.records ? ' or' : '') + '"><b>' + b.records + '</b><span>' + (b.records > 1 ? 'RECORDS' : 'RECORD') + '</span></div>'
       + '</div>';
+    var muscles = musclesDuJour(ds, 'bilan-muscles anim');
+    if (muscles) html += muscles.replace('class="muscles-jour bilan-muscles anim"', 'class="muscles-jour bilan-muscles anim" style="--i:3"');
 
     if (c){
       html += '<div class="bilan-bloc anim" style="--i:4">'

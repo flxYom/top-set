@@ -212,6 +212,13 @@ Garde : gabarits §40.
 **Le verre : une seule exception, la loupe des onglets** (décision du
 13/09/2026). Aucun nouvel élément en verre ailleurs.
 
+**La silhouette d'une séance — 16/11/2026.** Le schéma du récap
+(`muscleMapSVG`) sert aussi pour un seul jour : carte `--s1` au rayon
+`--r-xl` dans la fiche, bloc au rayon `--r-m` dans le bilan, où le dessin
+passe à 124 px de large pour laisser la légende lisible à 320 px. Titre
+MUSCLES TRAVAILLÉS en étiquette `--t-1`. Jamais dans l'écran de saisie.
+Garde : gabarits §45.
+
 **Le bloc « la prochaine fois » du bilan — 16/11/2026.** Même registre que
 la cible SUGGÉRÉ de la carte : filet et fond orange à 42 % / 6 %, pastille
 SUGGÉRÉ pleine orange en `--t-1`. Chaque ligne suit la grille de la

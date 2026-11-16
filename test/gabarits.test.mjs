@@ -1718,5 +1718,18 @@ ok('le bloc est etiquete SUGGERE et dit l ecart en mots',
 ok('le bloc garde le registre orange de la cible',
    /\.bilan-bloc\.prochaine\{border-color:rgba\(255,92,56,\.42\);/.test(REFONTE) && /\.bilan-cible\{[^}]*grid-column:2;/.test(REFONTE));
 
+console.log('\n== 45. La silhouette d une seance (16/11) : fiche et bilan ==');
+ok('la legende du schema est une seule fonction, pour le recap, la fiche et le bilan',
+   /function legendeMuscles\(counts, sousC\)/.test(SRC) && /var legend = legendeMuscles\(counts, sousC\);/.test(SRC)
+   && (SRC.match(/<span class="muscle-name">/g) || []).length === 1);
+ok('la silhouette d un jour compte les series de ce seul jour',
+   /var counts = groupCountsIn\(ds, ds\), sousC = sousCountsIn\(ds, ds\);/.test(SRC)
+   && /if \(!Object\.keys\(counts\)\.length\) return '';/.test(SRC));
+ok('elle dit ce qu elle montre', /muscleMapSVG\(sousC, 'Muscles travaillés pendant cette séance, de face et de dos'\)/.test(SRC)
+   && /aria-label="' \+ esc\(libelle \|\| 'Muscles travaillés sur la période, de face et de dos'\)/.test(SRC));
+ok('la fiche et le bilan la portent',
+   /html \+= musclesDuJour\(ds, 'fiche-muscles'\);/.test(SRC) && /musclesDuJour\(ds, 'bilan-muscles anim'\)/.test(SRC));
+ok('le bilan la tient a 124 px de large', /\.bilan-muscles \.muscle-svg\{width:124px;height:auto;\}/.test(REFONTE));
+
 console.log(`\n${pass} reussis, ${fail} echoues`);
 process.exit(fail ? 1 : 0);

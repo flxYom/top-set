@@ -411,6 +411,14 @@ cible. La carte passe désormais le cycle déclaré à la règle, comme la doubl
 progression le prévoyait : 8 à 12 reps en hypertrophie, un cran à reps égales
 en force.
 
+**La silhouette d'une séance** (16 novembre 2026). Le schéma de face et de
+dos de PROGRÈS montre aussi une seule séance : dans sa fiche, sous les quatre
+tuiles, et dans le bilan de fin de séance, sous les tuiles séries, exos,
+records. Mêmes zones, mêmes couleurs de groupe, même légende (un groupe par
+ligne avec son nombre de séries, les muscles dessous). La légende est une seule
+fonction pour le récap, la fiche et le bilan. Pas de silhouette pendant la
+séance elle-même : l'écran de saisie reste réservé aux séries.
+
 **Duplication de série.** `+ SÉRIE` recopie la précédente : poids, reps, RPE,
 repos. Seul `fait` repart à zéro, et le commentaire ne se recopie pas. Sur cinq
 séries identiques, tu en saisis une et tu appuies quatre fois. La ligne s'ajoute

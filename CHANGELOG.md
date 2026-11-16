@@ -9,6 +9,15 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ## [Unreleased]
 
+### Added — a session's muscle silhouette (2026-11-16)
+
+- The front-and-back silhouette of PROGRÈS now also shows one session: in
+  its sheet, under the four tiles, and in the end-of-session summary, under
+  the series/exos/records tiles. Same zones, same group colours, same
+  legend (one group per line with its set count, the muscles below). The
+  legend is now one shared function for the recap, the sheet and the
+  summary. Service worker v71, gabarits §45.
+
 ### Added — "next time" in the end-of-session summary (2026-11-16)
 
 - The summary ends with a "LA PROCHAINE FOIS · SUGGÉRÉ" block: one line per

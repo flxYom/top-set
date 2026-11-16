@@ -375,6 +375,14 @@ the target's orange register. The card now passes the declared cycle to the
 rule, as double progression intended: 8 to 12 reps in hypertrophy, one step at
 equal reps in strength.
 
+**A session's silhouette** (16 November 2026). The front-and-back drawing of
+PROGRÈS also shows a single session: in its sheet, under the four tiles, and in
+the end-of-session summary, under the sets/exos/records tiles. Same zones, same
+group colours, same legend (one group per line with its set count, the muscles
+below). The legend is one shared function for the recap, the sheet and the
+summary. No silhouette during the session itself: the logging screen stays for
+sets.
+
 **Set duplication.** `+ SÉRIE` copies the previous set — weight, reps, RPE, rest.
 Only `fait` resets, and the comment is not copied. Five identical sets means
 typing one and tapping four times. The row is added to the card without
