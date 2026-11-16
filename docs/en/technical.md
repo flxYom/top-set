@@ -198,6 +198,14 @@ transpiling, the global names shared between files are kept, and `sw.js` is left
 alone (its `VERSION` stays readable online). If the build fails, Vercel keeps the
 previous version live. To test before pushing: `node build.mjs && npx serve dist`.
 
+**An update shows on the first relaunch (2026-11-16).** The page always comes
+from the network, but the service worker served `app.js` from its cache: the
+first relaunch after an update showed the new page with the old code, and the
+app had to be reopened a second time. `index.html` now loads `app.js?v=82` and
+`intelligence.js?v=82`; the old service worker does not know these URLs and
+fetches them. The number follows `VERSION` in `sw.js`, which precaches the
+same URLs: on every change, all three move together (gabarits §56).
+
 **CSS minified too (2026-11-16).** The same esbuild, in CSS mode, shrinks the
 three `<style>` tags of `index.html` (over half the file, and what blocks the
 first paint) plus `css/contenu.css` and `css/legal.css`. `index.html` goes from

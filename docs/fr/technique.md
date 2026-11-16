@@ -207,6 +207,15 @@ et `sw.js` n'est pas touché (sa `VERSION` reste lisible en ligne). Si le build
 échoue, Vercel garde la version précédente en ligne. Pour tester avant de
 pousser : `node build.mjs && npx serve dist`.
 
+**Une mise à jour se voit dès la première réouverture (16/11/2026).** La page
+vient toujours du réseau, mais le service worker servait `app.js` depuis son
+cache : la première réouverture après une mise à jour montrait la page neuve
+avec l'ancien code, et il fallait rouvrir l'app une seconde fois. `index.html`
+appelle désormais `app.js?v=82` et `intelligence.js?v=82` ; l'ancien service
+worker ne connaît pas ces adresses et va les chercher sur le réseau. Le numéro
+suit `VERSION` dans `sw.js`, qui précharge les mêmes adresses : à chaque
+changement, les trois se montent ensemble (gabarits §56).
+
 **Le CSS minifié aussi (16/11/2026).** Le même esbuild, en mode CSS, réduit les
 trois balises `<style>` d'`index.html` (plus de la moitié du fichier, et ce qui
 bloque le premier affichage) ainsi que `css/contenu.css` et `css/legal.css`.

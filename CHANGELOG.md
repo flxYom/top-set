@@ -9,6 +9,16 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ## [Unreleased]
 
+### Fixed — an update shows on the first relaunch (2026-11-16)
+
+- The page always came from the network but `app.js` came from the service
+  worker's cache, so the first relaunch after an update ran the new page
+  with the old code; new features only appeared after a second relaunch.
+  `index.html` now loads `app.js?v=82` and `intelligence.js?v=82`, which the
+  old service worker has never cached and fetches from the network. The
+  number follows the service worker's `VERSION`, which precaches the same
+  URLs (gabarits §56). Service worker v82.
+
 ### Added — a session as a story image (2026-11-16)
 
 - `PARTAGER EN IMAGE`, under a session's page and after `FERMER` in the

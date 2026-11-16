@@ -186,7 +186,8 @@ ok('style-src garde unsafe-inline, et c est assume',
 ok('aucun script inline dans index.html', !/<script>/.test(HTML));
 ok('aucun gestionnaire inline dans index.html', !/<[a-z]+[^>]* on[a-z]+=/i.test(HTML));
 ok('aucune URL javascript:', HTML.indexOf('javascript:') === -1);
-ok('app.js est precache par le service worker', SW.indexOf("'app.js'") > -1);
+// Avec son numero de version depuis le 16/11/2026 (voir §56).
+ok('app.js est precache par le service worker', /'app\.js(\?v=\d+)?'/.test(SW));
 ok('frame-ancestors none', CFG.indexOf("frame-ancestors 'none'") > -1);
 ok('object-src none', CFG.indexOf("object-src 'none'") > -1);
 [['X-Content-Type-Options', 'nosniff'],
@@ -1936,6 +1937,15 @@ ok('dans la fiche, avant ENREGISTRER COMME MODELE ; dans le bilan, apres FERMER'
 ok('le panneau passe au-dessus du bilan et se ferme avec les autres',
    REFONTE.includes('.image-sheet{z-index:65;}') && /'peseeSheet', 'imageSheet'\]/.test(SRC));
 ok('aucun envoi : ni fetch ni rpc dans le dessin', !/fetch\(|\.rpc\(/.test(corps('function dessinerStory', 'function fermerImage')));
+
+console.log('\n== 56. Une mise a jour se voit des la premiere reouverture (16/11) ==');
+{
+  const v = (SW.match(/var VERSION = 'topset-v(\d+)';/) || [])[1];
+  ok('app.js et intelligence.js portent le numero du service worker',
+     !!v && HTML.includes('<script src="app.js?v=' + v + '" defer></script>') && HTML.includes('<script src="intelligence.js?v=' + v + '" defer></script>'));
+  ok('le service worker precharge ces memes adresses',
+     !!v && SW.includes("'app.js?v=" + v + "',") && SW.includes("'intelligence.js?v=" + v + "',") && !/\n\s*'app\.js',/.test(SW));
+}
 
 console.log(`\n${pass} reussis, ${fail} echoues`);
 process.exit(fail ? 1 : 0);
