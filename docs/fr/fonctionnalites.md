@@ -467,6 +467,20 @@ menu ⋯ de sa carte commence par « ↗ COMMENT LE FAIRE », et sa fiche montre
 une page ajoutée à `exercices/` doit y être ajoutée aussi, et un gabarit le
 vérifie.
 
+**Un seul jeu d'icônes** (16 novembre 2026). Les glyphes texte qui servaient
+d'icônes (⇄ ↺ ✎ ⋯ △ ▲ ▼ ✕ ↗ ⇅ ⟳ ＋ ◷ ▶ ❚❚ ✓ × ‹ ›) changeaient de forme, de
+graisse et d'alignement d'un téléphone à l'autre. Ils sont remplacés par un
+seul jeu SVG, tracé comme les icônes des onglets (24 × 24, trait de 1,9, bouts
+ronds, couleur du texte) : le menu de la carte (flamme pour l'échauffement,
+chevrons pour monter et descendre, flèches croisées pour « c'est le même
+exercice », corbeille), le bouton ⋯, DERNIÈRE FOIS, le superset (un maillon),
+la coche de la série, le temps et le cardio (une horloge), partager, renommer,
+l'ordre, fermer, revenir, rafraîchir, la lecture et la pause du chrono. Le jeu
+vit dans `ico()` (`app.js`) ; le HTML statique en porte des copies exactes,
+vérifiées par un gabarit. Les signes typographiques restent du texte : le ×
+de « 80 kg × 10 », la flèche des horaires, ▲ ▼ devant un pourcentage, le ›
+des liens.
+
 **Duplication de série.** `+ SÉRIE` recopie la précédente : poids, reps, RPE,
 repos. Seul `fait` repart à zéro, et le commentaire ne se recopie pas. Sur cinq
 séries identiques, tu en saisis une et tu appuies quatre fois. La ligne s'ajoute

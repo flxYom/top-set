@@ -212,6 +212,17 @@ Garde : gabarits §40.
 **Le verre : une seule exception, la loupe des onglets** (décision du
 13/09/2026). Aucun nouvel élément en verre ailleurs.
 
+**Les icônes — 16/11/2026 (§8 posé).** Un seul jeu SVG, tracé comme les
+icônes des onglets : grille 24 × 24, trait 1,9, bouts et angles ronds,
+`currentColor`, aucune couleur propre. Devant un libellé : 1,25 em et 0,45 em
+d'espace ; seule dans un bouton de 44 px : 20 px. Remplissage plein réservé à
+deux tracés (les trois points du menu, la lecture du chrono). Correspondances :
+flamme = échauffement, chevrons = monter/descendre/revenir, flèches croisées =
+« c'est le même exercice » et passer en répétitions, maillon = superset,
+horloge = au temps, cardio et horaires, flèche sortant d'une boîte = partager,
+livre = Apprendre, corbeille = supprimer. Les signes typographiques restent du
+texte (×, →, ▲ ▼ devant un pourcentage, › des liens). Garde : gabarits §50.
+
 **L'année, écran par écran — 16/11/2026.** Un plein écran sur `--bg`, un
 chiffre par écran. Le fond prend en halo (24 %) la couleur du rôle de l'écran :
 orange marque pour l'ouverture et la fin, `--ok` pour la régularité et la

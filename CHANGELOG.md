@@ -9,6 +9,19 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ## [Unreleased]
 
+### Changed — one SVG icon set (2026-11-16)
+
+- The text glyphs used as icons (⇄ ↺ ✎ ⋯ △ ▲ ▼ ✕ ↗ ⇅ ⟳ ＋ ◷ ▶ ❚❚ ✓ × ‹ ›)
+  changed shape, weight and alignment from one phone to the next. They are
+  now one SVG set drawn like the tab icons (24 × 24, 1.9 stroke, round
+  ends, text colour): the card menu (warm-up flame, move up and down,
+  "same exercise", bin), the ⋯ button, LAST TIME, superset (a link), the
+  set tick, timed/cardio (a clock), share, edit, sort, close, back, refresh,
+  the chrono's play and pause. `ico()` in `app.js` holds the set; the static
+  HTML carries exact copies, checked by a gabarit. Typographic signs stay
+  text: × in "80 kg × 10", → in times, ▲▼ in percentages, the › of links.
+  Service worker v76, gabarits §50.
+
 ### Added — how to do it, from the card (2026-11-16)
 
 - When an exercise has its page in Apprendre (bench press, plank and its

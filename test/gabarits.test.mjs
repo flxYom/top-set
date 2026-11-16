@@ -909,7 +909,7 @@ ok('une abreviation connue partage l historique du nom entier',
 ok('fusionner deux exercices se fait depuis le menu de la carte, a tout moment',
    /function ouvrirFusion\(card, ex\)\{/.test(SRC)
    && /data-action="fusion" data-id="/.test(SRC)
-   && /\u21c4 RATTACH\u00c9 \u00c0 \u00ab '/.test(SRC)
+   && /ico\('echange'\) \+ \(rattacheA \? 'RATTACH\u00c9 \u00c0 \u00ab '/.test(SRC)
    && /data-action="rattacher"/.test(SRC) && /data-action="detacher"/.test(SRC)
    && /relierExo\(ex, null, true\);/.test(SRC)
    // Un seul chemin pour rattacher : la frappe et le menu passent par la.
@@ -1795,9 +1795,22 @@ ok('chaque page d exercice est connue de l app, et chaque lien mene a une page q
             return pages.length > 0 && pages.every(p => liens.includes(p)) && liens.every(l => pages.includes(l)); })());
 ok('le nom passe par cleCanonique (bench, dc)', /return cleCanonique\(n\) === cle;/.test(SRC));
 ok('la carte le propose en tete du menu, la fiche sous son nom',
-   /'<a class="ex-menu-item" href="' \+ page \+ '">↗ COMMENT LE FAIRE<\/a>'/.test(SRC) && /return comment\s*\+ echauffer/.test(SRC)
+   /'<a class="ex-menu-item" href="' \+ page \+ '">' \+ ico\('livre'\) \+ 'COMMENT LE FAIRE<\/a>'/.test(SRC) && /return comment\s*\+ echauffer/.test(SRC)
    && /lienSavoir\(pageX, 'COMMENT LE FAIRE\\u00a0\?'\)/.test(SRC));
 ok('le lien a l allure des autres lignes du menu', /a\.ex-menu-item\{display:flex;align-items:center;text-decoration:none;\}/.test(REFONTE));
+
+console.log('\n== 50. Les icones (16/11) : un seul jeu SVG ==');
+const ICO = Object.fromEntries([...SRC.matchAll(/^    ([a-z]+):'(<[^']+)'/gm)].map(m => [m[1], m[2]]));
+ok('le jeu d icones est defini une fois, dans app.js', Object.keys(ICO).length >= 19 && /function ico\(nom, seul\)\{/.test(SRC));
+ok('le HTML statique en porte des copies exactes',
+   (() => { const svgs = [...HTML.matchAll(/<svg class="ico( seul)?" viewBox="0 0 24 24" aria-hidden="true" focusable="false">(.*?)<\/svg>/g)].map(m => m[2]);
+            return svgs.length >= 20 && svgs.every(p => Object.values(ICO).includes(p)); })());
+ok('plus de glyphe texte dans les boutons de l app',
+   !/>(⇄|↺|△|✕|⋯|✎|⟳|＋|◷|❚❚|▶) /.test(SRC) && !/'(⇄|↺|△|✕|◷|＋) [A-ZÉ]/.test(SRC) && !/>×<\/button>/.test(HTML) && !/>‹ RETOUR</.test(HTML) && !/>&lsaquo;<|>&#8635;</.test(HTML));
+ok('un bouton qui change de libelle passe par innerHTML', /bascule\.innerHTML = libelleMesure\(/.test(SRC) && /bouton\.innerHTML = ico\('coche'\)/.test(SRC)
+   && /b\.innerHTML = h \? esc\(h\.toUpperCase\(\)\) : ico\('horloge'\)/.test(SRC));
+ok('l icone prend la couleur du texte et un trait de 1,9',
+   /\.ico\{[^}]*fill:none;stroke:currentColor;stroke-width:1\.9;stroke-linecap:round;stroke-linejoin:round;\}/.test(REFONTE));
 
 console.log(`\n${pass} reussis, ${fail} echoues`);
 process.exit(fail ? 1 : 0);

@@ -424,6 +424,14 @@ shorthand follows ("bench", "dc"). The mapping lives in `PAGES_EXERCICE` in
 `app.js`: a page added to `exercices/` must be added there too, and a gabarit
 checks it.
 
+**One icon set** (16 November 2026). The text glyphs used as icons
+(⇄ ↺ ✎ ⋯ △ ▲ ▼ ✕ ↗ ⇅ ⟳ ＋ ◷ ▶ ❚❚ ✓ × ‹ ›) changed shape, weight and alignment from
+one phone to another. One SVG set replaces them, drawn like the tab icons
+(24 × 24, 1.9 stroke, round ends, text colour). The set lives in `ico()`
+(`app.js`); the static HTML carries exact copies, checked by a gabarit.
+Typographic signs stay text: the × of "80 kg × 10", the arrow of times, ▲ ▼
+before a percentage, the › of links.
+
 **Set duplication.** `+ SÉRIE` copies the previous set — weight, reps, RPE, rest.
 Only `fait` resets, and the comment is not copied. Five identical sets means
 typing one and tapping four times. The row is added to the card without

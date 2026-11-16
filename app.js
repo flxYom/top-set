@@ -1801,7 +1801,7 @@
       var hh = horairesTexte(ds);
       tags += '<button type="button" class="hero-tag hero-heures" id="heroHeures"'
         + ' aria-label="Horaires de la séance">'
-        + (hh ? esc(hh.toUpperCase()) : '＋ HORAIRES') + '</button>';
+        + (hh ? esc(hh.toUpperCase()) : ico('horloge') + 'HORAIRES') + '</button>';
     }
 
     var hero = document.getElementById('heroBand');
@@ -2049,7 +2049,7 @@
       +   valeur
       // Le cardio n'a pas de difficulte : la vitesse et l'inclinaison la disent.
       +   (cardio ? '' : '<select class="serie-rpe'+(s.rpe==null?' vide':'')+'" data-field="rpe"' + (auTemps ? ' data-mode="temps"' : '') + ' data-serie-id="'+ sid +'" title="'+titreEffort+'" aria-label="'+(auTemps ? 'Difficulté' : 'RPE')+' série '+num+'">'+rpeOptions+'</select>')
-      +   '<button type="button" class="serie-check'+(s.fait?' checked':'')+'" data-action="toggle-fait" data-serie-id="'+ sid +'" aria-pressed="'+(s.fait?'true':'false')+'" aria-label="Série '+num+' — '+(s.fait?'marquer comme non faite':'marquer comme faite')+'">'+(s.fait?'✓':'')+'</button>'
+      +   '<button type="button" class="serie-check'+(s.fait?' checked':'')+'" data-action="toggle-fait" data-serie-id="'+ sid +'" aria-pressed="'+(s.fait?'true':'false')+'" aria-label="Série '+num+' — '+(s.fait?'marquer comme non faite':'marquer comme faite')+'">'+(s.fait?ico('coche', true):'')+'</button>'
       +   (pr ? ETOILE_PR : '')
       + '</div>'
       + '<div class="serie-outils">'
@@ -2164,7 +2164,7 @@
         +   '<span class="ex-cible-val">' + esc(val) + '</span>'
         +   '<button type="button" class="ex-cible-copie" data-copier="' + esc(ex.id) + '"'
         +     ' data-poids="' + cible.poids + '" data-reps="' + esc(String(cible.reps)) + '" data-type=""'
-        +     ' aria-label="Recopier la cible ' + esc(val) + '">↺</button>'
+        +     ' aria-label="Recopier la cible ' + esc(val) + '">' + ico('refaire', true) + '</button>'
         + '</div>'
         + '<div class="ex-cible-raison">' + esc(cible.raison)
         +   lienSavoir('/entrainement/surcharge-progressive', 'D\u2019OÙ ÇA VIENT\u00a0?')
@@ -2266,13 +2266,13 @@
     var charge = auTemps || series.some(function(s){ return TS.typeSerie(s) === TS.TYPES.ECHAUFFEMENT; })
       ? null : chargeDeTravail(ex, p);
     var echauffer = charge === null ? ''
-      : '<button type="button" class="ex-menu-item" data-action="echauffement" data-id="'+ eid +'">△ ÉCHAUFFEMENT POUR ' + esc(formatWeight(charge)) + ' KG</button>';
+      : '<button type="button" class="ex-menu-item" data-action="echauffement" data-id="'+ eid +'">' + ico('flamme') + 'ÉCHAUFFEMENT POUR ' + esc(formatWeight(charge)) + ' KG</button>';
     var pl = placeBloc(ex);
     var deplacer = (pl.i < 0 || pl.n < 2) ? ''
-      : (pl.i > 0 ? '<button type="button" class="ex-menu-item" data-action="monter" data-id="'+ eid +'">▲ MONTER DANS LA SÉANCE</button>' : '')
-      + (pl.i < pl.n - 1 ? '<button type="button" class="ex-menu-item" data-action="descendre" data-id="'+ eid +'">▼ DESCENDRE DANS LA SÉANCE</button>' : '');
+      : (pl.i > 0 ? '<button type="button" class="ex-menu-item" data-action="monter" data-id="'+ eid +'">' + ico('haut') + 'MONTER DANS LA SÉANCE</button>' : '')
+      + (pl.i < pl.n - 1 ? '<button type="button" class="ex-menu-item" data-action="descendre" data-id="'+ eid +'">' + ico('bas') + 'DESCENDRE DANS LA SÉANCE</button>' : '');
     var page = pageExercice(ex.nom);
-    var comment = page ? '<a class="ex-menu-item" href="' + page + '">↗ COMMENT LE FAIRE</a>' : '';
+    var comment = page ? '<a class="ex-menu-item" href="' + page + '">' + ico('livre') + 'COMMENT LE FAIRE</a>' : '';
     return comment
       + echauffer
       + deplacer
@@ -2281,10 +2281,10 @@
           : '')
       + (ex.nom && ex.nom.trim()
           ? '<button type="button" class="ex-menu-item" data-action="fusion" data-id="'+ eid +'">'
-            + (rattacheA ? '⇄ RATTACHÉ À « ' + esc(rattacheA.toUpperCase()) + ' »'
-                         : '⇄ C\'EST LE MÊME EXERCICE QUE…') + '</button>'
+            + ico('echange') + (rattacheA ? 'RATTACHÉ À « ' + esc(rattacheA.toUpperCase()) + ' »'
+                         : 'C\'EST LE MÊME EXERCICE QUE…') + '</button>'
           : '')
-      + '<button type="button" class="ex-menu-item danger ex-del" data-id="'+ eid +'">✕ SUPPRIMER L\'EXERCICE</button>';
+      + '<button type="button" class="ex-menu-item danger ex-del" data-id="'+ eid +'">' + ico('corbeille') + 'SUPPRIMER L\'EXERCICE</button>';
   }
   function majMenuExo(card, ex){
     var menu = card && card.querySelector('.ex-menu');
@@ -2311,7 +2311,7 @@
       +     '<select class="ex-groupe" data-field="groupe" data-id="'+ eid +'" aria-label="Groupe musculaire">'+groupOptions+'</select></label>'
       // L'exercice en plein ecran : pas pour le cardio, qui n'enchaine rien.
       +   (auTemps && estCardio(ex) ? '' : '<button type="button" class="ex-focus-btn" data-action="focus" data-id="'+ eid +'" aria-label="Ouvrir l\'exercice en plein écran"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/></svg></button>')
-      +   '<button type="button" class="ex-menu-btn" data-action="menu-exo" data-id="'+ eid +'" aria-expanded="false" aria-label="Plus d\'actions sur l\'exercice">⋯</button>'
+      +   '<button type="button" class="ex-menu-btn" data-action="menu-exo" data-id="'+ eid +'" aria-expanded="false" aria-label="Plus d\'actions sur l\'exercice">' + ico('points', true) + '</button>'
       + '</div>'
       + menu
       + '<div class="ex-body">'
@@ -2325,7 +2325,7 @@
       // disparaitre des la premiere ligne remplie, et c'est justement a la
       // troisieme serie qu'on veut encore retrouver celles de ce jour-la.
       // Il part quand il n'y a plus rien a reprendre.
-      +     (resteAReprendre(ex, p) ? '<button type="button" class="btn-comme-avant" data-action="comme-avant" data-id="'+ eid +'">↺ DERNIÈRE FOIS</button>' : '')
+      +     (resteAReprendre(ex, p) ? '<button type="button" class="btn-comme-avant" data-action="comme-avant" data-id="'+ eid +'">' + ico('refaire') + 'DERNIÈRE FOIS</button>' : '')
       // Le chrono d'un gainage : lancer, puis pause, et la serie est notee.
       +     ((auTemps || reglages.btnChrono) && !estCardio(ex) ? boutonChronoHTML(ex) : '')
       // A cote de « + SERIE », parce que c'est au meme moment qu'on y pense :
@@ -2335,8 +2335,8 @@
       // Le superset est une action de saisie, pas un reglage : il reste avec
       // « + SERIE », la ou on ajoute quelque chose a sa seance.
       +   (ex.bloc
-            ? '<button type="button" class="btn-superset" data-action="detacher" data-id="'+ eid +'">⇄ SORTIR DU SUPERSET</button>'
-            : '<button type="button" class="btn-superset" data-action="superset" data-id="'+ eid +'">⇄ AJOUTER UN EXERCICE EN SUPERSET</button>')
+            ? '<button type="button" class="btn-superset" data-action="detacher" data-id="'+ eid +'">' + ico('lien') + 'SORTIR DU SUPERSET</button>'
+            : '<button type="button" class="btn-superset" data-action="superset" data-id="'+ eid +'">' + ico('lien') + 'AJOUTER UN EXERCICE EN SUPERSET</button>')
       // Une seance passee et faite : l'exercice se recopie dans celle d'aujourd'hui.
       +   (seanceFaite(state.selectedDay) && series.some(serieRemplie)
             ? '<button type="button" class="btn-ajout-jour" data-action="ajout-jour" data-id="'+ eid +'">+ AJOUTER À MA SÉANCE DU JOUR</button>'
@@ -2364,12 +2364,12 @@
       + (auTemps && estCardio(ex) ? '<span aria-hidden="true">MIN</span><span aria-hidden="true">KM/H</span><span aria-hidden="true">INCL. %</span>'
          : auTemps ? '<span class="col-duree" aria-hidden="true">DURÉE</span><span class="col-rpe" aria-hidden="true">DIFF.</span>'
                  : '<span aria-hidden="true">KG</span><span aria-hidden="true">REPS</span><span class="col-rpe" aria-hidden="true">RPE</span>')
-      + '<span aria-hidden="true">✓</span></div>'
+      + '<span aria-hidden="true">' + ico('coche', true) + '</span></div>'
       + series.map(function(s,idx){ return serieRowHTML(s, idx, ex, auTemps, p && p.prec, s.id === ouverte); }).join('');
   }
   function libelleMesure(auTemps, cardio){
-    if (auTemps) return '⇄ PASSER EN RÉPÉTITIONS';
-    return cardio ? '◷ PASSER EN CARDIO (MINUTES, VITESSE…)' : '◷ PASSER AU TEMPS (GAINAGE, PLANCHE…)';
+    if (auTemps) return ico('echange') + 'PASSER EN RÉPÉTITIONS';
+    return ico('horloge') + (cardio ? 'PASSER EN CARDIO (MINUTES, VITESSE…)' : 'PASSER AU TEMPS (GAINAGE, PLANCHE…)');
   }
   // Taper un nom change tout ce qui en depend : la colonne PRÉC., et le
   // passage en secondes pour « Planche ». On repeint les series, pas la
@@ -2383,7 +2383,7 @@
     var liste = card.querySelector('.series-list');
     if (liste) liste.innerHTML = seriesListeHTML(ex, auTemps, p);
     var bascule = card.querySelector('[data-action="mesure"]');
-    if (bascule) bascule.textContent = libelleMesure(auTemps, cardioParDefaut(ex));
+    if (bascule) bascule.innerHTML = libelleMesure(auTemps, cardioParDefaut(ex));
   }
   // Une carte refaite sur place, sans toucher aux autres : cocher une serie
   // replie la ligne et ouvre la suivante.
@@ -3141,7 +3141,7 @@
     var b = document.getElementById('heroHeures');
     if (!b) return;
     var h = horairesTexte(ds);
-    b.textContent = h ? h.toUpperCase() : '＋ HORAIRES';
+    b.innerHTML = h ? esc(h.toUpperCase()) : ico('horloge') + 'HORAIRES';
   }
   function definirHoraires(ds, debut, fin){
     var day = getOrCreateDay(ds);
@@ -3647,7 +3647,7 @@
     var html = '<div class="fiche-tete" style="--card-color:' + couleur + '">'
       + '<div class="fiche-titre-ligne">'
       +   '<button type="button" class="fiche-titre" id="ficheTitre" title="Renommer">' + esc(titreSeance(ds)) + '</button>'
-      +   '<button type="button" class="seance-crayon" id="ficheCrayon" aria-label="Renommer la séance">✎</button>'
+      +   '<button type="button" class="seance-crayon" id="ficheCrayon" aria-label="Renommer la séance">' + ico('crayon', true) + '</button>'
       + '</div>'
       + '<div class="fiche-quand">' + esc(quand)
       +   (cycleDe(ds) ? '<span class="fiche-cycle">' + esc(cycleDe(ds).toUpperCase()) + '</span>' : '')
@@ -3709,7 +3709,7 @@
     });
 
     var meme = (ds === state.selectedDay);
-    html += '<button type="button" class="btn-partage" id="fichePartager">↗ PARTAGER CETTE SÉANCE</button>';
+    html += '<button type="button" class="btn-partage" id="fichePartager">' + ico('partager') + 'PARTAGER CETTE SÉANCE</button>';
     html += '<button type="button" class="btn-partage" id="ficheIA">COPIER POUR UNE IA</button>';
     html += '<button type="button" class="btn-add" id="ficheModifier">MODIFIER CETTE SÉANCE</button>';
     html += '<button type="button" class="btn-reprendre" id="ficheSelectionner"' + (meme ? ' disabled' : '') + '>'
@@ -3841,7 +3841,7 @@
         + (h ? '<span class="fin-faite-heure">' + esc(h) + '</span>' : '')
         + '<button type="button" class="fin-revoir" id="finRevoir">REVOIR LE BILAN ›</button></div>';
     } else {
-      zone.innerHTML = '<button type="button" class="btn-fin" id="finBtn">✓ TERMINER MA SÉANCE</button>';
+      zone.innerHTML = '<button type="button" class="btn-fin" id="finBtn">' + ico('coche') + 'TERMINER MA SÉANCE</button>';
     }
   }
   function fromISO(iso){
@@ -4296,6 +4296,36 @@
   // en decoration : il n'apparait qu'a cote d'un chiffre que l'app vient de
   // sortir, pour qu'une question qui se pose dans la salle trouve sa reponse
   // en un appui au lieu de finir dans un forum. (22/10/2026)
+  // ---------- icones (16/11/2026) ----------
+  // Un seul jeu, trace comme les icones des onglets : 24 x 24, trait de 1,9,
+  // bouts ronds. Il remplace les glyphes texte (⇄ ↺ ✎ ⋯ △ ✕…), qui
+  // changeaient de forme et de graisse d'un telephone a l'autre. Le HTML
+  // statique en porte des copies exactes ; un gabarit verifie qu'elles
+  // suivent ce dictionnaire.
+  var ICONES = {
+    echange:'<path d="M7 7h12l-3.5-3.5M17 17H5l3.5 3.5"/>',
+    refaire:'<path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3"/><path d="M4.5 4.5v4h4"/>',
+    flamme:'<path d="M12 3.5c.8 3 4.5 4.6 4.5 9a4.5 4.5 0 0 1-9 0c0-2.2 1.2-3.4 2.3-4.4.1 1.8.9 2.9 2.2 3.1-.6-2.6-.6-5 0-7.7z"/>',
+    haut:'<path d="M6 15l6-6 6 6"/>',
+    bas:'<path d="M6 9l6 6 6-6"/>',
+    gauche:'<path d="M15 5l-7 7 7 7"/>',
+    droite:'<path d="M9 5l7 7-7 7"/>',
+    corbeille:'<path d="M4 7h16M9.5 7V4.5h5V7M6.5 7l1 12.5h9l1-12.5"/>',
+    partager:'<path d="M12 15V3.5M7.5 8L12 3.5 16.5 8M5 13.5v6h14v-6"/>',
+    livre:'<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v14.5H6.5A2.5 2.5 0 0 0 4 20z"/><path d="M4 20a2.5 2.5 0 0 0 2.5 1H20v-3.5"/>',
+    crayon:'<path d="M4 20h4.5L19.5 9 15 4.5 4 15.5z"/><path d="M13.5 6l4.5 4.5"/>',
+    ordre:'<path d="M8 20V4M4 8l4-4 4 4M16 4v16M12 16l4 4 4-4"/>',
+    horloge:'<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
+    lien:'<path d="M10 14a4 4 0 0 0 5.66 0l3-3a4 4 0 0 0-5.66-5.66l-1 1"/><path d="M14 10a4 4 0 0 0-5.66 0l-3 3a4 4 0 0 0 5.66 5.66l1-1"/>',
+    lecture:'<path class="plein" d="M8 5.5v13l10.5-6.5z"/>',
+    pause:'<path d="M9 5.5v13M15 5.5v13"/>',
+    coche:'<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+    fermer:'<path d="M6 6l12 12M18 6L6 18"/>',
+    points:'<circle class="plein" cx="5.5" cy="12" r="1.7"/><circle class="plein" cx="12" cy="12" r="1.7"/><circle class="plein" cx="18.5" cy="12" r="1.7"/>'
+  };
+  function ico(nom, seul){
+    return '<svg class="ico' + (seul ? ' seul' : '') + '" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' + ICONES[nom] + '</svg>';
+  }
   // Les exercices qui ont leur page dans Apprendre (16/11/2026). Le nom
   // passe par cleCanonique : « bench » ou « dc » menent au developpe couche.
   // Une page d'exercice ajoutee a exercices/ doit l'etre ici aussi (un
@@ -4461,7 +4491,7 @@
         }).join('')
       + '</div>';
 
-    html += '<button type="button" class="btn-partage" id="exoPartager">↗ PARTAGER CET EXERCICE</button>';
+    html += '<button type="button" class="btn-partage" id="exoPartager">' + ico('partager') + 'PARTAGER CET EXERCICE</button>';
 
     hote.innerHTML = html;
 
@@ -5264,7 +5294,7 @@
   }
   function marquerAjoute(bouton, nom){
     bouton.disabled = true;
-    bouton.textContent = '✓ AJOUTÉ À TA SÉANCE DU JOUR';
+    bouton.innerHTML = ico('coche') + 'AJOUTÉ À TA SÉANCE DU JOUR';
     showToast(nom + ' ajouté à ta séance du jour');
   }
   exListEl.addEventListener('click', function(e){
@@ -5295,7 +5325,7 @@
         ? 'CELLE DE ' + DAY_NAMES[(d.getDay()+6)%7].toUpperCase() + ' DERNIER'
         : 'MA DERNIÈRE SÉANCE · ' + d.getDate() + ' ' + MONTH_ABBR[d.getMonth()].toUpperCase();
       return '<button type="button" class="btn-refaire" data-refaire="' + esc(r.ds) + '">'
-        + '<span class="btn-refaire-quoi">↺ REFAIRE ' + esc(quoi) + '</span>'
+        + '<span class="btn-refaire-quoi">' + ico('refaire') + 'REFAIRE ' + esc(quoi) + '</span>'
         + '<span class="btn-refaire-titre">' + esc(titreSeance(r.ds)) + '</span></button>';
     }).join('');
   }
@@ -5359,7 +5389,7 @@
     scheduleSave(state.selectedDay, true);
     renderDayPanel(true);
     renderBandeau();
-    showToast((normalizeName(ex.nom) || 'L\'exercice') + ' ajouté · ↺ DERNIÈRE FOIS reprend ses séries');
+    showToast((normalizeName(ex.nom) || 'L\'exercice') + ' ajouté · « DERNIÈRE FOIS » reprend ses séries');
   });
 
   // ---------- chrono des exercices au temps ----------
@@ -5384,7 +5414,7 @@
     var enCours = !!chrono && chrono.exId === ex.id && chrono.ds === state.selectedDay;
     return '<button type="button" class="btn-chrono' + (enCours ? ' en-cours' : '') + '" data-action="chrono" data-id="' + esc(ex.id) + '"'
       + ' aria-label="' + (enCours ? 'Mettre le chrono en pause et noter la série' : 'Lancer le chrono') + '">'
-      + (enCours ? '❚❚ <span class="chrono-temps">' + texteChrono(secondesChrono()) + '</span>' : '▶ CHRONO')
+      + (enCours ? ico('pause') + '<span class="chrono-temps">' + texteChrono(secondesChrono()) + '</span>' : ico('lecture') + 'CHRONO')
       + '</button>';
   }
   function tenirEcran(oui){
@@ -5752,7 +5782,7 @@
       html += '<div class="fs-pile">' + membres.map(function(m, k){
         var af = premiereAFaire(m), lettre = String.fromCharCode(65 + k);
         var clm = classement(m);
-        if (!af) return '<div class="fs-carte fs-ss fini"><div class="fs-ss-tete"><span class="fs-lettre">' + lettre + '</span><b>' + esc(normalizeName(m.nom) || 'Sans nom') + '</b><span>✓ fini</span></div></div>';
+        if (!af) return '<div class="fs-carte fs-ss fini"><div class="fs-ss-tete"><span class="fs-lettre">' + lettre + '</span><b>' + esc(normalizeName(m.nom) || 'Sans nom') + '</b><span>' + ico('coche') + 'fini</span></div></div>';
         var estActif = m === actif;
         return '<div class="fs-carte fs-ss' + (estActif ? ' actif' : ' en-attente') + '" data-ex-id="' + esc(m.id) + '" data-serie-id="' + esc(af.serie.id) + '">'
           + '<div class="fs-ss-tete"><span class="fs-lettre">' + lettre + '</span><b>' + esc(normalizeName(m.nom) || 'Sans nom') + '</b><span>' + esc(libelleMuscle(clm)) + ' · S' + af.num + '</span></div>'
@@ -5761,7 +5791,7 @@
       }).join('') + '</div>';
     } else {
       var af1 = premiereAFaire(ex);
-      var faites = (ex.series || []).map(function(s, k){ return s.fait ? '<span>S' + (k + 1) + ' ' + esc(perfCourt(s)) + '<b aria-hidden="true">✓</b></span>' : ''; }).join('');
+      var faites = (ex.series || []).map(function(s, k){ return s.fait ? '<span>S' + (k + 1) + ' ' + esc(perfCourt(s)) + '<b aria-hidden="true">' + ico('coche', true) + '</b></span>' : ''; }).join('');
       html += '<div class="fs-titre"><p class="fs-eyebrow">Exo ' + numUnite + ' sur ' + unites.length + '</p>'
         + '<h2 class="fs-nom" id="focusTitre">' + esc(normalizeName(ex.nom) || 'Exercice sans nom') + '</h2>'
         + '<span class="fs-chip" style="--c:' + couleurGroupe(cl.groupe) + '">' + esc(libelleMuscle(cl)) + '</span></div>'
@@ -5798,7 +5828,7 @@
     var html = '<div class="fs-titre"><p class="fs-eyebrow">Repos · ' + esc(f ? normalizeName(f.exercise.nom) || 'Exercice' : 'Exercice') + '</p></div>'
       + '<div class="fs-anneau" id="focusAnneau"><div class="fs-temps"><b id="focusTemps">0:00</b><small>'
       + (f ? 'depuis la série ' + ((f.exercise.series || []).indexOf(f.serie) + 1) : '') + '</small></div></div>';
-    if (f) html += '<p class="fs-note">✓ Série enregistrée : ' + esc(perfTexte(f.serie)) + (typeof f.serie.rpe === 'number' ? ' · RPE ' + String(f.serie.rpe).replace('.', ',') : '') + '</p>';
+    if (f) html += '<p class="fs-note">' + ico('coche') + 'Série enregistrée : ' + esc(perfTexte(f.serie)) + (typeof f.serie.rpe === 'number' ? ' · RPE ' + String(f.serie.rpe).replace('.', ',') : '') + '</p>';
     if (p && p.serie){
       var autre = membres.indexOf(p.exercise) < 0;
       html += '<p class="fs-suite">Prochaine : ' + (autre || membres.length > 1 ? esc(normalizeName(p.exercise.nom)) + ' · ' : '')
