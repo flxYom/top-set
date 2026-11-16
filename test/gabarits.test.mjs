@@ -1041,7 +1041,7 @@ ok('la derniere fois cherche d abord dans le meme cycle',
                 && f.includes('ailleurs: !!(cycle && cq !== cycle)')
                 && avant(f, 'var memes = toutes.filter', 'var q = TS.performancePrecedente(toutes'); })()
    // La suggestion se calcule sur le meme perimetre que l'historique montre.
-   && /var cible = TS\.suggererCible\(p\.seances\);/.test(SRC));
+   && /var cible = TS\.suggererCible\(p\.seances, undefined, cycleCible\(p\)\);/.test(SRC));
 
 ok('des chiffres d un autre cycle ne passent jamais pour comparables',
    /AUTRE CYCLE : /.test(SRC)
@@ -1702,6 +1702,21 @@ ok('deux tuiles par rangee, teintees de leur groupe',
 ok('le signet fait 44 px et se remplit quand il est presse',
    /\.recap-epingle,\.exo-suivre\{[^}]*width:44px;min-height:44px;/.test(REFONTE)
    && /\.recap-epingle\[aria-pressed="true"\] svg,\.exo-suivre\[aria-pressed="true"\] svg\{fill:currentColor;\}/.test(REFONTE));
+
+console.log('\n== 44. La prochaine fois (16/11) : la cible de chaque exercice dans le bilan ==');
+ok('la carte et l echauffement passent le cycle a la regle',
+   (SRC.match(/TS\.suggererCible\(p\.seances, undefined, cycleCible\(p\)\)/g) || []).length === 2
+   && !/TS\.suggererCible\(p\.seances\);/.test(SRC)
+   && /return \(p && p\.cycle && !p\.ailleurs\) \? p\.cycle : undefined;/.test(SRC));
+ok('le bilan prend la cible sur l historique qui finit ce jour-la, dans le meme cycle',
+   /function cibleApres\(nom, ds\)/.test(SRC) && /return j\.date <= ds;/.test(SRC)
+   && /TS\.suggererCible\(memes, undefined, cycle\)/.test(SRC));
+ok('un exercice en double ne sort qu une fois', /if \(vus\[cle\]\) return;/.test(SRC));
+ok('le bloc est etiquete SUGGERE et dit l ecart en mots',
+   /LA PROCHAINE FOIS<span class="bilan-suggere">SUGGÉRÉ<\/span>/.test(SRC) && /function ecartCible\(c\)/.test(SRC)
+   && /'une rep de plus'/.test(SRC) && /'mêmes reps'/.test(SRC) && /'repars de ' \+ c\.reps \+ ' reps'/.test(SRC));
+ok('le bloc garde le registre orange de la cible',
+   /\.bilan-bloc\.prochaine\{border-color:rgba\(255,92,56,\.42\);/.test(REFONTE) && /\.bilan-cible\{[^}]*grid-column:2;/.test(REFONTE));
 
 console.log(`\n${pass} reussis, ${fail} echoues`);
 process.exit(fail ? 1 : 0);

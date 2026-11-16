@@ -212,6 +212,13 @@ Garde : gabarits §40.
 **Le verre : une seule exception, la loupe des onglets** (décision du
 13/09/2026). Aucun nouvel élément en verre ailleurs.
 
+**Le bloc « la prochaine fois » du bilan — 16/11/2026.** Même registre que
+la cible SUGGÉRÉ de la carte : filet et fond orange à 42 % / 6 %, pastille
+SUGGÉRÉ pleine orange en `--t-1`. Chaque ligne suit la grille de la
+comparaison (nom, écart en mots en `--dim`, valeur à droite en `--t-3` 800,
+chiffres tabulaires). Une recommandation ne prend jamais le vert ni le jaune,
+réservés à ce qui a été fait. Garde : gabarits §44.
+
 **La tuile d'un exercice suivi — 16/11/2026.** PROGRÈS a deux pages
 d'exercices, SUIVIS et TOUS, choisies par le même segment que la période
 (`.recap-pages`, deux cases, le compte en petit `--ink3`). La tuile

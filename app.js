@@ -2075,6 +2075,38 @@
     return { prec:q, seances:toutes, cycle:cq, ailleurs: !!(cycle && cq !== cycle) };
   }
 
+  // Le cycle dont la regle tire sa fourchette de reps (8-12 en hypertrophie…).
+  // Des chiffres d'un autre cycle n'en imposent pas la leur : on laisse la
+  // regle la deduire des reps. (16/11/2026)
+  function cycleCible(p){
+    return (p && p.cycle && !p.ailleurs) ? p.cycle : undefined;
+  }
+  // La cible de la prochaine seance, vue depuis le jour ds : le meme
+  // perimetre que la carte de la seance suivante (le meme cycle quand il y en
+  // a un), pour que le bilan et la carte disent la meme chose.
+  function cibleApres(nom, ds){
+    var toutes = seancesDeLExo(nom).filter(function(j){ return j.date <= ds; });
+    var cycle = cycleDe(ds);
+    if (cycle){
+      var memes = toutes.filter(function(j){ return cycleDe(j.date) === cycle; });
+      if (memes.length) return TS.suggererCible(memes, undefined, cycle);
+    }
+    return TS.suggererCible(toutes);
+  }
+  // « +2,5 kg, mêmes reps » : l'ecart avec ce qu'on vient de faire, en mots.
+  function ecartCible(c){
+    var b = c.base || {};
+    var dp = Math.round(((c.poids || 0) - (b.poids || 0)) * 100) / 100;
+    var charge = dp > 0 ? '+' + formatWeight(dp) + ' kg' : 'même charge';
+    var reps;
+    if (c.repsHaut && c.repsHaut !== c.reps) reps = 'une rep de moins';
+    else if (c.reps === b.reps) reps = dp > 0 ? 'mêmes reps' : 'pour consolider';
+    else if (c.reps === b.reps + 1) reps = 'une rep de plus';
+    else if (c.reps < b.reps) reps = 'repars de ' + c.reps + ' reps';
+    else reps = c.reps + ' reps';
+    return charge + ', ' + reps;
+  }
+
   // Deux registres visuels distincts, et c'est volontaire : l'historique est
   // sobre et gris, la suggestion est orange et etiquetee SUGGERE. On ne doit
   // jamais pouvoir lire une recommandation comme une performance passee.
@@ -2104,7 +2136,7 @@
 
     // La cible s'appuie sur tout l'historique et pas seulement sur la
     // derniere seance : sans RPE note, c'est la tendance qui decide.
-    var cible = TS.suggererCible(p.seances);
+    var cible = TS.suggererCible(p.seances, undefined, cycleCible(p));
     if (cible){
       var reps = (cible.repsHaut && cible.repsHaut !== cible.reps)
         ? cible.reps + '–' + cible.repsHaut
@@ -2179,7 +2211,7 @@
     }
     if (p === undefined) p = precedentDe(ex);
     if (!p) return null;
-    var cible = TS.suggererCible(p.seances);
+    var cible = TS.suggererCible(p.seances, undefined, cycleCible(p));
     if (cible && cible.poids > 0) return cible.poids;
     var top = p.prec && p.prec.topSet;
     return (top && typeof top.poids === 'number' && top.poids > 0) ? top.poids : null;
@@ -3279,6 +3311,7 @@
       records: 0,
       top: null,
       progres: [],
+      prochaine: [],
       comparaison: null,
       mot: motDuJour(ds)
     };
@@ -3305,6 +3338,22 @@
           hausse: lignes.filter(function(l){ return l.sens === 'hausse'; }).length };
       }
     }
+
+    // La prochaine fois, exercice par exercice : la meme regle que la cible
+    // SUGGERE de la carte, appliquee a l'historique qui finit aujourd'hui.
+    // Un nom en double (superset repete) ne sort qu'une fois. (16/11/2026)
+    var vus = {};
+    exos.forEach(function(e){
+      if (!e.nom || !e.nom.trim()) return;
+      var cle = cleCanonique(e.nom);
+      if (vus[cle]) return;
+      vus[cle] = true;
+      var c = cibleApres(e.nom, ds);
+      if (!c) return;
+      var reps = (c.repsHaut && c.repsHaut !== c.reps) ? c.reps + '–' + c.repsHaut : String(c.reps);
+      bilan.prochaine.push({ nom:nomCanonique(e.nom) || e.nom,
+        valeur: formatWeight(c.poids) + ' kg × ' + reps, ecart: ecartCible(c) });
+    });
 
     exos.forEach(function(e){
       var remplies = seriesRemplies(e);
@@ -6758,9 +6807,20 @@
           }).join('')
         + '</div>';
     }
-    html += '<p class="bilan-mot anim" style="--i:7">«\u00a0' + esc(b.mot) + '\u00a0»</p>'
-      + '<button type="button" class="btn-sheet primary anim" style="--i:8" id="finFiche">VOIR LA FICHE DE LA SÉANCE</button>'
-      + '<button type="button" class="btn-sheet anim" style="--i:8" id="finFermer">FERMER</button>'
+    if (b.prochaine.length){
+      html += '<div class="bilan-bloc prochaine anim" style="--i:7">'
+        + '<div class="bilan-bloc-tete">LA PROCHAINE FOIS<span class="bilan-suggere">SUGGÉRÉ</span></div>'
+        + b.prochaine.slice(0, 6).map(function(p){
+            return '<div class="bilan-ligne bilan-compare"><b>' + esc(p.nom) + '</b>'
+              + '<span>' + esc(p.ecart) + '</span>'
+              + '<i class="bilan-cible">' + esc(p.valeur) + '</i></div>';
+          }).join('')
+        + '<div class="bilan-bloc-note">La même cible t\'attend sur la carte de l\'exercice, prête à recopier.</div>'
+        + '</div>';
+    }
+    html += '<p class="bilan-mot anim" style="--i:8">«\u00a0' + esc(b.mot) + '\u00a0»</p>'
+      + '<button type="button" class="btn-sheet primary anim" style="--i:9" id="finFiche">VOIR LA FICHE DE LA SÉANCE</button>'
+      + '<button type="button" class="btn-sheet anim" style="--i:9" id="finFermer">FERMER</button>'
       + '</div>';
     bilanCorps.innerHTML = html;
     animerCompteur(bilanCorps.querySelector('[data-compteur]'));

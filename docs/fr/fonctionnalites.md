@@ -401,6 +401,16 @@ l'exercice qui parle. La suggestion porte sa méthode (`lineaire` / `double`) et
 sa raison, et le bloc `SUGGÉRÉ` de la carte l'affiche comme avant. Le bloc « la
 prochaine fois » dans le bilan de fin de séance et la fiche reste à faire.
 
+**La prochaine fois, dans le bilan** (16 novembre 2026). Le bilan de fin de
+séance se termine par un bloc « LA PROCHAINE FOIS · SUGGÉRÉ » : une ligne par
+exercice, avec la cible de la séance suivante (« Squat · +2,5 kg, mêmes reps ·
+105 kg × 5 »). C'est la même règle que la cible SUGGÉRÉ de la carte, appliquée
+à l'historique qui finit ce jour-là et dans le même cycle : la carte de la
+prochaine séance proposera la même chose. Le bloc garde le registre orange de la
+cible. La carte passe désormais le cycle déclaré à la règle, comme la double
+progression le prévoyait : 8 à 12 reps en hypertrophie, un cran à reps égales
+en force.
+
 **Duplication de série.** `+ SÉRIE` recopie la précédente : poids, reps, RPE,
 repos. Seul `fait` repart à zéro, et le commentaire ne se recopie pas. Sur cinq
 séries identiques, tu en saisis une et tu appuies quatre fois. La ligne s'ajoute

@@ -366,6 +366,15 @@ carries its method (`lineaire` / `double`) and reason, and the card's `SUGGÉRÉ
 block shows it as before. The « next time » block in the end-of-session bilan
 and the session sheet is still to come.
 
+**Next time, in the summary** (16 November 2026). The end-of-session summary
+ends with a "LA PROCHAINE FOIS · SUGGÉRÉ" block: one line per exercise with the
+target for the next session ("Squat · +2,5 kg, mêmes reps · 105 kg × 5"). It is
+the card's SUGGÉRÉ rule applied to the history that ends that day, within the
+same cycle, so the next session's card proposes the same thing. The block keeps
+the target's orange register. The card now passes the declared cycle to the
+rule, as double progression intended: 8 to 12 reps in hypertrophy, one step at
+equal reps in strength.
+
 **Set duplication.** `+ SÉRIE` copies the previous set — weight, reps, RPE, rest.
 Only `fait` resets, and the comment is not copied. Five identical sets means
 typing one and tapping four times. The row is added to the card without

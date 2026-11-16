@@ -9,6 +9,18 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ## [Unreleased]
 
+### Added — "next time" in the end-of-session summary (2026-11-16)
+
+- The summary ends with a "LA PROCHAINE FOIS · SUGGÉRÉ" block: one line per
+  exercise with the target for the next session ("Squat · +2,5 kg, mêmes
+  reps · 105 kg × 5"), computed by the same rule as the card's SUGGÉRÉ
+  target (double progression without RPE, RPE otherwise), on the history
+  that ends that day and within the same cycle. Orange and labelled, like
+  the card, so it never reads as a past performance.
+- The card now passes the declared cycle to the rule, as Fable's double
+  progression intended: an hypertrophy day climbs 8 → 12 reps, a strength
+  day adds a step at equal reps. Service worker v70, gabarits §44.
+
 ### Added — tracked exercises in PROGRÈS (2026-11-16)
 
 - PROGRÈS was one long list of every exercise of the period. It now has two

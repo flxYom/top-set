@@ -3515,6 +3515,17 @@ button:active:not(:disabled):not(.topbar-tab):not(.bulle-onglet){filter:brightne
   .suivis-grille{gap:6px;}
   .suivi-tuile{padding:10px 10px 9px;min-height:142px;}
 }
+/* ---- La prochaine fois (16/11/2026) : la cible de chaque exercice dans le bilan ---- */
+/* Meme registre que la cible SUGGERE de la carte : orange, etiquetee. On ne
+   doit jamais la lire comme une performance passee. */
+.bilan-bloc.prochaine{border-color:rgba(255,92,56,.42);background:rgba(255,92,56,.06);}
+.bilan-bloc.prochaine .bilan-bloc-tete{display:flex;align-items:center;gap:8px;}
+.bilan-suggere{padding:2px 6px;border-radius:var(--r-xs);background:var(--orange);color:#160803;font-size:var(--t-1);font-weight:700;letter-spacing:.08em;}
+.bilan-cible{
+  grid-column:2;grid-row:1 / span 2;align-self:center;
+  font-style:normal;font-size:var(--t-3);font-weight:800;letter-spacing:-.01em;white-space:nowrap;
+  font-variant-numeric:tabular-nums;color:var(--ink);
+}
 </style>
 </head>
 
