@@ -3210,17 +3210,35 @@
   .cl-bas .fs-ghost{flex:none;min-width:104px;}
 
   /* ==== Les reglages, dans la feuille du profil ========================= */
-  .reg-groupe{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:52px;border-bottom:1px solid var(--line);}
+  /* Le nuancier (15/11) : une ligne par groupe, sa pastille, son nom, le nom de sa
+     teinte ; la roue de douze ronds se deplie dessous, un seul groupe a la fois. */
+  .reg-groupe{border-bottom:1px solid var(--line);}
+  .reg-groupe-tete{
+    display:flex;align-items:center;gap:10px;width:100%;min-height:56px;padding:8px 0;
+    background:none;border:0;color:var(--ink);text-align:left;font-family:var(--f-ui);
+  }
+  .reg-pastille{flex:none;width:28px;height:28px;border-radius:50%;background:var(--c);box-shadow:0 0 0 4px color-mix(in srgb, var(--c) 22%, transparent);}
   .reg-groupe-nom{
-    display:flex;align-items:center;gap:10px;min-width:0;
-    font-size:var(--t-3);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    flex:1;min-width:0;font-size:var(--t-3);font-weight:700;letter-spacing:.04em;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   }
-  .reg-groupe-nom i{flex:none;width:20px;height:20px;border-radius:var(--r-xs);background:var(--c);}
-  .reg-nuancier{display:flex;gap:6px;flex:none;}
+  .reg-teinte-nom{
+    flex:none;padding:5px 10px;border-radius:999px;
+    font-size:var(--t-1);font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--c);background:color-mix(in srgb, var(--c) 16%, transparent);
+  }
+  .reg-chevron{flex:none;color:var(--ink3);transition:transform .2s ease;}
+  .reg-groupe.ouvert .reg-chevron{transform:rotate(180deg);}
+  .reg-nuancier{display:grid;grid-template-columns:repeat(6,1fr);gap:10px 6px;padding:2px 0 16px;}
+  .reg-nuancier[hidden]{display:none;}
   .reg-teinte{
-    width:30px;height:30px;padding:0;border-radius:var(--r-s);border:2px solid transparent;background:var(--c);
+    position:relative;width:100%;aspect-ratio:1;max-width:48px;margin:0 auto;padding:0;border-radius:50%;
+    border:2px solid transparent;background:var(--c);
   }
-  .reg-teinte[aria-pressed="true"]{border-color:var(--ink);}
+  .reg-teinte[aria-pressed="true"]{border-color:var(--s1);box-shadow:0 0 0 2px var(--c);}
+  .reg-teinte[aria-pressed="true"]::after{content:"";position:absolute;inset:0;margin:auto;width:10px;height:10px;border-radius:50%;background:var(--s1);}
+  .reg-teinte[data-origine]::before{content:"";position:absolute;left:50%;bottom:-8px;width:4px;height:4px;margin-left:-2px;border-radius:50%;background:var(--ink3);}
+  @media (prefers-reduced-motion:reduce){ .reg-chevron{transition:none;} }
   .reg-bascule{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 0;border-bottom:1px solid var(--line);text-align:left;width:100%;background:none;border-left:0;border-right:0;border-top:0;color:var(--ink);font-family:var(--f-ui);}
   .reg-bascule b{display:block;font-size:var(--t-3);font-weight:700;}
   .reg-bascule small{display:block;margin-top:3px;font-size:var(--t-1);font-weight:400;color:var(--dim);line-height:1.4;}
@@ -3244,9 +3262,8 @@
     .brand-mark .wm-app{display:none;}
     .brand-btn,.brand-btn.msg,.brand-btn.profil{width:40px;height:40px;}
     .brand-btn svg{width:18px;height:18px;}
-    .reg-groupe-nom{font-size:var(--t-2);gap:8px;}
-    .reg-nuancier{gap:4px;}
-    .reg-teinte{width:26px;height:26px;}
+    .reg-groupe-nom{font-size:var(--t-2);}
+    .reg-nuancier{gap:8px 4px;}
   }
 
   /* Chercher un exercice depuis le carnet : on tape un nom, on tombe sur son

@@ -491,9 +491,12 @@ le téléphone ou quitter l'app ne l'arrête pas. Le fond est la braise.
 
 **Les réglages** (20/09/2026, « l'interface devient fouilli »). Le bouton profil
 de l'en-tête ouvre `RÉGLAGES ET PROFIL`, réglages d'abord :
-- **Couleurs des groupes** : cinq teintes par groupe, dont celle d'origine. La
-  couleur choisie suit le groupe **partout** — carte, planning, récap,
-  silhouette, bandeau, plein écran. Un bouton remet celles d'origine.
+- **Couleurs des groupes** : douze teintes en roue (15/11/2026), les sept
+  d'origine et cinq de plus — brique, sable, sauge, acier, orchidée. Le
+  nuancier d'un groupe se déplie sous son nom, un seul à la fois ; une couleur
+  choisie avant la roue reste proposée comme « actuelle ». La couleur choisie
+  suit le groupe **partout** — carte, planning, récap, silhouette, bandeau,
+  plein écran. Un bouton remet celles d'origine.
 - **Chrono de repos automatique** : la pastille qui part toute seule quand on
   coche une série.
 - **Bouton CHRONO sur tous les exercices** : sinon il ne sort que pour le

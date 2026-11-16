@@ -1655,5 +1655,19 @@ ok('le menu de la carte se pose avec l animation du bilan', /\.ex-card\.menu-ouv
 ok('tout s arrete avec « reduire les animations »',
    /prefers-reduced-motion:reduce\)\{\s*\.sheet,\.sheet-card,\.ex-card\.menu-ouvert \.ex-menu\{animation:none;\}/.test(REFONTE));
 
+console.log('\n== 42. Le nuancier des groupes (15/11) : douze teintes en roue, un seul groupe deplie ==');
+const nuancier = ((SRC.match(/var NUANCIER = \[([\s\S]*?)\];/) || ['', ''])[1].match(/#[0-9a-f]{6}/gi) || []).map(c => c.toLowerCase());
+ok('douze teintes, toutes distinctes', nuancier.length === 12 && new Set(nuancier).size === 12, String(nuancier.length));
+ok('les sept couleurs d origine sont dans la roue, inchangees', couleursGroupes.filter(c => c !== '#8f887d').every(c => nuancier.includes(c)));
+ok('aucune teinte de la roue n est une couleur de sens', nuancier.every(c => !['#ff5c38', '#ffd23f', '#2bd08a', '#4d7cff', '#ff4d6d'].includes(c)));
+ok('l ancienne liste TEINTES a disparu', !/var TEINTES\b/.test(SRC));
+ok('le nuancier d un groupe se deplie sous son nom (aria-expanded, aria-controls, un seul ouvert)',
+   /data-reg="ouvrir"[\s\S]{0,120}aria-expanded=/.test(SRC) && /regGroupeOuvert = regGroupeOuvert === b\.dataset\.groupe \? null : b\.dataset\.groupe/.test(SRC));
+ok('une couleur gardee hors de la roue reste proposee et selectionnee comme « actuelle »', /NUANCIER\.concat\(\[\[c, 'actuelle'\]\]\)/.test(SRC));
+ok('la roue est une grille de six ronds de 48 px au plus, la teinte d origine marquee d un point',
+   /\.reg-nuancier\{display:grid;grid-template-columns:repeat\(6,1fr\)/.test(REFONTE) && /\.reg-teinte\{[^}]*aspect-ratio:1;max-width:48px/.test(REFONTE)
+   && /\.reg-teinte\[data-origine\]::before/.test(REFONTE));
+ok('le chevron est un SVG sur la grille de 24, trait 1.9, bouts ronds', /class="reg-chevron" viewBox="0 0 24 24"[^>]*stroke-width="1\.9"[^>]*stroke-linecap="round"/.test(SRC));
+
 console.log(`\n${pass} reussis, ${fail} echoues`);
 process.exit(fail ? 1 : 0);

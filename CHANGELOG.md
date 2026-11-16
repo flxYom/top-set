@@ -9,6 +9,20 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ## [Unreleased]
 
+### Changed — a twelve-colour wheel for the groups (2026-11-15)
+
+- The settings offered five swatches per group, four of them the same for
+  every group and two of them sense colours (orange, yellow). Now each group
+  unfolds a wheel of twelve: the seven original colours, unchanged, plus
+  brick, sand, sage, steel and orchid, every one at least 10 ΔE2000 from the
+  sense colours and 5.5:1 on the card (`scripts/palette-groupes.mjs` checks
+  the wheel with the palette).
+- One group open at a time, under its name: its dot, its colour's name, a
+  chevron; six round 48 px swatches per row, the current one ringed, the
+  original one dotted. A colour kept from before the wheel stays shown and
+  selected as "actuelle", never replaced silently. Service worker v68,
+  gabarits §42.
+
 ### Changed — touch answers, surfaces arrive (2026-11-15)
 
 - No more grey browser flash on touch: every button darkens while pressed

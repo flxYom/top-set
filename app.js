@@ -5777,10 +5777,21 @@
   }
 
   // ---------- les reglages, dans la feuille du profil ----------
-  // Cinq teintes par groupe plutot qu'un selecteur de couleur : elles sont
-  // toutes lisibles sur le fond sombre, et se touchent du pouce. Le reste,
-  // ce sont des interrupteurs — ce qu'on affiche, pas ce qu'on garde.
-  var TEINTES = ['#ff7aa2', '#ff5c38', '#ffd23f', '#12c07a', '#22b8a8', '#4d7cff', '#a99bff', '#b3d236'];
+  // Douze teintes en roue plutot qu'un selecteur de couleur : les sept
+  // d'origine et cinq de plus (brique, sable, sauge, acier, orchidee),
+  // toutes a 10 au moins (dE2000) des couleurs de sens et a 5,5:1 au moins
+  // sur la carte — scripts/palette-groupes.mjs les verifie. Le nuancier
+  // d'un groupe se deplie sous son nom, un seul a la fois ; une couleur
+  // gardee d'avant la roue reste proposee comme « actuelle », jamais
+  // remplacee en silence. Le reste, ce sont des interrupteurs — ce qu'on
+  // affiche, pas ce qu'on garde.
+  var NUANCIER = [
+    ['#ff7aa2','rose'], ['#cf7a60','brique'], ['#c99a6b','cuivre'], ['#d8c38a','sable'],
+    ['#b3d236','citron'], ['#9fc49a','sauge'], ['#22b8a8','turquoise'], ['#6fd6f5','ciel'],
+    ['#64a9dc','acier'], ['#a99bff','violet'], ['#cf8be8','orchidée'], ['#d45fc4','magenta']
+  ];
+  var ICONE_CHEVRON = '<svg class="reg-chevron" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
+  var regGroupeOuvert = null;
   var BASCULES = [
     { cle:'chronoAuto',  titre:'Chrono de repos automatique', note:'La pastille qui part toute seule quand tu coches une série.' },
     { cle:'btnChrono',   titre:'Bouton CHRONO sur tous les exercices', note:'Sinon, il ne sort que pour le gainage.' },
@@ -5793,14 +5804,21 @@
     var zoneC = document.getElementById('regCouleurs');
     var zoneB = document.getElementById('regBascules');
     if (!zoneC || !zoneB) return;
-    zoneC.innerHTML = Object.keys(GROUP_COLORS).filter(function(g){ return g !== 'Autre'; }).map(function(g){
-      var c = couleurGroupe(g);
-      return '<div class="reg-groupe"><span class="reg-groupe-nom" style="--c:' + c + '"><i aria-hidden="true"></i>' + esc(g.toUpperCase()) + '</span>'
-        + '<span class="reg-nuancier" role="group" aria-label="Couleur de ' + esc(g) + '">'
-        + [GROUP_COLORS[g]].concat(TEINTES.filter(function(t){ return t.toLowerCase() !== GROUP_COLORS[g].toLowerCase(); })).slice(0, 5).map(function(t){
-            return '<button type="button" class="reg-teinte" style="--c:' + t + '" data-reg="couleur" data-groupe="' + esc(g) + '" data-v="' + t + '"'
-              + ' aria-pressed="' + (c.toLowerCase() === t.toLowerCase()) + '" aria-label="' + esc(g) + ' en ' + t + '"></button>';
-          }).join('') + '</span></div>';
+    zoneC.innerHTML = Object.keys(GROUP_COLORS).filter(function(g){ return g !== 'Autre'; }).map(function(g, i){
+      var c = couleurGroupe(g).toLowerCase(), ouvert = regGroupeOuvert === g;
+      var enRoue = NUANCIER.filter(function(t){ return t[0] === c; })[0];
+      var roue = enRoue ? NUANCIER : NUANCIER.concat([[c, 'actuelle']]);
+      return '<div class="reg-groupe' + (ouvert ? ' ouvert' : '') + '" style="--c:' + c + '">'
+        + '<button type="button" class="reg-groupe-tete" data-reg="ouvrir" data-groupe="' + esc(g) + '" aria-expanded="' + ouvert + '" aria-controls="regNuancier' + i + '">'
+        + '<span class="reg-pastille" aria-hidden="true"></span>'
+        + '<span class="reg-groupe-nom">' + esc(g.toUpperCase()) + '</span>'
+        + '<span class="reg-teinte-nom">' + esc(enRoue ? enRoue[1] : 'actuelle') + '</span>' + ICONE_CHEVRON + '</button>'
+        + '<div class="reg-nuancier" id="regNuancier' + i + '" role="group" aria-label="Couleur de ' + esc(g) + '"' + (ouvert ? '' : ' hidden') + '>'
+        + roue.map(function(t){
+            return '<button type="button" class="reg-teinte" style="--c:' + t[0] + '" data-reg="couleur" data-groupe="' + esc(g) + '" data-v="' + t[0] + '"'
+              + ' aria-pressed="' + (c === t[0]) + '" aria-label="' + esc(g) + ' en ' + esc(t[1]) + '"'
+              + (t[0] === GROUP_COLORS[g].toLowerCase() ? ' data-origine="1"' : '') + '></button>';
+          }).join('') + '</div></div>';
     }).join('');
     zoneB.innerHTML = BASCULES.map(function(b){
       return '<button type="button" class="reg-bascule" data-reg="bascule" data-cle="' + b.cle + '" aria-pressed="' + !!reglages[b.cle] + '">'
@@ -5811,6 +5829,11 @@
   document.getElementById('profilSheet').addEventListener('click', function(e){
     var b = e.target.closest('[data-reg]');
     if (!b) return;
+    if (b.dataset.reg === 'ouvrir'){
+      regGroupeOuvert = regGroupeOuvert === b.dataset.groupe ? null : b.dataset.groupe;
+      rendreReglages();
+      return;
+    }
     if (b.dataset.reg === 'couleur'){
       if (b.dataset.v === GROUP_COLORS[b.dataset.groupe]) delete reglages.couleurs[b.dataset.groupe];
       else reglages.couleurs[b.dataset.groupe] = b.dataset.v;

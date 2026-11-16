@@ -455,9 +455,12 @@ phone or leaving the app does not stop it. The background is the ember shader.
 
 **Settings** (20 September 2026, "the interface is getting cluttered"). The
 profile button in the header opens `RÉGLAGES ET PROFIL`, settings first:
-- **Muscle group colours**: five shades per group, including the original one.
-  The chosen colour follows the group **everywhere** — card, planner, recap,
-  silhouette, banner, full screen. A button restores the originals.
+- **Muscle group colours**: a wheel of twelve (15 November 2026), the seven
+  originals plus five more — brick, sand, sage, steel, orchid. A group's wheel
+  unfolds under its name, one at a time; a colour chosen before the wheel
+  stays offered as "actuelle". The chosen colour follows the group
+  **everywhere** — card, planner, recap, silhouette, banner, full screen. A
+  button restores the originals.
 - **Automatic rest timer**: the pill that starts on its own when you tick a set.
 - **CHRONO button on every exercise**: otherwise it only shows for planks.
 - **REST field on each set**, **RPE column**: put away by default since 20

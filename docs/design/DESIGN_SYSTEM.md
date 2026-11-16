@@ -84,6 +84,39 @@ Historique :
 - une palette pastel a été écartée : « trop pastel » ;
 - l'ancienne palette réutilisait l'orange, le jaune, le vert et le bleu.
 
+### Le nuancier des réglages — 15/11/2026
+
+Douze teintes en roue, les sept d'origine et cinq de plus, proposées pour
+chaque groupe dans `RÉGLAGES ET PROFIL`. Les couleurs d'origine n'ont pas
+bougé. Le nuancier d'un groupe se déplie sous son nom (un seul ouvert à la
+fois) : une grille de six ronds de 48 px au plus, la teinte en place cerclée,
+celle d'origine marquée d'un point. Une couleur gardée d'un ancien réglage et
+hors de la roue reste affichée et sélectionnée comme « actuelle » : rien n'est
+jamais remplacé en silence.
+
+| Teinte | Couleur |
+|---|---|
+| rose | `#ff7aa2` (Pectoraux) |
+| brique | `#cf7a60` |
+| cuivre | `#c99a6b` (Abdos) |
+| sable | `#d8c38a` |
+| citron | `#b3d236` (Jambes) |
+| sauge | `#9fc49a` |
+| turquoise | `#22b8a8` (Dos) |
+| ciel | `#6fd6f5` (Cardio) |
+| acier | `#64a9dc` |
+| violet | `#a99bff` (Épaules) |
+| orchidée | `#cf8be8` |
+| magenta | `#d45fc4` (Bras) |
+
+Chaque teinte est à 10 au moins (ΔE2000) de chaque couleur de sens et à 5,5:1
+au moins sur la carte ; en vision normale, la paire la plus proche de la roue
+est orchidée/magenta à 10,9. Les trois daltonismes ne sont garantis que pour
+les sept couleurs d'origine : douze teintes ne peuvent pas toutes se tenir à 7,
+et c'est l'utilisateur qui choisit. `scripts/palette-groupes.mjs` vérifie la
+roue avec la palette ; garde gabarits §42. Source unique : `NUANCIER` dans
+`app.js`.
+
 ## 3. Typographie
 
 État actuel :

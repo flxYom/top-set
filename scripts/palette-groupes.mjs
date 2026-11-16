@@ -73,5 +73,31 @@ for (const [vision, M] of Object.entries(VISIONS)) {
   if (!ok) echecs++;
   console.log((ok ? 'OK   ' : 'FAIL ') + ('vision ' + vision).padEnd(20) + ' paire la plus proche : ' + pire[1] + ' ' + pire[0].toFixed(1));
 }
+// Le nuancier (15/11/2026) : les douze teintes proposees dans les reglages.
+// Chacune reste loin des couleurs de sens et lisible sur la carte ; la roue
+// est distincte en vision normale. Les daltonismes ne sont garantis que pour
+// les sept d'origine : douze teintes ne peuvent pas toutes tenir a 7, et
+// c'est l'utilisateur qui choisit.
+const blocN = (SRC.match(/var NUANCIER = \[([\s\S]*?)\];/) || [])[1] || '';
+const NUANCIER = [...blocN.matchAll(/\['(#[0-9a-fA-F]{6})','([^']+)'\]/g)].map(m => [m[1], m[2]]);
+console.log('\nNuancier lu dans app.js : ' + NUANCIER.length + ' teintes');
+for (const [h, n] of NUANCIER) {
+  const c = hex2rgb(h);
+  const [d, sens] = Object.entries(SENS).map(([k, v]) => [de2000(rgb2lab(c), rgb2lab(hex2rgb(v))), k]).sort((a, b) => a[0] - b[0])[0];
+  const k = contraste(c, hex2rgb(SURFACE));
+  const ok = d >= SEUIL_SENS && k >= CONTRASTE_MIN;
+  if (!ok) echecs++;
+  console.log((ok ? 'OK   ' : 'FAIL ') + n.padEnd(10) + ' sens le plus proche : ' + sens + ' ' + d.toFixed(1) + ' · contraste ' + k.toFixed(1) + ':1');
+}
+{
+  let pire = [Infinity, ''];
+  for (let i = 0; i < NUANCIER.length; i++) for (let j = i + 1; j < NUANCIER.length; j++) {
+    const d = de2000(rgb2lab(hex2rgb(NUANCIER[i][0])), rgb2lab(hex2rgb(NUANCIER[j][0])));
+    if (d < pire[0]) pire = [d, NUANCIER[i][1] + '/' + NUANCIER[j][1]];
+  }
+  const ok = NUANCIER.length === 12 && pire[0] >= SEUIL_GROUPES;
+  if (!ok) echecs++;
+  console.log((ok ? 'OK   ' : 'FAIL ') + 'roue, vision normale   paire la plus proche : ' + pire[1] + ' ' + pire[0].toFixed(1));
+}
 console.log(echecs ? '\n' + echecs + ' probleme(s)' : '\nPalette conforme');
 process.exit(echecs ? 1 : 0);
