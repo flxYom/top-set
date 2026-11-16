@@ -3707,6 +3707,7 @@
 
     var meme = (ds === state.selectedDay);
     html += '<button type="button" class="btn-partage" id="fichePartager">↗ PARTAGER CETTE SÉANCE</button>';
+    html += '<button type="button" class="btn-partage" id="ficheIA">COPIER POUR UNE IA</button>';
     html += '<button type="button" class="btn-add" id="ficheModifier">MODIFIER CETTE SÉANCE</button>';
     html += '<button type="button" class="btn-reprendre" id="ficheSelectionner"' + (meme ? ' disabled' : '') + '>'
       + (meme ? 'C\'EST LA SÉANCE DU JOUR AFFICHÉ' : 'SÉLECTIONNER POUR LE JOUR AFFICHÉ')
@@ -7024,6 +7025,10 @@
       modifierSeance(state.seanceOuverte);
       return;
     }
+    if (e.target.closest('#ficheIA')){
+      ouvrirIA(texteSeanceIA(state.seanceOuverte), 'Séance · ' + titreSeance(state.seanceOuverte));
+      return;
+    }
     if (e.target.closest('#fichePartager')){
       var dsP = state.seanceOuverte;
       ouvrirPartage('seance', titreSeance(dsP), instantaneSeance(dsP));
@@ -7049,6 +7054,138 @@
     populateDatalist();
     allerAuJour(state.selectedDay);
     showToast(n + (n > 1 ? ' exercices ajoutés' : ' exercice ajouté'));
+  });
+
+  // ==================================================================
+  // POUR UNE IA (16/11/2026)
+  // ==================================================================
+  // Une seance ou une periode en texte propre, pret a coller dans Claude,
+  // ChatGPT ou une autre IA. Rien ne part d'ici : la feuille montre le texte,
+  // on le copie, on le colle soi-meme. Le texte commence par la question a
+  // poser, puis les chiffres, et finit par les unites — une IA qui lit
+  // « 80 kg × 10 » sans savoir que c'est poids × reps se trompe.
+  var IA_UNITES = 'Unités : « 80 kg × 10 » veut dire 10 répétitions à 80 kg ; PDC = poids du corps ; RPE sur 10.';
+  function jourLong(ds){
+    var d = fromDateStr(ds);
+    return DAY_NAMES[(d.getDay()+6)%7].toLowerCase() + ' ' + d.getDate() + ' ' + MONTH_NAMES[d.getMonth()] + ' ' + d.getFullYear();
+  }
+  function serieIA(s){
+    var bits = [];
+    var type = TS.typeSerie(s);
+    if (type === TS.TYPES.ECHAUFFEMENT) bits.push('échauffement');
+    else if (type === TS.TYPES.TOP) bits.push('top set');
+    else if (type === TS.TYPES.BACKOFF) bits.push('back-off');
+    if (typeof s.rpe === 'number') bits.push('RPE ' + String(s.rpe).replace('.', ','));
+    var p = perfTexte(s);
+    if (typeof s.poids !== 'number' && TS.dureeSecondes(s.reps) === null) p = 'PDC × ' + p;
+    return p + (bits.length ? ' (' + bits.join(', ') + ')' : '');
+  }
+  function groupeIA(e){
+    var cl = classement(e);
+    return cl.groupe + (cl.sous ? ' · ' + cl.sous : '');
+  }
+  function texteSeanceIA(ds){
+    var day = state.sessions[ds];
+    var exos = day ? (day.exercises || []).filter(function(e){ return seriesRemplies(e).length; }) : [];
+    if (!exos.length) return '';
+    var cycle = cycleDe(ds), horaires = horairesTexte(ds), mot = commentaireSeance(ds);
+    var l = ['Voici une séance de musculation notée dans l\'app Top Set. Dis-moi ce qui progresse, ce qui stagne et quoi ajuster la prochaine fois.', ''];
+    l.push('Séance du ' + jourLong(ds) + ' — ' + titreSeance(ds) + (cycle ? ' (cycle ' + cycle.toLowerCase() + ')' : ''));
+    if (horaires) l.push('Horaires : ' + horaires);
+    if (mot) l.push('Ressenti : « ' + mot + ' »');
+    exos.forEach(function(e){
+      var nom = nomCanonique(e.nom) || normalizeName(e.nom) || 'Exercice sans nom';
+      l.push('', nom + ' — ' + groupeIA(e));
+      (e.series || []).forEach(function(s){
+        if (!hasData(s)) return;
+        l.push('- ' + serieIA(s) + (s.note && String(s.note).trim() ? ' — « ' + String(s.note).trim() + ' »' : ''));
+      });
+      if (e.note && String(e.note).trim()) l.push('Note : « ' + String(e.note).trim() + ' »');
+      var avant = e.nom ? seancesDeLExo(e.nom).filter(function(j){ return j.date < ds; }) : [];
+      var der = avant[avant.length - 1];
+      if (der) l.push('La fois d\'avant (' + jourCourt(der.date) + ') : ' + der.series.map(serieIA).join(' · '));
+    });
+    l.push('', 'En tout : ' + pluriel(exos.length, 'exercice') + ', ' + pluriel(compterJour(day), 'série') + '.', IA_UNITES);
+    return l.join('\n');
+  }
+  function textePeriodeIA(periode){
+    var data = computeRecap(periode);
+    if (!data.seances) return '';
+    var quoi = periode === 'semaine' ? 'la semaine du ' + jourCourt(data.startStr) + ' au ' + jourCourt(data.endStr)
+      : periode === 'mois' ? data.label.toLowerCase() : 'l\'année ' + data.label;
+    var l = ['Voici mon entraînement de musculation sur ' + quoi + ', noté dans l\'app Top Set. Fais-moi un bilan : régularité, équilibre entre les groupes musculaires, exercices qui progressent ou stagnent, et ce que tu changerais.', ''];
+    l.push('En bref : ' + pluriel(data.seances, 'séance') + ', ' + pluriel(data.totalSeries, 'série') + ', ' + pluriel(data.mouvements, 'exercice') + ' différents.');
+    var r = regulariteAu(data.endStr < toDateStr(new Date()) ? data.endStr : toDateStr(new Date()));
+    l.push('Régularité : objectif de ' + pluriel(r.objectif, 'séance') + ' par semaine ; ' + pluriel(r.serie, 'semaine') + ' tenue' + (r.serie > 1 ? 's' : '') + ' d\'affilée.');
+    var counts = groupCountsIn(data.startStr, data.endStr);
+    var g = GROUPS.filter(function(x){ return counts[x]; });
+    if (g.length) l.push('Séries par groupe musculaire : ' + g.map(function(x){ return x + ' ' + counts[x]; }).join(', ') + '.');
+    l.push('', 'Par exercice (meilleure série de la période, puis le top set de la première et de la dernière séance) :');
+    data.items.forEach(function(it){
+      var pts = topSetsEntre(it.nom, data.startStr, data.endStr);
+      var evo = '';
+      if (pts.length > 1){
+        var a = pts[0], b = pts[pts.length - 1];
+        evo = ' · ' + serieIA(a.top) + ' le ' + jourCourt(a.date) + ' → ' + serieIA(b.top) + ' le ' + jourCourt(b.date);
+      }
+      l.push('- ' + it.nom + ' (' + it.groupe + ') : ' + valeurRecap(it) + ' · ' + pluriel(it.fois, 'séance') + ', ' + pluriel(it.series, 'série') + evo);
+    });
+    // Le detail seance par seance, sauf sur l'annee : trop long pour etre lu.
+    if (periode !== 'annee'){
+      l.push('', 'Séance par séance :');
+      Object.keys(state.sessions).filter(function(ds){
+        return ds >= data.startStr && ds <= data.endStr && compterJour(state.sessions[ds]) > 0;
+      }).sort().forEach(function(ds){
+        l.push('', jourLong(ds) + ' — ' + titreSeance(ds) + (cycleDe(ds) ? ' (cycle ' + cycleDe(ds).toLowerCase() + ')' : ''));
+        state.sessions[ds].exercises.forEach(function(e){
+          var sr = seriesRemplies(e);
+          if (!sr.length) return;
+          l.push('- ' + (nomCanonique(e.nom) || normalizeName(e.nom) || 'Exercice sans nom') + ' : ' + sr.map(serieIA).join(' · '));
+        });
+      });
+    }
+    l.push('', IA_UNITES);
+    return l.join('\n');
+  }
+
+  var iaSheet = document.getElementById('iaSheet');
+  function ouvrirIA(texte, quoi){
+    if (!texte){ showToast('Rien de noté ici'); return; }
+    document.getElementById('iaQuoi').textContent = quoi;
+    var ta = document.getElementById('iaTexte');
+    ta.value = texte;
+    document.getElementById('iaEnvoyer').hidden = !(navigator.share);
+    iaSheet.hidden = false;
+    ta.scrollTop = 0;
+  }
+  function fermerIA(){ iaSheet.hidden = true; }
+  // Copier d'abord par le presse-papiers ; sinon on selectionne le texte et
+  // on tente l'ancienne commande. Si rien ne marche, le texte reste
+  // selectionne : il ne reste qu'a appuyer sur « Copier ».
+  function copierIA(){
+    var ta = document.getElementById('iaTexte');
+    function aLaMain(){
+      ta.focus();
+      ta.select();
+      try { ta.setSelectionRange(0, ta.value.length); } catch (err) {}
+      var ok = false;
+      try { ok = document.execCommand && document.execCommand('copy'); } catch (err) { ok = false; }
+      showToast(ok ? 'Copié : colle-le dans ton IA' : 'Texte sélectionné : appuie sur Copier');
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(ta.value).then(function(){ showToast('Copié : colle-le dans ton IA'); }, aLaMain);
+    } else aLaMain();
+  }
+  iaSheet.addEventListener('click', function(e){
+    if (e.target === this || e.target.closest('#iaClose')) { fermerIA(); return; }
+    if (e.target.closest('#iaCopier')) { copierIA(); return; }
+    if (e.target.closest('#iaEnvoyer') && navigator.share){
+      navigator.share({ text: document.getElementById('iaTexte').value }).catch(function(){});
+    }
+  });
+  document.getElementById('recapIA').addEventListener('click', function(){
+    var data = computeRecap(state.recapPeriod);
+    ouvrirIA(textePeriodeIA(state.recapPeriod), 'Ton entraînement · ' + data.label);
   });
 
   document.getElementById('recapPartager').addEventListener('click', function(){
@@ -7536,7 +7673,7 @@
 
   // Ouvrir une page depuis une feuille, c'est quitter la feuille.
   function fermerFeuilles(){
-    ['dataSheet', 'profilSheet', 'retourSheet', 'partageSheet'].forEach(function(id){
+    ['dataSheet', 'profilSheet', 'retourSheet', 'partageSheet', 'iaSheet'].forEach(function(id){
       var el = document.getElementById(id);
       if (el) el.hidden = true;
     });

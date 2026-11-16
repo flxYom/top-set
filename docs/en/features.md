@@ -394,6 +394,16 @@ de la semaine · objectif tenu · 5 semaines d'affilée"). The rule is
 `TS.regularite` in `intelligence.js`; the goal stays in the local settings
 (`topset_reglages.objectifSemaine`).
 
+**Copy for an AI** (16 November 2026). Under a session's sheet and under
+PROGRÈS, "COPIER POUR UNE IA" opens a sheet that shows the text before any copy:
+the question to ask first, then the numbers, then the units. A session gives
+each exercise with its group, every set (type and RPE when logged, comments)
+and the time before. A week or a month gives the totals, consistency, sets per
+group, each exercise's best set with its first and last top set, then session
+by session; a year stops at the per-exercise summary. "COPIER LE TEXTE" uses the
+clipboard and otherwise selects the text; "ENVOYER…" opens the phone's share
+sheet where there is one. Nothing leaves the app: you paste it yourself.
+
 **Set duplication.** `+ SÉRIE` copies the previous set — weight, reps, RPE, rest.
 Only `fait` resets, and the comment is not copied. Five identical sets means
 typing one and tapping four times. The row is added to the card without

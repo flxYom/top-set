@@ -1751,5 +1751,23 @@ ok('le vert dit tenue, comme fait', /\.regu-col\.tenue \.regu-pips i\.plein\{bac
 ok('le bilan dit ou en est la semaine', /\+ ligneRegularite\(regulariteAu\(ds\)\);/.test(SRC) && /' · objectif tenu'/.test(SRC));
 ok('le bouton OBJECTIF fait 44 px', /\.regu-objectif\{min-height:44px;/.test(REFONTE));
 
+console.log('\n== 47. Pour une IA (16/11) : une seance ou une periode en texte propre ==');
+ok('la fiche et PROGRES ont leur bouton',
+   /id="ficheIA">COPIER POUR UNE IA<\/button>/.test(SRC) && /id="recapIA">COPIER POUR UNE IA<\/button>/.test(HTML));
+ok('la feuille montre le texte avant de le copier',
+   /<textarea class="sheet-paste ia-texte" id="iaTexte" rows="12" readonly aria-label="Le texte à copier"><\/textarea>/.test(HTML)
+   && /id="iaCopier">COPIER LE TEXTE<\/button>/.test(HTML) && /Rien ne part d'ici/.test(HTML));
+ok('le texte pose la question, donne les chiffres et dit les unites',
+   /Dis-moi ce qui progresse, ce qui stagne et quoi ajuster la prochaine fois\./.test(SRC)
+   && /var IA_UNITES = 'Unités : « 80 kg × 10 » veut dire 10 répétitions à 80 kg ; PDC = poids du corps ; RPE sur 10\.';/.test(SRC)
+   && (SRC.match(/IA_UNITES\)/g) || []).length + (SRC.match(/, IA_UNITES/g) || []).length >= 2);
+ok('la seance dit la fois d avant, la periode la premiere et la derniere',
+   /'La fois d\\'avant \(' \+ jourCourt\(der\.date\)/.test(SRC) && /topSetsEntre\(it\.nom, data\.startStr, data\.endStr\)/.test(SRC));
+ok('l annee ne detaille pas chaque seance', /if \(periode !== 'annee'\)\{/.test(SRC));
+ok('copier : le presse-papiers, sinon le texte selectionne',
+   /navigator\.clipboard\.writeText\(ta\.value\)\.then\(/.test(SRC) && /ta\.setSelectionRange\(0, ta\.value\.length\)/.test(SRC));
+ok('la feuille se ferme avec les autres', /'partageSheet', 'iaSheet'\]\.forEach/.test(SRC));
+ok('aucune taille de police sur le texte (garde iOS)', !/\.ia-texte\{[^}]*font-size/.test(REFONTE));
+
 console.log(`\n${pass} reussis, ${fail} echoues`);
 process.exit(fail ? 1 : 0);

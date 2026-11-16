@@ -431,6 +431,19 @@ la semaine (« 3e séance de la semaine · objectif tenu · 5 semaines
 d'affilée »). La règle est `TS.regularite` dans `intelligence.js` ; l'objectif
 reste dans les réglages locaux (`topset_reglages.objectifSemaine`).
 
+**Copier pour une IA** (16 novembre 2026). Sous la fiche d'une séance et sous
+PROGRÈS, « COPIER POUR UNE IA » ouvre une feuille qui montre le texte avant
+toute copie : la question à poser d'abord (« Dis-moi ce qui progresse, ce qui
+stagne… »), puis les chiffres, puis les unités. Une séance donne chaque
+exercice avec son groupe, chaque série (type et RPE quand ils sont notés,
+commentaires) et la fois d'avant. Une semaine ou un mois donne les totaux, la
+régularité, les séries par groupe, la meilleure série de chaque exercice avec
+son premier et son dernier top set, puis le détail séance par séance ; l'année
+s'arrête au résumé par exercice. « COPIER LE TEXTE » passe par le
+presse-papiers et, à défaut, sélectionne le texte ; « ENVOYER… » ouvre le
+partage du téléphone quand il existe. Rien ne part de l'app : on colle
+soi-même.
+
 **Duplication de série.** `+ SÉRIE` recopie la précédente : poids, reps, RPE,
 repos. Seul `fait` repart à zéro, et le commentaire ne se recopie pas. Sur cinq
 séries identiques, tu en saisis une et tu appuies quatre fois. La ligne s'ajoute

@@ -3564,6 +3564,10 @@ button:active:not(:disabled):not(.topbar-tab):not(.bulle-onglet){filter:brightne
 /* Le bilan : une ligne sous la date. */
 .bilan-regu{margin:-4px 0 0;font-size:var(--t-2);font-weight:700;color:var(--dim);}
 .bilan-regu.tenue{color:var(--ok);}
+/* ---- Pour une IA (16/11/2026) : le texte qu'on va coller ---- */
+/* Le texte se lit avant d'etre copie : on sait ce qui part. Hauteur bornee,
+   le reste defile. Aucune taille de police ici : garde iOS des champs. */
+.ia-texte{height:42vh;min-height:180px;max-height:360px;resize:none;white-space:pre-wrap;}
 </style>
 </head>
 
@@ -3726,6 +3730,7 @@ button:active:not(:disabled):not(.topbar-tab):not(.bulle-onglet){filter:brightne
     </div>
     <div class="recap-groups" id="recapGroups"></div>
     <button type="button" class="btn-partage" id="recapPartager">↗ PARTAGER CE RÉCAP</button>
+    <button type="button" class="btn-partage" id="recapIA">COPIER POUR UNE IA</button>
   </section>
 
   <section class="view" id="view-apprendre" hidden>
@@ -4110,6 +4115,23 @@ button:active:not(:disabled):not(.topbar-tab):not(.bulle-onglet){filter:brightne
 <!-- L'ordre des exercices. Une liste courte, des lignes hautes : on vient y
      ranger sa seance d'un pouce, pas la relire. Un superset tient sur une
      seule ligne et se deplace d'un bloc. -->
+<div class="sheet" id="iaSheet" hidden>
+  <div class="sheet-card" role="dialog" aria-modal="true" aria-labelledby="iaTitre">
+    <div class="sheet-head">
+      <h2 id="iaTitre">POUR UNE IA</h2>
+      <button type="button" class="icon-btn" id="iaClose" aria-label="Fermer">×</button>
+    </div>
+    <div class="pg-quoi" id="iaQuoi">—</div>
+    <textarea class="sheet-paste ia-texte" id="iaTexte" rows="12" readonly aria-label="Le texte à copier"></textarea>
+    <button type="button" class="btn-sheet primary" id="iaCopier">COPIER LE TEXTE</button>
+    <button type="button" class="btn-sheet" id="iaEnvoyer" hidden>ENVOYER…</button>
+    <p class="sheet-note">
+      Colle-le dans Claude, ChatGPT ou l'IA de ton choix. Rien ne part d'ici :
+      c'est toi qui le colles, et seulement ce texte.
+    </p>
+  </div>
+</div>
+
 <div class="sheet" id="ordreSheet" hidden>
   <div class="sheet-card" role="dialog" aria-modal="true" aria-labelledby="ordreTitre">
     <div class="sheet-head">

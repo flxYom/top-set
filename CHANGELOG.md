@@ -9,6 +9,20 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ## [Unreleased]
 
+### Added — copy for an AI (2026-11-16)
+
+- "COPIER POUR UNE IA" under a session's sheet and under PROGRÈS. A sheet
+  shows the text before anything is copied: the question to ask first
+  ("Dis-moi ce qui progresse, ce qui stagne…"), then the numbers, then the
+  units. A session lists each exercise with its group, every set (type and
+  RPE when noted, set comments) and the time before; a week or a month gives
+  the totals, consistency, sets per muscle group, each exercise's best set
+  with its first and last top set, then session by session; a year stops
+  at the per-exercise summary. "COPIER LE TEXTE" uses the clipboard and
+  falls back to selecting the text; "ENVOYER…" opens the phone's share
+  sheet where it exists. Nothing leaves the app: the user pastes it
+  themselves. Service worker v73, gabarits §47.
+
 ### Added — consistency counted in weeks (2026-11-16)
 
 - A weekly goal (1 to 7 sessions, 3 by default) in RÉGLAGES ET PROFIL. A week
