@@ -33,7 +33,7 @@
   // vit dans ce telephone et ne monte pas dans le compte.
   var CLE_REGLAGES = 'topset_reglages';
   var REGLAGES_DEFAUT = { chronoAuto:true, btnChrono:false, champRepos:false, rpe:false, ecranAllume:true,
-                          nomsLibres:false, couleurs:{}, barres:{}, outils:{}, suivis:[], objectifSemaine:3 };
+                          nomsLibres:false, pasPoids:true, couleurs:{}, barres:{}, outils:{}, suivis:[], objectifSemaine:3 };
   // Au plus quarante exercices suivis dans PROGRES : au-dela, « suivre » ne
   // veut plus rien dire.
   var SUIVIS_MAX = 40;
@@ -134,6 +134,11 @@
   function appliquerReglages(){
     document.body.classList.toggle('sans-rpe', !reglages.rpe);
     document.body.classList.toggle('sans-repos-champ', !reglages.champRepos);
+    // « Ca prend bcp de place pour rien » (16/11/2026) : les − / + du poids
+    // se rangent sur l'ecran de saisie. Une classe plutot qu'un nouveau
+    // dessin : elle vaut tout de suite, meme clavier ouvert. L'exercice en
+    // grand (.fs-pm) garde toujours les siens.
+    document.body.classList.toggle('sans-pas-poids', !reglages.pasPoids);
   }
   // Une attente courte (une liste, un graphique, un fil) : la meme barre
   // qu'on charge, en petit, pour que toutes les attentes parlent la meme
@@ -2300,8 +2305,8 @@
       : auTemps
       ? '<button type="button" class="step-btn" data-action="step-temps" data-delta="-5" data-serie-id="'+ sid +'" aria-label="Retirer 5 secondes à la série '+num+'">−5</button>'
       + '<button type="button" class="step-btn" data-action="step-temps" data-delta="5" data-serie-id="'+ sid +'" aria-label="Ajouter 5 secondes à la série '+num+'">+5</button>'
-      : '<button type="button" class="step-btn" data-action="step" data-delta="-2.5" data-serie-id="'+ sid +'" aria-label="Retirer 2,5 kg à la série '+num+'">−</button>'
-      + '<button type="button" class="step-btn" data-action="step" data-delta="2.5" data-serie-id="'+ sid +'" aria-label="Ajouter 2,5 kg à la série '+num+'">+</button>';
+      : '<button type="button" class="step-btn step-poids" data-action="step" data-delta="-2.5" data-serie-id="'+ sid +'" aria-label="Retirer 2,5 kg à la série '+num+'">−</button>'
+      + '<button type="button" class="step-btn step-poids" data-action="step" data-delta="2.5" data-serie-id="'+ sid +'" aria-label="Ajouter 2,5 kg à la série '+num+'">+</button>';
 
     return '<div class="serie-card'+(s.fait?' fait':'')+(ouverte?' ouverte':'')+'" data-serie-id="'+ sid +'"'
       + (typeCourant ? ' data-type="'+typeCourant+'"' : '') + '>'
@@ -6958,6 +6963,7 @@
     { cle:'chronoAuto',  titre:'Chrono de repos automatique', note:'La pastille qui part toute seule quand tu coches une série.' },
     { cle:'btnChrono',   titre:'Bouton CHRONO sur tous les exercices', note:'Sinon, il ne sort que pour le gainage.' },
     { cle:'champRepos',  titre:'Champ REPOS sur chaque série', note:'Le repos est déjà mesuré tout seul par la pastille.' },
+    { cle:'pasPoids',    titre:'Boutons − / + sous le poids', note:'Ils retirent ou ajoutent 2,5 kg d\'un appui. L\'exercice en grand garde toujours les siens.' },
     { cle:'rpe',         titre:'Colonne RPE (difficulté)', note:'Elle nourrit la charge suggérée. Les valeurs déjà notées sont gardées.' },
     { cle:'ecranAllume', titre:'Garder l\'écran allumé', note:'Pendant un chrono ou un repos, pour ne pas rallumer entre deux séries.' },
     { cle:'nomsLibres',  titre:'Je nomme mes exercices moi-même', note:'L\'app ne demande plus rien quand tu tapes un nom. Le menu ⋯ d\'un exercice sait encore le relier à la demande.' }

@@ -9,6 +9,18 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ## [Unreleased]
 
+### Added — a setting to put away the − / + under the weight (2026-11-16)
+
+- `RÉGLAGES ET PROFIL` has a new switch, **Boutons − / + sous le poids**
+  (`reglages.pasPoids`, on by default, so nothing changes for anyone who does
+  not touch it). Switched off, the open set's tool row hides the −2,5 / +2,5 kg
+  buttons through a body class (`sans-pas-poids`), like the REST field: it
+  applies at once, even with the keyboard still open on a weight, without
+  redrawing the card. The full-screen exercise always keeps its own − / +,
+  and timed and cardio sets keep their −5 / +5 and −1′ / +1′. Like the other
+  settings it lives in this phone and erases nothing. Service worker v85,
+  gabarits §59.
+
 ### Changed — look-alike exercise names merge on their own (2026-11-16)
 
 - « leg curl », « Leg curl » and « Leg curls » were already one exercise for

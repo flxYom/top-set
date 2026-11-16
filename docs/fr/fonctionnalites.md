@@ -610,6 +610,10 @@ de l'en-tête ouvre `RÉGLAGES ET PROFIL`, réglages d'abord :
   part dans les exports, et revient si on rallume la colonne. Le RPE nourrit la
   charge suggérée : éteint, la suggestion s'appuie sur la seule tendance des
   charges.
+- **Boutons − / + sous le poids** (16/11/2026, « ça prend bcp de place pour
+  rien »). Allumés par défaut. Éteints, la série ouverte n'a plus ses boutons
+  −2,5 / +2,5 kg ; l'exercice en grand garde toujours les siens, et les séries
+  au temps ou en cardio gardent leurs −5 / +5 et −1′ / +1′.
 - **Garder l'écran allumé** pendant un chrono ou un repos.
 - **Je nomme mes exercices moi-même** (14/10/2026, « faut une option en mode
   jmet le nom de mon exo »). Allumée, l'app ne demande plus rien quand on tape

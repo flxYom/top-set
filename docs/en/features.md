@@ -556,6 +556,10 @@ profile button in the header opens `RÉGLAGES ET PROFIL`, settings first:
   goes into the exports, and comes back if the column is switched on again. RPE
   feeds the suggested load: switched off, the suggestion relies on the trend of
   the loads alone.
+- **− / + buttons under the weight** (2026-11-16, "it takes a lot of room for
+  nothing"). On by default. Switched off, the open set loses its −2.5 / +2.5 kg
+  buttons; the full-screen exercise always keeps its own, and timed or cardio
+  sets keep their −5 / +5 and −1′ / +1′.
 - **Keep the screen awake** during a timer or a rest.
 - **I name my own exercises** (2026-10-14, "I need an option where I put my own
   exercise name"). Switched on, the app asks nothing while you type a name:

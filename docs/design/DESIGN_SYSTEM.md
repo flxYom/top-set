@@ -489,7 +489,10 @@ Cible :
   elles). Interrupteurs de 52 × 31 px, libellé à gauche, témoin à droite. Par
   défaut l'app est **en mode simple** : RPE et champ REPOS rangés. Ranger une
   colonne corrige aussi la grille (`body.sans-rpe`, une jumelle par variante de
-  largeur) : cacher l'élément seul laisserait son trou.
+  largeur) : cacher l'élément seul laisserait son trou. Les − / + du poids
+  (16/11/2026) se rangent de même par une classe (`body.sans-pas-poids`) : la
+  barre d'outils est en flex, rien ne reste à leur place, et le plein écran
+  garde toujours ses gros − / +.
 - **Sous-groupes** (18/09) : la pastille du groupe affiche le muscle
   (`BICEPS`, `QUADRI`) sans prendre plus de place ; les sous-groupes gardent la
   couleur de leur groupe, la silhouette du récap (face et dos) les distingue par

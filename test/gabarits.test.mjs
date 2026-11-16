@@ -789,7 +789,7 @@ ok('chrono libre : une heure de depart gardee, pas un compteur qui tourne',
 // exos, desactiver activer le chrono et personnaliser des reglages simples. »
 ok('reglages : par defaut l app est en mode simple, et rien n est efface',
    SRC.indexOf('var REGLAGES_DEFAUT = { chronoAuto:true, btnChrono:false, champRepos:false, rpe:false, ecranAllume:true,') > -1
-   && SRC.indexOf('nomsLibres:false, couleurs:{}, barres:{}, outils:{}, suivis:[], objectifSemaine:3 };') > -1
+   && SRC.indexOf('nomsLibres:false, pasPoids:true, couleurs:{}, barres:{}, outils:{}, suivis:[], objectifSemaine:3 };') > -1
    && /document\.body\.classList\.toggle\('sans-rpe', !reglages\.rpe\);/.test(SRC)
    && /body\.sans-rpe \.serie-rpe,/.test(HTML)
    && /body\.sans-repos-champ \.serie-repos-champ\{display:none;\}/.test(HTML)
@@ -1972,6 +1972,20 @@ ok('un seul nom affiche par exercice', /function nomCanoniqueCalcul\(nom\)\{[\s\
 ok('les exercices suivis se reconnaissent par l exercice, pas par l ecriture', /function indexSuivi\(nom\)/.test(SRC) && /parCle\[cleCanonique\(it\.nom\)\] = it;/.test(SRC));
 ok('aucune question pour un nom deja reuni', /if \(!syn && FUSION_AUTO\[cleExo\(ex\.nom\)\]\) return;/.test(SRC));
 ok('recalcule quand les noms changent, pas a chaque ecran', /function rafraichirFusionAuto\(force\)\{[\s\S]{0,300}if \(!force && sig === signatureFusion\) return false;/.test(SRC));
+
+console.log('\n== 59. Les boutons − / + du poids se rangent (16/11) ==');
+ok('allumes par defaut : rien ne change pour qui ne touche a rien', /nomsLibres:false, pasPoids:true, couleurs:\{\}/.test(SRC));
+ok('eteints, la saisie les range tout de suite ; le temps et le cardio gardent les leurs',
+   /document\.body\.classList\.toggle\('sans-pas-poids', !reglages\.pasPoids\);/.test(SRC)
+   && /body\.sans-pas-poids \.step-poids\{display:none;\}/.test(HTML)
+   && (SRC.match(/class="step-btn step-poids" data-action="step" data-delta="-?2\.5"/g) || []).length === 2
+   && !/step-poids/.test(corps('function ligneHTML(', 'function puces(')) && (SRC.match(/step-poids/g) || []).length === 2
+   && /data-action="step-temps" data-delta="-5"/.test(SRC) && /data-action="step-temps" data-delta="-60"/.test(SRC));
+ok('l exercice en grand garde ses − / +, quel que soit le reglage',
+   corps('function ligneHTML(', 'function puces(').indexOf('class="fs-pm" data-fs="pas"') > -1
+   && corps('function ligneHTML(', 'function puces(').indexOf('pasPoids') < 0
+   && (SRC.match(/reglages\.pasPoids/g) || []).length === 1);
+ok('un interrupteur dans RÉGLAGES ET PROFIL', /\{ cle:'pasPoids',\s+titre:'Boutons − \/ \+ sous le poids'/.test(SRC));
 
 console.log(`\n${pass} reussis, ${fail} echoues`);
 process.exit(fail ? 1 : 0);
