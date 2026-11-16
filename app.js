@@ -2,6 +2,23 @@
   "use strict";
 
   var GROUPS = ['Pectoraux','Dos','Épaules','Bras','Jambes','Abdos','Cardio','Autre'];
+  // Les noms d'exercice se normalisent des milliers de fois par ecran : le
+  // recap, le bilan et la fiche relisent tout le carnet. Sur un carnet d'un
+  // an et demi, c'etait la moitie du temps de calcul de l'app. Ces calculs ne
+  // dependent que du texte et de tables fixes : on les retient. Le nom
+  // canonique depend aussi du dictionnaire personnel, et son cache se vide a
+  // chaque reconstruction de celui-ci (rebuildLower). Bornes a 4000 noms :
+  // au-dela, on repart de zero. (16/11/2026)
+  var MEMO_NOMS = { accents:new Map(), net:new Map(), syn:new Map(), muscle:new Map(), canon:new Map(), affiche:new Map() };
+  function retenu(cache, cle, calcul){
+    var v = cache.get(cle);
+    if (v === undefined){
+      v = calcul();
+      if (cache.size >= 4000) cache.clear();
+      cache.set(cle, v);
+    }
+    return v;
+  }
   var GROUP_COLORS = {
     'Pectoraux':'#ff7aa2','Dos':'#22b8a8','Épaules':'#a99bff','Bras':'#d45fc4',
     'Jambes':'#b3d236','Abdos':'#c99a6b','Cardio':'#6fd6f5','Autre':'#8f887d'
@@ -208,7 +225,13 @@
     [/course|rameur|velo|elliptique|corde a sauter|tapis|natation|marche|burpee|cardio/, 'Cardio']
   ];
   // Ce que le nom dit tout seul, sans memoire : { groupe, sous } ou null.
+  // Une copie a chaque appel : classement() rend parfois cet objet tel quel,
+  // et personne ne doit pouvoir modifier la valeur retenue.
   function detecterMuscle(nom){
+    var r = retenu(MEMO_NOMS.muscle, String(nom == null ? '' : nom), function(){ return detecterMuscleCalcul(nom); });
+    return r ? { groupe:r.groupe, sous:r.sous } : null;
+  }
+  function detecterMuscleCalcul(nom){
     var net = normalizeName(nom);
     if (!net) return null;
     var dansBase = Object.keys(EXERCISE_DB).filter(function(n){ return n.toLowerCase() === net.toLowerCase(); })[0];
@@ -275,12 +298,16 @@
     'plank':'Planche', 'push up':'Pompes', 'pushup':'Pompes', 'push ups':'Pompes'
   };
   function sansAccents(t){
-    return String(t == null ? '' : t).toLowerCase()
-      .replace(/[àâä]/g,'a').replace(/[éèêë]/g,'e').replace(/[îï]/g,'i')
-      .replace(/[ôö]/g,'o').replace(/[ùûü]/g,'u').replace(/ç/g,'c');
+    var s = String(t == null ? '' : t);
+    return retenu(MEMO_NOMS.accents, s, function(){
+      return s.toLowerCase()
+        .replace(/[àâä]/g,'a').replace(/[éèêë]/g,'e').replace(/[îï]/g,'i')
+        .replace(/[ôö]/g,'o').replace(/[ùûü]/g,'u').replace(/ç/g,'c');
+    });
   }
   function cleSynonyme(t){
-    return sansAccents(t).replace(/[^a-z0-9]+/g,' ').trim();
+    var s = String(t == null ? '' : t);
+    return retenu(MEMO_NOMS.syn, s, function(){ return sansAccents(s).replace(/[^a-z0-9]+/g,' ').trim(); });
   }
   // Le nom de la base vise par ce qu'on vient de taper, ou null. Exact
   // seulement : proposer sur un debut de mot ferait clignoter une question a
@@ -438,6 +465,9 @@
   function rebuildLower(){
     EXERCISE_DB_LOWER = {};
     CUSTOM_PAR_CLE = {};
+    // Le dictionnaire change : le nom canonique et le nom affiche aussi.
+    MEMO_NOMS.canon.clear();
+    MEMO_NOMS.affiche.clear();
     Object.keys(EXERCISE_DB).forEach(function(k){ EXERCISE_DB_LOWER[k.toLowerCase()] = EXERCISE_DB[k]; });
     Object.keys(customExercises).forEach(function(k){
       var info = infoExo(customExercises[k], k);
@@ -1439,7 +1469,8 @@
 
   // ---------- recap computation ----------
   function normalizeName(nom){
-    return String(nom == null ? '' : nom).replace(/\([^)]*\)/g,'').replace(/\s+/g,' ').trim();
+    var s = String(nom == null ? '' : nom);
+    return retenu(MEMO_NOMS.net, s, function(){ return s.replace(/\([^)]*\)/g,'').replace(/\s+/g,' ').trim(); });
   }
   // La cle ignore la casse et les parentheses : « Bench (top set) » et
   // « bench » sont le meme mouvement, et doivent le rester d'un jour a l'autre.
@@ -1459,6 +1490,9 @@
   // explicitement separe, puis ce que le dictionnaire sait. Sa decision passe
   // toujours devant le dictionnaire, dans les deux sens.
   function cleCanonique(nom){
+    return retenu(MEMO_NOMS.canon, String(nom == null ? '' : nom), function(){ return cleCanoniqueCalcul(nom); });
+  }
+  function cleCanoniqueCalcul(nom){
     var k = cleExo(nom);
     var info = CUSTOM_PAR_CLE[k];
     if (info && info.alias) return info.alias;
@@ -1474,6 +1508,9 @@
   // dans le recap : deux noms rattaches produisent la meme chaine, donc une
   // seule ligne.
   function nomCanonique(nom){
+    return retenu(MEMO_NOMS.affiche, String(nom == null ? '' : nom), function(){ return nomCanoniqueCalcul(nom); });
+  }
+  function nomCanoniqueCalcul(nom){
     var cle = cleCanonique(nom);
     if (cle === cleExo(nom)) return normalizeName(nom);
     var cible = CUSTOM_PAR_CLE[cle];

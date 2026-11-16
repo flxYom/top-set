@@ -11,9 +11,11 @@ pour travailler : la source est servie telle quelle en local. Une seule étape a
 déploiement, la minification (voir [Déployer](#déployer)).
 
 Un fichier HTML avec le CSS en ligne, plus des fichiers statiques.
-`index.html` pèse environ 204 Ko, dont à peu près 119 Ko de texture en base64 ;
-le JavaScript de l'app vit à côté, dans `app.js` (237 Ko), et la logique métier
-testée dans `intelligence.js` (31 Ko).
+`index.html` pèse environ 237 Ko de source (plus de base64 depuis le
+15/11/2026) ; le JavaScript de l'app vit à côté, dans `app.js` (552 Ko de
+source très commentée), et la logique métier testée dans `intelligence.js`
+(46 Ko). En ligne, après minification, cela fait 38 Ko, 83 Ko et 6 Ko
+compressés (mesures du 16/11/2026).
 
 **Pourquoi le JS n'est pas en ligne, lui.** Il l'a été jusqu'à l'audit de
 sécurité. Un script en ligne oblige à écrire `script-src 'self' 'unsafe-inline'`
@@ -193,6 +195,26 @@ de transpilation, les noms globaux partagés entre les fichiers restent intacts,
 et `sw.js` n'est pas touché (sa `VERSION` reste lisible en ligne). Si le build
 échoue, Vercel garde la version précédente en ligne. Pour tester avant de
 pousser : `node build.mjs && npx serve dist`.
+
+**Le CSS minifié aussi (16/11/2026).** Le même esbuild, en mode CSS, réduit les
+trois balises `<style>` d'`index.html` (plus de la moitié du fichier, et ce qui
+bloque le premier affichage) ainsi que `css/contenu.css` et `css/legal.css`.
+`index.html` passe de 55 à 38,5 Ko compressés. Sans cible, esbuild ne réécrit
+aucune syntaxe : il retire commentaires et espaces, et raccourcit ce qui est
+équivalent. Vérifié dans un navigateur : sur les 1 153 éléments de l'écran de
+séance, les styles calculés de la source et de `dist/` sont identiques ; les
+seuls écarts relevés sont l'adresse des images (le port du serveur de test),
+une animation saisie à un autre instant, et des dégradés écrits sans leurs
+« 0% » et « 100% », qui sont les valeurs par défaut.
+
+**Les noms d'exercice retenus (16/11/2026).** Le récap, le bilan et la fiche
+relisent tout le carnet, et normalisaient chaque nom d'exercice à chaque fois
+(accents, abréviations, nom canonique, muscle). Sur un carnet d'un an et demi
+(306 séances), c'était la moitié du temps de calcul. Ces fonctions retiennent
+désormais leur résultat (`MEMO_NOMS`, borné à 4 000 noms) ; le nom canonique,
+qui dépend du dictionnaire personnel, est oublié à chaque `rebuildLower()`.
+Mesuré dans jsdom sur ce carnet : bilan de 166 à 33 ms, PROGRÈS semaine de 86 à
+30 ms, écran de séance de 84 à 41 ms, « Ton année » de 26 à 4 ms.
 
 Le site vit sur `top-set.fr`, qui redirige vers `www.top-set.fr`. Le domaine est
 écrit en dur dans les balises Open Graph, les liens canoniques, `robots.txt` et

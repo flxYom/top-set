@@ -1826,5 +1826,20 @@ ok('le record : une pastille pleine, nommee pour les lecteurs d ecran',
    && /\.serie-pr\{[^}]*width:18px;height:18px;[^}]*background:var\(--yellow\);/.test(REFONTE));
 ok('la pastille ne surgit pas avec reduire les animations', /prefers-reduced-motion:reduce\)\{ \.serie-pr\{animation:none;\} \}/.test(REFONTE));
 
+function CSS_EN_LIGNE_OK(B){
+  const liste = (B.match(/const CSS_FICHIERS = \[([^\]]*)\]/) || [])[1] || '';
+  return liste.split(',').map(s => s.trim().replace(/'/g, '')).filter(Boolean).every(f => existsSync(new URL('../' + f, import.meta.url)));
+}
+console.log('\n== 52. Optimisations (16/11) : noms retenus, CSS minifie ==');
+ok('les calculs de nom sont retenus, bornes', /var MEMO_NOMS = \{ accents:new Map\(\), net:new Map\(\), syn:new Map\(\), muscle:new Map\(\), canon:new Map\(\), affiche:new Map\(\) \};/.test(SRC)
+   && /if \(cache\.size >= 4000\) cache\.clear\(\);/.test(SRC));
+ok('le nom canonique s oublie quand le dictionnaire change',
+   /function rebuildLower\(\)\{[\s\S]{0,260}MEMO_NOMS\.canon\.clear\(\);\s*MEMO_NOMS\.affiche\.clear\(\);/.test(SRC));
+ok('le muscle detecte est rendu en copie', /return r \? \{ groupe:r\.groupe, sous:r\.sous \} : null;/.test(SRC));
+ok('le deploiement minifie aussi le CSS', (() => { const B = lireLF('../build.mjs');
+   return /const CSS_EN_LIGNE = \['index\.html'\];/.test(B) && /const CSS_FICHIERS = \['css\/contenu\.css', 'css\/legal\.css'\];/.test(B)
+     && /CSS_FICHIERS\.every|for \(const fichier of CSS_FICHIERS\)/.test(B)
+     && CSS_EN_LIGNE_OK(B); })());
+
 console.log(`\n${pass} reussis, ${fail} echoues`);
 process.exit(fail ? 1 : 0);

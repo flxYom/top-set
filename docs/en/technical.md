@@ -11,9 +11,10 @@ on it: the source is served as is locally. A single deploy-time step, minificati
 (see [Deploying](#deploying)).
 
 One HTML file carrying the markup and inline CSS, plus static assets.
-`index.html` is about 204 KB, of which roughly 119 KB is a base64 texture; the
-app's JavaScript sits beside it in `app.js` (237 KB), and the tested business
-logic in `intelligence.js` (31 KB).
+`index.html` is about 237 KB of source (no base64 left since 2026-11-15); the
+app's JavaScript sits beside it in `app.js` (552 KB of heavily commented
+source), and the tested business logic in `intelligence.js` (46 KB). Online,
+minified, that is 38 KB, 83 KB and 6 KB gzipped (measured 2026-11-16).
 
 **Why the JS is not inline.** It was, until the security audit. An inline script
 forces `script-src 'self' 'unsafe-inline'` in the Content-Security-Policy — and
@@ -186,6 +187,25 @@ goes from 92 to 51 KB gzipped. Nothing else is rewritten: no bundling, no
 transpiling, the global names shared between files are kept, and `sw.js` is left
 alone (its `VERSION` stays readable online). If the build fails, Vercel keeps the
 previous version live. To test before pushing: `node build.mjs && npx serve dist`.
+
+**CSS minified too (2026-11-16).** The same esbuild, in CSS mode, shrinks the
+three `<style>` tags of `index.html` (over half the file, and what blocks the
+first paint) plus `css/contenu.css` and `css/legal.css`. `index.html` goes from
+55 to 38.5 KB gzipped. With no target, esbuild rewrites no syntax: it strips
+comments and whitespace and shortens equivalent values. Checked in a browser:
+across the 1,153 elements of the session screen, computed styles of the source
+and of `dist/` match; the only differences were image URLs (the test server
+port), an animation caught at another instant, and gradients written without
+their default "0%" and "100%".
+
+**Exercise names remembered (2026-11-16).** The recap, the summary and the
+exercise page re-read the whole logbook and normalised every exercise name each
+time (accents, shorthand, canonical name, muscle). On an 18-month logbook (306
+sessions) that was half of the app's compute time. These functions now remember
+their result (`MEMO_NOMS`, capped at 4,000 names); the canonical name, which
+depends on the personal dictionary, is forgotten on every `rebuildLower()`.
+Measured in jsdom on that logbook: summary 166 → 33 ms, PROGRÈS week 86 → 30 ms,
+session screen 84 → 41 ms, "Ton année" 26 → 4 ms.
 
 The site lives on `top-set.fr`, which redirects to `www.top-set.fr`. The domain
 is written out in the Open Graph tags, canonical links, `robots.txt` and

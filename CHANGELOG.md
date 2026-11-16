@@ -9,6 +9,22 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ## [Unreleased]
 
+### Changed — faster screens, lighter first load (2026-11-16)
+
+- Exercise-name normalisation (accents, shorthand, canonical name, muscle)
+  is now remembered instead of recomputed thousands of times per screen
+  (capped at 4,000 names; the canonical name is forgotten whenever the
+  personal dictionary is rebuilt). On an 18-month logbook in jsdom: the
+  end-of-session summary 166 → 33 ms, PROGRÈS week 86 → 30 ms, the session
+  screen 84 → 41 ms. A bench proves that linking then separating two names
+  after the cache is warm still updates the recap (and fails without the
+  cache reset).
+- The deploy build now minifies the CSS too: the three `<style>` tags of
+  `index.html` and `css/*.css`. `index.html` goes from 55 to 38.5 KB
+  gzipped. Computed styles of all 1,153 elements of the session screen were
+  compared between source and `dist/` in a browser: identical. Service
+  worker v78, gabarits §52.
+
 ### Changed — one colour per state (2026-11-16)
 
 - Errors get their own colour, `--erreur` #ff4d6d, instead of the action
