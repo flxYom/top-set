@@ -785,7 +785,7 @@ ok('chrono libre : une heure de depart gardee, pas un compteur qui tourne',
 // exos, desactiver activer le chrono et personnaliser des reglages simples. »
 ok('reglages : par defaut l app est en mode simple, et rien n est efface',
    SRC.indexOf('var REGLAGES_DEFAUT = { chronoAuto:true, btnChrono:false, champRepos:false, rpe:false, ecranAllume:true,') > -1
-   && SRC.indexOf('nomsLibres:false, couleurs:{}, barres:{} };') > -1
+   && SRC.indexOf('nomsLibres:false, couleurs:{}, barres:{}, suivis:[] };') > -1
    && /document\.body\.classList\.toggle\('sans-rpe', !reglages\.rpe\);/.test(SRC)
    && /body\.sans-rpe \.serie-rpe,/.test(HTML)
    && /body\.sans-repos-champ \.serie-repos-champ\{display:none;\}/.test(HTML)
@@ -1668,6 +1668,40 @@ ok('la roue est une grille de six ronds de 48 px au plus, la teinte d origine ma
    /\.reg-nuancier\{display:grid;grid-template-columns:repeat\(6,1fr\)/.test(REFONTE) && /\.reg-teinte\{[^}]*aspect-ratio:1;max-width:48px/.test(REFONTE)
    && /\.reg-teinte\[data-origine\]::before/.test(REFONTE));
 ok('le chevron est un SVG sur la grille de 24, trait 1.9, bouts ronds', /class="reg-chevron" viewBox="0 0 24 24"[^>]*stroke-width="1\.9"[^>]*stroke-linecap="round"/.test(SRC));
+
+console.log('\n== 43. Les exercices suivis (16/11) : deux pages dans PROGRES ==');
+ok('le choix de page SUIVIS / TOUS, avec ses comptes',
+   /<p class="vue-sous-titre" id="recapPagesLabel">EXERCICES<\/p>/.test(HTML)
+   && /id="recapPages" role="group" aria-labelledby="recapPagesLabel"/.test(HTML)
+   && /data-page="suivis" aria-pressed="false">SUIVIS<span class="seg-compte" id="recapNbSuivis">/.test(HTML)
+   && /data-page="tous" aria-pressed="false">TOUS<span class="seg-compte" id="recapNbTous">/.test(HTML));
+ok('les suivis sont un reglage local, lu sans doublon et borne',
+   /couleurs:\{\}, barres:\{\}, suivis:\[\] \}/.test(SRC) && /var SUIVIS_MAX = 40;/.test(SRC)
+   && /k === 'suivis' \? \[\] : REGLAGES_DEFAUT\[k\]/.test(SRC)
+   && /r\.suivis\.indexOf\(nom\) < 0 && r\.suivis\.length < SUIVIS_MAX/.test(SRC));
+ok('sans exercice suivi on arrive sur TOUS, sinon sur SUIVIS',
+   /return reglages\.suivis\.length \? 'suivis' : 'tous';/.test(SRC));
+ok('la ligne de TOUS separe le bouton qui ouvre du signet',
+   /<div class="recap-row">/.test(SRC) && /class="recap-ouvrir" data-recap-name=/.test(SRC)
+   && /boutonSuivre\(it\.nom, 'recap-epingle'\)/.test(SRC) && !/class="recap-row" data-recap-name/.test(SRC));
+ok('le signet dit son etat et son action',
+   /aria-pressed="' \+ \(suivi \? 'true' : 'false'\)/.test(SRC) && /\(suivi \? 'Ne plus suivre ' : 'Suivre '\)/.test(SRC));
+ok('la fiche porte le meme signet', /boutonSuivre\(affiche, 'exo-suivre'\)/.test(SRC));
+ok('la tuile : groupe, nom, courbe, valeur, fleche, frequence',
+   /class="suivi-tuile/.test(SRC) && /class="suivi-groupe"/.test(SRC) && /class="suivi-nom"/.test(SRC)
+   && /sparkline\(vals\)/.test(SRC) && /class="suivi-ligne"/.test(SRC) && /class="suivi-freq"/.test(SRC));
+ok('un exercice suivi sans serie reste affiche, eteint',
+   /' absente'/.test(SRC) && /rien sur cette période/.test(SRC) && /\.suivi-tuile\.absente\{background:var\(--s1\);\}/.test(REFONTE));
+ok('la fleche compare a la periode d avant, dans la meme unite',
+   /function periodePrecedente\(data\)/.test(SRC) && /now\.unite !== before\.unite\) return '';/.test(SRC)
+   && /\.suivi-delta\.hausse\{color:var\(--ok\);\}/.test(REFONTE) && /\.suivi-delta\.baisse\{color:var\(--orange\);\}/.test(REFONTE));
+ok('la courbe ne deforme pas ses traits', /vector-effect="non-scaling-stroke"/.test(SRC) && /preserveAspectRatio="none"/.test(SRC));
+ok('deux tuiles par rangee, teintees de leur groupe',
+   /\.suivis-grille\{display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\);gap:8px;\}/.test(REFONTE)
+   && /\.suivi-tuile\{[^}]*color-mix\(in srgb, var\(--c\) 14%, var\(--s1\)\)/.test(REFONTE));
+ok('le signet fait 44 px et se remplit quand il est presse',
+   /\.recap-epingle,\.exo-suivre\{[^}]*width:44px;min-height:44px;/.test(REFONTE)
+   && /\.recap-epingle\[aria-pressed="true"\] svg,\.exo-suivre\[aria-pressed="true"\] svg\{fill:currentColor;\}/.test(REFONTE));
 
 console.log(`\n${pass} reussis, ${fail} echoues`);
 process.exit(fail ? 1 : 0);

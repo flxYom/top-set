@@ -212,6 +212,24 @@ Garde : gabarits §40.
 **Le verre : une seule exception, la loupe des onglets** (décision du
 13/09/2026). Aucun nouvel élément en verre ailleurs.
 
+**La tuile d'un exercice suivi — 16/11/2026.** PROGRÈS a deux pages
+d'exercices, SUIVIS et TOUS, choisies par le même segment que la période
+(`.recap-pages`, deux cases, le compte en petit `--ink3`). La tuile
+(`.suivi-tuile`) est un bouton de 150 px de haut, deux par rangée, teinté
+de son groupe comme les en-têtes (`color-mix` 14 % → `--s1`, aucun rail de
+couleur) : en haut la pastille et le groupe en `--t-1` ; le nom en `--t-3`,
+deux lignes au plus ; une courbe de 34 px (un point par séance, le dernier
+marqué d'un rond de 7 px, traits non déformés) ; la meilleure série en
+`--t-4` jaune, l'unité et les reps en `--t-2` gris ; la flèche de période
+(`▲` vert `--ok`, `▼` orange, `= pareil` gris) ; la fréquence en étiquette.
+Un exercice suivi sans série sur la période garde sa tuile, éteinte
+(`.absente` : fond `--s1`, nom et valeur `--dim`, courbe à plat) — c'est ce
+qu'on veut voir. Le signet (`.recap-epingle`, `.exo-suivre`, 44 px, contour
+`--ink3`, plein jaune quand il est pressé) est le seul moyen de suivre ou
+de retirer : sur chaque ligne de TOUS et en tête de la fiche. La page vide
+de SUIVIS est une carte pleine, pas un emplacement en pointillés : c'est une
+invitation, avec un bouton vers TOUS. Garde : gabarits §43.
+
 ## 5. Mouvement
 
 Une animation sert une interaction, une hiérarchie ou l'identité. Jamais un

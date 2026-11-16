@@ -62,8 +62,8 @@ repository is for right now.
   separates two exercise names at any time.
 - **See where you stand.** A calendar planning (day, week, month), planned
   sessions and history, an end-of-session recap compared with the same session
-  last week, weekly, monthly and yearly recaps, and each exercise's progression
-  and records.
+  last week, weekly, monthly and yearly recaps with the exercises you chose to
+  track shown first, and each exercise's progression and records.
 - **Keep your data.** Works offline, no account by default, JSON or spreadsheet
   export and import. An optional account syncs the logbook across devices.
 - **Never lose a session.** One storage key for the whole device, so a page of

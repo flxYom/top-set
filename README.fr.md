@@ -62,8 +62,9 @@ c'est exactement à ça que sert ce repo pour l'instant.
   la carte fusionne ou sépare deux noms d'exercice à tout moment.
 - **Voir où on en est.** Un planning en calendrier (jour, semaine, mois), les
   séances prévues et l'historique, un bilan de fin de séance comparé à la même
-  séance la semaine d'avant, le récap de la semaine, du mois et de l'année, la
-  progression et les records de chaque exercice.
+  séance la semaine d'avant, le récap de la semaine, du mois et de l'année avec
+  les exercices qu'on suit en premier, la progression et les records de chaque
+  exercice.
 - **Garder la main sur ses données.** Hors-ligne, sans compte par défaut, export
   et import JSON ou tableur. Un compte facultatif synchronise le carnet d'un
   appareil à l'autre.

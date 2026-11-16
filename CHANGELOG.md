@@ -9,6 +9,21 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ## [Unreleased]
 
+### Added — tracked exercises in PROGRÈS (2026-11-16)
+
+- PROGRÈS was one long list of every exercise of the period. It now has two
+  pages under the summary, picked by a segment like the period: SUIVIS, the
+  exercises you chose to keep an eye on, and TOUS, the full list by group.
+  Each row of TOUS and the head of an exercise's page carry a bookmark; a
+  tracked exercise gets a tile (two per row, tinted like its group) with its
+  best set of the period, a sparkline of its top set session after session,
+  an arrow against the previous week, month or year, and its frequency. A
+  tracked exercise with no set on the period keeps its tile, dimmed. With
+  nothing tracked yet you land on TOUS, where a line explains the bookmark.
+  Tracked names live in the local settings (`topset_reglages.suivis`, at
+  most 40, never synced, never dropped if unknown). Service worker v69,
+  gabarits §43.
+
 ### Changed — a twelve-colour wheel for the groups (2026-11-15)
 
 - The settings offered five swatches per group, four of them the same for

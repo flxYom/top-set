@@ -16,14 +16,17 @@
   // vit dans ce telephone et ne monte pas dans le compte.
   var CLE_REGLAGES = 'topset_reglages';
   var REGLAGES_DEFAUT = { chronoAuto:true, btnChrono:false, champRepos:false, rpe:false, ecranAllume:true,
-                          nomsLibres:false, couleurs:{}, barres:{} };
+                          nomsLibres:false, couleurs:{}, barres:{}, suivis:[] };
+  // Au plus quarante exercices suivis dans PROGRES : au-dela, « suivre » ne
+  // veut plus rien dire.
+  var SUIVIS_MAX = 40;
   // Les barres qu'on peut choisir pour le calcul des disques : l'olympique,
   // la courte, la legere, celle de competition avec ses colliers.
   var BARRES_CHOIX = [20, 15, 10, 25];
   var reglages = (function(){
     var r = {};
     Object.keys(REGLAGES_DEFAUT).forEach(function(k){
-      r[k] = (k === 'couleurs' || k === 'barres') ? {} : REGLAGES_DEFAUT[k];
+      r[k] = (k === 'couleurs' || k === 'barres') ? {} : (k === 'suivis' ? [] : REGLAGES_DEFAUT[k]);
     });
     try {
       var lu = JSON.parse(localStorage.getItem(CLE_REGLAGES) || 'null');
@@ -43,6 +46,14 @@
                 if (BARRES_CHOIX.indexOf(Number(lu.barres[nom])) > -1) r.barres[nom] = Number(lu.barres[nom]);
               });
             }
+          } else if (k === 'suivis'){
+            // Les exercices suivis dans PROGRES : des noms, sans doublon, gardes
+            // tels quels — un nom sans serie reste suivi, il attend les siennes.
+            if (Array.isArray(lu.suivis)){
+              lu.suivis.forEach(function(nom){
+                if (typeof nom === 'string' && nom.trim() && r.suivis.indexOf(nom) < 0 && r.suivis.length < SUIVIS_MAX) r.suivis.push(nom);
+              });
+            }
           } else if (typeof lu[k] === 'boolean') r[k] = lu[k];
         });
       }
@@ -55,6 +66,20 @@
   // La couleur d'un groupe : celle qu'on a choisie, sinon celle d'origine.
   function couleurGroupe(g){
     return (g && reglages.couleurs[g]) || GROUP_COLORS[g] || GROUP_COLORS['Autre'];
+  }
+  // ---------- exercices suivis (16/11/2026) ----------
+  // Un exercice est suivi par son nom canonique, celui que le recap affiche.
+  function estSuivi(nom){
+    return reglages.suivis.indexOf(nomCanonique(nom) || nom) > -1;
+  }
+  // Bascule, garde, et dit si l'exercice est suivi apres l'appel.
+  function basculerSuivi(nom){
+    var cle = nomCanonique(nom) || nom;
+    var i = reglages.suivis.indexOf(cle);
+    if (i > -1) reglages.suivis.splice(i, 1);
+    else if (reglages.suivis.length < SUIVIS_MAX) reglages.suivis.push(cle);
+    garderReglages();
+    return i < 0 && reglages.suivis.indexOf(cle) > -1;
   }
   // Les classes qui rangent une colonne : le CSS fait le reste, y compris
   // les largeurs de la grille des series.
@@ -660,6 +685,7 @@
     exoRetour:'recap',
     exoPeriode:'tout',
     recapPeriod:'semaine',
+    recapPage:null,
     loading:true
   };
 
@@ -3946,36 +3972,179 @@
       + '<div class="muscle-body">'+muscleMapSVG(sousC)+'<div class="muscle-legend">'+legend+note+'</div></div>'
       + '</div>';
 
-    if (!data.items.length){
-      groupsEl.innerHTML = '<div class="empty-state">Aucune donnée pour cette période.</div>';
-      return;
-    }
+    // Deux pages pour les exercices : SUIVIS, ceux qu'on garde a l'oeil, et
+    // TOUS, la liste complete par groupe. Sans exercice suivi, on arrive sur
+    // TOUS, la ou on choisit. (16/11/2026)
+    var page = pageRecap();
+    document.querySelectorAll('#recapPages .seg-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.page === page);
+      b.setAttribute('aria-pressed', b.dataset.page === page ? 'true' : 'false');
+    });
+    document.getElementById('recapNbSuivis').textContent = reglages.suivis.length || '';
+    document.getElementById('recapNbTous').textContent = data.items.length || '';
+    groupsEl.innerHTML = page === 'suivis' ? rendreSuivis(data) : rendreTous(data);
+  }
+
+  function pageRecap(){
+    if (state.recapPage === 'suivis' || state.recapPage === 'tous') return state.recapPage;
+    return reglages.suivis.length ? 'suivis' : 'tous';
+  }
+
+  function valeurRecap(it){
+    return it.maxDuree !== null
+      ? TS.formatDuree(it.maxDuree)
+      : (it.bodyweight ? 'PDC' : formatWeight(it.maxPoids)+' kg') + ' × ' + it.repsAtMax;
+  }
+  function frequenceRecap(it){
+    return (it.sous ? it.sous + ' · ' : '') + it.fois + (it.fois > 1 ? ' séances' : ' séance') + ' · '
+      + it.series + (it.series > 1 ? ' séries' : ' série');
+  }
+
+  var ICONE_SIGNET = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 4.5h11v15.5l-5.5-4-5.5 4z"/></svg>';
+  // Le signet : plein quand l'exercice est suivi. Meme bouton sur la ligne de
+  // TOUS et en tete de la fiche.
+  function boutonSuivre(nom, classe){
+    var suivi = estSuivi(nom);
+    return '<button type="button" class="' + classe + '" data-suivre="' + esc(nom) + '" aria-pressed="' + (suivi ? 'true' : 'false') + '"'
+      + ' aria-label="' + (suivi ? 'Ne plus suivre ' : 'Suivre ') + esc(nom) + '">' + ICONE_SIGNET + '</button>';
+  }
+
+  // La page TOUS : chaque groupe dans sa carte, chaque exercice sur sa ligne
+  // avec son signet. Tant que rien n'est suivi, une ligne explique le signet.
+  function rendreTous(data){
+    if (!data.items.length) return '<div class="empty-state">Aucune donnée pour cette période.</div>';
     var byGroup = {};
     data.items.forEach(function(it){
       if (!byGroup[it.groupe]) byGroup[it.groupe]=[];
       byGroup[it.groupe].push(it);
     });
-    var html = '';
+    var html = reglages.suivis.length ? ''
+      : '<p class="suivis-aide">' + ICONE_SIGNET + 'Appuie sur le signet d\'un exercice pour le suivre : il s\'affichera dans SUIVIS, en premier.</p>';
     GROUPS.forEach(function(g){
       if (!byGroup[g]) return;
       html += '<div class="recap-section" style="--sect-color:'+couleurGroupe(g)+'">'
         + '<div class="recap-section-title">'+g+'</div>'
         + '<div class="recap-rows">'
         + byGroup[g].map(function(it){
-            var valueTxt = it.maxDuree !== null
-              ? TS.formatDuree(it.maxDuree)
-              : (it.bodyweight ? 'PDC' : formatWeight(it.maxPoids)+' kg') + ' × ' + it.repsAtMax;
-            var freq = (it.sous ? it.sous + ' · ' : '') + it.fois + (it.fois > 1 ? ' séances' : ' séance') + ' · ' +
-                       it.series + (it.series > 1 ? ' séries' : ' série');
-            return '<button type="button" class="recap-row" data-recap-name="'+esc(it.nom)+'">'
+            return '<div class="recap-row">'
+              + '<button type="button" class="recap-ouvrir" data-recap-name="'+esc(it.nom)+'">'
               +   '<span class="recap-name"><span class="chev" aria-hidden="true">›</span>'+esc(it.nom)
-              +     '<span class="recap-freq">'+esc(freq)+'</span></span>'
-              +   '<span class="recap-value">'+esc(valueTxt)+'</span>'
-              + '</button>';
+              +     '<span class="recap-freq">'+esc(frequenceRecap(it))+'</span></span>'
+              +   '<span class="recap-value">'+esc(valeurRecap(it))+'</span>'
+              + '</button>'
+              + boutonSuivre(it.nom, 'recap-epingle')
+              + '</div>';
           }).join('')
         + '</div></div>';
     });
-    groupsEl.innerHTML = html;
+    return html;
+  }
+
+  // La page SUIVIS : une tuile par exercice suivi, dans l'ordre des groupes.
+  // Un exercice suivi sans serie sur la periode reste la, eteint : c'est
+  // justement ce qu'on veut voir.
+  function rendreSuivis(data){
+    if (!reglages.suivis.length){
+      return '<div class="suivis-vide">'
+        + '<div class="suivis-vide-titre">Aucun exercice suivi</div>'
+        + '<p>Choisis ceux que tu veux garder à l\'œil : ils s\'affichent ici en premier, avec leur meilleure série et leur courbe sur la période. Les autres restent dans TOUS.</p>'
+        + '<button type="button" class="btn-sheet suivis-choisir" data-page="tous">CHOISIR DANS TOUS ›</button>'
+        + '</div>';
+    }
+    var parNom = {};
+    data.items.forEach(function(it){ parNom[it.nom] = it; });
+    var avant = periodePrecedente(data);
+    var liste = reglages.suivis.map(function(nom){
+      var it = parNom[nom] || null;
+      var groupe = it ? it.groupe : classement({ nom:nom, groupe:groupeCanonique(nom) || 'Autre' }).groupe;
+      return { nom:nom, it:it, groupe:groupe };
+    });
+    liste.sort(function(x,y){
+      var gi = GROUPS.indexOf(x.groupe) - GROUPS.indexOf(y.groupe);
+      if (gi!==0) return gi;
+      return x.nom.localeCompare(y.nom,'fr');
+    });
+    return '<div class="suivis-grille">' + liste.map(function(s){ return tuileSuivie(s, data, avant); }).join('') + '</div>';
+  }
+
+  // La periode d'avant, de meme nature : la semaine, le mois ou l'annee
+  // precedente. C'est le repere de la fleche sur chaque tuile.
+  function periodePrecedente(data){
+    var debut = fromDateStr(data.startStr);
+    var fin = addDays(debut, -1), dep;
+    if (state.recapPeriod === 'semaine') dep = addDays(debut, -7);
+    else if (state.recapPeriod === 'mois') dep = startOfMonth(fin);
+    else dep = startOfYear(fin);
+    return { startStr:toDateStr(dep), endStr:toDateStr(fin) };
+  }
+  // Le top set de chaque seance de l'exercice entre deux dates, dans l'ordre.
+  function topSetsEntre(nom, startStr, endStr){
+    return seancesDeLExo(nom).filter(function(j){ return j.date >= startStr && j.date <= endStr; })
+      .map(function(j){ return { date:j.date, top:TS.calculerTopSet(j.series) }; })
+      .filter(function(p){ return p.top; });
+  }
+  // Ce qu'on suit d'une seance a l'autre : le temps tenu, sinon le poids,
+  // sinon les reps (poids du corps).
+  function mesureTop(top){
+    var d = TS.dureeSecondes(top.reps);
+    if (d !== null) return { v:d, unite:'s' };
+    if (typeof top.poids === 'number' && top.poids > 0) return { v:top.poids, unite:'kg' };
+    var r = TS.nombreReps(top.reps);
+    return r === null ? null : { v:r, unite:'reps' };
+  }
+  function meilleureMesure(points){
+    var best = null;
+    points.forEach(function(p){
+      var m = mesureTop(p.top);
+      if (m && (!best || m.v > best.v)) best = m;
+    });
+    return best;
+  }
+  // La courbe de la tuile : un point par seance, le dernier marque. Les
+  // traits ne s'etirent pas avec la tuile (non-scaling-stroke).
+  function sparkline(vals){
+    var W = 140, H = 34, M = 5;
+    var ns = ' vector-effect="non-scaling-stroke"';
+    if (!vals.length){
+      return '<svg class="suivi-spark vide" viewBox="0 0 140 34" preserveAspectRatio="none" aria-hidden="true"><path d="M5 29H135"' + ns + '/></svg>';
+    }
+    var min = Math.min.apply(null, vals), max = Math.max.apply(null, vals);
+    var y = function(v){ return (max === min ? H / 2 : M + (H - 2 * M) * (1 - (v - min) / (max - min))).toFixed(1); };
+    var x = function(i){ return (vals.length === 1 ? W / 2 : M + (W - 2 * M) * i / (vals.length - 1)).toFixed(1); };
+    var d = vals.map(function(v, i){ return (i ? 'L' : 'M') + x(i) + ' ' + y(v); }).join('');
+    var n = vals.length - 1;
+    return '<svg class="suivi-spark" viewBox="0 0 140 34" preserveAspectRatio="none" aria-hidden="true">'
+      + (vals.length > 1 ? '<path class="trace" d="' + d + '"' + ns + '/>' : '')
+      + '<path class="point" d="M' + x(n) + ' ' + y(vals[n]) + 'h0.01"' + ns + '/></svg>';
+  }
+  function valeurTuile(it){
+    if (it.maxDuree !== null) return '<span class="suivi-valeur">' + esc(TS.formatDuree(it.maxDuree)) + '</span>';
+    return '<span class="suivi-valeur">' + (it.bodyweight ? 'PDC' : esc(formatWeight(it.maxPoids)) + '<small> kg</small>')
+      + '<small> × ' + esc(String(it.repsAtMax)) + '</small></span>';
+  }
+  // La fleche : le meilleur de la periode contre celui d'avant, dans la meme
+  // unite. Sans periode d'avant, pas de fleche : rien a comparer.
+  function deltaTuile(now, before){
+    if (!now || !before || now.unite !== before.unite) return '';
+    var d = Math.round((now.v - before.v) * 100) / 100;
+    if (d === 0) return '<span class="suivi-delta egal">= pareil</span>';
+    var abs = Math.abs(d);
+    var txt = now.unite === 'kg' ? formatWeight(abs) + ' kg' : abs + (now.unite === 's' ? ' s' : (abs > 1 ? ' reps' : ' rep'));
+    return '<span class="suivi-delta ' + (d > 0 ? 'hausse' : 'baisse') + '">' + (d > 0 ? '▲ +' : '▼ −') + txt + '</span>';
+  }
+  function tuileSuivie(s, data, avant){
+    var it = s.it;
+    var points = topSetsEntre(s.nom, data.startStr, data.endStr);
+    var vals = points.map(function(p){ var m = mesureTop(p.top); return m ? m.v : null; })
+      .filter(function(v){ return v !== null; });
+    var delta = it ? deltaTuile(meilleureMesure(points), meilleureMesure(topSetsEntre(s.nom, avant.startStr, avant.endStr))) : '';
+    return '<button type="button" class="suivi-tuile' + (it ? '' : ' absente') + '" style="--c:' + couleurGroupe(s.groupe) + '" data-recap-name="' + esc(s.nom) + '">'
+      + '<span class="suivi-groupe"><i aria-hidden="true"></i>' + esc(s.groupe) + '</span>'
+      + '<span class="suivi-nom">' + esc(s.nom) + '</span>'
+      + sparkline(vals)
+      + '<span class="suivi-ligne">' + (it ? valeurTuile(it) : '<span class="suivi-valeur">—</span>') + delta + '</span>'
+      + '<span class="suivi-freq">' + (it ? esc(frequenceRecap(it)) : 'rien sur cette période') + '</span>'
+      + '</button>';
   }
 
   // ---------- fiche d'un exercice : progression, records, historique ----------
@@ -4037,8 +4206,11 @@
     var couleur = couleurGroupe(groupe);
 
     var html = '<div class="exo-tete" style="--card-color:' + couleur + '">'
+      + '<div class="exo-tete-texte">'
       + '<div class="exo-nom">' + esc(affiche) + '</div>'
       + '<div class="exo-groupe">' + esc(groupe + (clX.sous ? ' · ' + clX.sous : '')) + '</div>'
+      + '</div>'
+      + boutonSuivre(affiche, 'exo-suivre')
       + '</div>';
 
     if (!toutes.length){
@@ -4213,8 +4385,22 @@
     return chartLibPromise;
   }
   document.getElementById('recapGroups').addEventListener('click', function(e){
-    var btn = e.target.closest('.recap-row'); if (!btn) return;
+    var s = e.target.closest('[data-suivre]');
+    if (s){
+      // La page reste celle ou on est : le premier signet ne doit pas
+      // nous emmener sur SUIVIS pendant qu'on choisit dans TOUS.
+      if (!state.recapPage) state.recapPage = pageRecap();
+      basculerSuivi(s.dataset.suivre); renderRecap(); return;
+    }
+    var p = e.target.closest('[data-page]');
+    if (p){ state.recapPage = p.dataset.page; renderRecap(); return; }
+    var btn = e.target.closest('[data-recap-name]'); if (!btn) return;
     ouvrirExercice(btn.dataset.recapName, 'recap');
+  });
+  document.getElementById('recapPages').addEventListener('click', function(e){
+    var btn = e.target.closest('.seg-btn'); if (!btn) return;
+    state.recapPage = btn.dataset.page;
+    renderRecap();
   });
 
   function renderAll(){
@@ -6632,6 +6818,14 @@
   });
 
   document.getElementById('exoDetail').addEventListener('click', function(e){
+    var s = e.target.closest('[data-suivre]');
+    if (s){
+      var suivi = basculerSuivi(s.dataset.suivre);
+      s.setAttribute('aria-pressed', suivi ? 'true' : 'false');
+      s.setAttribute('aria-label', (suivi ? 'Ne plus suivre ' : 'Suivre ') + s.dataset.suivre);
+      showToast(suivi ? 'Suivi dans PROGRÈS' : 'Retiré des suivis');
+      return;
+    }
     var p = e.target.closest('[data-periode]');
     if (p){
       state.exoPeriode = p.dataset.periode;

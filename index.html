@@ -3453,6 +3453,68 @@ button:active:not(:disabled):not(.topbar-tab):not(.bulle-onglet){filter:brightne
 @media (prefers-reduced-motion:reduce){
   .sheet,.sheet-card,.ex-card.menu-ouvert .ex-menu{animation:none;}
 }
+/* ---- Exercices suivis (16/11/2026) : deux pages dans PROGRES ---- */
+/* Le choix de page, au-dessus de la liste : deux cases, le compte en petit. */
+.segmented.sub.recap-pages{grid-template-columns:repeat(2,minmax(0,1fr));}
+.seg-compte{margin-left:6px;font-size:var(--t-1);font-weight:700;color:var(--ink3);font-variant-numeric:tabular-nums;}
+.seg-btn.active .seg-compte{color:var(--dim);}
+.seg-compte:empty{display:none;}
+/* La ligne de TOUS : le bouton qui ouvre, puis le signet, chacun sa cible. */
+.recap-row{display:flex;align-items:stretch;gap:0;padding:0;}
+.recap-ouvrir{
+  flex:1;min-width:0;display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:12px 0;background:none;border:0;color:inherit;font:inherit;text-align:left;
+}
+.recap-epingle,.exo-suivre{
+  flex:none;display:flex;align-items:center;justify-content:center;width:44px;min-height:44px;
+  margin-right:-8px;padding:0;background:none;border:0;color:var(--ink3);
+}
+.recap-epingle[aria-pressed="true"],.exo-suivre[aria-pressed="true"]{color:var(--yellow);}
+.recap-epingle[aria-pressed="true"] svg,.exo-suivre[aria-pressed="true"] svg{fill:currentColor;}
+.suivis-aide{display:flex;align-items:center;gap:10px;margin:0 0 12px;font-size:var(--t-2);line-height:1.45;color:var(--dim);}
+.suivis-aide svg{flex:none;color:var(--ink3);}
+/* La fiche : le signet a droite du nom. */
+.exo-tete{display:flex;align-items:flex-start;gap:8px;}
+.exo-tete-texte{flex:1;min-width:0;}
+.exo-suivre{margin:-6px 0 0;}
+/* Les tuiles : deux par rangee, teintees de leur groupe comme les en-tetes. */
+.suivis-grille{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}
+.suivi-tuile{
+  position:relative;display:flex;flex-direction:column;gap:5px;min-height:150px;
+  padding:12px 12px 11px;border:1px solid var(--trait);border-radius:var(--r-l);
+  background:linear-gradient(180deg, color-mix(in srgb, var(--c) 14%, var(--s1)), var(--s1) 72%);
+  color:var(--ink);text-align:left;font-family:var(--f-ui);overflow:hidden;
+}
+.suivi-groupe{display:flex;align-items:center;gap:6px;font-size:var(--t-1);font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--c);}
+.suivi-groupe i{width:8px;height:8px;border-radius:50%;background:var(--c);}
+.suivi-nom{font-size:var(--t-3);font-weight:700;line-height:1.2;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.suivi-spark{display:block;width:100%;height:34px;margin-top:auto;}
+.suivi-spark path{fill:none;stroke:var(--c);stroke-linecap:round;stroke-linejoin:round;}
+.suivi-spark .trace{stroke-width:2;}
+.suivi-spark .point{stroke-width:7;}
+.suivi-spark.vide path{stroke:var(--trait2);stroke-width:1.5;}
+.suivi-ligne{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 8px;}
+.suivi-valeur{font-size:var(--t-4);font-weight:800;letter-spacing:-.02em;color:var(--yellow);font-variant-numeric:tabular-nums;white-space:nowrap;}
+.suivi-valeur small{font-size:var(--t-2);font-weight:700;letter-spacing:0;color:var(--dim);}
+.suivi-delta{font-size:var(--t-1);font-weight:700;letter-spacing:.04em;white-space:nowrap;}
+.suivi-delta.hausse{color:var(--ok);}
+.suivi-delta.baisse{color:var(--orange);}
+.suivi-delta.egal{color:var(--dim);}
+.suivi-freq{font-size:var(--t-1);font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--dim);}
+/* Suivi mais pas fait sur la periode : la tuile reste, eteinte. */
+.suivi-tuile.absente{background:var(--s1);}
+.suivi-tuile.absente .suivi-valeur{color:var(--dim);}
+.suivi-tuile.absente .suivi-nom{color:var(--dim);}
+/* Rien de suivi : une carte qui dit quoi faire, sans pointilles — ce n'est
+   pas un emplacement, c'est une invitation. */
+.suivis-vide{padding:18px 16px 14px;border:1px solid var(--trait);border-radius:var(--r-l);background:var(--s1);text-align:center;}
+.suivis-vide-titre{font-size:var(--t-4);font-weight:800;letter-spacing:-.02em;}
+.suivis-vide p{margin:8px 0 14px;font-size:var(--t-2);line-height:1.5;color:var(--dim);}
+.suivis-choisir{margin:0;border-width:1px;border-color:var(--trait2);border-radius:var(--r-m);background:var(--s2);}
+@media (max-width:359px){
+  .suivis-grille{gap:6px;}
+  .suivi-tuile{padding:10px 10px 9px;min-height:142px;}
+}
 </style>
 </head>
 
@@ -3607,6 +3669,11 @@ button:active:not(:disabled):not(.topbar-tab):not(.bulle-onglet){filter:brightne
     <div class="stats-row" id="recapStats"></div>
     <div id="recapHeatmap"></div>
     <div id="recapMuscle"></div>
+    <p class="vue-sous-titre" id="recapPagesLabel">EXERCICES</p>
+    <div class="segmented sub recap-pages" id="recapPages" role="group" aria-labelledby="recapPagesLabel">
+      <button type="button" class="seg-btn" data-page="suivis" aria-pressed="false">SUIVIS<span class="seg-compte" id="recapNbSuivis"></span></button>
+      <button type="button" class="seg-btn" data-page="tous" aria-pressed="false">TOUS<span class="seg-compte" id="recapNbTous"></span></button>
+    </div>
     <div class="recap-groups" id="recapGroups"></div>
     <button type="button" class="btn-partage" id="recapPartager">↗ PARTAGER CE RÉCAP</button>
   </section>

@@ -137,6 +137,19 @@ sélection d'iOS. La feuille arrive au lieu d'apparaître : le voile en fondu, l
 carte qui monte de 18 px ; le menu ⋯ de la carte se pose depuis le bas comme le
 bilan. Tout s'arrête avec « réduire les animations ».
 
+**Les exercices suivis (16 novembre 2026).** PROGRÈS n'affichait qu'une
+longue liste de tous les exercices de la période. Sous le résumé, il a
+maintenant deux pages, choisies par le même segment que la période : SUIVIS,
+les exercices qu'on garde à l'œil, et TOUS, la liste complète par groupe.
+Chaque ligne de TOUS et la tête de la fiche d'un exercice portent un signet ;
+un exercice suivi devient une tuile (deux par rangée, teintée de son groupe)
+avec sa meilleure série de la période, la courbe de son top set séance après
+séance, une flèche contre la semaine, le mois ou l'année d'avant, et sa
+fréquence. Suivi mais pas fait sur la période : la tuile reste, éteinte. Sans
+rien de suivi, on arrive sur TOUS, où une ligne explique le signet. Les noms
+suivis vivent dans les réglages locaux (`topset_reglages.suivis`, quarante
+au plus, jamais synchronisés, jamais perdus s'ils sont inconnus).
+
 **La loupe des onglets, les couleurs des groupes, les attentes (septembre
 2026).** Sous l'onglet actif, une pièce de verre (`#ongletLoupe`, placée par
 `placerLoupe()` à chaque `montrerVue`) : un reflet en haut, un liseré clair à

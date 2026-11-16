@@ -126,6 +126,19 @@ of appearing: the scrim fades in, the card rises 18 px; the card's ⋯ menu
 settles from below like the summary does. Everything stops with "reduce
 motion".
 
+**Tracked exercises (16 November 2026).** PROGRÈS was one long list of
+every exercise of the period. Under the summary it now has two pages, picked
+by the same segment as the period: SUIVIS, the exercises you keep an eye on,
+and TOUS, the full list by group. Each row of TOUS and the head of an
+exercise's page carry a bookmark; a tracked exercise becomes a tile (two per
+row, tinted like its group) with its best set of the period, the sparkline of
+its top set session after session, an arrow against the previous week, month
+or year, and its frequency. Tracked but not done on the period: the tile
+stays, dimmed. With nothing tracked you land on TOUS, where a line explains
+the bookmark. Tracked names live in the local settings
+(`topset_reglages.suivis`, at most 40, never synced, never dropped when
+unknown).
+
 **The tab lens, muscle-group colours, waiting states (September 2026).** Under
 the active tab sits a piece of glass (`#ongletLoupe`, placed by `placerLoupe()`
 on every `montrerVue`): a highlight on top, a barely visible light rim.
