@@ -1935,7 +1935,7 @@ ok('l apercu est le canvas : la CSP n admet pas les images blob', /r\.canvas\.id
 ok('dans la fiche, avant ENREGISTRER COMME MODELE ; dans le bilan, apres FERMER',
    /id="ficheImage"[\s\S]{0,200}id="ficheModele"/.test(SRC) && /id="finFermer">FERMER<\/button>'[\s\S]{0,160}id="finImage"/.test(SRC));
 ok('le panneau passe au-dessus du bilan et se ferme avec les autres',
-   REFONTE.includes('.image-sheet{z-index:65;}') && /'peseeSheet', 'imageSheet'\]/.test(SRC));
+   REFONTE.includes('.image-sheet{z-index:65;}') && /'peseeSheet', 'imageSheet'[\],]/.test(SRC));
 ok('aucun envoi : ni fetch ni rpc dans le dessin', !/fetch\(|\.rpc\(/.test(corps('function dessinerStory', 'function fermerImage')));
 
 console.log('\n== 56. Une mise a jour se voit des la premiere reouverture (16/11) ==');
@@ -1945,6 +1945,10 @@ console.log('\n== 56. Une mise a jour se voit des la premiere reouverture (16/11
      !!v && HTML.includes('<script src="app.js?v=' + v + '" defer></script>') && HTML.includes('<script src="intelligence.js?v=' + v + '" defer></script>'));
   ok('le service worker precharge ces memes adresses',
      !!v && SW.includes("'app.js?v=" + v + "',") && SW.includes("'intelligence.js?v=" + v + "',") && !/\n\s*'app\.js',/.test(SW));
+  // export.js, charge a la demande, au numero d'app.js (16/11/2026).
+  ok('export.js est precharge au meme numero, et charge a ce numero',
+     !!v && SW.includes("'export.js?v=" + v + "',") && /s\.src = 'export\.js' \+ \(VERSION_SCRIPTS \? '\?v=' \+ VERSION_SCRIPTS : ''\);/.test(SRC)
+     && /var s = document\.currentScript, m = s && \/\[\?&\]v=\(\\d\+\)\/\.exec\(s\.src \|\| ''\);/.test(SRC));
 }
 
 console.log('\n== 57. Le materiel d un exercice (16/11) ==');
@@ -1986,6 +1990,26 @@ ok('l exercice en grand garde ses − / +, quel que soit le reglage',
    && corps('function ligneHTML(', 'function puces(').indexOf('pasPoids') < 0
    && (SRC.match(/reglages\.pasPoids/g) || []).length === 1);
 ok('un interrupteur dans RÉGLAGES ET PROFIL', /\{ cle:'pasPoids',\s+titre:'Boutons − \/ \+ sous le poids'/.test(SRC));
+
+console.log('\n== 60. Exporter mes donnees, a la place de synchroniser (16/11) ==');
+{
+  const EXP = readFileSync(new URL('export.js', RACINE), 'utf8');
+  ok('SYNCHRONISER MAINTENANT laisse sa place a EXPORTER MES DONNÉES', !/id="compteSync"/.test(HTML) && !/compteSync/.test(SRC)
+     && /<div class="sheet-label espace">MES DONNÉES<\/div>\s*<button type="button" class="btn-sheet" id="compteExporter">EXPORTER MES DONNÉES<\/button>/.test(HTML));
+  ok('la synchro reste automatique : retour dans l app et retour du reseau', /window\.addEventListener\('online', function\(\)\{ echec = ''; echecs = 0; if \(user\) synchroniser\(\); \}\);/.test(SRC)
+     && /if \(!document\.hidden && user\) synchroniser\(\);/.test(SRC));
+  ok('sans compte, la porte est dans TES DONNÉES, apres le tableur', HTML.indexOf('id="dataExporter"') > HTML.indexOf('id="dataCsv"') && HTML.indexOf('id="dataExporter"') < HTML.indexOf('id="dataFile"'));
+  ok('export.js n est pas dans la page : il se charge a l ouverture de l ecran', !/<script src="export\.js/.test(HTML)
+     && corps('function ouvrirExport(){', 'function fermerExport(').indexOf('chargerExport()') > -1);
+  ok('export.js est minifie comme les autres scripts', /const A_MINIFIER = \[[^\]]*'export\.js'/.test(readFileSync(new URL('build.mjs', RACINE), 'utf8')));
+  ok('le modele ne porte que le carnet, les pesees et le pseudo', corps('function modeleExport(){', 'var exportLib = null;').length > 500
+     && !/email|localStorage|session_|token|reglages\.(?!objectifSemaine)/.test(corps('function modeleExport(){', 'var exportLib = null;')));
+  ok('export.js ne lit ni le stockage, ni le reseau, ni l ecran', !/localStorage|fetch\(|XMLHttpRequest|document\.|navigator\./.test(EXP.replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, '')));
+  ok('les regles viennent d intelligence.js', /TS\.pointsTopSet\(/.test(EXP) && /TS\.progressionTopSet\(/.test(EXP) && /TS\.meilleurPoids\(/.test(EXP) && /TS\.regularite\(/.test(EXP));
+  ok('un fichier part dans le geste ; refuse, il attend un second appui', /exportPret = \{ format:format, fichier:fichier, blob:blob, nom:nom \};/.test(SRC)
+     && /if \(exportPret && exportPret\.format === format\)\{ envoyerExportPret\(\); return; \}/.test(SRC));
+  ok('l ecran se ferme avec les autres feuilles', /'imageSheet', 'exportSheet'\]\.forEach/.test(SRC));
+}
 
 console.log(`\n${pass} reussis, ${fail} echoues`);
 process.exit(fail ? 1 : 0);

@@ -28,6 +28,10 @@ jobs:
       - name: Business logic tests
         run: node test/intelligence.test.mjs
 
+      # Les exports (classeur Excel relu octet par octet, texte pour une IA).
+      - name: Export tests
+        run: node test/export.test.mjs
+
       - name: Template and hardening guards
         run: node test/gabarits.test.mjs
 

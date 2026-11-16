@@ -78,7 +78,9 @@ repository is for right now.
 - **Ask an AI.** A session or a period copies as clean text, question and
   units included, ready to paste into Claude or ChatGPT.
 - **Keep your data.** Works offline, no account by default, JSON or spreadsheet
-  export and import. An optional account syncs the logbook across devices.
+  export and import, and `EXPORTER MES DONNÉES`: the whole logbook in Excel, or
+  the whole history ready for an AI. An optional account syncs the logbook
+  across devices.
 - **Never lose a session.** One storage key for the whole device, so a page of
   the app re-reads the logbook before writing, rather than erasing what another
   page has just noted. Five reserves keep whatever could have been lost —

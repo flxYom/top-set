@@ -9,6 +9,34 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ## [Unreleased]
 
+### Changed — EXPORTER MES DONNÉES replaces SYNCHRONISER MAINTENANT (2026-11-16)
+
+- "The sync button doesn't really do anything: replace it with export my
+  data." In the profile's account section, `SYNCHRONISER MAINTENANT` gives way
+  to `EXPORTER MES DONNÉES` (sync keeps running on its own: back in the app,
+  back online, after each logged set). Without an account, the same screen
+  opens from `TES DONNÉES`, after the spreadsheet.
+- The screen offers, for now: **Excel** (`.xlsx`, six tabs: Séries, Séances,
+  Semaines, Exercices, Poids du corps, À lire — real dates and times, numbers
+  as numbers, frozen header; written by hand as a stored zip, no library), the
+  existing **CSV**, and **for an AI** (`.txt`, or copied): the question to ask
+  first (consistency, loads week after week, rest times, training patterns,
+  volume per muscle group, time spent, body weight, then a 4-week plan), the
+  notation legend, a profile, a week-by-week table with empty weeks, each
+  exercise with its top set session by session, and every session in full
+  (« 100×5 @8 r150 »).
+- `export.js` (new) builds the files from a plain model that `app.js` hands
+  it (the logbook, weigh-ins and pseudonym only: no email, key or setting). It
+  loads when the screen opens, not at start-up, and at the app's own version
+  (`export.js?v=N`, read from `document.currentScript`); the service worker
+  precaches it. On a phone the file goes to the share sheet in the same tap;
+  if iOS refuses (too long after the tap), it stays ready and the button sends
+  it on the next tap. On a computer it is downloaded.
+- Tests: `test/export.test.mjs` (new, in CI) rereads the workbook's zip,
+  CRCs and XML by hand; openpyxl 3.1.5 read the same file back (six tabs,
+  dates, times, numbers) on the dev machine. Gabarits §56, §60. Service worker
+  v86.
+
 ### Added — a setting to put away the − / + under the weight (2026-11-16)
 
 - `RÉGLAGES ET PROFIL` has a new switch, **Boutons − / + sous le poids**

@@ -961,9 +961,35 @@ endroit : l'équipe Top Set, son coach, ses coachés. Une pastille y compte ce q
 attend. Voir [La messagerie](coach-et-admin.md#la-messagerie).
 
 **Trois portes dans l'en-tête.** La bulle des messages, la silhouette du
-**profil** (compte, pseudo, coach, synchronisation) et `⇅` pour les **données**
+**profil** (compte, pseudo, coach, exports) et `⇅` pour les **données**
 (sauvegarde, tableur, import). Le compte et les fichiers vivaient dans la même
 feuille, qui était devenue un fourre-tout.
+
+**Exporter mes données** (16/11/2026, « le bouton synchronisé ne sert pas
+vraiment à grand-chose »). Dans le compte, `EXPORTER MES DONNÉES` remplace
+`SYNCHRONISER MAINTENANT` : la synchro se fait déjà seule, au retour dans l'app,
+au retour du réseau et après chaque note. Sans compte, le même écran s'ouvre
+depuis `TES DONNÉES`, après le tableur. Les fichiers sont faits dans le
+téléphone et ne passent par aucun serveur :
+- **Tout en Excel** (`.xlsx`) : six onglets — Séries (une ligne par série),
+  Séances (horaires, durée, volume, repos médian, ressenti), Semaines (du lundi
+  au dimanche, semaines vides comprises, séries par groupe), Exercices (charge
+  max, meilleure série, 1RM estimé au début et à la fin, progression), Poids du
+  corps, À lire (la légende). De vraies dates et de vraies heures, des nombres
+  qui se calculent, l'en-tête figé. De quoi tout garder si on quitte l'app. Le
+  `.csv` de toujours reste à côté.
+- **Pour une IA** (`.txt`, ou `COPIER LE TEXTE`) : la question d'abord
+  (régularité, charges semaine après semaine, temps de repos, schémas
+  d'entraînement, volume par groupe, temps passé, poids du corps, puis un plan
+  pour les 4 semaines suivantes), la légende des notations, le profil, un
+  tableau semaine par semaine, chaque exercice avec son top set séance par
+  séance, et toutes les séances en entier : `100×5 @8 r150` = 5 reps à 100 kg,
+  RPE 8, 150 s de repos.
+Sur un téléphone, le fichier part dans la feuille de partage du même appui
+(Fichiers, Mail, une app d'IA) ; si iOS refuse parce que l'appui est trop
+ancien, il reste prêt et le bouton l'envoie au suivant. Sur un ordinateur, il
+est téléchargé. `export.js` les fabrique depuis un modèle qu'`app.js` lui passe
+(le carnet, les pesées et le pseudo : ni email, ni clé, ni réglage).
 
 **Pensé pour le téléphone.** Sur un écran de moins de 900 px, les onglets
 vivent **en bas**, sous le pouce, avec leurs icônes ; ils se rangent le temps

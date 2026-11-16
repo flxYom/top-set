@@ -876,8 +876,33 @@ place — the Top Set team, your coach, your clients — with a badge counting w
 is waiting. See [Messaging](coach-and-admin.md#messaging).
 
 **Three doors in the header.** The messages bubble, the **profile** silhouette
-(account, pseudonym, coach, sync) and `⇅` for **data** (backup, CSV, import).
+(account, pseudonym, coach, exports) and `⇅` for **data** (backup, CSV, import).
 Account and files used to share one sheet, which had become a catch-all.
+
+**Export my data** (2026-11-16, "the sync button doesn't really do
+anything"). In the account section, `EXPORTER MES DONNÉES` replaces
+`SYNCHRONISER MAINTENANT`: sync already runs on its own, back in the app, back
+online and after each logged set. Without an account, the same screen opens
+from `TES DONNÉES`, after the spreadsheet. The files are made on the phone and
+go through no server:
+- **Everything in Excel** (`.xlsx`): six tabs — Séries (one row per set),
+  Séances (times, duration, volume, median rest, how it felt), Semaines (Monday
+  to Sunday, empty weeks included, sets per group), Exercices (max load, best
+  set, estimated 1RM at the start and the end, progress), Poids du corps, À
+  lire (the legend). Real dates and times, numbers that compute, a frozen
+  header. Enough to keep everything if you leave the app. The usual `.csv`
+  stays next to it.
+- **For an AI** (`.txt`, or `COPIER LE TEXTE`): the question first
+  (consistency, loads week after week, rest times, training patterns, volume
+  per group, time spent, body weight, then a plan for the next 4 weeks), the
+  notation legend, the profile, a week-by-week table, each exercise with its
+  top set session by session, and every session in full: `100×5 @8 r150` = 5
+  reps at 100 kg, RPE 8, 150 s rest.
+On a phone the file goes to the share sheet in the same tap (Files, Mail, an AI
+app); if iOS refuses because the tap is too old, it stays ready and the button
+sends it on the next tap. On a computer it is downloaded. `export.js` builds
+them from a model that `app.js` hands it (logbook, weigh-ins and pseudonym: no
+email, key or setting).
 
 **Built for the phone.** Below 900 px the tabs live **at the bottom**, under
 the thumb, with icons; they tuck away while a field has the keyboard

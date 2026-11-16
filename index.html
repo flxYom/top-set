@@ -3166,6 +3166,8 @@
   body.sans-rpe .ex-card.sans-prec[data-mode="temps"] .serie-main{grid-template-columns:40px minmax(80px,1fr) 44px;}
   body.sans-repos-champ .serie-repos-champ{display:none;}
   body.sans-pas-poids .step-poids{display:none;}
+  /* Exporter (16/11/2026) : un fichier pret a renvoyer se voit. */
+  #exportSheet .btn-sheet.pret{border-color:var(--orange);color:var(--orange);}
   @media (max-width:359px){ .ex-head{gap:6px;} .ex-groupe-chip{padding:0 8px;} .fs-ligne{grid-template-columns:48px minmax(0,1fr) 48px;} .fs-pm{height:52px;} }
   @media (prefers-reduced-motion:reduce){ .fs-points i{transition:none;} }
 
@@ -4067,6 +4069,12 @@ a.ex-menu-item{display:flex;align-items:center;text-decoration:none;}
     </div>
 
     <div class="sheet-section">
+      <div class="sheet-label">EXPORTER</div>
+      <button type="button" class="btn-sheet" id="dataExporter">EXPORTER MES DONNÉES</button>
+      <p class="sheet-note">Un classeur Excel complet, ou tout ton historique prêt pour une IA.</p>
+    </div>
+
+    <div class="sheet-section">
       <div class="sheet-label">IMPORTER</div>
       <label class="btn-sheet file">CHOISIR UN FICHIER (.JSON OU .CSV)<input type="file" id="dataFile" accept="application/json,.json,text/csv,.csv"></label>
       <textarea id="dataPaste" class="sheet-paste" rows="3" placeholder="… ou colle ici le contenu d'une sauvegarde"></textarea>
@@ -4088,6 +4096,43 @@ a.ex-menu-item{display:flex;align-items:center;text-decoration:none;}
         fichier n'ajoute rien de plus.
       </p>
     </div>
+  </div>
+</div>
+
+<!-- Exporter mes données (16/11/2026) : des fichiers faits dans le
+     téléphone, qui ne passent par aucun serveur. -->
+<div class="sheet" id="exportSheet" hidden>
+  <div class="sheet-card" role="dialog" aria-modal="true" aria-labelledby="exportTitre">
+    <div class="sheet-head">
+      <h2 id="exportTitre">EXPORTER MES DONNÉES</h2>
+      <button type="button" class="icon-btn" id="exportClose" aria-label="Fermer"><svg class="ico seul" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+    <div class="sheet-stat" id="exportStat">—</div>
+
+    <div class="sheet-section">
+      <div class="sheet-label">DANS UN TABLEUR</div>
+      <button type="button" class="btn-sheet" data-export="xlsx">TOUT EN EXCEL (.XLSX)</button>
+      <button type="button" class="btn-sheet" data-export="csv">EN .CSV</button>
+      <p class="sheet-note">
+        Chaque série, chaque séance, chaque semaine, tes exercices et leurs
+        records, tes pesées : un onglet pour chaque. Tout reste à toi, même
+        sans l'app.
+      </p>
+    </div>
+
+    <div class="sheet-section">
+      <div class="sheet-label">POUR UNE IA</div>
+      <button type="button" class="btn-sheet" data-export="ia">TOUT MON HISTORIQUE (.TXT)</button>
+      <button type="button" class="btn-sheet" data-export="ia-copier">COPIER LE TEXTE</button>
+      <p class="sheet-note">
+        Tout ton carnet, déjà mis en forme, avec la question à poser. Donne le
+        fichier à ChatGPT, Claude ou Gemini : il analysera tes repos, tes
+        charges semaine après semaine, ta façon de t'entraîner et ton temps
+        passé.
+      </p>
+    </div>
+    <div class="sheet-msg" id="exportMsg" hidden></div>
+    <p class="sheet-note">Les fichiers sont faits dans ce téléphone : rien ne passe par Top Set.</p>
   </div>
 </div>
 
@@ -4209,8 +4254,10 @@ a.ex-menu-item{display:flex;align-items:center;text-decoration:none;}
         <button type="button" class="btn-sheet danger" id="coachCesser" hidden>NE PLUS ÊTRE COACH</button>
         <div class="sheet-msg" id="coachMsg" hidden></div>
 
-        <div class="sheet-label espace">SYNCHRONISATION</div>
-        <button type="button" class="btn-sheet" id="compteSync">SYNCHRONISER MAINTENANT</button>
+        <!-- A la place de SYNCHRONISER MAINTENANT (16/11/2026) : la synchro
+             se fait seule. -->
+        <div class="sheet-label espace">MES DONNÉES</div>
+        <button type="button" class="btn-sheet" id="compteExporter">EXPORTER MES DONNÉES</button>
         <p class="sheet-note" id="compteNote"></p>
 
         <button type="button" class="btn-sheet" id="compteAdmin" hidden>ADMINISTRATION</button>
@@ -4552,11 +4599,11 @@ a.ex-menu-item{display:flex;align-items:center;text-decoration:none;}
 </div>
 <div class="toast" id="toast"></div>
 
-<script src="intelligence.js?v=85" defer></script>
+<script src="intelligence.js?v=86" defer></script>
 <!-- Coordonnees publiques du projet Supabase. Absent ou vide : l'app reste
      en mode 100 % local, sans bouton mort ni erreur. -->
 <script src="supabase-config.js" defer></script>
-<script src="app.js?v=85" defer></script>
+<script src="app.js?v=86" defer></script>
 <script src="mesure.js" defer></script>
 </body>
 </html>

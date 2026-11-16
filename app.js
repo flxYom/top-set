@@ -1,6 +1,14 @@
 (function(){
   "use strict";
 
+  // Le numero de version de ce script (« app.js?v=86 ») : export.js, charge
+  // a la demande, se charge au meme numero. Un vieux cache ne peut pas
+  // servir un export.js d'une autre version que l'app. (16/11/2026)
+  var VERSION_SCRIPTS = (function(){
+    var s = document.currentScript, m = s && /[?&]v=(\d+)/.exec(s.src || '');
+    return m ? m[1] : '';
+  })();
+
   var GROUPS = ['Pectoraux','Dos','Épaules','Bras','Jambes','Abdos','Cardio','Autre'];
   // Les noms d'exercice se normalisent des milliers de fois par ecran : le
   // recap, le bilan et la fiche relisent tout le carnet. Sur un carnet d'un
@@ -3369,12 +3377,16 @@
   // La duree n'est affichee que si elle veut dire quelque chose : deux heures
   // a l'envers, ou une seance de onze heures parce qu'on a note une serie le
   // soir, ne disent rien.
-  function dureeSeance(ds){
+  function minutesSeance(ds){
     var h = horairesDe(ds);
-    if (!h || !h.debut || !h.fin) return '';
+    if (!h || !h.debut || !h.fin) return null;
     var ms = new Date(h.fin).getTime() - new Date(h.debut).getTime();
-    if (!(ms > 0) || ms > 8 * 3600000) return '';
-    var mn = Math.round(ms / 60000);
+    if (!(ms > 0) || ms > 8 * 3600000) return null;
+    return Math.round(ms / 60000);
+  }
+  function dureeSeance(ds){
+    var mn = minutesSeance(ds);
+    if (mn === null) return '';
     return mn < 60 ? mn + ' min' : Math.floor(mn / 60) + 'h' + String(mn % 60).padStart(2, '0');
   }
   function horairesTexte(ds){
@@ -9048,7 +9060,7 @@
 
   // Ouvrir une page depuis une feuille, c'est quitter la feuille.
   function fermerFeuilles(){
-    ['dataSheet', 'profilSheet', 'retourSheet', 'partageSheet', 'iaSheet', 'modeleSheet', 'peseeSheet', 'imageSheet'].forEach(function(id){
+    ['dataSheet', 'profilSheet', 'retourSheet', 'partageSheet', 'iaSheet', 'modeleSheet', 'peseeSheet', 'imageSheet', 'exportSheet'].forEach(function(id){
       var el = document.getElementById(id);
       if (el) el.hidden = true;
     });
@@ -10678,6 +10690,229 @@
       navigator.share(payload).catch(function(){ /* annule par l'utilisateur */ });
     });
   })();
+
+  // ==================================================================
+  // EXPORTER MES DONNEES (16/11/2026)
+  // ==================================================================
+  // « Le bouton synchroniser ne sert pas a grand-chose : remplace-le par
+  // exporter mes donnees. » Trois fichiers, faits dans ce telephone, qui ne
+  // passent par aucun serveur : le classeur Excel (tout, pour le garder
+  // meme sans l'app), le texte pour une IA (tout l'historique et la question
+  // a poser), le carnet PDF pour un coach. export.js les fabrique depuis le
+  // modele ci-dessous : le carnet, les pesees et le pseudo, rien d'autre —
+  // ni email, ni cle, ni reglage.
+  function serieExport(s, i){
+    var duree = TS.dureeSecondes(s.reps);
+    var repos = parseInt(String(s.repos == null ? '' : s.repos), 10);
+    var texte = perfTexte(s), court = perfCourt(s);
+    if (typeof s.poids !== 'number' && duree === null){ texte = 'PDC × ' + texte; court = 'PDC' + court; }
+    return {
+      n:i + 1, type:TS.typeSerie(s),
+      poids:typeof s.poids === 'number' ? s.poids : null,
+      reps:s.reps == null ? '' : String(s.reps),
+      nbReps:duree === null ? TS.nombreReps(s.reps) : null,
+      duree:duree,
+      rpe:typeof s.rpe === 'number' ? s.rpe : null,
+      repos:(isFinite(repos) && repos > 0) ? repos : null,
+      fait:!!s.fait,
+      note:typeof s.note === 'string' ? s.note.trim() : '',
+      vitesse:typeof s.vitesse === 'number' ? s.vitesse : null,
+      inclinaison:typeof s.inclinaison === 'number' ? s.inclinaison : null,
+      volume:TS.volumeSerie(s) || 0,
+      e1rm:TS.epleySerie(s),
+      texte:texte, court:court
+    };
+  }
+  function pseudoExport(){
+    var el = document.getElementById('compteMonPseudo');
+    return (typeof Sync !== 'undefined' && Sync.estConnecte() && el && el.value.trim()) || '';
+  }
+  function joursExportables(){
+    return Object.keys(state.sessions).filter(function(ds){
+      return /^\d{4}-\d{2}-\d{2}$/.test(ds) && compterJour(state.sessions[ds]) > 0;
+    }).sort();
+  }
+  function modeleExport(){
+    var couleurs = {};
+    GROUPS.forEach(function(g){ couleurs[g] = couleurGroupe(g); });
+    var pes = lesPesees();
+    return {
+      version:1,
+      aujourdhui:toDateStr(new Date()),
+      genere:new Date().toISOString(),
+      pseudo:pseudoExport(),
+      objectifSemaine:reglages.objectifSemaine,
+      groupes:GROUPS.slice(),
+      couleurs:couleurs,
+      jours:joursExportables().map(function(ds){
+        var day = state.sessions[ds], h = horairesDe(ds) || {};
+        return {
+          date:ds, titre:titreSeance(ds), titreChoisi:!!titreChoisi(ds), cycle:cycleDe(ds) || '',
+          debutHM:heureChamp(h.debut), finHM:heureChamp(h.fin), duree:minutesSeance(ds),
+          validee:!!estTerminee(ds), ressenti:commentaireSeance(ds) || '',
+          exos:(day.exercises || []).filter(function(e){ return seriesRemplies(e).length; }).map(function(e){
+            var cl = classement(e), auTemps = estAuTemps(e);
+            return {
+              nom:nomCanonique(e.nom) || normalizeName(e.nom) || 'Exercice sans nom',
+              ecrit:String(e.nom || '').trim(),
+              groupe:cl.groupe, sous:cl.sous || '',
+              mode:auTemps ? (estCardio(e) ? 'cardio' : 'temps') : 'reps',
+              note:typeof e.note === 'string' ? e.note.trim() : '',
+              series:seriesRemplies(e).map(serieExport)
+            };
+          })
+        };
+      }),
+      pesees:Object.keys(pes).sort().map(function(k){ return pes[k]; }).filter(function(p){
+        return p && !p.supprime && typeof p.poids === 'number';
+      }).map(function(p){
+        return { date:p.date, poids:p.poids, taille:p.taille || null, bras:p.bras || null, cuisse:p.cuisse || null };
+      })
+    };
+  }
+
+  // export.js se charge a l'ouverture de l'ecran : au premier appui sur un
+  // format, il est deja la, et le fichier part dans le meme geste (iOS
+  // refuse un partage qui arrive apres une attente).
+  var exportLib = null;
+  function chargerExport(){
+    if (window.TopSetExport) return Promise.resolve(window.TopSetExport);
+    if (exportLib) return exportLib;
+    exportLib = new Promise(function(ok, ko){
+      var s = document.createElement('script');
+      s.src = 'export.js' + (VERSION_SCRIPTS ? '?v=' + VERSION_SCRIPTS : '');
+      s.onload = function(){
+        if (window.TopSetExport) ok(window.TopSetExport);
+        else { exportLib = null; ko(new Error('export.js')); }
+      };
+      s.onerror = function(){ exportLib = null; ko(new Error('export.js')); };
+      document.head.appendChild(s);
+    });
+    return exportLib;
+  }
+
+  var exportSheet = document.getElementById('exportSheet');
+  var exportPret = null;   // { format, fichier, blob, nom } : un partage a refaire
+  var MIME_XLSX = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+  var EXPORT_LIBELLES = {};
+  function exportMsg(type, txt){
+    var m = document.getElementById('exportMsg');
+    if (!txt){ m.hidden = true; return; }
+    m.hidden = false;
+    m.className = 'sheet-msg ' + type;
+    m.textContent = txt;
+  }
+  function oublierExportPret(){
+    exportPret = null;
+    Object.keys(EXPORT_LIBELLES).forEach(function(f){
+      var b = exportSheet.querySelector('[data-export="' + f + '"]');
+      if (b){ b.textContent = EXPORT_LIBELLES[f]; b.classList.remove('pret'); }
+    });
+  }
+  function ouvrirExport(){
+    fermerFeuilles();
+    exportMsg();
+    oublierExportPret();
+    var jours = joursExportables();
+    document.getElementById('exportStat').textContent = jours.length
+      ? pluriel(jours.length, 'séance') + ', du ' + jourCourt(jours[0]) + ' ' + jours[0].slice(0, 4)
+        + ' au ' + jourCourt(jours[jours.length - 1]) + ' ' + jours[jours.length - 1].slice(0, 4)
+      : 'Aucune séance notée pour l\'instant.';
+    exportSheet.hidden = false;
+    chargerExport().catch(function(){});
+  }
+  function fermerExport(){ exportSheet.hidden = true; oublierExportPret(); }
+  function nomExport(quoi, ext){ return 'topset-' + quoi + '-' + toDateStr(new Date()) + '.' + ext; }
+  function enregistrerBlob(blob, nom){
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = nom;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+  }
+  // Sur un telephone, la feuille de partage (Fichiers, Mail, WhatsApp, une
+  // IA) ; sur un ordinateur, le dossier des telechargements.
+  function partageFichiers(fichier){
+    var tactile = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+    return !!(fichier && tactile && navigator.share && navigator.canShare && navigator.canShare({ files:[fichier] }));
+  }
+  function livrerExport(format, contenu, nom, mime){
+    var blob = new Blob([contenu], { type:mime }), fichier = null;
+    try { fichier = new File([blob], nom, { type:mime }); } catch (err) { fichier = null; }
+    if (partageFichiers(fichier)){
+      navigator.share({ files:[fichier] }).catch(function(e){
+        if (e && e.name === 'AbortError') return;
+        // Refuse hors du geste (le fichier a mis un instant a se faire) : il
+        // reste pret, et le bouton l'envoie au prochain appui.
+        exportPret = { format:format, fichier:fichier, blob:blob, nom:nom };
+        var b = exportSheet.querySelector('[data-export="' + format + '"]');
+        if (b){ b.textContent = 'ENVOYER ' + nom.split('.').pop().toUpperCase(); b.classList.add('pret'); }
+        exportMsg('ok', 'Le fichier est prêt : touche encore le bouton pour l\'envoyer.');
+      });
+      return;
+    }
+    enregistrerBlob(blob, nom);
+    showToast('Fichier enregistré : ' + nom);
+  }
+  function envoyerExportPret(){
+    var p = exportPret;
+    oublierExportPret();
+    exportMsg();
+    if (partageFichiers(p.fichier)){
+      navigator.share({ files:[p.fichier] }).catch(function(e){
+        if (e && e.name !== 'AbortError'){ enregistrerBlob(p.blob, p.nom); showToast('Fichier enregistré : ' + p.nom); }
+      });
+    } else { enregistrerBlob(p.blob, p.nom); showToast('Fichier enregistré : ' + p.nom); }
+  }
+  function copierExport(texte){
+    function aLaMain(){
+      var ta = document.createElement('textarea');
+      ta.value = texte;
+      ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      var ok = false;
+      try { ok = document.execCommand('copy'); } catch (err) { ok = false; }
+      ta.remove();
+      if (ok) showToast('Copié : colle-le dans ton IA');
+      else exportMsg('err', 'La copie n\'a pas marché ici. Envoie plutôt le fichier.');
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(texte).then(function(){ showToast('Copié : colle-le dans ton IA'); }, aLaMain);
+    } else aLaMain();
+  }
+  function exporter(format){
+    if (exportPret && exportPret.format === format){ envoyerExportPret(); return; }
+    oublierExportPret();
+    exportMsg();
+    if (!joursExportables().length){ exportMsg('warn', 'Rien à exporter pour l\'instant : note d\'abord une séance.'); return; }
+    if (format === 'csv'){
+      livrerExport('csv', csvContent(), csvFilename(), 'text/csv;charset=utf-8');
+      return;
+    }
+    var lib = window.TopSetExport;
+    if (!lib){
+      exportMsg('warn', 'Un instant, l\'export se prépare…');
+      chargerExport().then(function(){ exportMsg('ok', 'C\'est prêt : touche encore le bouton.'); },
+        function(){ exportMsg('err', 'L\'export n\'a pas pu se charger. Vérifie ta connexion et réessaie.'); });
+      return;
+    }
+    try {
+      var a = lib.analyser(modeleExport());
+      if (format === 'xlsx') livrerExport('xlsx', lib.xlsx(a), nomExport('donnees', 'xlsx'), MIME_XLSX);
+      else if (format === 'ia') livrerExport('ia', lib.texteIA(a), nomExport('pour-ia', 'txt'), 'text/plain;charset=utf-8');
+      else if (format === 'ia-copier') copierExport(lib.texteIA(a));
+    } catch (err) {
+      exportMsg('err', 'L\'export n\'a pas abouti. La sauvegarde complète (.json) de TES DONNÉES reste possible.');
+    }
+  }
+  [].forEach.call(exportSheet.querySelectorAll('[data-export]'), function(b){ EXPORT_LIBELLES[b.dataset.export] = b.textContent; });
+  exportSheet.addEventListener('click', function(e){
+    if (e.target === this || e.target.closest('#exportClose')){ fermerExport(); return; }
+    var b = e.target.closest('[data-export]');
+    if (b) exporter(b.dataset.export);
+  });
+  document.getElementById('dataExporter').addEventListener('click', ouvrirExport);
 
   document.getElementById('dataCopy').addEventListener('click', function(){
     var text = backupJSON();
@@ -12622,9 +12857,9 @@
       Sync.modeAccueil('connexion');
       Sync.montrerAccueil();
     });
-    document.getElementById('compteSync').addEventListener('click', function(){
-      occupe(this, 'SYNCHRONISATION…', function(){ return Sync.synchroniser(); });
-    });
+    // A la place de SYNCHRONISER MAINTENANT (16/11/2026) : la synchro se fait
+    // seule, au retour dans l'app, au retour du reseau et apres chaque note.
+    document.getElementById('compteExporter').addEventListener('click', ouvrirExport);
     document.getElementById('compteMigrer').addEventListener('click', function(){
       occupe(this, 'ENVOI…', function(){ return Sync.migrer(); });
     });

@@ -26,7 +26,7 @@ const SORTIE = join(RACINE, 'dist');
 const ESBUILD = 'esbuild@0.28.2';
 // Seuls les scripts de l'app. Pas sw.js : sa VERSION doit rester lisible en ligne.
 // Pas vendor/ : deja minifie par ses auteurs.
-const A_MINIFIER = ['app.js', 'braise.js', 'intelligence.js', 'mesure.js', 'supabase-config.js'];
+const A_MINIFIER = ['app.js', 'braise.js', 'export.js', 'intelligence.js', 'mesure.js', 'supabase-config.js'];
 // Le CSS (16/11/2026) : celui d'index.html vit dans trois balises <style>,
 // soit plus de la moitie du fichier, commentaires compris. C'est lui qui bloque
 // le premier affichage. Les feuilles de css/ servent les pages Apprendre et
