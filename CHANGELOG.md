@@ -9,6 +9,24 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ## [Unreleased]
 
+### Added — the year, screen by screen (2026-11-16)
+
+- PROGRÈS → ANNÉE (and every period in December and January) opens "Ton
+  année" in full screen, one number per screen like a story: sessions
+  logged, weeks held out of the year with the longest streak, the group of
+  the year with the year's silhouette, the exercise of the year, the
+  biggest progression (first vs last top set on estimated 1RM), records
+  beaten with the heaviest lift, the busiest month, then "COPIER POUR UNE
+  IA" for the year's text. Tap right to go on, left to go back; arrows and
+  Escape on a keyboard. Each screen takes the colour of its role (green
+  progress, yellow records, blue information, the group's colour). No
+  tonnage, no glass, no braise. In January it shows the year that just
+  ended.
+- New rules in `intelligence.js`: `progressionTopSet` and `recordsBattus`
+  (a session beating everything lifted before it on that exercise, warm-ups
+  excluded; the very first time is not a record), 7 tests. Service worker
+  v74, gabarits §48.
+
 ### Added — copy for an AI (2026-11-16)
 
 - "COPIER POUR UNE IA" under a session's sheet and under PROGRÈS. A sheet

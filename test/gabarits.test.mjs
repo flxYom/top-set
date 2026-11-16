@@ -1769,5 +1769,24 @@ ok('copier : le presse-papiers, sinon le texte selectionne',
 ok('la feuille se ferme avec les autres', /'partageSheet', 'iaSheet'\]\.forEach/.test(SRC));
 ok('aucune taille de police sur le texte (garde iOS)', !/\.ia-texte\{[^}]*font-size/.test(REFONTE));
 
+console.log('\n== 48. L annee, ecran par ecran (16/11) ==');
+ok('les regles viennent d intelligence.js', /TS\.recordsBattus\(toutes, debut, fin\)/.test(SRC) && /TS\.progressionTopSet\(dansAn\)/.test(SRC)
+   && /TS\.regularite\(joursAvecSeries\('0000-01-01', fin\), reglages\.objectifSemaine, fin, nbSem\)/.test(SRC));
+ok('pas de tonnage dans le bilan de l annee', !/volume|tonnage|kg soulevés/i.test(corps('function donneesAnnee(an){', 'function diapo(')));
+ok('en janvier, l annee qui vient de finir', /if \(d\.getMonth\(\) === 0 && joursAvecSeries\(an - 1/.test(SRC));
+ok('l ecran : barres, fermer a 44 px, une diapo a la fois, un titre lisible',
+   /<div class="annee" id="anneeEcran" hidden>/.test(HTML) && /aria-labelledby="anneeTitre"/.test(HTML)
+   && /\.annee-fermer\{[^}]*width:44px;height:44px;/.test(REFONTE) && /id="anneeTitre"/.test(SRC));
+ok('a droite on avance, a gauche on revient, et le clavier aussi',
+   /\(e\.clientX - \(r\.left \|\| 0\)\) < largeur \* 0\.3/.test(SRC) && /e\.key === 'ArrowLeft'/.test(SRC) && /e\.key === 'Escape'\)\{ e\.preventDefault\(\); fermerAnnee\(\); \}/.test(SRC));
+ok('chaque ecran prend une couleur de son role', /diapo\('var\(--yellow\)', 'RECORDS'/.test(SRC) && /diapo\('var\(--ok\)', 'RÉGULARITÉ'/.test(SRC)
+   && /diapo\('var\(--blue\)', 'TON MOIS'/.test(SRC));
+ok('la plus forte progression gagne, pas la premiere trouvee', /p\.gain > D\.progres\.p\.gain/.test(SRC));
+ok('le grand chiffre est la seule exception a l echelle', /\.annee-grand\{[^}]*font-size:calc\(var\(--t-6\) \* 1\.8\);/.test(REFONTE));
+ok('pas de verre ni de braise sur cet ecran', !/\.annee[^{]*\{[^}]*backdrop-filter/.test(REFONTE) && !/anneeEcran[^\n]*braise/i.test(SRC));
+ok('l animation s arrete avec reduire les animations', /prefers-reduced-motion:reduce\)\{ \.annee-diapo\{animation:none;\}/.test(REFONTE));
+ok('l entree dans PROGRES : periode ANNEE, decembre et janvier', /if \(state\.recapPeriod !== 'annee' && mois !== 11 && mois !== 0\) return '';/.test(SRC)
+   && /<div class="recap-label" id="recapLabel">—<\/div>\s*<div id="recapAnnee"><\/div>/.test(HTML));
+
 console.log(`\n${pass} reussis, ${fail} echoues`);
 process.exit(fail ? 1 : 0);

@@ -444,6 +444,21 @@ presse-papiers et, à défaut, sélectionne le texte ; « ENVOYER… » ouvre le
 partage du téléphone quand il existe. Rien ne part de l'app : on colle
 soi-même.
 
+**L'année, écran par écran** (16 novembre 2026). Dans PROGRÈS, sur la période
+ANNÉE (et sur toutes les périodes en décembre et en janvier), « Ton année »
+s'ouvre en plein écran, un chiffre par écran à la façon d'une story : les
+séances notées, les semaines tenues sur l'année et la plus longue série, le
+groupe de l'année avec la silhouette de l'année, l'exercice de l'année, la plus
+belle progression (premier contre dernier top set, sur le 1RM estimé), les
+records battus et la charge la plus lourde, le mois le plus chargé, puis
+« COPIER POUR UNE IA » avec le texte de l'année. On touche à droite pour
+avancer, à gauche pour revenir ; flèches et Échap au clavier. Chaque écran prend
+la couleur de son rôle. Pas de tonnage, pas de verre, pas de braise. En janvier,
+c'est l'année qui vient de finir. Deux règles nouvelles dans `intelligence.js` :
+`progressionTopSet` et `recordsBattus` (une séance qui bat tout ce qui a été
+soulevé avant elle sur cet exercice, échauffements exclus ; la toute première
+fois n'est pas un record).
+
 **Duplication de série.** `+ SÉRIE` recopie la précédente : poids, reps, RPE,
 repos. Seul `fait` repart à zéro, et le commentaire ne se recopie pas. Sur cinq
 séries identiques, tu en saisis une et tu appuies quatre fois. La ligne s'ajoute

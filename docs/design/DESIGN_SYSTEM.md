@@ -212,6 +212,16 @@ Garde : gabarits §40.
 **Le verre : une seule exception, la loupe des onglets** (décision du
 13/09/2026). Aucun nouvel élément en verre ailleurs.
 
+**L'année, écran par écran — 16/11/2026.** Un plein écran sur `--bg`, un
+chiffre par écran. Le fond prend en halo (24 %) la couleur du rôle de l'écran :
+orange marque pour l'ouverture et la fin, `--ok` pour la régularité et la
+progression, `--yellow` pour les records, `--blue` pour le mois, la couleur du
+groupe pour le groupe et l'exercice de l'année. Le grand chiffre est la
+**seule exception à l'échelle typographique** : `calc(var(--t-6) * 1.8)`
+(72 px, 60 px sous 360 px), en `--f-titre`. Barres de progression de 3 px en
+haut, fermer à 44 px, pas de verre, pas de braise (décision du 18/09 : la braise
+reste à l'accueil, au bilan et au plein écran). Garde : gabarits §48.
+
 **La régularité — 16/11/2026.** Une carte `--s1` au rayon `--r-xl`, placée
 sous les trois tuiles de PROGRÈS. Deux chiffres en `--t-5` (la semaine « 2 / 3 »,
 la série de semaines, verte `--ok` dès qu'elle vaut 1), puis huit colonnes de

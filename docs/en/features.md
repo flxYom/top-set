@@ -404,6 +404,19 @@ by session; a year stops at the per-exercise summary. "COPIER LE TEXTE" uses the
 clipboard and otherwise selects the text; "ENVOYER…" opens the phone's share
 sheet where there is one. Nothing leaves the app: you paste it yourself.
 
+**The year, screen by screen** (16 November 2026). In PROGRÈS, on the ANNÉE
+period (and on every period in December and January), "Ton année" opens full
+screen, one number per screen like a story: sessions logged, weeks held over the
+year and the longest streak, the group of the year with the year's silhouette,
+the exercise of the year, the biggest progression (first vs last top set, on
+estimated 1RM), records beaten and the heaviest lift, the busiest month, then
+"COPIER POUR UNE IA" with the year's text. Tap right to go on, left to go back;
+arrows and Escape on a keyboard. Each screen takes the colour of its role. No
+tonnage, no glass, no braise. In January it is the year that just ended. Two new
+rules in `intelligence.js`: `progressionTopSet` and `recordsBattus` (a session
+that beats everything lifted before it on that exercise, warm-ups excluded; the
+very first time is not a record).
+
 **Set duplication.** `+ SÉRIE` copies the previous set — weight, reps, RPE, rest.
 Only `fait` resets, and the comment is not copied. Five identical sets means
 typing one and tapping four times. The row is added to the card without

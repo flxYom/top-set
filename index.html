@@ -3568,6 +3568,49 @@ button:active:not(:disabled):not(.topbar-tab):not(.bulle-onglet){filter:brightne
 /* Le texte se lit avant d'etre copie : on sait ce qui part. Hauteur bornee,
    le reste defile. Aucune taille de police ici : garde iOS des champs. */
 .ia-texte{height:42vh;min-height:180px;max-height:360px;resize:none;white-space:pre-wrap;}
+/* ---- L'annee, ecran par ecran (16/11/2026) ---- */
+/* Un chiffre par ecran. Le fond prend la couleur de l'ecran (orange marque,
+   vert regularite et progression, jaune records, bleu information, couleur
+   du groupe), en halo sur le noir : pas de verre, pas de braise. Le grand
+   chiffre est la seule exception a l'echelle typographique (1,8 x --t-6). */
+.annee{
+  position:fixed;inset:0;z-index:62;display:flex;justify-content:center;
+  background:radial-gradient(120% 70% at 50% 18%, color-mix(in srgb, var(--a, var(--orange)) 24%, transparent), transparent 62%), var(--bg);
+  padding:max(14px, env(safe-area-inset-top)) 16px calc(16px + env(safe-area-inset-bottom));
+  transition:background-color .3s ease;
+}
+.annee-carte{display:flex;flex-direction:column;width:100%;max-width:460px;min-height:100%;}
+.annee-haut{display:flex;align-items:center;gap:10px;}
+.annee-barres{flex:1;display:flex;gap:4px;}
+.annee-barres i{flex:1;height:3px;border-radius:999px;background:var(--trait2);}
+.annee-barres i.vu{background:var(--ink3);}
+.annee-barres i.ici{background:var(--a, var(--orange));}
+.annee-fermer{flex:none;width:44px;height:44px;margin-right:-10px;border:0;background:none;color:var(--ink);font-size:var(--t-5);line-height:1;}
+.annee-corps{flex:1;display:flex;align-items:center;}
+.annee-diapo{display:flex;flex-direction:column;gap:10px;width:100%;padding:24px 0;animation:poser .42s cubic-bezier(.2,.7,.3,1) both;}
+.annee-tag{margin:0;font-family:var(--f-ui);font-size:var(--t-1);font-weight:700;letter-spacing:.08em;color:var(--a, var(--orange));}
+.annee-grand{margin:0;font-family:var(--f-titre);font-size:calc(var(--t-6) * 1.8);font-weight:800;letter-spacing:-.04em;line-height:1;font-variant-numeric:tabular-nums;color:var(--ink);}
+.annee-grand small{font-size:var(--t-5);letter-spacing:0;color:var(--dim);}
+.annee-titre{margin:0;font-size:var(--t-5);font-weight:800;letter-spacing:-.02em;line-height:1.15;text-wrap:balance;}
+.annee-texte{margin:0;max-width:34ch;font-size:var(--t-3);line-height:1.5;color:var(--dim);}
+.annee-silhouette{margin-top:6px;}
+.annee-silhouette .muscle-svg{width:190px;height:auto;}
+.annee-action{margin:6px 0 0;}
+.annee-aide{margin:0;text-align:center;font-size:var(--t-1);font-weight:700;letter-spacing:.04em;color:var(--ink3);}
+/* L'entree dans PROGRES. */
+.annee-lien{
+  display:flex;align-items:center;gap:12px;width:100%;margin-top:10px;padding:12px 14px;
+  border:1px solid color-mix(in srgb, var(--orange) 42%, var(--trait));border-radius:var(--r-l);
+  background:linear-gradient(90deg, color-mix(in srgb, var(--orange) 16%, var(--s1)), var(--s1) 80%);
+  color:var(--ink);text-align:left;font-family:var(--f-ui);
+}
+.annee-lien-an{font-family:var(--f-titre);font-size:var(--t-5);font-weight:800;letter-spacing:-.02em;color:var(--orange);}
+.annee-lien-texte{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;}
+.annee-lien-texte b{font-size:var(--t-3);font-weight:700;}
+.annee-lien-texte small{font-size:var(--t-1);font-weight:700;letter-spacing:.04em;color:var(--dim);}
+.annee-lien-fleche{color:var(--ink3);font-size:var(--t-4);}
+@media (prefers-reduced-motion:reduce){ .annee-diapo{animation:none;} .annee{transition:none;} }
+@media (max-width:359px){ .annee-grand{font-size:calc(var(--t-6) * 1.5);} }
 </style>
 </head>
 
@@ -3718,6 +3761,7 @@ button:active:not(:disabled):not(.topbar-tab):not(.bulle-onglet){filter:brightne
       <button type="button" class="seg-btn" data-period="annee">ANNÉE</button>
     </div>
     <div class="recap-label" id="recapLabel">—</div>
+    <div id="recapAnnee"></div>
     <div id="recapVolume"></div>
     <div class="stats-row" id="recapStats"></div>
     <div id="recapRegularite"></div>
@@ -4187,6 +4231,17 @@ button:active:not(:disabled):not(.topbar-tab):not(.bulle-onglet){filter:brightne
 <div class="bilan" id="bilanEcran" hidden>
   <div class="bilan-carte" role="dialog" aria-modal="true" aria-labelledby="bilanTitre">
     <div class="bilan-corps" id="bilanCorps"></div>
+  </div>
+</div>
+
+<div class="annee" id="anneeEcran" hidden>
+  <div class="annee-carte" role="dialog" aria-modal="true" aria-labelledby="anneeTitre">
+    <div class="annee-haut">
+      <div class="annee-barres" id="anneeBarres" aria-hidden="true"></div>
+      <button type="button" class="annee-fermer" id="anneeFermer" aria-label="Fermer">×</button>
+    </div>
+    <div class="annee-corps" id="anneeCorps" aria-live="polite"></div>
+    <p class="annee-aide">Touche à droite pour avancer, à gauche pour revenir.</p>
   </div>
 </div>
 

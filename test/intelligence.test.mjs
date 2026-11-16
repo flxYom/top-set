@@ -637,6 +637,25 @@ titre('Regularite, comptee en semaines (16/11/2026)');
 }
 
 // ----------------------------------------------------------------
+titre('Sur une periode : progression et records battus (16/11/2026)');
+{
+  const jj = (date, ...series) => ({ date, series });
+  const dc = [jj('2026-03-01', s(80, '10')), jj('2026-01-10', s(40, '10', { type: 'echauffement' }), s(80, '8')), jj('2026-11-18', s(90, '8'))];
+  const p = TS.progressionTopSet(dc);
+  egal('la premiere et la derniere seance, dans l ordre des dates', [p.debut.date, p.fin.date], ['2026-01-10', '2026-11-18']);
+  egal('le gain se lit sur le 1RM estime', p.gain, 12.5);
+  egal('une seule seance chiffree : pas de progression', TS.progressionTopSet([jj('2026-01-10', s(80, '8')), jj('2026-02-10', s(null, '12'))]), null);
+  egal('au temps : pas de progression', TS.progressionTopSet([jj('2026-01-10', s(null, '1:00')), jj('2026-02-10', s(null, '1:30'))]), null);
+  const sq = [jj('2025-12-20', s(100, '5')), jj('2026-01-05', s(60, '5', { type: 'echauffement' }), s(102.5, '5'), s(105, '3')),
+              jj('2026-02-01', s(105, '5')), jj('2026-03-01', s(140, '1', { type: 'echauffement' }), s(100, '5')), jj('2026-04-01', s(110, '3'))];
+  egal('deux seances battent le record en 2026 ; une seance compte une fois ; l echauffement et l egalite ne comptent pas',
+       TS.recordsBattus(sq, '2026-01-01', '2026-12-31'), 2);
+  egal('la toute premiere fois n est pas un record', TS.recordsBattus([jj('2026-01-05', s(100, '5'))], '2026-01-01', '2026-12-31'), 0);
+  egal('un record d avant la periode ne compte pas, mais sert de reference',
+       TS.recordsBattus([jj('2025-05-01', s(90, '5')), jj('2025-06-01', s(95, '5')), jj('2026-02-01', s(94, '5'))], '2026-01-01', '2026-12-31'), 0);
+}
+
+// ----------------------------------------------------------------
 console.log('\n' + '='.repeat(52));
 if (echecs.length) {
   console.log(passes + ' tests passes, ' + echecs.length + ' ECHEC(S) :');

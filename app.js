@@ -1570,8 +1570,8 @@
     arr.forEach(function(v){ counts[v]=(counts[v]||0)+1; if(counts[v]>bestCount){bestCount=counts[v]; best=v;} });
     return best;
   }
-  function computeRecap(period){
-    var today = new Date(), start, end, label;
+  function computeRecap(period, ref){
+    var today = ref ? fromDateStr(ref) : new Date(), start, end, label;
     if (period === 'semaine'){
       start = startOfWeek(today); end = addDays(start,6);
       label = formatWeekRange(start,end);
@@ -4020,6 +4020,7 @@
       document.getElementById('recapStats').innerHTML = '';
       document.getElementById('recapHeatmap').innerHTML = '';
       document.getElementById('recapRegularite').innerHTML = '';
+      document.getElementById('recapAnnee').innerHTML = '';
       groupsEl.innerHTML = '<div class="empty-state">' + attente() + '</div>';
       return;
     }
@@ -4036,6 +4037,7 @@
       statTile(data.totalSeries,'Séries') + statTile(data.seances,'Séances') + statTile(data.mouvements,'Mouvements');
     document.getElementById('recapHeatmap').innerHTML = renderHeatmap(data.startStr, data.endStr);
     document.getElementById('recapRegularite').innerHTML = blocRegularite();
+    document.getElementById('recapAnnee').innerHTML = lienAnnee();
 
     var counts = groupCountsIn(data.startStr, data.endStr);
     var sousC = sousCountsIn(data.startStr, data.endStr);
@@ -7108,8 +7110,8 @@
     l.push('', 'En tout : ' + pluriel(exos.length, 'exercice') + ', ' + pluriel(compterJour(day), 'série') + '.', IA_UNITES);
     return l.join('\n');
   }
-  function textePeriodeIA(periode){
-    var data = computeRecap(periode);
+  function textePeriodeIA(periode, ref){
+    var data = computeRecap(periode, ref);
     if (!data.seances) return '';
     var quoi = periode === 'semaine' ? 'la semaine du ' + jourCourt(data.startStr) + ' au ' + jourCourt(data.endStr)
       : periode === 'mois' ? data.label.toLowerCase() : 'l\'année ' + data.label;
@@ -7186,6 +7188,190 @@
   document.getElementById('recapIA').addEventListener('click', function(){
     var data = computeRecap(state.recapPeriod);
     ouvrirIA(textePeriodeIA(state.recapPeriod), 'Ton entraînement · ' + data.label);
+  });
+
+  // ==================================================================
+  // L'ANNEE, ECRAN PAR ECRAN (16/11/2026)
+  // ==================================================================
+  // Le bilan de l'annee, a la facon d'un « Wrapped » : un chiffre par ecran,
+  // on touche a droite pour avancer, a gauche pour revenir. Tout se calcule
+  // depuis le carnet ; les regles (regularite, progression, records) viennent
+  // d'intelligence.js. Pas de tonnage : il ne dit rien de la progression.
+  // En janvier, c'est l'annee qui vient de finir.
+  function anneeDuBilan(){
+    var d = new Date(), an = d.getFullYear();
+    if (d.getMonth() === 0 && joursAvecSeries(an - 1 + '-01-01', an - 1 + '-12-31').length) return an - 1;
+    return an;
+  }
+  function joursAvecSeries(debut, fin){
+    return Object.keys(state.sessions).filter(function(ds){
+      return ds >= debut && ds <= fin && compterJour(state.sessions[ds]) > 0;
+    }).sort();
+  }
+  function donneesAnnee(an){
+    var debut = an + '-01-01', auj = toDateStr(new Date());
+    var fin = (an + '-12-31' < auj) ? an + '-12-31' : auj;
+    var jours = joursAvecSeries(debut, fin);
+    if (!jours.length) return null;
+    var D = { an:an, debut:debut, fin:fin, seances:jours.length, series:0 };
+    jours.forEach(function(ds){ D.series += compterJour(state.sessions[ds]); });
+    // Regularite : les semaines de l'annee, et la plus longue serie dedans.
+    var nbSem = Math.round((fromDateStr(fin) - startOfWeek(fromDateStr(debut))) / (7 * 864e5)) + 1;
+    var r = TS.regularite(joursAvecSeries('0000-01-01', fin), reglages.objectifSemaine, fin, nbSem);
+    var sem = r.semaines.filter(function(s){ return s.lundi >= toDateStr(startOfWeek(fromDateStr(debut))); });
+    D.objectif = r.objectif;
+    D.tenues = sem.filter(function(s){ return s.tenue; }).length;
+    D.semaines = sem.length;
+    D.serieMax = 0;
+    var cours = 0;
+    sem.forEach(function(s){ cours = s.tenue ? cours + 1 : 0; if (cours > D.serieMax) D.serieMax = cours; });
+    // Les groupes et la silhouette.
+    D.counts = groupCountsIn(debut, fin);
+    D.sous = sousCountsIn(debut, fin);
+    D.groupe = GROUPS.filter(function(g){ return D.counts[g] && g !== 'Autre'; })
+      .sort(function(a, b){ return D.counts[b] - D.counts[a]; })[0] || null;
+    // Les exercices : le plus fait, la plus forte progression, les records.
+    var noms = {};
+    jours.forEach(function(ds){
+      state.sessions[ds].exercises.forEach(function(e){
+        if (!e.nom || !e.nom.trim() || !seriesRemplies(e).length) return;
+        var cle = cleCanonique(e.nom);
+        if (!noms[cle]) noms[cle] = { nom: nomCanonique(e.nom) || normalizeName(e.nom), brut: e.nom, jours: {}, series: 0, groupe: classement(e).groupe };
+        noms[cle].jours[ds] = true;
+        noms[cle].series += seriesRemplies(e).length;
+      });
+    });
+    var liste = Object.keys(noms).map(function(k){ var x = noms[k]; x.fois = Object.keys(x.jours).length; return x; });
+    liste.sort(function(a, b){ return (b.fois - a.fois) || (b.series - a.series); });
+    D.exo = liste[0] || null;
+    D.records = 0;
+    D.progres = null;
+    D.lourd = null;
+    liste.forEach(function(x){
+      var toutes = seancesDeLExo(x.brut);
+      D.records += TS.recordsBattus(toutes, debut, fin);
+      var dansAn = toutes.filter(function(j){ return j.date >= debut && j.date <= fin; });
+      var p = dansAn.length >= 3 ? TS.progressionTopSet(dansAn) : null;
+      if (p && p.gain > 0 && (!D.progres || p.gain > D.progres.p.gain)) D.progres = { nom:x.nom, groupe:x.groupe, p:p };
+      dansAn.forEach(function(j){
+        j.series.forEach(function(s){
+          if (TS.typeSerie(s) === TS.TYPES.ECHAUFFEMENT || typeof s.poids !== 'number') return;
+          if (!D.lourd || s.poids > D.lourd.s.poids) D.lourd = { nom:x.nom, groupe:x.groupe, s:s };
+        });
+      });
+    });
+    // Le mois le plus charge.
+    var parMois = {};
+    jours.forEach(function(ds){ var m = Number(ds.slice(5, 7)) - 1; parMois[m] = (parMois[m] || 0) + 1; });
+    var mois = Object.keys(parMois).sort(function(a, b){ return parMois[b] - parMois[a] || a - b; })[0];
+    D.mois = { m:Number(mois), n:parMois[mois] };
+    return D;
+  }
+  function diapo(couleur, tag, grand, titre, texte, extra){
+    return { couleur: couleur, html: '<p class="annee-tag">' + esc(tag) + '</p>'
+      + '<p class="annee-grand">' + grand + '</p>'
+      + '<h2 class="annee-titre" id="anneeTitre">' + esc(titre) + '</h2>'
+      + (texte ? '<p class="annee-texte">' + esc(texte) + '</p>' : '')
+      + (extra || '') };
+  }
+  function compteur(n){ return '<span data-compteur="' + n + '">' + n + '</span>'; }
+  function diaposAnnee(D){
+    var L = [];
+    var tag = 'TON ANNÉE ' + D.an;
+    L.push(diapo('var(--orange)', tag, compteur(D.seances), pluriel(D.seances, 'séance').replace(/^\d+ /, '') + ' notée' + (D.seances > 1 ? 's' : ''),
+      pluriel(D.series, 'série') + ' en tout. Voici ce qu\'elles racontent.'));
+    L.push(diapo('var(--ok)', 'RÉGULARITÉ', compteur(D.tenues), (D.tenues > 1 ? 'semaines tenues' : 'semaine tenue') + ' sur ' + D.semaines,
+      'Objectif : ' + pluriel(D.objectif, 'séance') + ' par semaine. Ta plus longue série : ' + pluriel(D.serieMax, 'semaine') + ' d\'affilée.'));
+    if (D.groupe){
+      L.push(diapo(couleurGroupe(D.groupe), 'LE GROUPE DE L\'ANNÉE', compteur(D.counts[D.groupe]), 'séries pour ' + (D.groupe === 'Dos' || D.groupe === 'Cardio' ? 'le ' : 'les ') + D.groupe.toLowerCase(),
+        GROUPS.filter(function(g){ return D.counts[g] && g !== D.groupe; }).slice(0, 3).map(function(g){ return g.toLowerCase() + ' ' + D.counts[g]; }).join(', '),
+        '<div class="annee-silhouette">' + muscleMapSVG(D.sous, 'Muscles travaillés en ' + D.an + ', de face et de dos') + '</div>'));
+    }
+    if (D.exo){
+      L.push(diapo(couleurGroupe(D.exo.groupe), 'L\'EXERCICE DE L\'ANNÉE', compteur(D.exo.fois), D.exo.nom,
+        pluriel(D.exo.fois, 'séance') + ', ' + pluriel(D.exo.series, 'série') + '. Ton exercice le plus fidèle.'));
+    }
+    if (D.progres){
+      var a = D.progres.p.debut, b = D.progres.p.fin;
+      L.push(diapo('var(--ok)', 'TA PLUS BELLE PROGRESSION', '+' + String(D.progres.p.gain).replace('.', ',') + '<small> %</small>', D.progres.nom,
+        perfTexte(a.top) + ' le ' + jourCourt(a.date) + ' → ' + perfTexte(b.top) + ' le ' + jourCourt(b.date) + ', sur le 1RM estimé.'));
+    }
+    if (D.records || D.lourd){
+      L.push(diapo('var(--yellow)', 'RECORDS', compteur(D.records), D.records > 1 ? 'records battus' : 'record battu',
+        D.lourd ? 'Le plus lourd : ' + D.lourd.nom + ', ' + perfTexte(D.lourd.s) + '.' : ''));
+    }
+    L.push(diapo('var(--blue)', 'TON MOIS', esc(majuscule(MONTH_NAMES[D.mois.m])), pluriel(D.mois.n, 'séance') + ', ton mois le plus chargé', ''));
+    L.push(diapo('var(--orange)', tag, esc(String(D.an)), 'À l\'année prochaine.',
+      'Pour en parler à une IA, le texte de ton année est prêt.',
+      '<button type="button" class="btn-sheet primary annee-action" id="anneeIA">COPIER POUR UNE IA</button>'
+      + '<button type="button" class="btn-sheet annee-action" id="anneeFin">FERMER</button>'));
+    return L;
+  }
+
+  var anneeEcran = document.getElementById('anneeEcran');
+  var anneeEtat = null;
+  function ouvrirAnnee(an){
+    var D = donneesAnnee(an);
+    if (!D){ showToast('Rien de noté cette année'); return; }
+    anneeEtat = { an:an, diapos:diaposAnnee(D), i:0 };
+    anneeEcran.hidden = false;
+    document.body.classList.add('en-bilan');
+    montrerDiapo(0);
+  }
+  function fermerAnnee(){
+    anneeEcran.hidden = true;
+    anneeEtat = null;
+    document.getElementById('anneeCorps').innerHTML = '';
+    document.body.classList.remove('en-bilan');
+  }
+  function montrerDiapo(i){
+    var L = anneeEtat.diapos;
+    i = Math.max(0, Math.min(L.length - 1, i));
+    anneeEtat.i = i;
+    anneeEcran.style.setProperty('--a', L[i].couleur);
+    document.getElementById('anneeBarres').innerHTML = L.map(function(x, k){
+      return '<i' + (k < i ? ' class="vu"' : (k === i ? ' class="ici"' : '')) + '></i>';
+    }).join('');
+    var corps = document.getElementById('anneeCorps');
+    corps.innerHTML = '<div class="annee-diapo">' + L[i].html + '</div>';
+    animerCompteur(corps.querySelector('[data-compteur]'));
+  }
+  anneeEcran.addEventListener('click', function(e){
+    if (!anneeEtat) return;
+    if (e.target.closest('#anneeFermer') || e.target.closest('#anneeFin')){ fermerAnnee(); return; }
+    if (e.target.closest('#anneeIA')){
+      var an = anneeEtat.an;
+      fermerAnnee();
+      ouvrirIA(textePeriodeIA('annee', an + '-12-31' < toDateStr(new Date()) ? an + '-12-31' : null), 'Ton année ' + an);
+      return;
+    }
+    var r = anneeEcran.getBoundingClientRect();
+    var largeur = r.width || window.innerWidth || 0;
+    var gauche = largeur > 0 && (e.clientX - (r.left || 0)) < largeur * 0.3;
+    montrerDiapo(anneeEtat.i + (gauche ? -1 : 1));
+  });
+  document.addEventListener('keydown', function(e){
+    if (!anneeEtat || anneeEcran.hidden) return;
+    if (e.key === 'Escape'){ e.preventDefault(); fermerAnnee(); }
+    else if (e.key === 'ArrowRight' || e.key === ' '){ e.preventDefault(); montrerDiapo(anneeEtat.i + 1); }
+    else if (e.key === 'ArrowLeft'){ e.preventDefault(); montrerDiapo(anneeEtat.i - 1); }
+  });
+  // L'entree dans PROGRES : sur la periode ANNEE, et en decembre et en
+  // janvier sur toutes les periodes — c'est la saison des bilans.
+  function lienAnnee(){
+    var mois = new Date().getMonth();
+    if (state.recapPeriod !== 'annee' && mois !== 11 && mois !== 0) return '';
+    var an = anneeDuBilan();
+    var jours = joursAvecSeries(an + '-01-01', an + '-12-31');
+    if (!jours.length) return '';
+    return '<button type="button" class="annee-lien" id="anneeOuvrir" data-an="' + an + '">'
+      + '<span class="annee-lien-an">' + an + '</span>'
+      + '<span class="annee-lien-texte"><b>Ton année, écran par écran</b><small>' + pluriel(jours.length, 'séance') + ' · régularité, progression, records</small></span>'
+      + '<span class="annee-lien-fleche" aria-hidden="true">›</span></button>';
+  }
+  document.getElementById('recapAnnee').addEventListener('click', function(e){
+    var b = e.target.closest('#anneeOuvrir');
+    if (b) ouvrirAnnee(Number(b.dataset.an));
   });
 
   document.getElementById('recapPartager').addEventListener('click', function(){

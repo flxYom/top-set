@@ -938,6 +938,44 @@
   }
 
   // ------------------------------------------------------------------
+  // Sur une periode : la progression et les records battus (16/11/2026)
+  // ------------------------------------------------------------------
+  // La progression d'un exercice : le top set de la premiere seance contre
+  // celui de la derniere, compares sur le 1RM estime — la seule mesure qui
+  // rapproche 80 kg x 10 et 90 kg x 6. Null sans deux seances chiffrees
+  // (un exercice au temps ou au poids du corps n'a pas de 1RM).
+  function parDate(a, b) { return a.date < b.date ? -1 : (a.date > b.date ? 1 : 0); }
+  function progressionTopSet(seances) {
+    var pts = (seances || []).slice().sort(parDate).map(function (j) {
+      var t = calculerTopSet(j.series);
+      var rm = t ? epleySerie(t) : null;
+      return rm ? { date: j.date, top: t, rm: rm } : null;
+    }).filter(Boolean);
+    if (pts.length < 2) return null;
+    var a = pts[0], b = pts[pts.length - 1];
+    return { debut: a, fin: b, gain: Math.round(((b.rm - a.rm) / a.rm) * 1000) / 10 };
+  }
+  // Les records battus entre deux dates : une seance compte quand sa charge
+  // de travail la plus lourde depasse tout ce qui a ete souleve avant elle
+  // sur cet exercice, echauffements exclus. Une seance compte une fois, meme
+  // si deux series battent l'ancien record. La toute premiere fois n'est pas
+  // un record : il n'y avait rien a battre.
+  function recordsBattus(seances, debut, fin) {
+    var best = 0, n = 0;
+    (seances || []).slice().sort(parDate).forEach(function (j) {
+      var max = 0;
+      (j.series || []).forEach(function (s) {
+        if (typeSerie(s) === TYPES.ECHAUFFEMENT) return;
+        if (typeof s.poids === 'number' && s.poids > max) max = s.poids;
+      });
+      if (!max) return;
+      if (best > 0 && max > best && j.date >= debut && j.date <= fin) n++;
+      if (max > best) best = max;
+    });
+    return n;
+  }
+
+  // ------------------------------------------------------------------
   // Regularite, comptee en semaines (16/11/2026)
   // ------------------------------------------------------------------
   // Un objectif de N seances par semaine, du lundi au dimanche. Une semaine
@@ -1036,6 +1074,8 @@
     DISQUES: DISQUES,
     BARRES: BARRES,
     chargerBarre: chargerBarre,
-    regularite: regularite
+    regularite: regularite,
+    progressionTopSet: progressionTopSet,
+    recordsBattus: recordsBattus
   };
 });
