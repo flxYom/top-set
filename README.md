@@ -49,7 +49,9 @@ repository is for right now.
   correction. The app suggests, you decide — or you switch the question off.
 - **Never start from scratch.** Redo last time, last week's exercises, a
   suggested load. `↺ DERNIÈRE FOIS` fills in the sets of the previous session
-  and never overwrites what you have already entered.
+  and never overwrites what you have already entered. A session can be kept as
+  a template ("Push A", filed in a folder) and relaunched in one tap on an
+  empty day, with your last-time weights.
 - **Send your numbers to a friend.** Friends are made by a code, both sides
   agreeing; an exercise, a session or a recap goes to the friends you pick, as a
   frozen copy. No feed, no counters, no ranking, no stories.
@@ -168,8 +170,9 @@ and Data sheets; sticky tabs that no longer slide under the iPhone status bar,
 a back-to-top button, and no more accidental zoom. A schema upgrade test now
 installs every past schema version before applying the current one.
 
-**In progress:** session templates filed in folders and assignable into a
-client's logbook, and a per-session debrief. `profils` is the foundation for
+**In progress:** session templates exist, filed in folders and synced
+(2026-11-16); what remains is making them assignable into a client's logbook,
+and a per-session debrief. `profils` is the foundation for
 all of it — that is why it was written first.
 
 **Still open:** the return leg of the password-reset link has never been

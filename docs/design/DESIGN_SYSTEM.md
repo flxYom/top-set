@@ -279,6 +279,19 @@ de retirer : sur chaque ligne de TOUS et en tête de la fiche. La page vide
 de SUIVIS est une carte pleine, pas un emplacement en pointillés : c'est une
 invitation, avec un bouton vers TOUS. Garde : gabarits §43.
 
+**Les modèles de séance — 16/11/2026.** Un modèle se lance comme on refait
+une séance : même carte que `REFAIRE` (`.btn-refaire.btn-modele`, verbe
+orange en `--t-1` 800, résumé gris sur une ligne coupée), sous ces boutons,
+dans un bloc `.modeles-jour` dont le titre `MES MODÈLES` et les dossiers
+reprennent les sous-titres de l'app (`--t-1`, lettres espacées, `--dim`).
+`GÉRER` est un lien orange de 44 px de haut, pas un bouton plein : l'action
+du bloc, c'est lancer. Sans modèle, rien ne s'affiche — pas d'emplacement
+vide qui inviterait. Le panneau reprend les feuilles existantes (champ,
+datalist des dossiers, alerte neutre si le nom existe, suppression en deux
+appuis) ; sa liste (`.modele-ligne`, 56 px, fond `--s2`, crayon à droite)
+est celle d'un réglage. Dans la fiche, le bouton vient après tous les
+autres : aucun ne change de place. Garde : gabarits §53.
+
 ## 5. Mouvement
 
 Une animation sert une interaction, une hiérarchie ou l'identité. Jamais un

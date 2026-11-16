@@ -1514,5 +1514,65 @@ console.log('\n== 27. Le cycle et le mot de la seance ==');
     () => asAnon(`select public.pousser_commentaire($1::date, 'coucou')`, [J]));
 }
 
+// ------------------------------------------------------------------------
+console.log('\n== 15. Les modeles de seance : chacun les siens ==');
+{
+  // Deux comptes a eux : les sections d'avant suppriment A pour tester la cascade.
+  const A = '15151515-1515-4515-8515-151515151501';
+  const B = '15151515-1515-4515-8515-151515151502';
+  await db.query(`insert into auth.users (id, email) values ($1, 'm1@exemple.fr'), ($2, 'm2@exemple.fr')
+                  on conflict do nothing`, [A, B]);
+  const M1 = '0a0a0a0a-0000-4000-8000-000000000001';
+  const M2 = '0a0a0a0a-0000-4000-8000-000000000002';
+  const contenu = [{ nom: 'Développé couché', groupe: 'Pectoraux', series: [{ poids: 80, reps: '8' }] }];
+  await as(A, `select public.pousser_modeles($1::jsonb)`,
+    [JSON.stringify([{ id: M1, nom: 'Push A', dossier: 'PPL', contenu },
+                     { id: 'pas-un-uuid', nom: 'Ignore', contenu },
+                     { id: M2, nom: '   ', contenu: 'pas une liste' }])]);
+  const a = (await as(A, `select public.tirer_modeles() m`)).rows[0].m;
+  ok('A relit ses deux modeles valides, pas celui sans UUID', a.length === 2, JSON.stringify(a.map(m => m.nom)));
+  const push = a.find(m => m.id === M1);
+  ok('le contenu revient tel quel', push && push.contenu[0].series[0].poids === 80 && push.dossier === 'PPL');
+  ok('un nom vide devient « Modèle », un contenu qui n est pas une liste devient vide',
+     a.find(m => m.id === M2)?.nom === 'Modèle' && a.find(m => m.id === M2)?.contenu.length === 0);
+  ok('B ne lit aucun modele de A',
+     (await as(B, `select public.tirer_modeles() m`)).rows[0].m.length === 0);
+  ok('B ne voit rien non plus en lisant la table',
+     (await as(B, `select count(*)::int n from public.modeles`)).rows[0].n === 0);
+  await as(B, `select public.pousser_modeles($1::jsonb)`,
+    [JSON.stringify([{ id: M1, nom: 'Detourne', contenu: [] }])]);
+  ok('B qui reutilise l identifiant de A cree SA ligne, sans toucher celle de A',
+     (await db.query(`select nom from public.modeles where user_id = $1 and id = $2`, [A, M1])).rows[0].nom === 'Push A'
+     && (await db.query(`select nom from public.modeles where user_id = $1 and id = $2`, [B, M1])).rows[0].nom === 'Detourne');
+  await refuse('B ne peut pas ecrire une ligne au nom de A, meme en direct',
+    () => as(B, `insert into public.modeles (user_id, id, nom) values ($1, gen_random_uuid(), 'x')`, [A]));
+  await refuse('anon ne pousse pas de modele',
+    () => asAnon(`select public.pousser_modeles('[]'::jsonb)`));
+  await refuse('anon ne lit pas de modele',
+    () => asAnon(`select public.tirer_modeles()`));
+  await refuse('un nom de 61 caracteres est refuse par la table',
+    () => as(A, `update public.modeles set nom = $1 where id = $2`, ['n'.repeat(61), M1]));
+  await refuse('plus de 200 modeles en un envoi est refuse',
+    () => as(A, `select public.pousser_modeles($1::jsonb)`,
+      [JSON.stringify(Array.from({ length: 201 }, (_, i) => ({ id: M1, nom: 'x' + i })))]));
+  // La suppression : une pierre tombale, contenu vide, relue par l'autre telephone.
+  await as(A, `select public.pousser_modeles($1::jsonb)`,
+    [JSON.stringify([{ id: M2, nom: 'Modèle', supprime: true, contenu }])]);
+  const t = (await as(A, `select public.tirer_modeles() m`)).rows[0].m.find(m => m.id === M2);
+  ok('un modele supprime revient comme pierre tombale, sans contenu', t && t.supprime === true && t.contenu.length === 0);
+  // Le plafond : 500 lignes, mais une mise a jour passe toujours.
+  await db.query(`insert into public.modeles (user_id, id, nom)
+                  select $1, gen_random_uuid(), 'm' || g from generate_series(1, 498) g`, [A]);
+  ok('A a 500 lignes', (await db.query(`select count(*)::int n from public.modeles where user_id = $1`, [A])).rows[0].n === 500);
+  await refuse('la 501e est refusee par la base',
+    () => as(A, `select public.pousser_modeles($1::jsonb)`,
+      [JSON.stringify([{ id: '0a0a0a0a-0000-4000-8000-0000000001ff', nom: 'De trop' }])]));
+  await as(A, `select public.pousser_modeles($1::jsonb)`,
+    [JSON.stringify([{ id: M1, nom: 'Push A bis', contenu }])]);
+  ok('mais renommer un modele existant passe encore',
+     (await db.query(`select nom from public.modeles where user_id = $1 and id = $2`, [A, M1])).rows[0].nom === 'Push A bis');
+  await db.query(`delete from public.modeles where user_id = $1 and nom ~ '^m[0-9]+$'`, [A]);
+}
+
 console.log(`\n${pass} reussis, ${fail} echoues`);
 process.exit(fail ? 1 : 0);

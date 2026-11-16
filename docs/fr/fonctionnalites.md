@@ -650,6 +650,22 @@ dernière fois, qui se lit et ne recopie rien :
   semaine d'avant) et `↺ REFAIRE MA DERNIÈRE SÉANCE` si ce n'est pas la même,
   avec leur titre ; tout se recopie par `selectionnerSeance`.
 
+**Les modèles de séance (16/11/2026).** Le dernier bouton de la fiche d'une
+séance, `ENREGISTRER COMME MODÈLE`, la garde sous un nom (« Push A ») et, si on
+veut, dans un dossier. Le même nom remplace le modèle existant, ce que le
+panneau dit avant d'enregistrer ; un dossier laissé vide garde le sien. Sur un
+jour vide, les modèles s'alignent sous les boutons `REFAIRE` (`LANCER PUSH A`,
+sans dossier d'abord, puis par dossier) ; sans modèle, l'écran ne change pas.
+Un modèle garde l'ordre, les exercices et les supersets (avec un bloc neuf à
+chaque lancement). En le lançant, chaque exercice reprend sa dernière fois,
+comme `↺ DERNIÈRE FOIS` (même cycle d'abord), sinon les séries du modèle : un
+modèle de septembre ne ramène pas les charges de septembre. Rien n'est coché,
+et la séance prend le nom du modèle si elle n'en a pas (`lancerModele`).
+`GÉRER` renomme, range et supprime ; supprimer se confirme d'un second appui.
+Les modèles vivent sous `topset_modeles`, suivent le compte (table `modeles`),
+changent de carnet avec leur propriétaire quand un autre compte se connecte, et
+voyagent dans la sauvegarde JSON ; l'import n'ajoute que ceux qui manquent.
+
 **Ce qui allait avec, la semaine d'avant.** Sous `+ AJOUTER UN EXERCICE`, dès
 qu'un exercice du jour a un nom : les exercices de la même séance la semaine
 d'avant (même reconnaissance que le bilan, un exercice en commun suffit) qui ne

@@ -3754,6 +3754,9 @@
     html += '<button type="button" class="btn-reprendre" id="ficheSelectionner"' + (meme ? ' disabled' : '') + '>'
       + (meme ? 'C\'EST LA SÉANCE DU JOUR AFFICHÉ' : 'SÉLECTIONNER POUR LE JOUR AFFICHÉ')
       + '</button>';
+    // Les ajouts du 16/11/2026 viennent apres tout le reste : aucun bouton
+    // existant ne change de place.
+    html += '<button type="button" class="btn-partage" id="ficheModele">' + ico('modele') + 'ENREGISTRER COMME MODÈLE</button>';
     hote.innerHTML = html;
   }
 
@@ -3851,7 +3854,7 @@
     var y = window.scrollY;
     lacherFocus(list);
     if (!exercises.length){
-      list.innerHTML = '<div class="empty-state">Aucun exercice noté pour ce jour.<br>Ajoute ta première série ci-dessous.</div>' + refaireHTML(ds);
+      list.innerHTML = '<div class="empty-state">Aucun exercice noté pour ce jour.<br>Ajoute ta première série ci-dessous.</div>' + refaireHTML(ds) + modelesHTML();
     } else {
       list.innerHTML = exercisesHTML(exercises);
       majNomsLongs(list);
@@ -4360,7 +4363,8 @@
     pause:'<path d="M9 5.5v13M15 5.5v13"/>',
     coche:'<path d="M5 12.5l4.5 4.5L19 7.5"/>',
     fermer:'<path d="M6 6l12 12M18 6L6 18"/>',
-    points:'<circle class="plein" cx="5.5" cy="12" r="1.7"/><circle class="plein" cx="12" cy="12" r="1.7"/><circle class="plein" cx="18.5" cy="12" r="1.7"/>'
+    points:'<circle class="plein" cx="5.5" cy="12" r="1.7"/><circle class="plein" cx="12" cy="12" r="1.7"/><circle class="plein" cx="18.5" cy="12" r="1.7"/>',
+    modele:'<rect x="8" y="7.5" width="11.5" height="13" rx="2"/><path d="M5 16.5V5.5A2 2 0 0 1 7 3.5h9"/>'
   };
   function ico(nom, seul){
     return '<svg class="ico' + (seul ? ' seul' : '') + '" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' + ICONES[nom] + '</svg>';
@@ -5341,6 +5345,318 @@
     if (!b) return;
     var nom = ajouterAuJour(state.selectedDay, b.dataset.id);
     if (nom) marquerAjoute(b, nom);
+  });
+
+  // ---------- les modeles de seance (16/11/2026) ----------
+  // « Push A », enregistre une fois depuis la fiche d'une seance, relance
+  // d'un appui sur un jour vide, sous les boutons REFAIRE. Un modele garde
+  // l'ordre, les exercices, les supersets et les series. En le lancant,
+  // chaque exercice reprend sa derniere fois quand il y en a une (la meme
+  // regle que ↺ DERNIÈRE FOIS, cycle compris), sinon les series du modele :
+  // un modele enregistre en septembre ne ramene pas les charges de
+  // septembre.
+  //
+  // Ils vivent ici (topset_modeles) et, avec un compte, suivent le compte
+  // comme les seances (table modeles). Un modele supprime laisse une pierre
+  // tombale ({ supprime:true }) : sans elle, l'autre telephone le ferait
+  // revenir a la synchro suivante. Personne d'autre ne les voit.
+  var MODELES_KEY = 'topset_modeles';
+  var MODELES_MAX = 100, MODELE_EXOS_MAX = 40, MODELE_SERIES_MAX = 30;
+  var modeles = null;   // id -> modele, charge au premier usage
+  var UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  // L'identifiant est un vrai UUID : c'est la cle de la ligne en base, et
+  // une cle refaite a chaque envoi dupliquerait le modele.
+  function uuidNeuf(){
+    if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+    var o = new Uint8Array(16), i;
+    if (window.crypto && crypto.getRandomValues) crypto.getRandomValues(o);
+    else for (i = 0; i < 16; i++) o[i] = Math.floor(Math.random() * 256);
+    o[6] = (o[6] & 15) | 64; o[8] = (o[8] & 63) | 128;
+    var h = Array.prototype.map.call(o, function(b){ return (b + 256).toString(16).slice(1); }).join('');
+    return h.slice(0, 8) + '-' + h.slice(8, 12) + '-' + h.slice(12, 16) + '-' + h.slice(16, 20) + '-' + h.slice(20);
+  }
+  // Ce qui vient du stockage, d'un fichier ou du compte n'est jamais cru sur
+  // parole : la normalisation des journees, plus des bornes.
+  function modeleSur(m){
+    if (!m || typeof m !== 'object' || !UUID_RE.test(String(m.id || ''))) return null;
+    var nom = String(m.nom == null ? '' : m.nom).trim().slice(0, 60);
+    var sortie = { id:String(m.id).toLowerCase(), nom:nom || 'Modèle',
+                   maj:(typeof m.maj === 'string' ? m.maj.slice(0, 40) : '') };
+    if (m.supprime){ sortie.supprime = true; sortie.exercises = []; return sortie; }
+    var dossier = String(m.dossier == null ? '' : m.dossier).trim().slice(0, 40);
+    if (dossier) sortie.dossier = dossier;
+    sortie.exercises = (Array.isArray(m.exercises) ? m.exercises : []).slice(0, MODELE_EXOS_MAX)
+      .map(function(e){
+        var n = normalizeExercise(e);
+        delete n.note;
+        n.series = n.series.slice(0, MODELE_SERIES_MAX).map(function(s){ s.fait = false; delete s.note; return s; });
+        return n;
+      })
+      .filter(function(e){ return e.nom && e.nom.trim(); });
+    return sortie;
+  }
+  function lesModeles(){
+    if (modeles) return modeles;
+    modeles = {};
+    var brut = null;
+    try { brut = JSON.parse(localStorage.getItem(MODELES_KEY) || 'null'); } catch (err) { brut = null; }
+    if (brut && typeof brut === 'object'){
+      Object.keys(brut).forEach(function(k){ var m = modeleSur(brut[k]); if (m) modeles[m.id] = m; });
+    }
+    return modeles;
+  }
+  function saveModeles(){
+    try { localStorage.setItem(MODELES_KEY, JSON.stringify(lesModeles())); } catch (err) {}
+  }
+  // Remplace toute la collection (changement de compte, synchro) : la seule
+  // porte d'entree pour un lot venu d'ailleurs.
+  function remplacerModeles(lot){
+    modeles = {};
+    Object.keys(lot || {}).forEach(function(k){ var m = modeleSur(lot[k]); if (m) modeles[m.id] = m; });
+    saveModeles();
+  }
+  // Sans dossier d'abord, puis par dossier ; par nom dans chaque groupe.
+  function modelesVivants(){
+    var tous = lesModeles();
+    return Object.keys(tous).map(function(k){ return tous[k]; })
+      .filter(function(m){ return !m.supprime; })
+      .sort(function(a, b){
+        var da = (a.dossier || '').toLowerCase(), db = (b.dossier || '').toLowerCase();
+        if (da !== db) return !da ? -1 : (!db ? 1 : da.localeCompare(db, 'fr'));
+        return a.nom.localeCompare(b.nom, 'fr');
+      });
+  }
+  function modeleDuNom(nom, sauf){
+    var k = String(nom || '').trim().toLowerCase();
+    return modelesVivants().filter(function(m){ return m.id !== sauf && m.nom.toLowerCase() === k; })[0] || null;
+  }
+  function marquerModele(id){
+    if (typeof Sync !== 'undefined' && Sync.marquerColl) Sync.marquerColl('modeles', id);
+  }
+  // La seance telle qu'elle se rejouera : ses exercices nommes, dans
+  // l'ordre, avec leurs series remplies — ou leurs series vides, pour une
+  // seance seulement prevue.
+  function exercicesPourModele(ds){
+    var day = state.sessions[ds];
+    return ((day && day.exercises) || []).filter(function(e){ return e && e.nom && String(e.nom).trim(); })
+      .map(function(e){
+        var remplies = seriesRemplies(e);
+        return { nom:e.nom, groupe:e.groupe, repos:e.repos || '', bloc:e.bloc, mesure:e.mesure,
+                 series:(remplies.length ? remplies : (e.series || [])).map(function(s){
+                   return { poids:s.poids, reps:s.reps, rpe:s.rpe, repos:s.repos || '', type:s.type,
+                            vitesse:s.vitesse, inclinaison:s.inclinaison };
+                 }) };
+      });
+  }
+  // Un nom deja pris par un autre modele : celui-ci est remplace par la
+  // seance (c'est ce que dit le panneau avant d'enregistrer). Il garde son
+  // dossier si le champ est laisse vide : remplacer le contenu n'est pas
+  // le deranger.
+  function enregistrerModele(ds, nom, dossier){
+    var exos = exercicesPourModele(ds);
+    if (!exos.length) return { erreur:'Cette séance n\'a aucun exercice nommé.' };
+    var meme = modeleDuNom(nom);
+    if (meme && !String(dossier || '').trim()) dossier = meme.dossier || '';
+    if (!meme && modelesVivants().length >= MODELES_MAX) return { erreur:'Tu as déjà ' + MODELES_MAX + ' modèles : supprimes-en un d\'abord.' };
+    var m = modeleSur({ id:meme ? meme.id : uuidNeuf(), nom:nom, dossier:dossier, exercises:exos, maj:new Date().toISOString() });
+    lesModeles()[m.id] = m;
+    saveModeles();
+    marquerModele(m.id);
+    return { modele:m, remplace:!!meme };
+  }
+  function modifierModele(id, nom, dossier){
+    var m = lesModeles()[id];
+    if (!m || m.supprime) return { erreur:'Ce modèle n\'existe plus.' };
+    var v = String(nom || '').trim().slice(0, 60);
+    if (!v) return { erreur:'Donne-lui un nom.' };
+    if (modeleDuNom(v, id)) return { erreur:'Un autre modèle s\'appelle déjà « ' + v + ' ».' };
+    m.nom = v;
+    var d = String(dossier || '').trim().slice(0, 40);
+    if (d) m.dossier = d; else delete m.dossier;
+    m.maj = new Date().toISOString();
+    saveModeles();
+    marquerModele(id);
+    return { modele:m };
+  }
+  function supprimerModele(id){
+    var m = lesModeles()[id];
+    if (!m) return;
+    lesModeles()[id] = { id:id, nom:m.nom, supprime:true, exercises:[], maj:new Date().toISOString() };
+    saveModeles();
+    marquerModele(id);
+  }
+  // Lancer un modele sur le jour affiche, vide. « fait » repart a faux et le
+  // RPE se note le jour meme, comme pour ↺ DERNIÈRE FOIS. La seance prend le
+  // nom du modele si elle n'en a pas.
+  function lancerModele(id){
+    var m = lesModeles()[id];
+    if (!m || m.supprime) return 0;
+    var ds = state.selectedDay;
+    var jour = getOrCreateDay(ds);
+    var blocs = {}, n = 0;
+    m.exercises.forEach(function(e){
+      var bloc;
+      // Un identifiant de bloc neuf : lancer deux fois le meme modele ne
+      // doit pas fusionner les deux supersets en un seul.
+      if (e.bloc){ if (!blocs[e.bloc]) blocs[e.bloc] = genId(); bloc = blocs[e.bloc]; }
+      var ex = { id:genId(), nom:e.nom, groupe:e.groupe || 'Autre', repos:e.repos || '', bloc:bloc, mesure:e.mesure, series:[] };
+      var p = precedentDe(ex);
+      var source = (p && p.prec.series.length) ? p.prec.series : e.series;
+      ex.series = source.map(function(s){
+        return repriseSerie(s, { id:genSerieId(), poids:null, reps:'', rpe:null, repos:'', fait:false });
+      });
+      if (!ex.series.length) ex.series.push({ id:genSerieId(), poids:null, reps:'', rpe:null, repos:'', fait:false });
+      jour.exercises.push(ex);
+      n++;
+    });
+    if (n && !titreChoisi(ds)) definirTitre(ds, m.nom);
+    return n;
+  }
+  // Repeindre la seance seulement si elle est vide : c'est le seul ecran ou
+  // les modeles se voient, et repeindre une seance en cours ferait perdre le
+  // champ en train d'etre tape.
+  function repeindreSiJourVide(){
+    var day = state.sessions[state.selectedDay];
+    if (state.view === 'seances' && !(day && (day.exercises || []).length)) renderSeanceJour(true);
+  }
+  function resumeModele(m){
+    var noms = m.exercises.slice(0, 3).map(function(e){ return normalizeName(e.nom); }).join(', ');
+    return pluriel(m.exercises.length, 'exercice') + ' · ' + noms + (m.exercises.length > 3 ? '…' : '');
+  }
+  // Sous les boutons REFAIRE d'un jour vide, et seulement s'il y a des
+  // modeles : sans modele, l'ecran ne change pas d'un pixel.
+  function modelesHTML(){
+    var liste = modelesVivants();
+    if (!liste.length) return '';
+    var html = '<div class="modeles-jour"><div class="modeles-tete"><span>MES MODÈLES</span>'
+      + '<button type="button" class="modeles-gerer" data-action="gerer-modeles">GÉRER</button></div>';
+    var dossier = '';
+    liste.forEach(function(m){
+      if ((m.dossier || '') !== dossier){
+        dossier = m.dossier || '';
+        html += '<div class="modeles-dossier">' + esc(dossier.toUpperCase()) + '</div>';
+      }
+      html += '<button type="button" class="btn-refaire btn-modele" data-modele="' + esc(m.id) + '">'
+        + '<span class="btn-refaire-quoi">' + ico('modele') + 'LANCER ' + esc(m.nom.toUpperCase()) + '</span>'
+        + '<span class="btn-refaire-titre">' + esc(resumeModele(m)) + '</span></button>';
+    });
+    return html + '</div>';
+  }
+  exListEl.addEventListener('click', function(e){
+    if (e.target.closest('[data-action="gerer-modeles"]')){ ouvrirModeles('liste'); return; }
+    var b = e.target.closest('[data-modele]');
+    if (!b) return;
+    var m = lesModeles()[b.dataset.modele];
+    var n = lancerModele(b.dataset.modele);
+    if (!n){ showToast('Ce modèle est vide'); return; }
+    scheduleSave(state.selectedDay, true);
+    populateDatalist();
+    renderSeanceJour(true);
+    showToast(m.nom + ' posé : ' + pluriel(n, 'exercice'));
+  });
+
+  // Le panneau des modeles : enregistrer une seance sous un nom, ou ranger,
+  // renommer et supprimer. Deux temps dans la meme feuille.
+  var modeleSheet = document.getElementById('modeleSheet');
+  var modeleEtat = { mode:'liste', ds:null, id:null };
+  function msgModele(kind, texte){
+    var el = document.getElementById('modeleMsg');
+    el.className = 'sheet-msg' + (kind ? ' ' + kind : '');
+    el.textContent = texte || '';
+    el.hidden = !texte;
+  }
+  function ouvrirModeles(mode, arg){
+    modeleEtat = { mode:mode, ds:mode === 'nouveau' ? arg : null, id:mode === 'editer' ? arg : null };
+    var liste = mode === 'liste';
+    document.getElementById('modeleListe').hidden = !liste;
+    document.getElementById('modeleForm').hidden = liste;
+    document.getElementById('modeleTitre').textContent = liste ? 'MES MODÈLES' : 'MODÈLE DE SÉANCE';
+    var sup = document.getElementById('modeleSupprimer');
+    sup.classList.remove('armed');
+    sup.textContent = 'SUPPRIMER CE MODÈLE';
+    msgModele('', '');
+    if (liste) rendreListeModeles();
+    else {
+      var m = mode === 'editer' ? lesModeles()[arg] : null;
+      var nom = document.getElementById('modeleNom');
+      var dos = document.getElementById('modeleDossier');
+      nom.value = m ? m.nom : titreSeance(arg);
+      dos.value = m ? (m.dossier || '') : '';
+      document.getElementById('modeleDossiers').innerHTML = dossiersModeles().map(function(d){
+        return '<option value="' + esc(d) + '"></option>';
+      }).join('');
+      document.getElementById('modeleQuoi').textContent = m ? resumeModele(m)
+        : pluriel(exercicesPourModele(arg).length, 'exercice') + ' · ' + titreSeance(arg);
+      document.getElementById('modeleEnregistrer').textContent = m ? 'ENREGISTRER' : 'ENREGISTRER LE MODÈLE';
+      sup.hidden = !m;
+      avertirDoublon();
+    }
+    modeleSheet.hidden = false;
+  }
+  function fermerModeles(){ modeleSheet.hidden = true; }
+  function dossiersModeles(){
+    var vus = {};
+    modelesVivants().forEach(function(m){ if (m.dossier) vus[m.dossier] = 1; });
+    return Object.keys(vus).sort(function(a, b){ return a.localeCompare(b, 'fr'); });
+  }
+  function rendreListeModeles(){
+    var liste = modelesVivants();
+    var hote = document.getElementById('modeleListe');
+    if (!liste.length){
+      hote.innerHTML = '<p class="sheet-note">Aucun modèle pour l\'instant. Ouvre une séance passée, puis ENREGISTRER COMME MODÈLE en bas de sa fiche.</p>';
+      return;
+    }
+    var dossier = '';
+    hote.innerHTML = liste.map(function(m){
+      var tete = '';
+      if ((m.dossier || '') !== dossier){
+        dossier = m.dossier || '';
+        tete = '<div class="modeles-dossier">' + esc(dossier.toUpperCase()) + '</div>';
+      }
+      return tete + '<button type="button" class="modele-ligne" data-editer="' + esc(m.id) + '"><b>' + esc(m.nom) + '</b>'
+        + '<span>' + esc(resumeModele(m)) + '</span>' + ico('crayon', true) + '</button>';
+    }).join('');
+  }
+  // Le nom tape est-il deja celui d'un autre modele ? On le dit avant
+  // d'enregistrer, pas apres.
+  function avertirDoublon(){
+    if (modeleEtat.mode !== 'nouveau') return;
+    var autre = modeleDuNom(document.getElementById('modeleNom').value);
+    if (autre) msgModele('warn', 'Un modèle s\'appelle déjà « ' + autre.nom + ' » : il sera remplacé par cette séance.');
+    else msgModele('', '');
+  }
+  document.getElementById('modeleNom').addEventListener('input', avertirDoublon);
+  modeleSheet.addEventListener('click', function(e){
+    if (e.target === this || e.target.closest('#modeleClose')){ fermerModeles(); return; }
+    var ed = e.target.closest('[data-editer]');
+    if (ed){ ouvrirModeles('editer', ed.dataset.editer); return; }
+    if (e.target.closest('#modeleEnregistrer')){
+      var nom = document.getElementById('modeleNom').value.trim();
+      var dossier = document.getElementById('modeleDossier').value;
+      if (!nom){ msgModele('err', 'Donne-lui un nom.'); document.getElementById('modeleNom').focus(); return; }
+      var r = modeleEtat.mode === 'editer'
+        ? modifierModele(modeleEtat.id, nom, dossier)
+        : enregistrerModele(modeleEtat.ds, nom, dossier);
+      if (r.erreur){ msgModele('err', r.erreur); return; }
+      if (modeleEtat.mode === 'editer'){ ouvrirModeles('liste'); showToast('Modèle enregistré'); }
+      else { fermerModeles(); showToast(r.remplace ? r.modele.nom + ' remplacé' : 'Modèle ' + r.modele.nom + ' enregistré'); }
+      repeindreSiJourVide();
+      return;
+    }
+    // Supprimer se confirme d'un second appui, sur le meme bouton.
+    var sup = e.target.closest('#modeleSupprimer');
+    if (sup){
+      if (!sup.classList.contains('armed')){
+        sup.classList.add('armed');
+        sup.textContent = 'CONFIRMER LA SUPPRESSION';
+        return;
+      }
+      var parti = lesModeles()[modeleEtat.id];
+      supprimerModele(modeleEtat.id);
+      ouvrirModeles('liste');
+      if (parti) showToast(parti.nom + ' supprimé');
+      repeindreSiJourVide();
+    }
   });
 
   // ---------- refaire une seance, sur un jour vide ----------
@@ -7120,6 +7436,10 @@
       modifierSeance(state.seanceOuverte);
       return;
     }
+    if (e.target.closest('#ficheModele')){
+      ouvrirModeles('nouveau', state.seanceOuverte);
+      return;
+    }
     if (e.target.closest('#ficheIA')){
       ouvrirIA(texteSeanceIA(state.seanceOuverte), 'Séance · ' + titreSeance(state.seanceOuverte));
       return;
@@ -7583,7 +7903,10 @@
   // fichier que l'utilisateur garde chez lui, et savent le relire.
   function backupPayload(){
     return { app:'topset', version:2, exportedAt:new Date().toISOString(),
-             sessions:state.sessions, customExercises:customExercises };
+             sessions:state.sessions, customExercises:customExercises,
+             // Ajoute le 16/11/2026 : un fichier plus ancien n'a simplement
+             // pas la cle, et l'import l'ignore.
+             modeles:modelesVivants() };
   }
   function backupJSON(){ return JSON.stringify(backupPayload(), null, 2); }
   function backupFilename(){ return 'topset-' + toDateStr(new Date()) + '.json'; }
@@ -7756,7 +8079,10 @@
     if (!Object.keys(clean).length) return { error:'Aucune s\u00e9ance exploitable dans ce fichier.' };
     var custom = (data.customExercises && typeof data.customExercises === 'object')
       ? nettoyerCustom(data.customExercises) : null;
-    return { sessions:clean, jours:jours, series:series, customExercises:custom };
+    var mods = Array.isArray(data.modeles) ? data.modeles
+      : ((data.modeles && typeof data.modeles === 'object') ? Object.keys(data.modeles).map(function(k){ return data.modeles[k]; }) : []);
+    mods = mods.slice(0, MODELES_MAX).map(modeleSur).filter(function(m){ return m && !m.supprime && m.exercises.length; });
+    return { sessions:clean, jours:jours, series:series, customExercises:custom, modeles:mods };
   }
 
   // Un fichier JSON de Top Set, ou le tableur qu'il exporte. Les deux passent
@@ -7786,7 +8112,15 @@
     return Object.keys(custom).filter(function(k){ return !connus[k.toLowerCase()]; });
   }
 
-  function resumeImport(b, perso){
+  // Les modeles du fichier qu'on n'a pas : ni le meme identifiant, ni le
+  // meme nom parmi ceux qu'on garde. Ce qu'on a deja n'est jamais remplace.
+  function modelesAbsents(liste){
+    var ici = lesModeles();
+    return (liste || []).filter(function(m){
+      return !(ici[m.id] && !ici[m.id].supprime) && !modeleDuNom(m.nom);
+    });
+  }
+  function resumeImport(b, perso, mods){
     var parts = [];
     var jours = b.dates.length;
     if (b.series){
@@ -7801,6 +8135,7 @@
     }
     if (b.titres) parts.push(b.titres + (b.titres > 1 ? ' titres de séance' : ' titre de séance'));
     if (perso) parts.push(perso + (perso > 1 ? ' exercices mémorisés' : ' exercice mémorisé'));
+    if (mods) parts.push(mods + (mods > 1 ? ' modèles de séance' : ' modèle de séance'));
     return parts.join(', ');
   }
 
@@ -7812,9 +8147,10 @@
     if (parsed.error){ disarmImport(); sheetMsg('err', parsed.error); return; }
     var essai = TS.fusionnerCarnets(state.sessions, parsed.sessions, fabriqueId);
     var perso = customAbsents(parsed.customExercises).length;
+    var mods = modelesAbsents(parsed.modeles).length;
     var contenu = parsed.jours + (parsed.jours > 1 ? ' jours' : ' jour') + ', ' +
                   parsed.series + (parsed.series > 1 ? ' séries' : ' série');
-    if (!essai.bilan.exercices && !essai.bilan.titres && !perso){
+    if (!essai.bilan.exercices && !essai.bilan.titres && !perso && !mods){
       disarmImport();
       sheetMsg('ok', 'Le fichier contient ' + contenu + ' — tout est déjà dans ton carnet. Rien à ajouter.');
       return;
@@ -7824,7 +8160,7 @@
     btn.classList.add('armed');
     btn.textContent = 'CONFIRMER L\'AJOUT';
     sheetMsg('warn', 'Le fichier contient ' + contenu + '. À ajouter : ' +
-      resumeImport(essai.bilan, perso) + '. Rien de ce que tu as déjà ne sera modifié.');
+      resumeImport(essai.bilan, perso, mods) + '. Rien de ce que tu as déjà ne sera modifié.');
   }
 
   // Second temps. La fusion est refaite sur le carnet de CET instant : entre
@@ -7836,6 +8172,9 @@
     state.sessions = r.sessions;
     var absents = customAbsents(parsed.customExercises);
     absents.forEach(function(k){ customExercises[k] = parsed.customExercises[k]; });
+    var modsNeufs = modelesAbsents(parsed.modeles);
+    modsNeufs.forEach(function(m){ lesModeles()[m.id] = m; marquerModele(m.id); });
+    if (modsNeufs.length) saveModeles();
     if (absents.length){
       saveCustom();
       rebuildLower();
@@ -7853,7 +8192,7 @@
     disarmImport();
     document.getElementById('dataPaste').value = '';
     refreshSheet();
-    sheetMsg('ok', 'Ajouté : ' + resumeImport(r.bilan, absents.length) + '. Rien n\'a été remplacé.');
+    sheetMsg('ok', 'Ajouté : ' + resumeImport(r.bilan, absents.length, modsNeufs.length) + '. Rien n\'a été remplacé.');
     showToast('Ajouté à ton carnet');
   }
 
@@ -7952,7 +8291,7 @@
 
   // Ouvrir une page depuis une feuille, c'est quitter la feuille.
   function fermerFeuilles(){
-    ['dataSheet', 'profilSheet', 'retourSheet', 'partageSheet', 'iaSheet'].forEach(function(id){
+    ['dataSheet', 'profilSheet', 'retourSheet', 'partageSheet', 'iaSheet', 'modeleSheet'].forEach(function(id){
       var el = document.getElementById(id);
       if (el) el.hidden = true;
     });
@@ -9923,7 +10262,8 @@
       // notée, parfois des jours.
       var enAttente = lireMeta();
       if (!dates.length && !Object.keys(enAttente.titres || {}).length
-          && !Object.keys(enAttente.fins || {}).length && !enAttente.exosSales) return Promise.resolve(0);
+          && !Object.keys(enAttente.fins || {}).length && !enAttente.exosSales
+          && !collEnAttente()) return Promise.resolve(0);
       enCours = true; echec = ''; majUI();
       var resteSale = false;
       return client().then(function(c){
@@ -9965,6 +10305,7 @@
           .then(function(){ return pousserMots().catch(function(){}); })
           .then(function(){ return pousserFins().catch(function(){}); })
           .then(function(){ return pousserHoraires().catch(function(){}); })
+          .then(function(){ return pousserCollections(); })
           .then(function(){ return dates.length; });
       }).then(function(n){
         enCours = false; echecs = 0; majUI();
@@ -10271,6 +10612,132 @@
       if (user) planifier(2500);
     }
 
+    // ------------------------------------- les collections (16/11/2026)
+    // Les modeles de seance (et bientot les pesees) suivent le compte comme
+    // le carnet, par une regle commune a toutes les collections :
+    //   - ce qui est marque ici part au prochain envoi, et la marque ne tombe
+    //     qu'une fois le serveur d'accord ET l'objet inchange depuis ;
+    //   - ce que le compte renvoie remplace ce qui n'est pas marque ici ;
+    //   - ce qui n'existe qu'ici (cree avant le compte, ou avant que le SQL
+    //     soit passe) est marque, et part au tour suivant.
+    // Une base qui n'a pas encore la table ne casse rien : l'appel echoue
+    // seul, la marque reste, et on ne redemande plus jusqu'a la prochaine
+    // ouverture de l'app.
+    var COLLECTIONS = {
+      modeles: {
+        pousser:'pousser_modeles', tirer:'tirer_modeles', arg:'p_modeles',
+        local:function(){ return lesModeles(); },
+        cle:function(o){ return o.id; },
+        versServeur:function(o){
+          return { id:o.id, nom:o.nom, dossier:o.dossier || null, contenu:o.exercises || [], supprime:!!o.supprime };
+        },
+        depuisServeur:function(x){
+          return x ? modeleSur({ id:x.id, nom:x.nom, dossier:x.dossier, exercises:x.contenu,
+                                 supprime:x.supprime, maj:x.maj }) : null;
+        },
+        sauver:function(){ saveModeles(); repeindreSiJourVide(); }
+      }
+    };
+    var collAbsente = {};
+    var collTireeLe = 0;
+    function collSales(nom){
+      var m = lireMeta();
+      return (m.coll && m.coll[nom]) || {};
+    }
+    function collEnAttente(){
+      return Object.keys(COLLECTIONS).some(function(nom){
+        return !collAbsente[nom] && Object.keys(collSales(nom)).length > 0;
+      });
+    }
+    function marquerColl(nom, cle){
+      if (!dispo() || !COLLECTIONS[nom]) return;
+      var q = marque();
+      majMeta(function(m){ m.coll = m.coll || {}; m.coll[nom] = m.coll[nom] || {}; m.coll[nom][cle] = q; });
+      if (user) planifier(2500);
+    }
+    // Une table ou une fonction que la base ne connait pas encore.
+    function collManque(e){
+      var t = String((e && e.code) || '') + ' ' + String((e && e.message) || '');
+      return /PGRST202|PGRST205|42883|42P01|Could not find the function|does not exist/i.test(t);
+    }
+    // L'egalite sans la date de mise a jour, que le serveur pose a sa facon.
+    function sansMaj(o){
+      var c = {};
+      Object.keys(o || {}).sort().forEach(function(k){ if (k !== 'maj') c[k] = o[k]; });
+      return JSON.stringify(c);
+    }
+    function pousserColl(nom){
+      var d = COLLECTIONS[nom];
+      if (!user || collAbsente[nom]) return Promise.resolve();
+      var sales = collSales(nom), cles = Object.keys(sales);
+      if (!cles.length) return Promise.resolve();
+      var local = d.local();
+      var liste = cles.filter(function(k){ return local[k]; }).map(function(k){ return d.versServeur(local[k]); });
+      function liberer(){
+        majMeta(function(m){
+          var mk = m.coll && m.coll[nom];
+          if (mk) cles.forEach(function(k){ if (mk[k] === sales[k]) delete mk[k]; });
+        });
+      }
+      if (!liste.length){ liberer(); return Promise.resolve(); }
+      var args = {}; args[d.arg] = liste;
+      return client().then(function(c){ return avecDelai(c.rpc(d.pousser, args)); }).then(function(r){
+        if (r.error) throw r.error;
+        liberer();
+      }).catch(function(e){ if (collManque(e)) collAbsente[nom] = true; throw e; });
+    }
+    function tirerColl(nom){
+      var d = COLLECTIONS[nom];
+      if (!user || collAbsente[nom]) return Promise.resolve(0);
+      return client().then(function(c){ return avecDelai(c.rpc(d.tirer)); }).then(function(r){
+        if (r.error) throw r.error;
+        var distants = Array.isArray(r.data) ? r.data : [];
+        var sales = collSales(nom), local = d.local(), vus = {}, change = 0, aMarquer = [];
+        distants.forEach(function(x){
+          var o = d.depuisServeur(x);
+          if (!o) return;
+          var k = d.cle(o);
+          vus[k] = true;
+          if (sales[k]) return;          // en attente d'envoi : ce qui est ici gagne
+          if (local[k] && sansMaj(local[k]) === sansMaj(o)) return;
+          local[k] = o;
+          change++;
+        });
+        Object.keys(local).forEach(function(k){
+          if (vus[k] || sales[k]) return;
+          // Une pierre tombale que le compte n'a jamais vue n'a plus rien a dire.
+          if (local[k].supprime){ delete local[k]; change++; return; }
+          aMarquer.push(k);
+        });
+        if (aMarquer.length){
+          var q = marque();
+          majMeta(function(m){
+            m.coll = m.coll || {}; m.coll[nom] = m.coll[nom] || {};
+            aMarquer.forEach(function(k){ m.coll[nom][k] = q; });
+          });
+        }
+        if (change) d.sauver();
+        return change;
+      }).catch(function(e){ if (collManque(e)) collAbsente[nom] = true; throw e; });
+    }
+    function pousserCollections(){
+      var chaine = Promise.resolve();
+      Object.keys(COLLECTIONS).forEach(function(nom){
+        chaine = chaine.then(function(){ return pousserColl(nom).catch(function(){}); });
+      });
+      return chaine;
+    }
+    // Relire le compte a chaque ouverture, puis au plus toutes les trente
+    // minutes : ce sont de petites listes qui changent rarement.
+    function tirerCollections(tout){
+      if (!user || !(tout || Date.now() - collTireeLe > 30 * 60000)) return Promise.resolve();
+      var chaine = Promise.resolve();
+      Object.keys(COLLECTIONS).forEach(function(nom){
+        chaine = chaine.then(function(){ return tirerColl(nom).catch(function(){}); });
+      });
+      return chaine.then(function(){ collTireeLe = Date.now(); });
+    }
+
     function synchroniser(){
       if (!user) return Promise.resolve();
       // La lecture ordinaire ne redemande que ce qui a change depuis le
@@ -10299,6 +10766,7 @@
           }
           return n;
         }, function(e){ if (montrerVoile) cacherLoader(); throw e; })
+        .then(function(){ return tirerCollections(tout); })
         .then(pousser)
         .then(function(){
           return lireMeta().exosSales ? pousserExos().catch(function(){}) : null;
@@ -10638,6 +11106,9 @@
           sales:    m.sales  || {},
           titres:   m.titres || {},
           depuis:   m.depuis || null,
+          // Les collections suivent leur proprietaire, avec leur file d'envoi.
+          modeles:  lesModeles(),
+          coll:     m.coll || {},
           jours:    jours,
           range_le: new Date().toISOString()
         }));
@@ -10652,10 +11123,12 @@
       state.sessions = normalizeLocal(p.sessions);
       customExercises = (p.custom && typeof p.custom === 'object') ? p.custom : {};
       saveLocal(); saveCustom(); rebuildLower(); populateDatalist();
+      remplacerModeles(p.modeles || {});
       majMeta(function(m){
         m.sales  = p.sales  || {};
         m.titres = p.titres || {};
         m.depuis = p.depuis || null;
+        m.coll   = p.coll   || {};
       });
       try { localStorage.removeItem(clePark(id)); } catch(e){}
       return joursRemplis(state.sessions);
@@ -10673,6 +11146,7 @@
       // (15/10/2026)
       viderStockageCarnet();
       saveLocal(); saveCustom(); rebuildLower(); populateDatalist();
+      remplacerModeles({});
       // La file d'envoi et le curseur appartiennent au carnet qu'on vient de
       // ranger : les garder ferait pousser les journees d'un compte vers
       // l'autre a la premiere synchro.
@@ -10681,7 +11155,7 @@
       // n'ont rien a faire dans la file du compte qui arrive. (22/10/2026)
       majMeta(function(m){
         m.sales = {}; m.titres = {}; m.cycles = {}; m.mots = {};
-        m.fins = {}; m.horaires = {}; m.depuis = null;
+        m.fins = {}; m.horaires = {}; m.depuis = null; m.coll = {};
       });
     }
 
@@ -11254,7 +11728,7 @@
       adminMembres:function(){ return rpcAdmin('admin_membres'); },
       adminRetours:function(s){ return rpcAdmin('admin_retours', { p_statut: s || null }); },
       adminMarquer:function(id, s){ return rpcAdmin('admin_marquer_retour', { p_id:id, p_statut:s }); },
-      marquerExos:marquerExos, marquerTitre:marquerTitre, marquerFin:marquerFin,
+      marquerExos:marquerExos, marquerTitre:marquerTitre, marquerFin:marquerFin, marquerColl:marquerColl,
       marquerCycle:marquerCycle, marquerCommentaire:marquerCommentaire,
       enregistrerPseudo:enregistrerPseudo, envoyerLienMdp:envoyerLienMdp,
       changerMdp:changerMdp, modeAccueil:modeAccueil,

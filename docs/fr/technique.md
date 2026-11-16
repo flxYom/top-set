@@ -144,7 +144,18 @@ cd supabase/test && npm install && npm test
 `test-rls.mjs` attaque les règles depuis le rôle `authenticated`, comme le
 ferait le navigateur : écriture, journée rejouée sans doublon, isolation entre
 utilisateurs, lien coach, messagerie, notifications, visiteur anonyme, cascade à
-la suppression du compte.
+la suppression du compte, modèles de séance (§15).
+
+**Les petites collections (16/11/2026).** Les modèles de séance suivent le
+compte par une règle commune, écrite une fois dans `Sync` (`COLLECTIONS`) : ce
+qui est marqué ici part au prochain envoi, et la marque ne tombe qu'une fois le
+serveur d'accord et l'objet inchangé ; ce que le compte renvoie remplace ce qui
+n'est pas marqué ; ce qui n'existe qu'ici est marqué et part au tour suivant.
+On relit le compte à chaque ouverture, puis au plus toutes les trente minutes.
+Une suppression est une pierre tombale, gardée six mois en base. Une base qui
+n'a pas encore la table ne casse rien : l'appel échoue seul (`PGRST202`), et on
+ne le retente qu'à l'ouverture suivante. Le SQL à coller est
+`supabase/modeles-et-pesees.txt`.
 
 `test-montee.mjs` installe **chaque version passée** du schéma sur une base
 neuve, y met des données, puis passe la version actuelle deux fois. La base de

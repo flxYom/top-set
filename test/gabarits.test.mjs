@@ -592,7 +592,7 @@ ok('un exercice d une seance faite s ajoute a la seance du jour, series comprise
    /function ajouterAuJour\(dsSource, exId\)\{/.test(SRC) && /data-ajout-jour="/.test(SRC)
    && /data-action="ajout-jour"/.test(SRC) && /function seanceFaite\(ds\)\{/.test(SRC));
 ok('un jour vide propose de refaire la seance de la semaine d avant ou la derniere',
-   /function seancesARefaire\(ds\)\{/.test(SRC) && /data-refaire="/.test(SRC) && /\+ refaireHTML\(ds\);/.test(SRC));
+   /function seancesARefaire\(ds\)\{/.test(SRC) && /data-refaire="/.test(SRC) && /\+ refaireHTML\(ds\)( \+ modelesHTML\(\))?;/.test(SRC));
 
 ok('le bilan compare a la meme seance la semaine d avant, sans tonnage',
    /function seanceComparable\(ds, cles, minimum\)\{/.test(SRC) && /function comparerExo\(e, avant\)\{/.test(SRC)
@@ -1766,7 +1766,7 @@ ok('la seance dit la fois d avant, la periode la premiere et la derniere',
 ok('l annee ne detaille pas chaque seance', /if \(periode !== 'annee'\)\{/.test(SRC));
 ok('copier : le presse-papiers, sinon le texte selectionne',
    /navigator\.clipboard\.writeText\(ta\.value\)\.then\(/.test(SRC) && /ta\.setSelectionRange\(0, ta\.value\.length\)/.test(SRC));
-ok('la feuille se ferme avec les autres', /'partageSheet', 'iaSheet'\]\.forEach/.test(SRC));
+ok('la feuille se ferme avec les autres', /'partageSheet', 'iaSheet'(, '\w+')*\]\.forEach/.test(SRC));
 ok('aucune taille de police sur le texte (garde iOS)', !/\.ia-texte\{[^}]*font-size/.test(REFONTE));
 
 console.log('\n== 48. L annee, ecran par ecran (16/11) ==');
@@ -1840,6 +1840,46 @@ ok('le deploiement minifie aussi le CSS', (() => { const B = lireLF('../build.mj
    return /const CSS_EN_LIGNE = \['index\.html'\];/.test(B) && /const CSS_FICHIERS = \['css\/contenu\.css', 'css\/legal\.css'\];/.test(B)
      && /CSS_FICHIERS\.every|for \(const fichier of CSS_FICHIERS\)/.test(B)
      && CSS_EN_LIGNE_OK(B); })());
+
+console.log('\n== 53. Modeles de seance (16/11) ==');
+ok('les modeles vivent sous topset_modeles, normalises comme une journee',
+   /var MODELES_KEY = 'topset_modeles';/.test(SRC) && /function modeleSur\(m\)\{[\s\S]{0,900}normalizeExercise\(e\)/.test(SRC));
+ok('un modele lance reprend la derniere fois de chaque exercice',
+   /function lancerModele\(id\)\{[\s\S]{0,1400}precedentDe\(ex\)[\s\S]{0,300}repriseSerie\(s,/.test(SRC));
+ok('sans modele, le jour vide ne change pas', /function modelesHTML\(\)\{\s*var liste = modelesVivants\(\);\s*if \(!liste\.length\) return '';/.test(SRC)
+   && /refaireHTML\(ds\) \+ modelesHTML\(\);/.test(SRC));
+ok('ENREGISTRER COMME MODELE vient apres tous les boutons de la fiche',
+   /id="ficheSelectionner"[\s\S]{0,400}id="ficheModele"[\s\S]{0,120}hote\.innerHTML = html;/.test(SRC));
+ok('remplacer un modele garde son dossier', /if \(meme && !String\(dossier \|\| ''\)\.trim\(\)\) dossier = meme\.dossier \|\| '';/.test(SRC));
+ok('la synchro des collections : modeles, table absente toleree',
+   /modeles: \{\s*pousser:'pousser_modeles', tirer:'tirer_modeles', arg:'p_modeles'/.test(SRC)
+   && /function collManque\(e\)/.test(SRC) && /PGRST202/.test(SRC));
+ok('les collections se tirent avant l envoi, et partent avec les journees',
+   /\.then\(function\(\)\{ return tirerCollections\(tout\); \}\)\s*\.then\(pousser\)/.test(SRC)
+   && /\.then\(function\(\)\{ return pousserCollections\(\); \}\)/.test(SRC) && /&& !collEnAttente\(\)\) return Promise\.resolve\(0\);/.test(SRC));
+ok('un carnet par compte : les modeles et leur file suivent le proprietaire',
+   /modeles:  lesModeles\(\),\s*coll:     m\.coll \|\| \{\},/.test(SRC) && /remplacerModeles\(p\.modeles \|\| \{\}\);/.test(SRC)
+   && /remplacerModeles\(\{\}\);/.test(SRC) && /m\.depuis = null; m\.coll = \{\};/.test(SRC));
+ok('la sauvegarde JSON porte les modeles, l import ajoute ceux qui manquent',
+   /modeles:modelesVivants\(\) \};/.test(SRC) && /function modelesAbsents\(liste\)/.test(SRC));
+ok('le panneau existe et se ferme avec les autres', /id="modeleSheet"/.test(HTML) && /'iaSheet', 'modeleSheet'\]/.test(SRC));
+ok('son CSS est dans la couche refonte', REFONTE.includes('.modeles-jour{') && REFONTE.includes('.modele-ligne{'));
+// Vu a 320 px le 16/11 : sans borne, le resume d'un modele au nom long
+// faisait defiler toute la page de cote.
+ok('le resume d un modele ne pousse jamais la page', REFONTE.includes('.btn-modele .btn-refaire-titre{max-width:100%;'));
+{
+  const S = lireLF('../supabase/schema.sql');
+  const T = existsSync(new URL('../supabase/modeles-et-pesees.txt', import.meta.url)) ? lireLF('../supabase/modeles-et-pesees.txt') : '';
+  const bloc = (S.split('15. LES MODÈLES DE SÉANCE')[1] || '');
+  ok('schema.sql : la table modeles, sa RLS et sa policy proprietaire',
+     /create table if not exists public\.modeles/.test(bloc) && /alter table public\.modeles enable row level security;/.test(bloc)
+     && /using \(auth\.uid\(\) = user_id\) with check \(auth\.uid\(\) = user_id\)/.test(bloc));
+  ok('schema.sql : anon n a rien, les fonctions sont reservees aux connectes',
+     /revoke all on public\.modeles from anon;/.test(bloc) && /revoke execute on function public\.pousser_modeles\(jsonb\) from anon, public;/.test(bloc)
+     && !/security definer/i.test(bloc));
+  ok('le fichier a coller porte la garde Yom Nutrition et la meme section',
+     /aliments_ciqual/.test(T) && T.includes('15. LES MODÈLES DE SÉANCE') && T.includes('create or replace function public.tirer_modeles()'));
+}
 
 console.log(`\n${pass} reussis, ${fail} echoues`);
 process.exit(fail ? 1 : 0);

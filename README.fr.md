@@ -49,7 +49,9 @@ c'est exactement à ça que sert ce repo pour l'instant.
   coupes la question d'un réglage.
 - **Ne pas repartir de zéro.** Refaire la dernière fois, les exercices de la
   semaine d'avant, la charge suggérée. `↺ DERNIÈRE FOIS` remplit les séries de
-  la séance précédente et n'écrase jamais ce qui est déjà saisi.
+  la séance précédente et n'écrase jamais ce qui est déjà saisi. Une séance se
+  garde comme modèle (« Push A », rangé en dossier) et se relance d'un appui
+  sur un jour vide, avec les charges de ta dernière fois.
 - **Envoyer ses perfs à un ami.** On devient amis par un code, des deux côtés ;
   un exercice, une séance ou un récap part chez les amis qu'on choisit, en copie
   figée. Pas de fil, pas de compteurs, pas de classement, pas de story.
@@ -161,8 +163,9 @@ réunies dans une seule boîte avec sa pastille ; les exercices au temps et leur
 chrono ; le cardio (minutes, vitesse, inclinaison) ; l'import qui ajoute sans
 remplacer, JSON comme tableur ; le profil et les données séparés.
 
-**En cours :** des modèles de séance rangés en dossiers, assignables dans le
-carnet d'un coaché, et un retour de séance. `profils` est le socle de tout ça —
+**En cours :** les modèles de séance existent, rangés en dossiers et
+synchronisés (16/11/2026) ; il reste à les rendre assignables dans le carnet
+d'un coaché, et un retour de séance. `profils` est le socle de tout ça —
 c'est pour elle qu'elle a été écrite en premier.
 
 **Encore ouvert :** le retour du lien de réinitialisation du mot de passe n'a

@@ -9,6 +9,30 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ## [Unreleased]
 
+### Added — session templates (2026-11-16)
+
+- Save any session as a named template ("Push A"), optionally filed in a
+  folder, from the last button of its page (`ENREGISTRER COMME MODÈLE`).
+  An empty day lists the templates under the existing `REFAIRE` buttons
+  (`LANCER PUSH A`); without any template that screen is unchanged. A
+  template keeps the order, the exercises and the supersets; when launched,
+  each exercise takes its last time (same rule as `↺ DERNIÈRE FOIS`, cycle
+  first) and falls back on the template's own sets, so a template saved in
+  September does not bring back September's weights. The session takes the
+  template's name when it has none. `GÉRER` renames, files and deletes
+  (second tap confirms).
+- Stored locally under `topset_modeles` and, with an account, in a new
+  `modeles` table (RLS owner-only, bounded name, folder and content, a
+  500-row cap held by a trigger, six-month tombstones so a deletion reaches
+  the other phone). One sync rule for every small collection: marked items
+  are pushed, the account's version replaces unmarked ones, local-only items
+  are marked. A database without the table breaks nothing: the call fails
+  alone and is not retried until the next launch. Templates follow their
+  owner on an account switch and travel in the JSON backup; an import adds
+  the missing ones and never replaces. SQL in
+  `supabase/modeles-et-pesees.txt` (section 15 of `schema.sql`), tested on
+  PGlite (`test-rls.mjs` §15). Service worker v79, gabarits §53.
+
 ### Changed — faster screens, lighter first load (2026-11-16)
 
 - Exercise-name normalisation (accents, shorthand, canonical name, muscle)

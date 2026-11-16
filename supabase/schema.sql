@@ -2731,3 +2731,150 @@ grant execute on function public.partages_non_lus()               to authenticat
 drop trigger if exists plafond_partages on public.partages;
 create trigger plafond_partages before insert on public.partages
   for each row execute function public.plafond_envois();
+
+
+-- ============================================================================
+-- 15. LES MODÈLES DE SÉANCE (16/11/2026)
+-- ============================================================================
+-- « Push A », enregistré une fois et relancé d'un appui. Un modèle est une
+-- petite liste d'exercices et de séries prévues, gardée en un seul bloc JSON :
+-- l'app le lit et l'écrit d'un tenant, comme une journée. Il ne sert qu'à son
+-- auteur : aucun coach, aucun ami, aucun administrateur ne le lit.
+--
+-- Un modèle supprimé reste une ligne « supprime » quelque temps : c'est ce qui
+-- permet à un autre téléphone d'apprendre la suppression au lieu de renvoyer
+-- le modèle.
+create table if not exists public.modeles (
+  user_id    uuid not null references auth.users (id) on delete cascade,
+  id         uuid not null,
+  nom        text not null,
+  dossier    text,
+  contenu    jsonb not null default '[]'::jsonb,
+  supprime   boolean not null default false,
+  updated_at timestamptz not null default now(),
+  primary key (user_id, id)
+);
+
+-- Les bornes vivent dans la table, pas seulement dans l'app : une écriture
+-- directe passe par elles aussi.
+alter table public.modeles drop constraint if exists modeles_nom_borne;
+alter table public.modeles add  constraint modeles_nom_borne
+  check (char_length(nom) between 1 and 60);
+alter table public.modeles drop constraint if exists modeles_dossier_borne;
+alter table public.modeles add  constraint modeles_dossier_borne
+  check (dossier is null or char_length(dossier) between 1 and 40);
+alter table public.modeles drop constraint if exists modeles_contenu_borne;
+alter table public.modeles add  constraint modeles_contenu_borne
+  check (jsonb_typeof(contenu) = 'array' and octet_length(contenu::text) <= 262144);
+
+alter table public.modeles enable row level security;
+
+drop policy if exists "Chacun gere ses modeles" on public.modeles;
+create policy "Chacun gere ses modeles"
+  on public.modeles for all
+  using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+revoke all on public.modeles from anon;
+grant select, insert, update, delete on public.modeles to authenticated;
+
+-- Un plafond tenu par la base : 500 lignes par personne, pierres tombales
+-- comprises (l'app en garde 100 au plus). Une mise à jour d'un modèle qui
+-- existe déjà passe toujours.
+create or replace function public.plafond_modeles()
+returns trigger
+language plpgsql
+security invoker
+set search_path = public
+as $$
+begin
+  if not exists (select 1 from public.modeles where user_id = new.user_id and id = new.id)
+     and (select count(*) from public.modeles where user_id = new.user_id) >= 500 then
+    raise exception 'Trop de modèles enregistrés.';
+  end if;
+  return new;
+end;
+$$;
+revoke all on function public.plafond_modeles() from public, anon, authenticated;
+
+drop trigger if exists plafond_modeles on public.modeles;
+create trigger plafond_modeles before insert on public.modeles
+  for each row execute function public.plafond_modeles();
+
+-- L'envoi : une liste de modèles, chacun remplacé en entier. SECURITY INVOKER,
+-- comme pousser_jour : la RLS s'applique, on n'écrit que chez soi.
+create or replace function public.pousser_modeles(p_modeles jsonb)
+returns timestamptz
+language plpgsql
+security invoker
+set search_path = public
+as $$
+declare
+  v_user uuid := auth.uid();
+  v_liste jsonb := coalesce(p_modeles, '[]'::jsonb);
+  v_m    jsonb;
+  v_sup  boolean;
+begin
+  if v_user is null then
+    raise exception 'Aucune session : connexion requise.';
+  end if;
+  if jsonb_typeof(v_liste) <> 'array' or jsonb_array_length(v_liste) > 200 then
+    raise exception 'Envoi de modèles invalide.';
+  end if;
+
+  -- Une pierre tombale de plus de six mois a fait son travail.
+  delete from public.modeles
+   where user_id = v_user and supprime and updated_at < now() - interval '180 days';
+
+  for v_m in select * from jsonb_array_elements(v_liste)
+  loop
+    -- Un identifiant qui n'est pas un UUID est ignoré, pas remplacé : un
+    -- identifiant neuf à chaque envoi dupliquerait le modèle.
+    continue when jsonb_typeof(v_m) <> 'object'
+      or coalesce(v_m ->> 'id', '') !~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$';
+    v_sup := coalesce(v_m -> 'supprime' = 'true'::jsonb, false);
+
+    insert into public.modeles (user_id, id, nom, dossier, contenu, supprime, updated_at)
+    values (v_user,
+            (v_m ->> 'id')::uuid,
+            left(coalesce(nullif(trim(v_m ->> 'nom'), ''), 'Modèle'), 60),
+            nullif(trim(left(coalesce(v_m ->> 'dossier', ''), 40)), ''),
+            case when v_sup then '[]'::jsonb
+                 when jsonb_typeof(v_m -> 'contenu') = 'array' then v_m -> 'contenu'
+                 else '[]'::jsonb end,
+            v_sup,
+            now())
+    on conflict (user_id, id) do update
+      set nom        = excluded.nom,
+          dossier    = excluded.dossier,
+          contenu    = excluded.contenu,
+          supprime   = excluded.supprime,
+          updated_at = now();
+  end loop;
+
+  return now();
+end;
+$$;
+
+create or replace function public.tirer_modeles()
+returns jsonb
+language sql
+security invoker
+stable
+set search_path = public
+as $$
+  select coalesce(jsonb_agg(jsonb_build_object(
+           'id',       m.id,
+           'nom',      m.nom,
+           'dossier',  m.dossier,
+           'contenu',  m.contenu,
+           'supprime', m.supprime,
+           'maj',      m.updated_at
+         ) order by m.updated_at), '[]'::jsonb)
+  from public.modeles m
+  where m.user_id = auth.uid();
+$$;
+
+revoke execute on function public.pousser_modeles(jsonb) from anon, public;
+revoke execute on function public.tirer_modeles()        from anon, public;
+grant  execute on function public.pousser_modeles(jsonb) to authenticated;
+grant  execute on function public.tirer_modeles()        to authenticated;

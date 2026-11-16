@@ -595,6 +595,22 @@ read and copies nothing:
   before) and `↺ REFAIRE MA DERNIÈRE SÉANCE` when it is a different one, with
   their title; everything is copied by `selectionnerSeance`.
 
+**Session templates (2026-11-16).** The last button of a session's page,
+`ENREGISTRER COMME MODÈLE`, saves it under a name ("Push A") and, optionally,
+in a folder. The same name replaces the existing template, which the sheet
+says before saving; a folder left empty keeps its own. On an empty day the
+templates line up under the `REFAIRE` buttons (`LANCER PUSH A`, unfiled
+first, then by folder); with no template the screen is unchanged. A template
+keeps the order, the exercises and the supersets (with a fresh block on each
+launch). When launched, each exercise takes its last time, like
+`↺ DERNIÈRE FOIS` (same cycle first), otherwise the template's sets: a
+September template does not bring back September's weights. Nothing is
+ticked, and the session takes the template's name when it has none
+(`lancerModele`). `GÉRER` renames, files and deletes; deleting takes a second
+tap. Templates live under `topset_modeles`, follow the account (`modeles`
+table), move with their owner when another account signs in, and travel in
+the JSON backup; an import only adds the missing ones.
+
 **What went with it last week.** Under `+ AJOUTER UN EXERCICE`, as soon as an
 exercise of the day has a name: the exercises of the same session last week
 (same matching as the recap, one exercise in common is enough) that are not in

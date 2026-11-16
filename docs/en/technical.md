@@ -138,7 +138,17 @@ cd supabase/test && npm install && npm test
 `test-rls.mjs` attacks the rules from the `authenticated` role, as the browser
 would: writes, replaying a day without duplicates, isolation between users, the
 coach link, messaging, notifications, anonymous visitors, cascade on account
-deletion.
+deletion, session templates (§15).
+
+**Small collections (2026-11-16).** Session templates follow the account by
+one shared rule, written once in `Sync` (`COLLECTIONS`): marked items are
+pushed, and the mark only drops once the server agrees and the item has not
+changed; the account's version replaces unmarked items; local-only items are
+marked and go next time. The account is re-read at every launch, then at most
+every thirty minutes. A deletion is a tombstone, kept six months in the
+database. A database without the table breaks nothing: the call fails alone
+(`PGRST202`) and is only retried at the next launch. The SQL to paste is
+`supabase/modeles-et-pesees.txt`.
 
 `test-montee.mjs` installs **every past version** of the schema on a fresh
 database, adds data, then applies the current one twice. The production database

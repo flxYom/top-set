@@ -3653,6 +3653,28 @@ a.ex-menu-item{display:flex;align-items:center;text-decoration:none;}
    le record. */
 .serie-prec.top{color:var(--ink);font-weight:800;}
 @media (prefers-reduced-motion:reduce){ .serie-pr{animation:none;} }
+
+/* ---------- Les modeles de seance (16/11/2026) ----------
+   Sous les boutons REFAIRE d'un jour vide, avec la meme carte : un modele se
+   lance comme on refait une seance. Le titre de groupe est celui des autres
+   sous-titres de l'app ; rien ne s'affiche tant qu'il n'y a pas de modele. */
+.modeles-jour{display:flex;flex-direction:column;gap:8px;margin-top:14px;}
+.modeles-tete{display:flex;align-items:center;justify-content:space-between;gap:12px;
+  font:700 var(--t-1)/1 var(--f-ui);letter-spacing:.12em;color:var(--dim);}
+.modeles-gerer{min-height:44px;padding:0 4px 0 12px;border:0;background:none;
+  font:800 var(--t-1)/1 var(--f-ui);letter-spacing:.1em;color:var(--orange);}
+.modeles-dossier{margin-top:6px;font:700 var(--t-1)/1.2 var(--f-ui);letter-spacing:.12em;color:var(--dim);}
+/* La carte est une colonne alignee a gauche : sans borne, une ligne qui ne
+   passe pas a la ligne prend sa largeur naturelle et pousse la page. */
+.btn-modele .btn-refaire-titre{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.modele-liste{display:flex;flex-direction:column;gap:8px;}
+.modele-ligne{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:12px;align-items:center;
+  width:100%;min-height:56px;padding:10px 14px;text-align:left;
+  border:1px solid var(--trait);border-radius:var(--r-m);background:var(--s2);color:var(--ink);}
+.modele-ligne b{font:700 var(--t-3)/1.25 var(--f-ui);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.modele-ligne span{grid-column:1;font-size:var(--t-2);color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.modele-ligne .ico{grid-column:2;grid-row:1 / span 2;color:var(--dim);}
+.modele-ligne:active{border-color:var(--orange);}
 </style>
 </head>
 
@@ -4215,6 +4237,35 @@ a.ex-menu-item{display:flex;align-items:center;text-decoration:none;}
       Colle-le dans Claude, ChatGPT ou l'IA de ton choix. Rien ne part d'ici :
       c'est toi qui le colles, et seulement ce texte.
     </p>
+  </div>
+</div>
+
+<!-- Les modeles de seance (16/11/2026) : enregistrer une seance sous un nom,
+     puis ranger, renommer ou supprimer. Le lancement se fait sur un jour vide,
+     sous les boutons REFAIRE. -->
+<div class="sheet" id="modeleSheet" hidden>
+  <div class="sheet-card" role="dialog" aria-modal="true" aria-labelledby="modeleTitre">
+    <div class="sheet-head">
+      <h2 id="modeleTitre">MODÈLE DE SÉANCE</h2>
+      <button type="button" class="icon-btn" id="modeleClose" aria-label="Fermer"><svg class="ico seul" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+    <div class="modele-liste" id="modeleListe" hidden></div>
+    <div id="modeleForm" hidden>
+      <div class="pg-quoi" id="modeleQuoi">—</div>
+      <label class="sheet-label" for="modeleNom">NOM</label>
+      <input type="text" class="sheet-input" id="modeleNom" maxlength="60" autocomplete="off" enterkeyhint="done" placeholder="Push A">
+      <label class="sheet-label espace" for="modeleDossier">DOSSIER (FACULTATIF)</label>
+      <input type="text" class="sheet-input" id="modeleDossier" maxlength="40" autocomplete="off" enterkeyhint="done" list="modeleDossiers" placeholder="Programme du lundi">
+      <datalist id="modeleDossiers"></datalist>
+      <p class="sheet-msg" id="modeleMsg" hidden></p>
+      <button type="button" class="btn-sheet primary" id="modeleEnregistrer">ENREGISTRER LE MODÈLE</button>
+      <button type="button" class="btn-sheet danger" id="modeleSupprimer" hidden>SUPPRIMER CE MODÈLE</button>
+      <p class="sheet-note">
+        Un modèle se lance sur un jour vide, sous les boutons REFAIRE. Il garde
+        l'ordre, les exercices et les supersets ; chaque exercice reprend ta
+        dernière fois.
+      </p>
+    </div>
   </div>
 </div>
 
