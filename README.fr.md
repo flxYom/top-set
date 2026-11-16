@@ -78,8 +78,9 @@ c'est exactement à ça que sert ce repo pour l'instant.
 - **Demander l'avis d'une IA.** Une séance ou une période se copie en texte
   propre, question et unités comprises, prête à coller dans Claude ou ChatGPT.
 - **Garder la main sur ses données.** Hors-ligne, sans compte par défaut, export
-  et import JSON ou tableur, et `EXPORTER MES DONNÉES` : tout le carnet en Excel,
-  ou tout l'historique prêt pour une IA. Un compte facultatif synchronise le carnet d'un
+  et import JSON ou tableur, et `EXPORTER MES DONNÉES` : un carnet PDF qui montre
+  son profil à un coach d'un coup d'œil, tout le carnet en Excel, ou tout
+  l'historique prêt pour une IA. Un compte facultatif synchronise le carnet d'un
   appareil à l'autre.
 - **Ne pas perdre une séance.** Une seule clé de stockage pour tout l'appareil :
   une page de l'app relit donc le carnet avant d'écrire, pour ne pas effacer ce

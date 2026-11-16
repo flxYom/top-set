@@ -423,6 +423,36 @@ Cible :
 - Poids : une image d'interface doit rester sous 25 Ko en WebP, et partir dans
   le cache hors ligne (`A_PRECHARGER` dans `sw.js`).
 
+## 9 bis. Le carnet PDF (16/11/2026)
+
+Un document qu'un coach lit sur un écran ou imprime : la page est **blanche**,
+pas la salle noire. La marque tient dans un bandeau sombre en tête de la
+page 1 (`#0c0b0a`, le mot TOP SET, le pseudo, la période) ; le reste est de
+l'encre (`#17140f`, puis `#57514a` et `#8a8277` pour le secondaire), des filets
+(`#e3ddd4`) et un fond doux (`#f4f2ef`) pour les tuiles et une ligne sur deux.
+
+- **L'orange** marque ce qui est atteint : une semaine qui tient l'objectif,
+  le dernier point d'une courbe, la ligne d'objectif (en pointillé, foncé
+  `#c7401f` pour rester lisible sur blanc). Une semaine sous l'objectif est
+  grise, pas rouge : ce n'est pas une faute.
+- **Les couleurs des groupes** ne servent qu'en aplat (barres, pastilles),
+  jamais en texte : pensées pour le fond sombre, elles manquent de contraste
+  sur blanc.
+- **La tendance** a ses deux couleurs de sens (`#1c8a5a` en hausse,
+  `#c23b2a` en baisse) et un mot, « stable », sous 2 % d'écart : la couleur
+  n'est jamais seule à parler.
+- **Typographie** : Bricolage Grotesque pour les titres, les grands chiffres
+  et la phrase de synthèse ; la police système pour le reste. Les nombres
+  d'une colonne sont alignés à droite.
+- **Une phrase avant les chiffres** : la page 1 s'ouvre sur la synthèse
+  (rythme, groupes, durée, fourchette de répétitions). C'est elle qu'un coach
+  lit en premier.
+- **Notation de salle** dans le détail : `100×5×3` pour trois séries
+  identiques, `É` pour l'échauffement, `@8` pour le RPE.
+- Aucun texte ne se chevauche : le dessin note chaque boîte de texte, et les
+  essais vérifient qu'aucune n'en touche une autre ni ne sort des marges
+  (40 pt).
+
 ## 10. Responsive et ergonomie en séance
 
 - **Téléphone d'abord.** Sous 900 px, les onglets sont en bas, sous le pouce.

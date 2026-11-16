@@ -971,6 +971,22 @@ vraiment à grand-chose »). Dans le compte, `EXPORTER MES DONNÉES` remplace
 au retour du réseau et après chaque note. Sans compte, le même écran s'ouvre
 depuis `TES DONNÉES`, après le tableur. Les fichiers sont faits dans le
 téléphone et ne passent par aucun serveur :
+- **Le carnet en PDF**, pour un coach (« tu le regardes et tu dis : ok, ce
+  mec fait ça, ça et ça »). Page 1, le profil d'un coup d'œil : une phrase de
+  synthèse, quatre chiffres (séances, par semaine, durée moyenne, séries par
+  séance), les 12 dernières semaines face à l'objectif, les séries par groupe,
+  les habitudes (jours, moment, repos médian, RPE, fourchettes de répétitions,
+  séances types, poids du corps, heures) et les exercices de base avec leur
+  dernier top set et leur tendance sur 12 semaines. Page 2 : les meilleures
+  séries, la charge max, le 1RM estimé du début à la fin, les exercices au
+  temps, et la courbe des charges des six exercices principaux. Page 3 : les
+  séances par semaine (52 semaines), les séries par semaine et par groupe,
+  la durée des séances, le repos médian par exercice, mois par mois. Ensuite,
+  les 8 dernières semaines séance par séance, en notation de salle
+  (`100×5×3` = trois séries de 5 à 100 kg), et la légende. Chaque page A4 est
+  dessinée sur un canvas puis rangée en JPEG dans un PDF écrit à la main ; le
+  dessin note la boîte de chaque texte, et `verifierMiseEnPage` signale tout
+  chevauchement ou débordement (0 sur un carnet de 18 mois : 7 pages, 1,7 Mo).
 - **Tout en Excel** (`.xlsx`) : six onglets — Séries (une ligne par série),
   Séances (horaires, durée, volume, repos médian, ressenti), Semaines (du lundi
   au dimanche, semaines vides comprises, séries par groupe), Exercices (charge

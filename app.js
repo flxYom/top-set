@@ -10791,6 +10791,11 @@
     return exportLib;
   }
 
+  // Les polices du carnet PDF : celles de l'app, titres en Bricolage.
+  var POLICES_EXPORT = {
+    titre:'"Bricolage Grotesque", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    texte:'-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
+  };
   var exportSheet = document.getElementById('exportSheet');
   var exportPret = null;   // { format, fichier, blob, nom } : un partage a refaire
   var MIME_XLSX = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
@@ -10820,6 +10825,7 @@
       : 'Aucune séance notée pour l\'instant.';
     exportSheet.hidden = false;
     chargerExport().catch(function(){});
+    if (document.fonts && document.fonts.load) document.fonts.load('800 20px "Bricolage Grotesque"').catch(function(){});
   }
   function fermerExport(){ exportSheet.hidden = true; oublierExportPret(); }
   function nomExport(quoi, ext){ return 'topset-' + quoi + '-' + toDateStr(new Date()) + '.' + ext; }
@@ -10902,9 +10908,28 @@
       if (format === 'xlsx') livrerExport('xlsx', lib.xlsx(a), nomExport('donnees', 'xlsx'), MIME_XLSX);
       else if (format === 'ia') livrerExport('ia', lib.texteIA(a), nomExport('pour-ia', 'txt'), 'text/plain;charset=utf-8');
       else if (format === 'ia-copier') copierExport(lib.texteIA(a));
+      else if (format === 'pdf') exporterCarnet(lib, a);
     } catch (err) {
       exportMsg('err', 'L\'export n\'a pas abouti. La sauvegarde complète (.json) de TES DONNÉES reste possible.');
     }
+  }
+  // Le carnet se dessine page par page (une seconde sur un telephone) : le
+  // bouton le dit d'abord, puis le fichier part. Si iOS refuse ce partage
+  // un peu tardif, le bouton devient « ENVOYER PDF » et le suivant l'envoie.
+  function exporterCarnet(lib, a){
+    var b = exportSheet.querySelector('[data-export="pdf"]');
+    b.disabled = true;
+    b.textContent = 'PRÉPARATION DU CARNET…';
+    setTimeout(function(){
+      try {
+        var res = lib.carnetPdf(a, { creerCanvas:function(){ return document.createElement('canvas'); }, police:POLICES_EXPORT });
+        livrerExport('pdf', res.octets, nomExport('carnet', 'pdf'), 'application/pdf');
+      } catch (err) {
+        exportMsg('err', 'Le carnet n\'a pas pu se dessiner sur cet appareil. Le classeur Excel et le texte pour une IA restent possibles.');
+      }
+      b.disabled = false;
+      if (!(exportPret && exportPret.format === 'pdf')) b.textContent = EXPORT_LIBELLES.pdf;
+    }, 30);
   }
   [].forEach.call(exportSheet.querySelectorAll('[data-export]'), function(b){ EXPORT_LIBELLES[b.dataset.export] = b.textContent; });
   exportSheet.addEventListener('click', function(e){

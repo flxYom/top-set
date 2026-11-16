@@ -56,7 +56,7 @@
   }
   function dateCourte(ds) {
     var p = parties(ds);
-    return p[2] + ' ' + MOIS_COURT[p[1] - 1];
+    return (p[2] === 1 ? '1er' : p[2]) + ' ' + MOIS_COURT[p[1] - 1];
   }
   function dateCourteAn(ds) { return dateCourte(ds) + ' ' + parties(ds)[0]; }
   function jourLong(ds) { return JOURS[jourSemaine(ds)] + ' ' + dateLongue(ds); }
@@ -681,6 +681,644 @@
     return L.join('\n') + '\n';
   }
 
+  // ------------------------------------------------------------------
+  // Le carnet PDF, pour un coach
+  // ------------------------------------------------------------------
+  // « Un carnet que tu regardes et tu dis : ok, ce mec fait ça, ça et ça. »
+  // Page 1 : le profil d'un coup d'oeil (la phrase de synthese, le rythme,
+  // ce qui est travaille, les habitudes, les exercices de base). Page 2 :
+  // les records et la courbe des charges des exercices principaux. Page 3 :
+  // le volume, la regularite et le temps passe. Ensuite : les huit
+  // dernieres semaines, seance par seance, puis la legende.
+  //
+  // Chaque page est dessinee sur un canvas (les polices de l'app, des
+  // graphiques nets), puis rangee dans le PDF en JPEG. Pas de bibliotheque :
+  // le PDF n'est qu'une liste d'objets et une table d'adresses. Le dessin
+  // note la boite de chaque texte pose : les tests verifient qu'aucun ne
+  // chevauche un autre ni ne deborde de la page.
+  var A4 = { l: 595.28, h: 841.89 };
+  var ECH = 2.5;                  // 1 point = 2,5 pixels, environ 180 dpi
+  var MARGE = 40;
+  var COUL = {
+    papier: '#ffffff', encre: '#17140f', encre2: '#57514a', encre3: '#8a8277', filet: '#e3ddd4',
+    doux: '#f4f2ef', nuit: '#0c0b0a', nuitEncre: '#f5f2ec', nuitDim: '#a39b8f',
+    orange: '#ff5c38', orangeFonce: '#c7401f', hausse: '#1c8a5a', baisse: '#c23b2a'
+  };
+  var SEMAINES_DETAIL = 8;
+
+  // Les series d'un exercice, en notation de salle : trois series
+  // identiques de suite s'ecrivent « 100×5×3 ».
+  function seriesSalle(series) {
+    var out = [];
+    series.forEach(function (s) {
+      var t = (s.type === TS.TYPES.ECHAUFFEMENT ? 'É ' : '') + (s.court || '') +
+        (typeof s.rpe === 'number' ? ' @' + String(s.rpe).replace('.', ',') : '');
+      var der = out[out.length - 1];
+      if (der && der.t === t && s.type !== TS.TYPES.ECHAUFFEMENT && /×\d+$/.test(s.court || '')) der.n++;
+      else out.push({ t: t, n: 1 });
+    });
+    return out.map(function (o) {
+      if (o.n < 2) return o.t;
+      var m = /^(.*?)( @[\d,]+)?$/.exec(o.t);
+      return m[1] + '×' + o.n + (m[2] || '');
+    }).join(' · ');
+  }
+  function tendance(p) {
+    if (!p) return { t: '—', c: COUL.encre3 };
+    if (p.gain >= 2) return { t: '+' + nombre(p.gain, 1) + ' %', c: COUL.hausse };
+    if (p.gain <= -2) return { t: nombre(p.gain, 1) + ' %', c: COUL.baisse };
+    return { t: 'stable', c: COUL.encre2 };
+  }
+
+  function octetsJpeg(cv, qualite) {
+    var url = cv.toDataURL('image/jpeg', qualite || 0.88);
+    var bin = atob(url.slice(url.indexOf(',') + 1));
+    var o = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) o[i] = bin.charCodeAt(i);
+    return o;
+  }
+  // Une chaine PDF en UTF-16 (les accents du titre).
+  function chainePdf(t) {
+    var h = 'FEFF';
+    for (var i = 0; i < t.length; i++) h += ('000' + t.charCodeAt(i).toString(16)).slice(-4).toUpperCase();
+    return '<' + h + '>';
+  }
+  // pages : [{ octets (JPEG), l, h (pixels) }] -> le PDF, une image par page A4.
+  function pdfDepuisImages(pages, info) {
+    var morceaux = [], decalages = [], taille = 0;
+    function ajoute(o) { if (typeof o === 'string') o = utf8(o); morceaux.push(o); taille += o.length; }
+    function objet(num, corps) { decalages[num] = taille; ajoute(num + ' 0 obj\n'); corps(); ajoute('\nendobj\n'); }
+    ajoute('%PDF-1.4\n');
+    ajoute(new Uint8Array([0x25, 0xe2, 0xe3, 0xcf, 0xd3, 0x0a]));
+    var n = pages.length, kids = [];
+    for (var i = 0; i < n; i++) kids.push((4 + 3 * i) + ' 0 R');
+    objet(1, function () { ajoute('<< /Type /Catalog /Pages 2 0 R >>'); });
+    objet(2, function () { ajoute('<< /Type /Pages /Kids [' + kids.join(' ') + '] /Count ' + n + ' >>'); });
+    objet(3, function () {
+      ajoute('<< /Title ' + chainePdf(info.titre || 'Top Set') + ' /Producer (Top Set) /Creator (Top Set)' +
+        (info.date ? ' /CreationDate (D:' + info.date + ')' : '') + ' >>');
+    });
+    pages.forEach(function (p, i) {
+      var page = 4 + 3 * i, contenu = page + 1, image = page + 2;
+      var flux = 'q ' + A4.l + ' 0 0 ' + A4.h + ' 0 0 cm /Im0 Do Q';
+      objet(page, function () {
+        ajoute('<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ' + A4.l + ' ' + A4.h + '] ' +
+          '/Resources << /XObject << /Im0 ' + image + ' 0 R >> /ProcSet [/PDF /ImageC] >> /Contents ' + contenu + ' 0 R >>');
+      });
+      objet(contenu, function () { ajoute('<< /Length ' + flux.length + ' >>\nstream\n' + flux + '\nendstream'); });
+      objet(image, function () {
+        ajoute('<< /Type /XObject /Subtype /Image /Width ' + p.l + ' /Height ' + p.h +
+          ' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ' + p.octets.length + ' >>\nstream\n');
+        ajoute(p.octets);
+        ajoute('\nendstream');
+      });
+    });
+    var total = 4 + 3 * n, xref = taille;
+    var table = 'xref\n0 ' + total + '\n0000000000 65535 f \n';
+    for (var k = 1; k < total; k++) table += ('000000000' + decalages[k]).slice(-10) + ' 00000 n \n';
+    ajoute(table + 'trailer\n<< /Size ' + total + ' /Root 1 0 R /Info 3 0 R >>\nstartxref\n' + xref + '\n%%EOF\n');
+    return concat(morceaux);
+  }
+
+  // opts : { creerCanvas: function () -> canvas, police: { titre, texte } }
+  function carnetPdf(a, opts) {
+    var P = (opts && opts.police) || {};
+    var FT = P.titre || 'sans-serif', FX = P.texte || 'sans-serif';
+    var cv = opts.creerCanvas();
+    cv.width = Math.round(A4.l * ECH);
+    cv.height = Math.round(A4.h * ECH);
+    var x = cv.getContext('2d');
+    var m = a.modele, p = a.profil;
+    var L = A4.l - 2 * MARGE, BAS = A4.h - 52;
+    var pages = [], boites = [], page = 0, y = 0, sectionCourante = '';
+
+    // -------- les outils de dessin, en points
+    function police(taille, graisse, famille) { x.font = (graisse || 400) + ' ' + taille + 'px ' + (famille || FX); }
+    function largeur(t, taille, graisse, famille) { police(taille, graisse, famille); return x.measureText(String(t)).width; }
+    function couper(s, max) {
+      if (x.measureText(s).width <= max) return s;
+      while (s.length > 1 && x.measureText(s + '…').width > max) s = s.slice(0, -1);
+      return s.replace(/[\s·,]+$/, '') + '…';
+    }
+    // o : { taille, graisse, famille, couleur, align, max }
+    function texte(t, px, py, o) {
+      o = o || {};
+      var taille = o.taille || 9;
+      police(taille, o.graisse, o.famille);
+      var s = String(t);
+      if (o.max) s = couper(s, o.max);
+      x.fillStyle = o.couleur || COUL.encre;
+      x.textAlign = o.align || 'left';
+      x.textBaseline = 'alphabetic';
+      x.fillText(s, px, py);
+      var w = x.measureText(s).width;
+      var gx = o.align === 'right' ? px - w : o.align === 'center' ? px - w / 2 : px;
+      if (!o.libre) boites.push({ page: page, x: gx, y: py - taille * 0.76, l: w, h: taille * 0.98, t: s });
+      return w;
+    }
+    function lignes(t, max) {
+      var mots = String(t).split(/\s+/), out = [], cur = '';
+      mots.forEach(function (mo) {
+        var essai = cur ? cur + ' ' + mo : mo;
+        if (!cur || x.measureText(essai).width <= max) cur = essai;
+        else { out.push(cur); cur = mo; }
+      });
+      if (cur) out.push(cur);
+      return out;
+    }
+    function paragraphe(t, px, py, max, o) {
+      police(o.taille, o.graisse, o.famille);
+      var ls = lignes(t, max);
+      ls.forEach(function (l, i) { texte(l, px, py + i * o.interligne, o); });
+      return ls.length * o.interligne;
+    }
+    function rect(px, py, l, h, c) { x.fillStyle = c; x.fillRect(px, py, l, h); }
+    function trait(x1, y1, x2, y2, c, ep, tirets) {
+      x.strokeStyle = c || COUL.filet; x.lineWidth = ep || 0.5;
+      x.setLineDash(tirets || []);
+      x.beginPath(); x.moveTo(x1, y1); x.lineTo(x2, y2); x.stroke();
+      x.setLineDash([]);
+    }
+    function rond(px, py, r, c) { x.fillStyle = c; x.beginPath(); x.arc(px, py, r, 0, Math.PI * 2); x.fill(); }
+    function etiquette(t, px, py, c) {
+      if ('letterSpacing' in x) x.letterSpacing = '0.9px';
+      texte(String(t).toUpperCase(), px, py, { taille: 7, graisse: 700, couleur: c || COUL.encre3 });
+      if ('letterSpacing' in x) x.letterSpacing = '0px';
+    }
+
+    // -------- les pages
+    function debutPage() {
+      page++;
+      x.setTransform(ECH, 0, 0, ECH, 0, 0);
+      rect(0, 0, A4.l, A4.h, COUL.papier);
+      y = MARGE;
+    }
+    function piedDePage() {
+      trait(MARGE, A4.h - 38, A4.l - MARGE, A4.h - 38, COUL.filet, 0.5);
+      var qui = m.pseudo ? 'Carnet de ' + m.pseudo : 'Carnet d\'entraînement';
+      texte('TOP SET · ' + qui + ' · édité le ' + dateLongue(a.aujourdhui), MARGE, A4.h - 26, { taille: 7, couleur: COUL.encre3, max: L - 60 });
+      texte('page ' + page, A4.l - MARGE, A4.h - 26, { taille: 7, couleur: COUL.encre3, align: 'right' });
+    }
+    function finPage() {
+      piedDePage();
+      pages.push({ octets: octetsJpeg(cv), l: cv.width, h: cv.height });
+    }
+    function enTete(titre, sous, suite) {
+      if (!suite) sectionCourante = titre;
+      texte('TOP SET', MARGE, y + 8, { taille: 7.5, graisse: 800, famille: FT, couleur: COUL.orangeFonce });
+      texte(titre, MARGE, y + 30, { taille: 20, graisse: 800, famille: FT });
+      if (sous) texte(sous, A4.l - MARGE, y + 30, { taille: 8, couleur: COUL.encre2, align: 'right', max: L - largeur(titre, 20, 800, FT) - 20 });
+      y += 40;
+      trait(MARGE, y, A4.l - MARGE, y, COUL.encre, 1);
+      y += 18;
+    }
+    // Il faut h points : sinon, page suivante, avec le meme titre.
+    function place(h) {
+      if (y + h <= BAS) return;
+      finPage(); debutPage();
+      enTete(sectionCourante + ' (suite)', '', true);
+    }
+    function titreBloc(t, sous) {
+      place(40);
+      etiquette(t, MARGE, y + 7);
+      if (sous) texte(sous, A4.l - MARGE, y + 7, { taille: 7, couleur: COUL.encre3, align: 'right', max: L - largeur(t.toUpperCase(), 7, 700) - 30 });
+      y += 13;
+    }
+
+    // -------- page 1 : le profil
+    debutPage();
+    var hBande = 128;
+    rect(0, 0, A4.l, hBande, COUL.nuit);
+    var wTop = texte('TOP', MARGE, 52, { taille: 26, graisse: 800, famille: FT, couleur: COUL.nuitEncre });
+    var wSet = largeur('SET', 26, 800, FT);
+    rect(MARGE + wTop + 4, 30, wSet + 10, 29, COUL.orange);
+    texte('SET', MARGE + wTop + 9, 52, { taille: 26, graisse: 800, famille: FT, couleur: COUL.nuit });
+    etiquette('Carnet d\'entraînement', MARGE, 84, COUL.nuitDim);
+    texte(m.pseudo || 'Mon carnet', MARGE, 108, { taille: 18, graisse: 700, famille: FT, couleur: COUL.nuitEncre, max: L * 0.55 });
+    if (a.nb) {
+      texte('Du ' + dateLongue(a.premier), A4.l - MARGE, 84, { taille: 9, couleur: COUL.nuitEncre, align: 'right' });
+      texte('au ' + dateLongue(a.dernier), A4.l - MARGE, 98, { taille: 9, couleur: COUL.nuitEncre, align: 'right' });
+    }
+    texte('édité le ' + dateLongue(a.aujourdhui), A4.l - MARGE, 112, { taille: 7.5, couleur: COUL.nuitDim, align: 'right' });
+    y = hBande + 30;
+    sectionCourante = 'Son profil';
+
+    etiquette('En une phrase', MARGE, y);
+    y += 20;
+    y += paragraphe(a.synthese, MARGE, y, L, { taille: 15, graisse: 700, famille: FT, interligne: 20 });
+    y += 6;
+
+    // Les quatre chiffres.
+    var tuiles = [
+      { t: 'Séances', v: nombre(a.nb, 0), s: a.nb ? 'depuis le ' + dateCourteAn(a.premier) : '' },
+      { t: 'Par semaine', v: nombre(p.semainesRecentes >= 4 ? p.parSemaineRecente : p.parSemaine, 1), s: p.semainesRecentes >= 4 ? 'sur les ' + p.semainesRecentes + ' dernières' : 'depuis le début' },
+      { t: 'Durée moyenne', v: (p.dureeRecente || p.dureeMoyenne) ? dureeTexte(p.dureeRecente || p.dureeMoyenne) : '—', s: p.seancesChronometrees ? pluriel(p.seancesChronometrees, 'séance') + ' chronométrée' + (p.seancesChronometrees > 1 ? 's' : '') : 'durée non mesurée' },
+      { t: 'Séries par séance', v: nombre(p.seriesParSeance, 0), s: pluriel(p.totalSeries, 'série') + ' en tout' }
+    ];
+    var gT = 8, lT = (L - 3 * gT) / 4, hT = 62;
+    tuiles.forEach(function (tu, i) {
+      var tx = MARGE + i * (lT + gT);
+      rect(tx, y, lT, hT, COUL.doux);
+      etiquette(tu.t, tx + 10, y + 15);
+      texte(tu.v, tx + 10, y + 40, { taille: 21, graisse: 800, famille: FT, max: lT - 20 });
+      texte(tu.s, tx + 10, y + 53, { taille: 7, couleur: COUL.encre2, max: lT - 20 });
+    });
+    y += hT + 22;
+
+    // Le rythme : les douze dernieres semaines contre l'objectif.
+    var r = p.regularite;
+    titreBloc('Son rythme', 'objectif : ' + pluriel(r.objectif, 'séance') + ' par semaine · tenu ' + pluriel(r.serie, 'semaine') + ' d\'affilée, ' + r.meilleure + ' au mieux');
+    grapheSemaines(MARGE, y, L, 78, a.semaines.slice(-RECENT), r.objectif, true);
+    y += 78 + 18;
+
+    // Ce qui est travaille / ses habitudes : deux colonnes.
+    var lCol = (L - 24) / 2, yCol = y;
+    var recents = Object.keys(p.groupesRecents).length && p.seancesRecentes >= 4;
+    var gs = recents ? p.groupesRecents : p.groupes;
+    var totG = Object.keys(gs).reduce(function (t, k) { return t + gs[k]; }, 0);
+    etiquette('Ce qu\'il travaille', MARGE, y + 7);
+    texte(recents ? 'séries, 12 dernières semaines' : 'séries, depuis le début', MARGE + lCol, y + 7, { taille: 7, couleur: COUL.encre3, align: 'right' });
+    var yg = y + 22;
+    trier(gs).slice(0, 7).forEach(function (g) {
+      var part = totG ? gs[g] / totG : 0;
+      texte(g, MARGE, yg + 7, { taille: 8.5, graisse: 600, max: 70 });
+      var bx = MARGE + 74, bl = lCol - 74 - 58;
+      rect(bx, yg, bl, 9, COUL.doux);
+      rect(bx, yg, Math.max(1.5, bl * part), 9, (m.couleurs && m.couleurs[g]) || COUL.encre3);
+      texte(Math.round(part * 100) + ' %', MARGE + lCol - 26, yg + 7.5, { taille: 8, graisse: 700, align: 'right' });
+      texte(nombre(gs[g], 0), MARGE + lCol, yg + 7.5, { taille: 7, couleur: COUL.encre3, align: 'right' });
+      yg += 16;
+    });
+
+    var xH = MARGE + lCol + 24;
+    etiquette('Ses habitudes', xH, y + 7);
+    var hab = [];
+    var jOrd = [0, 1, 2, 3, 4, 5, 6].filter(function (i) { return p.joursSemaine[i] >= Math.max(1, a.nb * 0.12); })
+      .sort(function (i, k) { return p.joursSemaine[k] - p.joursSemaine[i] || i - k; }).slice(0, 4).sort(function (i, k) { return i - k; });
+    if (jOrd.length) hab.push(['Jours', jOrd.map(function (i) { return JOURS[i]; }).join(', ')]);
+    var mo = p.moments, totM = mo.matin + mo.midi + mo.aprem + mo.soir;
+    if (totM >= 3) {
+      var dom = ['matin', 'midi', 'aprem', 'soir'].sort(function (u, v) { return mo[v] - mo[u]; })[0];
+      hab.push(['Moment', { matin: 'le matin', midi: 'le midi', aprem: 'l\'après-midi', soir: 'le soir' }[dom] + ' (' + Math.round(100 * mo[dom] / totM) + ' %)']);
+    }
+    if (p.nbRepos >= 10) hab.push(['Repos', reposTexte(p.reposMedian) + ' entre deux séries (médiane)']);
+    hab.push(['Intensité', p.nbRpe >= 10 ? 'RPE moyen ' + nombre(p.rpeMoyen, 1) + ' sur 10' : 'RPE peu ou pas noté']);
+    var f = p.fourchettes, tf = f.force + f.hypertrophie + f.endurance;
+    if (tf >= 10) hab.push(['Répétitions', Math.round(100 * f.hypertrophie / tf) + ' % à 6–12 · ' + Math.round(100 * f.force / tf) + ' % à 1–5 · ' + Math.round(100 * f.endurance / tf) + ' % au-delà']);
+    if (p.seancesTypes.length) hab.push(['Séances types', p.seancesTypes.slice(0, 3).map(function (t) { return t.titre + ' (' + t.fois + ')'; }).join(' · ')]);
+    if (a.poids) {
+      var po = a.poids;
+      hab.push(['Poids du corps', nombre(po.dernier.poids, 1) + ' kg' + (po.reference ? ' (' + (po.ecart >= 0 ? '+' : '') + nombre(po.ecart, 1) + ' kg depuis le ' + dateCourte(po.reference.date) + ')' : '')]);
+    }
+    if (p.heuresTotales >= 1) hab.push(['Temps passé', nombre(p.heuresTotales, 0) + ' h chronométrées']);
+    var yh = y + 22;
+    hab.forEach(function (h) {
+      texte(h[0], xH, yh + 7, { taille: 7.5, couleur: COUL.encre3, max: 66 });
+      police(8.5, 400);
+      var ls = lignes(h[1], lCol - 70);
+      ls.slice(0, 2).forEach(function (l, i) { texte(l, xH + 70, yh + 7 + i * 11, { taille: 8.5, max: lCol - 70 }); });
+      yh += 6 + 11 * Math.min(2, ls.length);
+    });
+    y = Math.max(yg, yh) + 14;
+
+    // Ses exercices de base.
+    var base = a.exercices.filter(function (e) { return e.mode === 'reps'; })
+      .sort(function (u, v) { return v.recentes - u.recentes || v.fois - u.fois; }).slice(0, 8);
+    if (base.length) {
+      titreBloc('Ses exercices de base', 'séances sur 12 semaines · dernier top set · tendance du 1RM estimé sur 12 semaines');
+      var cols = [MARGE, MARGE + 190, MARGE + 250, MARGE + 380, A4.l - MARGE];
+      base.forEach(function (e, i) {
+        place(16);
+        if (i % 2 === 0) rect(MARGE, y - 1, L, 15, COUL.doux);
+        rond(MARGE + 5, y + 6.5, 2.6, (m.couleurs && m.couleurs[e.groupe]) || COUL.encre3);
+        texte(e.nom, MARGE + 12, y + 9.5, { taille: 8.5, graisse: 600, max: 172 });
+        texte(e.recentes ? nombre(e.recentes, 0) : '—', cols[1] + 30, y + 9.5, { taille: 8.5, align: 'right' });
+        var der = e.points[e.points.length - 1];
+        texte(der ? der.topSet.court + ' le ' + dateCourte(der.date) : '—', cols[2] + 10, y + 9.5, { taille: 8.5, couleur: COUL.encre2, max: 120 });
+        var tdc = tendance(e.progressionRecente);
+        texte(tdc.t, cols[4] - 6, y + 9.5, { taille: 8.5, graisse: 700, couleur: tdc.c, align: 'right' });
+        y += 15;
+      });
+      y += 6;
+    }
+    finPage();
+
+    // -------- page 2 : records et progression
+    debutPage();
+    enTete('Records et progression', a.nb ? pluriel(p.exercicesDifferents, 'exercice') + ' différents' : '');
+    var parFois = a.exercices.filter(function (e) { return e.mode === 'reps' && e.fois >= 2; }).slice(0, 18);
+    if (parFois.length) {
+      titreBloc('Ses meilleures séries', 'du plus pratiqué au moins pratiqué');
+      var c = { nom: MARGE + 12, fois: MARGE + 192, max: MARGE + 252, best: MARGE + 264, rm: MARGE + 410, evo: A4.l - MARGE - 6 };
+      etiquette('Exercice', c.nom, y + 7);
+      texte('SÉANCES', c.fois, y + 7, { taille: 7, graisse: 700, couleur: COUL.encre3, align: 'right' });
+      texte('CHARGE MAX', c.max, y + 7, { taille: 7, graisse: 700, couleur: COUL.encre3, align: 'right' });
+      etiquette('Meilleure série', c.best, y + 7);
+      texte('1RM EST.', c.rm, y + 7, { taille: 7, graisse: 700, couleur: COUL.encre3, align: 'right' });
+      texte('DÉBUT → FIN', c.evo, y + 7, { taille: 7, graisse: 700, couleur: COUL.encre3, align: 'right' });
+      y += 14;
+      parFois.forEach(function (e, i) {
+        place(16);
+        if (i % 2 === 0) rect(MARGE, y - 1, L, 15, COUL.doux);
+        rond(MARGE + 5, y + 6.5, 2.6, (m.couleurs && m.couleurs[e.groupe]) || COUL.encre3);
+        texte(e.nom, c.nom, y + 9.5, { taille: 8.5, graisse: 600, max: c.fois - c.nom - 34 });
+        texte(nombre(e.fois, 0), c.fois, y + 9.5, { taille: 8.5, align: 'right' });
+        texte(e.chargeMax ? nombre(e.chargeMax, 2) + ' kg' : '—', c.max, y + 9.5, { taille: 8.5, graisse: 700, align: 'right' });
+        texte(e.meilleur ? e.meilleur.topSet.court + ' · ' + dateCourteAn(e.meilleur.date) : '—', c.best, y + 9.5, { taille: 8.5, couleur: COUL.encre2, max: c.rm - c.best - 40 });
+        texte(e.meilleur ? nombre(e.meilleur.valeur, 1) : '—', c.rm, y + 9.5, { taille: 8.5, align: 'right' });
+        var td = tendance(e.progression);
+        var evo = e.progression ? nombre(e.progression.debut.rm, 0) + ' → ' + nombre(e.progression.fin.rm, 0) + '  ' + td.t : '—';
+        texte(evo, c.evo, y + 9.5, { taille: 8.5, graisse: 600, couleur: td.c, align: 'right' });
+        y += 15;
+      });
+      y += 18;
+    }
+    if (!parFois.length) {
+      texte('Pas encore de record à montrer : il faut au moins deux séances d\'un même exercice.', MARGE, y + 10, { taille: 9, couleur: COUL.encre2, max: L });
+      y += 28;
+    }
+    var aTemps = a.exercices.filter(function (e) { return e.mode !== 'reps' && e.meilleur; }).slice(0, 6);
+    if (aTemps.length) {
+      titreBloc('Au temps', 'meilleure série');
+      aTemps.forEach(function (e) {
+        place(14);
+        texte(e.nom, MARGE + 12, y + 9, { taille: 8.5, graisse: 600, max: 200 });
+        texte(e.meilleur.topSet.court + ' · ' + dateCourteAn(e.meilleur.date) + ' · ' + pluriel(e.fois, 'séance'), MARGE + 220, y + 9, { taille: 8.5, couleur: COUL.encre2, max: L - 220 });
+        y += 14;
+      });
+      y += 14;
+    }
+    // La courbe des charges : le 1RM estime de chaque seance.
+    var courbes = a.exercices.filter(function (e) { return e.mode === 'reps' && e.points.length >= 3; }).slice(0, 6);
+    if (courbes.length) {
+      titreBloc('La courbe des charges', '1RM estimé du top set, séance par séance (kg)');
+      var gC = 14, lC = (L - 2 * gC) / 3, hC = 96;
+      for (var ci = 0; ci < courbes.length; ci += 3) {
+        place(hC + 10);
+        courbes.slice(ci, ci + 3).forEach(function (e, k) { miniCourbe(MARGE + k * (lC + gC), y, lC, hC, e); });
+        y += hC + 12;
+      }
+    }
+    finPage();
+
+    // -------- page 3 : volume, regularite, temps passe
+    debutPage();
+    enTete('Volume et régularité', a.nb ? pluriel(p.semainesActives, 'semaine') + ' actives sur ' + p.semaines : '');
+    var sem52 = a.semaines.slice(-52);
+    titreBloc('Séances par semaine', sem52.length < a.semaines.length ? 'les 52 dernières semaines' : 'depuis le début');
+    grapheSemaines(MARGE, y, L, 96, sem52, r.objectif, false);
+    y += 96 + 20;
+    var sem16 = a.semaines.slice(-16);
+    titreBloc('Séries par semaine et par groupe', 'les ' + sem16.length + ' dernières semaines');
+    grapheGroupes(MARGE, y, L, 100, sem16);
+    y += 100 + 34;
+    var chronos = a.jours.filter(function (j) { return j.duree > 0; }).slice(-80);
+    if (chronos.length >= 3) {
+      titreBloc('Durée des séances', 'moyenne ' + dureeTexte(moyenne(chronos.map(function (j) { return j.duree; }))) + ' sur les ' + chronos.length + ' dernières séances chronométrées');
+      grapheDurees(MARGE, y, L, 80, chronos);
+      y += 80 + 20;
+    }
+    var repEx = a.exercices.filter(function (e) { return e.repos.length >= 5; }).slice(0, 6);
+    if (repEx.length) {
+      titreBloc('Repos par exercice', 'médiane des repos mesurés ou notés, échauffements exclus');
+      var maxR = Math.max.apply(null, repEx.map(function (e) { return e.reposMedian; }));
+      repEx.forEach(function (e) {
+        place(14);
+        texte(e.nom, MARGE, y + 8.5, { taille: 8.5, graisse: 600, max: 170 });
+        var bl = L - 180 - 70;
+        rect(MARGE + 180, y + 1.5, bl, 8, COUL.doux);
+        rect(MARGE + 180, y + 1.5, Math.max(2, bl * e.reposMedian / maxR), 8, COUL.encre2);
+        texte(reposTexte(e.reposMedian), A4.l - MARGE, y + 8.5, { taille: 8.5, graisse: 700, align: 'right' });
+        y += 14;
+      });
+      y += 14;
+    }
+    var mois12 = a.mois.slice(-8).reverse();
+    if (mois12.length) {
+      titreBloc('Mois par mois', 'les ' + mois12.length + ' derniers, du plus récent au plus ancien');
+      var cm = { mois: MARGE, sea: MARGE + 165, ser: MARGE + 228, tps: MARGE + 290, grp: MARGE + 306 };
+      mois12.forEach(function (mo2, i) {
+        place(15);
+        if (i % 2 === 0) rect(MARGE, y - 1, L, 14, COUL.doux);
+        texte(moisTexte(mo2.mois), cm.mois + 6, y + 9, { taille: 8.5, graisse: 600 });
+        texte(pluriel(mo2.seances, 'séance'), cm.sea, y + 9, { taille: 8.5, align: 'right' });
+        texte(pluriel(mo2.series, 'série'), cm.ser, y + 9, { taille: 8.5, align: 'right', couleur: COUL.encre2 });
+        texte(mo2.duree ? dureeTexte(mo2.duree) : '', cm.tps, y + 9, { taille: 8.5, align: 'right', couleur: COUL.encre2 });
+        texte(trier(mo2.groupes).slice(0, 3).join(', '), cm.grp, y + 9, { taille: 8.5, couleur: COUL.encre2, max: A4.l - MARGE - cm.grp - 6 });
+        y += 14;
+      });
+    }
+    finPage();
+
+    // -------- pages suivantes : les dernieres semaines, seance par seance
+    debutPage();
+    enTete('Séance par séance', 'les ' + SEMAINES_DETAIL + ' dernières semaines, de la plus récente à la plus ancienne');
+    var depuis = dateDe(epoque(lundiDe(a.aujourdhui)) - 7 * (SEMAINES_DETAIL - 1));
+    var recentesJ = a.jours.filter(function (j) { return j.date >= depuis; }).reverse();
+    if (!recentesJ.length) {
+      texte('Aucune séance sur les ' + SEMAINES_DETAIL + ' dernières semaines.', MARGE, y + 10, { taille: 9, couleur: COUL.encre2 });
+      y += 24;
+    }
+    var semaineEnCours = null;
+    recentesJ.forEach(function (j) {
+      var lu = lundiDe(j.date);
+      if (lu !== semaineEnCours) {
+        semaineEnCours = lu;
+        var w = a.semaines.filter(function (s) { return s.lundi === lu; })[0];
+        place(64);
+        y += 4;
+        etiquette('Semaine du ' + dateCourte(lu), MARGE, y + 7, COUL.orangeFonce);
+        if (w) texte(pluriel(w.seances, 'séance') + ' · ' + pluriel(w.series, 'série') + (w.duree ? ' · ' + dureeTexte(w.duree) : ''), A4.l - MARGE, y + 7, { taille: 7, couleur: COUL.encre3, align: 'right' });
+        y += 11;
+        trait(MARGE, y, A4.l - MARGE, y, COUL.filet, 0.5);
+        y += 6;
+      }
+      // La hauteur de la seance, pour ne pas la couper entre deux pages.
+      var lNom = 150, lSer = L - lNom - 8;
+      police(8, 400);
+      var blocs = j.exos.map(function (e) { return { e: e, ls: lignes(seriesSalle(e.series), lSer) }; });
+      var hSeance = 16 + blocs.reduce(function (t, b) { return t + 11 * b.ls.length + 1; }, 0) + (j.ressenti ? 11 : 0) + 8;
+      place(Math.min(hSeance, BAS - MARGE - 80));
+      var jour = JOURS[jourSemaine(j.date)];
+      texte(jour.charAt(0).toUpperCase() + jour.slice(1) + ' ' + dateCourte(j.date) + ' — ' + j.titre, MARGE, y + 9, { taille: 9.5, graisse: 700, max: L - 130 });
+      texte([j.duree ? dureeTexte(j.duree) : '', pluriel(j.stats.series, 'série')].filter(Boolean).join(' · '), A4.l - MARGE, y + 9, { taille: 8, couleur: COUL.encre2, align: 'right' });
+      y += 16;
+      blocs.forEach(function (b) {
+        place(11 * b.ls.length + 2);
+        rond(MARGE + 3, y + 5, 2, (m.couleurs && m.couleurs[b.e.groupe]) || COUL.encre3);
+        texte(b.e.nom, MARGE + 9, y + 7.5, { taille: 8, graisse: 600, max: lNom - 12 });
+        b.ls.forEach(function (l, i) { texte(l, MARGE + lNom, y + 7.5 + 11 * i, { taille: 8, couleur: COUL.encre2, max: lSer }); });
+        y += 11 * b.ls.length + 1;
+      });
+      if (j.ressenti) {
+        place(12);
+        texte('« ' + j.ressenti.replace(/\s+/g, ' ') + ' »', MARGE + 9, y + 8, { taille: 7.5, couleur: COUL.encre3, max: L - 9 });
+        y += 11;
+      }
+      y += 8;
+    });
+
+    // La legende, a la fin.
+    var leg = [
+      '100×5 : 5 répétitions à 100 kg. 100×5×3 : trois séries de 5 à 100 kg. PDC×12 : 12 répétitions au poids du corps.',
+      '@8 : RPE 8 sur 10, l\'effort ressenti (10 = à l\'échec). É : série d\'échauffement.',
+      'Top set : la série la plus lourde de la séance, hors échauffement et back-off.',
+      '1RM estimé : formule d\'Epley, poids × (1 + reps / 30), jusqu\'à 12 répétitions. Une estimation, pas une charge soulevée.',
+      'Tendance : écart du 1RM estimé entre la première et la dernière séance de la période ; « stable » à moins de 2 %.',
+      'Repos : secondes entre deux séries, mesurées par l\'app ou notées. Semaines du lundi au dimanche.'
+    ];
+    place(30 + leg.length * 11);
+    y += 6;
+    trait(MARGE, y, A4.l - MARGE, y, COUL.filet, 0.5);
+    y += 14;
+    etiquette('Comment lire ce carnet', MARGE, y);
+    y += 12;
+    leg.forEach(function (l) { y += paragraphe(l, MARGE, y, L, { taille: 7.5, couleur: COUL.encre2, interligne: 10.5 }); });
+    finPage();
+
+    // -------- les graphiques
+    function grapheSemaines(px, py, l, h, sem, obj, avecNombres) {
+      if (!sem.length) return;
+      var max = Math.max(obj + 1, Math.max.apply(null, sem.map(function (w) { return w.seances; })));
+      var gauche = px + 16, base = py + h - 12, haut = py + (avecNombres ? 13 : 4), eY = (base - haut) / max;
+      var pas = max > 6 ? 2 : 1;
+      for (var v = 0; v <= max; v += pas) {
+        var yy = base - v * eY;
+        trait(gauche, yy, px + l, yy, COUL.filet, 0.5);
+        texte(v, gauche - 5, yy + 2.5, { taille: 6.5, couleur: COUL.encre3, align: 'right' });
+      }
+      var n = sem.length, slot = (px + l - gauche) / n, bl = Math.max(1.5, slot * (n > 30 ? 0.72 : 0.58));
+      var dernierLabel = -99;
+      sem.forEach(function (w, i) {
+        var bx = gauche + i * slot + (slot - bl) / 2, bh = w.seances * eY;
+        if (w.seances) rect(bx, base - bh, bl, bh, w.seances >= obj ? COUL.orange : COUL.encre3);
+        if (avecNombres && w.seances) texte(w.seances, bx + bl / 2, base - bh - 3, { taille: 7, graisse: 700, align: 'center', couleur: COUL.encre2 });
+        var pa = parties(w.lundi);
+        var debutMois = pa[2] <= 7;
+        var cx = gauche + i * slot + slot / 2;
+        if ((avecNombres || debutMois) && cx - dernierLabel > (avecNombres ? 26 : 22)) {
+          var lab = avecNombres ? dateCourte(w.lundi) : MOIS_COURT[pa[1] - 1];
+          if (cx + largeur(lab, 6.5) / 2 <= px + l) {
+            texte(lab, cx, base + 9, { taille: 6.5, couleur: COUL.encre3, align: 'center' });
+            dernierLabel = cx;
+          }
+        }
+      });
+      var yo = base - obj * eY;
+      trait(gauche, yo, px + l, yo, COUL.orangeFonce, 0.8, [3, 2]);
+    }
+    function grapheGroupes(px, py, l, h, sem) {
+      if (!sem.length) return;
+      var ordre = (m.groupes || []).filter(function (g) { return sem.some(function (w) { return w.groupes[g]; }); });
+      var max = Math.max(1, Math.max.apply(null, sem.map(function (w) { return w.series; })));
+      var pasG = max > 60 ? 20 : max > 30 ? 10 : 5;
+      max = Math.ceil(max / pasG) * pasG;
+      var gauche = px + 20, base = py + h - 12, haut = py + 4, eY = (base - haut) / max;
+      for (var v = 0; v <= max; v += pasG) {
+        var yy = base - v * eY;
+        trait(gauche, yy, px + l, yy, COUL.filet, 0.5);
+        texte(v, gauche - 5, yy + 2.5, { taille: 6.5, couleur: COUL.encre3, align: 'right' });
+      }
+      var n = sem.length, slot = (px + l - gauche) / n, bl = slot * 0.62;
+      var dernier = -99;
+      sem.forEach(function (w, i) {
+        var bx = gauche + i * slot + (slot - bl) / 2, yb = base;
+        ordre.forEach(function (g) {
+          var v2 = w.groupes[g] || 0;
+          if (!v2) return;
+          rect(bx, yb - v2 * eY, bl, v2 * eY, (m.couleurs && m.couleurs[g]) || COUL.encre3);
+          yb -= v2 * eY;
+        });
+        var cx = gauche + i * slot + slot / 2;
+        if (cx - dernier > 30) { texte(dateCourte(w.lundi), cx, base + 9, { taille: 6.5, couleur: COUL.encre3, align: 'center' }); dernier = cx; }
+      });
+      // La legende des couleurs, sous le graphique.
+      var lx = gauche, ly = py + h + 12;
+      ordre.forEach(function (g) {
+        var w2 = largeur(g, 7.5) + 22;
+        if (lx + w2 > px + l) { lx = gauche; ly += 11; }
+        rect(lx, ly - 6, 7, 7, (m.couleurs && m.couleurs[g]) || COUL.encre3);
+        texte(g, lx + 10, ly, { taille: 7.5, couleur: COUL.encre2 });
+        lx += w2;
+      });
+    }
+    function grapheDurees(px, py, l, h, js) {
+      var max = Math.max(30, Math.max.apply(null, js.map(function (j) { return j.duree; })));
+      var pasD = max > 120 ? 60 : 30;
+      max = Math.ceil(max / pasD) * pasD;
+      var gauche = px + 30, base = py + h - 12, haut = py + 4, eY = (base - haut) / max;
+      for (var v = 0; v <= max; v += pasD) {
+        var yy = base - v * eY;
+        trait(gauche, yy, px + l, yy, COUL.filet, 0.5);
+        texte(v ? dureeTexte(v) : '0', gauche - 5, yy + 2.5, { taille: 6.5, couleur: COUL.encre3, align: 'right' });
+      }
+      var e0 = epoque(js[0].date), e1 = epoque(js[js.length - 1].date), span = Math.max(1, e1 - e0);
+      var moy = moyenne(js.map(function (j) { return j.duree; }));
+      trait(gauche, base - moy * eY, px + l, base - moy * eY, COUL.orangeFonce, 0.8, [3, 2]);
+      js.forEach(function (j) {
+        var cx = gauche + 4 + (px + l - gauche - 8) * (epoque(j.date) - e0) / span;
+        rond(cx, base - j.duree * eY, 2.1, COUL.encre);
+      });
+      texte(dateCourteAn(js[0].date), gauche, base + 9, { taille: 6.5, couleur: COUL.encre3 });
+      texte(dateCourteAn(js[js.length - 1].date), px + l, base + 9, { taille: 6.5, couleur: COUL.encre3, align: 'right' });
+    }
+    function miniCourbe(px, py, l, h, e) {
+      rect(px, py, l, h, COUL.doux);
+      var td = tendance(e.progression);
+      var wTd = largeur(td.t, 7.5, 700);
+      texte(e.nom, px + 8, py + 13, { taille: 8.5, graisse: 700, max: l - 16 - wTd - 8 });
+      var pts = e.points, vals = pts.map(function (pt) { return pt.valeur; });
+      var mn = Math.min.apply(null, vals), mx = Math.max.apply(null, vals);
+      if (mx - mn < 2) { mn -= 1; mx += 1; }
+      var marge = (mx - mn) * 0.12; mn -= marge; mx += marge;
+      var gx = px + 8, gl = l - 16, top = py + 24, gb = py + h - 20;
+      var e0 = epoque(pts[0].date), e1 = epoque(pts[pts.length - 1].date), span = Math.max(1, e1 - e0);
+      var X0 = function (pt) { return gx + gl * (epoque(pt.date) - e0) / span; };
+      var Y0 = function (v) { return gb - (gb - top) * (v - mn) / (mx - mn); };
+      trait(gx, gb, gx + gl, gb, COUL.filet, 0.5);
+      x.strokeStyle = COUL.encre; x.lineWidth = 1.1; x.lineJoin = 'round';
+      x.beginPath();
+      pts.forEach(function (pt, i) { var X1 = X0(pt), Y1 = Y0(pt.valeur); if (i) x.lineTo(X1, Y1); else x.moveTo(X1, Y1); });
+      x.stroke();
+      if (pts.length <= 40) pts.forEach(function (pt) { rond(X0(pt), Y0(pt.valeur), 1.4, COUL.encre); });
+      var der = pts[pts.length - 1];
+      rond(X0(der), Y0(der.valeur), 2.6, COUL.orange);
+      texte(nombre(pts[0].valeur, 0), gx, gb + 11, { taille: 7, couleur: COUL.encre2 });
+      texte(nombre(der.valeur, 0) + ' kg', gx + gl, gb + 11, { taille: 7.5, graisse: 700, align: 'right' });
+      texte(td.t, px + l - 8, py + 13, { taille: 7.5, graisse: 700, couleur: td.c, align: 'right' });
+    }
+
+    return {
+      octets: pdfDepuisImages(pages, { titre: 'Top Set — ' + (m.pseudo ? 'carnet de ' + m.pseudo : 'carnet d\'entraînement'), date: String(a.aujourdhui).replace(/-/g, '') + '000000' }),
+      pages: pages.length,
+      boites: boites,
+      cadre: { l: A4.l, h: A4.h, marge: MARGE }
+    };
+  }
+
+  // Ce que les tests regardent : aucun texte ne chevauche un autre, et tout
+  // tient dans la page (marges comprises).
+  function verifierMiseEnPage(res) {
+    var pb = [], c = res.cadre;
+    res.boites.forEach(function (b) {
+      if (b.x < c.marge - 0.6 || b.x + b.l > c.l - c.marge + 0.6 || b.y < 0 || b.y + b.h > c.h) pb.push('déborde p.' + b.page + ' : ' + b.t);
+    });
+    var parPage = {};
+    res.boites.forEach(function (b) { (parPage[b.page] = parPage[b.page] || []).push(b); });
+    Object.keys(parPage).forEach(function (k) {
+      var l = parPage[k];
+      for (var i = 0; i < l.length; i++) {
+        for (var j = i + 1; j < l.length; j++) {
+          var u = l[i], v = l[j];
+          var ix = Math.min(u.x + u.l, v.x + v.l) - Math.max(u.x, v.x);
+          var iy = Math.min(u.y + u.h, v.y + v.h) - Math.max(u.y, v.y);
+          if (ix > 0.8 && iy > 0.8) pb.push('chevauche p.' + k + ' : « ' + u.t + ' » / « ' + v.t + ' »');
+        }
+      }
+    });
+    return pb;
+  }
+
   return {
     analyser: analyser,
     xlsx: xlsx,
@@ -689,6 +1327,10 @@
     zip: zip,
     crc32: crc32,
     texteIA: texteIA,
+    carnetPdf: carnetPdf,
+    pdfDepuisImages: pdfDepuisImages,
+    verifierMiseEnPage: verifierMiseEnPage,
+    seriesSalle: seriesSalle,
     // Pour les tests et pour le carnet PDF.
     outils: {
       lundiDe: lundiDe, jourSemaine: jourSemaine, dateLongue: dateLongue, dateCourte: dateCourte,

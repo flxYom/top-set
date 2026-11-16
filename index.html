@@ -4071,7 +4071,7 @@ a.ex-menu-item{display:flex;align-items:center;text-decoration:none;}
     <div class="sheet-section">
       <div class="sheet-label">EXPORTER</div>
       <button type="button" class="btn-sheet" id="dataExporter">EXPORTER MES DONNÉES</button>
-      <p class="sheet-note">Un classeur Excel complet, ou tout ton historique prêt pour une IA.</p>
+      <p class="sheet-note">Un carnet PDF pour ton coach, un classeur Excel complet, ou tout ton historique prêt pour une IA.</p>
     </div>
 
     <div class="sheet-section">
@@ -4108,6 +4108,16 @@ a.ex-menu-item{display:flex;align-items:center;text-decoration:none;}
       <button type="button" class="icon-btn" id="exportClose" aria-label="Fermer"><svg class="ico seul" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
     </div>
     <div class="sheet-stat" id="exportStat">—</div>
+
+    <div class="sheet-section">
+      <div class="sheet-label">POUR TON COACH</div>
+      <button type="button" class="btn-sheet primary" data-export="pdf">LE CARNET EN PDF</button>
+      <p class="sheet-note">
+        Ton profil d'un coup d'œil : ton rythme, ce que tu travailles, tes
+        habitudes, tes records et la courbe de tes charges, puis tes huit
+        dernières semaines séance par séance.
+      </p>
+    </div>
 
     <div class="sheet-section">
       <div class="sheet-label">DANS UN TABLEUR</div>
@@ -4599,11 +4609,11 @@ a.ex-menu-item{display:flex;align-items:center;text-decoration:none;}
 </div>
 <div class="toast" id="toast"></div>
 
-<script src="intelligence.js?v=86" defer></script>
+<script src="intelligence.js?v=87" defer></script>
 <!-- Coordonnees publiques du projet Supabase. Absent ou vide : l'app reste
      en mode 100 % local, sans bouton mort ni erreur. -->
 <script src="supabase-config.js" defer></script>
-<script src="app.js?v=86" defer></script>
+<script src="app.js?v=87" defer></script>
 <script src="mesure.js" defer></script>
 </body>
 </html>

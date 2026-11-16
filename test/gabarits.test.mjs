@@ -2011,5 +2011,21 @@ console.log('\n== 60. Exporter mes donnees, a la place de synchroniser (16/11) =
   ok('l ecran se ferme avec les autres feuilles', /'imageSheet', 'exportSheet'\]\.forEach/.test(SRC));
 }
 
+console.log('\n== 61. Le carnet PDF pour un coach (16/11) ==');
+{
+  const EXP = readFileSync(new URL('export.js', RACINE), 'utf8');
+  ok('le carnet vient en premier dans l ecran d export', HTML.indexOf('data-export="pdf"') > -1 && HTML.indexOf('data-export="pdf"') < HTML.indexOf('data-export="xlsx"')
+     && /<button type="button" class="btn-sheet primary" data-export="pdf">LE CARNET EN PDF<\/button>/.test(HTML));
+  ok('quatre parties : profil, records, volume, seance par seance', /enTete\('Records et progression'/.test(EXP) && /enTete\('Volume et régularité'/.test(EXP)
+     && /enTete\('Séance par séance'/.test(EXP) && /etiquette\('En une phrase'/.test(EXP) && /titreBloc\('Ses exercices de base'/.test(EXP));
+  ok('un PDF ecrit a la main : une image JPEG par page A4, une table d adresses', /var A4 = \{ l: 595\.28, h: 841\.89 \};/.test(EXP)
+     && /\/Filter \/DCTDecode/.test(EXP) && /'xref\\n0 ' \+ total/.test(EXP));
+  ok('le canvas vient d app.js : export.js ne touche pas a la page', /creerCanvas:function\(\)\{ return document\.createElement\('canvas'\); \}/.test(SRC) && /opts\.creerCanvas\(\)/.test(EXP));
+  ok('le bouton dit qu il prepare, puis le fichier part ; un echec se dit', /b\.textContent = 'PRÉPARATION DU CARNET…';/.test(SRC)
+     && /Le carnet n\\'a pas pu se dessiner sur cet appareil/.test(SRC));
+  ok('chaque texte pose est note, pour verifier qu aucun ne chevauche un autre', /boites\.push\(\{ page: page, x: gx/.test(EXP) && /function verifierMiseEnPage\(res\)/.test(EXP));
+  ok('les titres en Bricolage, chargee a l ouverture de l ecran', /document\.fonts\.load\('800 20px "Bricolage Grotesque"'\)/.test(corps('function ouvrirExport(){', 'function fermerExport(')));
+}
+
 console.log(`\n${pass} reussis, ${fail} echoues`);
 process.exit(fail ? 1 : 0);

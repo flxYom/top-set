@@ -9,6 +9,30 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ## [Unreleased]
 
+### Added — the PDF logbook for a coach (2026-11-16)
+
+- "A PDF book a coach looks at and says: ok, this guy does this, this and
+  this." `EXPORTER MES DONNÉES` now opens with **LE CARNET EN PDF**: page 1 is
+  the profile at a glance (one summary sentence, sessions, weekly rate,
+  average duration, sets per session, the last 12 weeks against the weekly
+  goal, sets per muscle group, habits — days, time of day, median rest, RPE,
+  rep ranges, usual sessions, body weight, hours — and the core exercises with
+  their last top set and 12-week trend). Page 2: best sets, max load,
+  estimated 1RM start → end, timed exercises, and the load curve of the six
+  main lifts. Page 3: sessions per week (52 weeks), sets per week per group
+  (16 weeks), session durations, median rest per exercise, month by month.
+  Then the last 8 weeks session by session, in gym notation (`100×5×3`), and a
+  legend.
+- Each A4 page is drawn on a canvas (the app's fonts, crisp charts) and stored
+  as a JPEG in a hand-written PDF (no library). Every text drawn records its
+  box: `verifierMiseEnPage` reports any overlap or overflow. On an 18-month
+  logbook (234 sessions) in Chrome: 7 pages, 1.7 MB, 0 overlaps, about 0.3 s;
+  also checked at 9, 1 and 0 sessions. The button says it is preparing,
+  then the file goes to the share sheet (second tap if iOS refuses).
+- `test/export.test.mjs` (54 checks) rereads the PDF: every xref offset lands
+  on its object, the JPEGs are intact, the title keeps its accents. Gabarits
+  §61. Service worker v87.
+
 ### Changed — EXPORTER MES DONNÉES replaces SYNCHRONISER MAINTENANT (2026-11-16)
 
 - "The sync button doesn't really do anything: replace it with export my

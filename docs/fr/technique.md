@@ -47,7 +47,7 @@ index.html               balisage et styles de l'app
 app.js                   toute la logique de l'app (sortie du HTML pour la CSP)
 braise.js                Web Worker qui dessine le fond animé (WebGL, OffscreenCanvas) hors du fil principal ; intensité et teinte réglables (plein écran)
 intelligence.js          logique métier pure : top set, records, 1RM, signaux
-export.js                les exports (classeur .xlsx, texte pour une IA) : chargé à l'ouverture de l'écran d'export, au numéro d'app.js
+export.js                les exports (carnet PDF, classeur .xlsx, texte pour une IA) : chargé à l'ouverture de l'écran d'export, au numéro d'app.js
 sw.js                    service worker — coquille en cache, hors-ligne
 supabase-config.js       URL du projet + clé publique (voir Comptes et Supabase)
 manifest.webmanifest     manifeste PWA

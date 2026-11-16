@@ -885,6 +885,20 @@ anything"). In the account section, `EXPORTER MES DONNÉES` replaces
 online and after each logged set. Without an account, the same screen opens
 from `TES DONNÉES`, after the spreadsheet. The files are made on the phone and
 go through no server:
+- **The logbook as a PDF**, for a coach ("you look at it and say: ok, this
+  guy does this, this and this"). Page 1, the profile at a glance: one summary
+  sentence, four numbers (sessions, per week, average duration, sets per
+  session), the last 12 weeks against the goal, sets per group, habits (days,
+  time of day, median rest, RPE, rep ranges, usual sessions, body weight,
+  hours) and the core exercises with their last top set and 12-week trend.
+  Page 2: best sets, max load, estimated 1RM start to end, timed exercises,
+  and the load curve of the six main lifts. Page 3: sessions per week (52
+  weeks), sets per week per group, session durations, median rest per
+  exercise, month by month. Then the last 8 weeks session by session, in gym
+  notation (`100×5×3` = three sets of 5 at 100 kg), and the legend. Each A4
+  page is drawn on a canvas then stored as a JPEG in a hand-written PDF; the
+  drawing records every text box, and `verifierMiseEnPage` reports any overlap
+  or overflow (0 on an 18-month logbook: 7 pages, 1.7 MB).
 - **Everything in Excel** (`.xlsx`): six tabs — Séries (one row per set),
   Séances (times, duration, volume, median rest, how it felt), Semaines (Monday
   to Sunday, empty weeks included, sets per group), Exercices (max load, best

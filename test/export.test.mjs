@@ -166,5 +166,33 @@ ok('la note d\'une serie suit la serie', txt.includes('80×7 « dur »'));
 ok('pas d\'email ni de cle dans le texte', !/@[a-z0-9-]+\.[a-z]{2,}|eyJ|anon/i.test(txt));
 ok('un carnet vide donne quand meme la consigne', /Ce que je te demande/.test(X.texteIA(X.analyser({ aujourdhui: '2026-11-16', jours: [], pesees: [] }))));
 
+console.log('\n— Le carnet PDF');
+ok('la notation de salle : trois series identiques font « ×3 »', X.seriesSalle([S(100, 5), S(100, 5), S(100, 5)]) === '100×5×3');
+ok('l echauffement reste a part, le RPE reste lu', X.seriesSalle([S(60, 10, { type: 'echauffement' }), S(100, 5), S(100, 5), S(100, 5, { rpe: 8 })]) === 'É 60×10 · 100×5×2 · 100×5 @8',
+  X.seriesSalle([S(60, 10, { type: 'echauffement' }), S(100, 5), S(100, 5), S(100, 5, { rpe: 8 })]));
+ok('deux series pareilles au RPE identique se regroupent, RPE a la fin', X.seriesSalle([S(80, 8, { rpe: 9 }), S(80, 8, { rpe: 9 })]) === '80×8×2 @9');
+const JPEG = Uint8Array.from(atob('/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAGAAQDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwC5RRRXxR+wH//Z'), c => c.charCodeAt(0));
+const pdf = X.pdfDepuisImages([{ octets: JPEG, l: 4, h: 6 }, { octets: JPEG, l: 4, h: 6 }], { titre: 'Top Set — carnet de Léa', date: '20261116000000' });
+const brut = new TextDecoder('latin1').decode(pdf);
+ok('un PDF 1.4, qui finit par %%EOF', brut.startsWith('%PDF-1.4\n') && brut.endsWith('%%EOF\n'));
+const sx = Number((/startxref\n(\d+)\n%%EOF\n$/.exec(brut) || [])[1]);
+ok('startxref pointe sur la table', brut.slice(sx, sx + 5) === 'xref\n');
+const lt = brut.slice(sx).split('\n'), nObj = Number(lt[1].split(' ')[1]);
+let adressesJustes = nObj > 1;
+for (let k = 1; k < nObj; k++) { const off = Number(lt[2 + k].slice(0, 10)); if (!brut.slice(off).startsWith(k + ' 0 obj')) adressesJustes = false; }
+ok('chaque adresse de la table tombe sur son objet', adressesJustes && lt[2].startsWith('0000000000 65535 f'));
+ok('chaque ligne de la table fait 20 octets', lt.slice(2, 2 + nObj).every(l => (l + '\n').length === 20));
+ok('deux pages A4', /\/Count 2 /.test(brut) && (brut.match(/\/MediaBox \[0 0 595\.28 841\.89\]/g) || []).length === 2);
+ok('chaque page porte son image JPEG intacte', (brut.match(/\/Filter \/DCTDecode \/Length 633 /g) || []).length === 2
+  && brut.includes('/Width 4 /Height 6') && brut.split(new TextDecoder('latin1').decode(JPEG)).length === 3);
+ok('le titre garde ses accents (UTF-16)', brut.includes('/Title <FEFF0054006F0070') && brut.includes('00E9') && brut.includes('/CreationDate (D:20261116000000)'));
+ok('la longueur du flux de chaque page est juste', [...brut.matchAll(/<< \/Length (\d+) >>\nstream\n([^\n]*)\nendstream/g)].every(m => Number(m[1]) === m[2].length));
+ok('la mise en page se verifie : un texte qui deborde ou en chevauche un autre est signale', (() => {
+  const pb = X.verifierMiseEnPage({ cadre: { l: 595.28, h: 841.89, marge: 40 }, boites: [
+    { page: 1, x: 40, y: 50, l: 100, h: 10, t: 'a' }, { page: 1, x: 120, y: 52, l: 60, h: 10, t: 'b' },
+    { page: 1, x: 500, y: 90, l: 80, h: 10, t: 'c' }, { page: 2, x: 40, y: 50, l: 100, h: 10, t: 'd' }] });
+  return pb.length === 2 && /chevauche p\.1/.test(pb.join()) && /déborde p\.1 : c/.test(pb.join());
+})());
+
 console.log('\n' + passes + ' reussis, ' + echecs.length + ' echoues');
 if (echecs.length) { console.log(echecs.join('\n')); process.exit(1); }
