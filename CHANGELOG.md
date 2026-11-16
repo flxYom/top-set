@@ -9,6 +9,15 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ## [Unreleased]
 
+### Added — how to do it, from the card (2026-11-16)
+
+- When an exercise has its page in Apprendre (bench press, plank and its
+  variants for now), the card's ⋯ menu starts with "↗ COMMENT LE FAIRE" and
+  the exercise page shows "COMMENT LE FAIRE ?" under its name. Gym
+  shorthand follows (« bench », « dc »). A gabarit checks that every page in
+  `exercices/` is known to the app and every link leads to a page that
+  exists. Service worker v75, gabarits §49.
+
 ### Added — the year, screen by screen (2026-11-16)
 
 - PROGRÈS → ANNÉE (and every period in December and January) opens "Ton

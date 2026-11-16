@@ -2271,7 +2271,10 @@
     var deplacer = (pl.i < 0 || pl.n < 2) ? ''
       : (pl.i > 0 ? '<button type="button" class="ex-menu-item" data-action="monter" data-id="'+ eid +'">▲ MONTER DANS LA SÉANCE</button>' : '')
       + (pl.i < pl.n - 1 ? '<button type="button" class="ex-menu-item" data-action="descendre" data-id="'+ eid +'">▼ DESCENDRE DANS LA SÉANCE</button>' : '');
-    return echauffer
+    var page = pageExercice(ex.nom);
+    var comment = page ? '<a class="ex-menu-item" href="' + page + '">↗ COMMENT LE FAIRE</a>' : '';
+    return comment
+      + echauffer
       + deplacer
       + (auTemps || nomAuTemps(ex.nom) || cardioParDefaut(ex) || !series.some(serieRemplie)
           ? '<button type="button" class="ex-menu-item" data-action="mesure" data-id="'+ eid +'">'+libelleMesure(auTemps, cardioParDefaut(ex))+'</button>'
@@ -4293,6 +4296,25 @@
   // en decoration : il n'apparait qu'a cote d'un chiffre que l'app vient de
   // sortir, pour qu'une question qui se pose dans la salle trouve sa reponse
   // en un appui au lieu de finir dans un forum. (22/10/2026)
+  // Les exercices qui ont leur page dans Apprendre (16/11/2026). Le nom
+  // passe par cleCanonique : « bench » ou « dc » menent au developpe couche.
+  // Une page d'exercice ajoutee a exercices/ doit l'etre ici aussi (un
+  // gabarit le verifie).
+  var PAGES_EXERCICE = [
+    { url:'/exercices/developpe-couche', noms:['Développé couché'] },
+    { url:'/exercices/planche-gainage', noms:['Planche', 'Gainage', 'Gainage planche', 'Planche abdos'], motif:/^(planche|gainage)\b/i }
+  ];
+  function pageExercice(nom){
+    if (!nom || !String(nom).trim()) return null;
+    var cle = cleCanonique(nom), affiche = nomCanonique(nom) || String(nom);
+    for (var i = 0; i < PAGES_EXERCICE.length; i++){
+      var p = PAGES_EXERCICE[i];
+      if (p.noms.some(function(n){ return cleCanonique(n) === cle; })) return p.url;
+      if (p.motif && p.motif.test(affiche.trim())) return p.url;
+    }
+    return null;
+  }
+
   function lienSavoir(href, mot){
     return '<a class="lien-savoir" href="' + href + '">' + (mot || 'POURQUOI\u00a0?')
       + '<i aria-hidden="true">›</i></a>';
@@ -4331,6 +4353,8 @@
       + '</div>'
       + boutonSuivre(affiche, 'exo-suivre')
       + '</div>';
+    var pageX = pageExercice(nom);
+    if (pageX) html += '<div class="exo-comment">' + lienSavoir(pageX, 'COMMENT LE FAIRE\u00a0?') + '</div>';
 
     if (!toutes.length){
       hote.innerHTML = html + '<div class="seances-vide">Aucune série notée sur cet exercice.</div>';

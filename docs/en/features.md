@@ -417,6 +417,13 @@ rules in `intelligence.js`: `progressionTopSet` and `recordsBattus` (a session
 that beats everything lifted before it on that exercise, warm-ups excluded; the
 very first time is not a record).
 
+**How to do it** (16 November 2026). When an exercise has its page in Apprendre
+(bench press, plank and its variants for now), its card's ⋯ menu starts with
+"↗ COMMENT LE FAIRE" and its page shows "COMMENT LE FAIRE ?" under its name. Gym
+shorthand follows ("bench", "dc"). The mapping lives in `PAGES_EXERCICE` in
+`app.js`: a page added to `exercices/` must be added there too, and a gabarit
+checks it.
+
 **Set duplication.** `+ SÉRIE` copies the previous set — weight, reps, RPE, rest.
 Only `fait` resets, and the comment is not copied. Five identical sets means
 typing one and tapping four times. The row is added to the card without

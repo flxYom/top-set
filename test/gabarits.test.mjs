@@ -1788,5 +1788,16 @@ ok('l animation s arrete avec reduire les animations', /prefers-reduced-motion:r
 ok('l entree dans PROGRES : periode ANNEE, decembre et janvier', /if \(state\.recapPeriod !== 'annee' && mois !== 11 && mois !== 0\) return '';/.test(SRC)
    && /<div class="recap-label" id="recapLabel">—<\/div>\s*<div id="recapAnnee"><\/div>/.test(HTML));
 
+console.log('\n== 49. Comment le faire (16/11) : la page de l exercice depuis la carte ==');
+ok('chaque page d exercice est connue de l app, et chaque lien mene a une page qui existe',
+   (() => { const pages = readdirSync(new URL('../exercices/', import.meta.url)).filter(f => f.endsWith('.html') && f !== 'index.html').map(f => '/exercices/' + f.replace(/\.html$/, ''));
+            const liens = [...SRC.matchAll(/url:'(\/exercices\/[a-z0-9-]+)'/g)].map(m => m[1]);
+            return pages.length > 0 && pages.every(p => liens.includes(p)) && liens.every(l => pages.includes(l)); })());
+ok('le nom passe par cleCanonique (bench, dc)', /return cleCanonique\(n\) === cle;/.test(SRC));
+ok('la carte le propose en tete du menu, la fiche sous son nom',
+   /'<a class="ex-menu-item" href="' \+ page \+ '">↗ COMMENT LE FAIRE<\/a>'/.test(SRC) && /return comment\s*\+ echauffer/.test(SRC)
+   && /lienSavoir\(pageX, 'COMMENT LE FAIRE\\u00a0\?'\)/.test(SRC));
+ok('le lien a l allure des autres lignes du menu', /a\.ex-menu-item\{display:flex;align-items:center;text-decoration:none;\}/.test(REFONTE));
+
 console.log(`\n${pass} reussis, ${fail} echoues`);
 process.exit(fail ? 1 : 0);

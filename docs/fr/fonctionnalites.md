@@ -459,6 +459,14 @@ c'est l'année qui vient de finir. Deux règles nouvelles dans `intelligence.js`
 soulevé avant elle sur cet exercice, échauffements exclus ; la toute première
 fois n'est pas un record).
 
+**Comment le faire** (16 novembre 2026). Quand un exercice a sa page dans
+Apprendre (le développé couché, la planche et ses variantes pour l'instant), le
+menu ⋯ de sa carte commence par « ↗ COMMENT LE FAIRE », et sa fiche montre
+« COMMENT LE FAIRE ? » sous son nom. Les abréviations de salle suivent
+(« bench », « dc »). La correspondance vit dans `PAGES_EXERCICE`, dans `app.js` :
+une page ajoutée à `exercices/` doit y être ajoutée aussi, et un gabarit le
+vérifie.
+
 **Duplication de série.** `+ SÉRIE` recopie la précédente : poids, reps, RPE,
 repos. Seul `fait` repart à zéro, et le commentaire ne se recopie pas. Sur cinq
 séries identiques, tu en saisis une et tu appuies quatre fois. La ligne s'ajoute
