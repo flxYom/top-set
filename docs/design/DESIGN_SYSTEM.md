@@ -279,6 +279,21 @@ de retirer : sur chaque ligne de TOUS et en tête de la fiche. La page vide
 de SUIVIS est une carte pleine, pas un emplacement en pointillés : c'est une
 invitation, avec un bouton vers TOUS. Garde : gabarits §43.
 
+**L'image d'une séance — 16/11/2026.** Une story 1080 × 1920 sur le fond
+`--bg`, alignée à gauche sur une marge de 90 px, tout entre 200 et 1 720 px
+(Instagram couvre le haut et le bas). En haut la date en orange `--t-1`
+capitales, puis le titre en Bricolage 800 jusqu'à 96 px, deux lignes au plus,
+la taille descend avant de couper. Au centre la silhouette de l'app, face et
+dos, dans ses couleurs de groupe, entre 1,6 et 2,55 fois sa taille : c'est
+elle qui cède la place. Dessous, des lignes de 82 px séparées d'un filet à
+8 % : pastille du groupe, nom en blanc cassé coupé d'une ellipse, meilleure
+série à droite en Bricolage 800 ; un record passe en **jaune**, précédé de
+l'étoile du record — le seul jaune de l'image, comme dans l'app. En bas, un
+filet, trois chiffres en Bricolage 68 px sur leur libellé gris, puis le logo,
+TOP SET et top-set.fr. Pas de braise, pas de dégradé : l'image est l'app.
+L'aperçu dans le panneau est le canvas, 9:16 exact, borné à 56 % de la
+hauteur. Garde : gabarits §55.
+
 **Le poids du corps — 16/11/2026.** Tout en bas de PROGRÈS, après les
 partages : rien au-dessus ne bouge. Sans pesée, une seule ligne discrète
 (`.poids-vide`, 48 px, filet `--trait`, texte `--dim`) — pas de pointillés,

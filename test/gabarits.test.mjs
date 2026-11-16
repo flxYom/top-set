@@ -1849,7 +1849,7 @@ ok('un modele lance reprend la derniere fois de chaque exercice',
 ok('sans modele, le jour vide ne change pas', /function modelesHTML\(\)\{\s*var liste = modelesVivants\(\);\s*if \(!liste\.length\) return '';/.test(SRC)
    && /refaireHTML\(ds\) \+ modelesHTML\(\);/.test(SRC));
 ok('ENREGISTRER COMME MODELE vient apres tous les boutons de la fiche',
-   /id="ficheSelectionner"[\s\S]{0,400}id="ficheModele"[\s\S]{0,120}hote\.innerHTML = html;/.test(SRC));
+   /id="ficheSelectionner"[\s\S]{0,700}id="ficheModele"[\s\S]{0,120}hote\.innerHTML = html;/.test(SRC));
 ok('remplacer un modele garde son dossier', /if \(meme && !String\(dossier \|\| ''\)\.trim\(\)\) dossier = meme\.dossier \|\| '';/.test(SRC));
 ok('la synchro des collections : modeles, table absente toleree',
    /modeles: \{\s*pousser:'pousser_modeles', tirer:'tirer_modeles', arg:'p_modeles'/.test(SRC)
@@ -1903,7 +1903,7 @@ ok('la sauvegarde JSON les porte, l import ajoute les jours absents',
      ia.length > 500 && /function textePeriodeIA/.test(ia) && partages.length > 500 && /function instantaneRecap/.test(partages)
      && !/peseesVivantes|lesPesees|blocPoids/.test(ia + partages));
 }
-ok('le panneau existe et se ferme avec les autres', /id="peseeSheet"/.test(HTML) && /'modeleSheet', 'peseeSheet'\]/.test(SRC));
+ok('le panneau existe et se ferme avec les autres', /id="peseeSheet"/.test(HTML) && /'modeleSheet', 'peseeSheet'[\],]/.test(SRC));
 ok('aucune taille de police sur les champs du panneau (garde iOS)', !/\.pesee-(duo|trio) \.sheet-input[^{]*\{[^}]*font-size/.test(REFONTE));
 {
   const S = lireLF('../supabase/schema.sql');
@@ -1920,6 +1920,22 @@ ok('aucune taille de police sur les champs du panneau (garde iOS)', !/\.pesee-(d
   ok('la politique dit ce qui est stocke, et que le coach ne le voit pas',
      /Ton poids du corps<\/strong>, si tu le notes/.test(CONF) && /tes modèles de séance ni ton poids du corps/.test(CONF));
 }
+
+console.log('\n== 55. L image d une seance (16/11) ==');
+ok('une story de 1080 x 1920, dans les zones sures', /var STORY_L = 1080, STORY_H = 1920, STORY_MARGE = 90;/.test(SRC)
+   && /var pas = 82, hBloc = montres\.length \* pas \+ \(reste \? 56 : 0\), basBloc = 1490;/.test(SRC));
+ok('la silhouette est rejouee dans le canvas, sans image SVG', /function dessinerSilhouette\(ctx, svg, x, y, echelle\)/.test(SRC)
+   && /new Path2D\(n\.getAttribute\('d'\) \|\| ''\)/.test(SRC) && !/new Image\(\)[\s\S]{0,200}svg\+xml/.test(SRC));
+ok('la silhouette rapetisse plutot que de pousser les exercices',
+   /var ech = Math\.max\(1\.6, Math\.min\(2\.55, \(basBloc - yS - hBloc - 130\) \/ 200\)\);/.test(SRC));
+ok('le fichier est prepare a l ouverture, le bouton ne fait que partager',
+   /function partagerImagePrete\(\)\{\s*var p = imagePrete;/.test(SRC) && /navigator\.share\(\{ files:\[p\.fichier\] \}\)/.test(SRC));
+ok('l apercu est le canvas : la CSP n admet pas les images blob', /r\.canvas\.id = 'imageApercu';/.test(SRC) && !/<img[^>]*id="imageApercu"/.test(HTML));
+ok('dans la fiche, avant ENREGISTRER COMME MODELE ; dans le bilan, apres FERMER',
+   /id="ficheImage"[\s\S]{0,200}id="ficheModele"/.test(SRC) && /id="finFermer">FERMER<\/button>'[\s\S]{0,160}id="finImage"/.test(SRC));
+ok('le panneau passe au-dessus du bilan et se ferme avec les autres',
+   REFONTE.includes('.image-sheet{z-index:65;}') && /'peseeSheet', 'imageSheet'\]/.test(SRC));
+ok('aucun envoi : ni fetch ni rpc dans le dessin', !/fetch\(|\.rpc\(/.test(corps('function dessinerStory', 'function fermerImage')));
 
 console.log(`\n${pass} reussis, ${fail} echoues`);
 process.exit(fail ? 1 : 0);

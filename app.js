@@ -3756,6 +3756,7 @@
       + '</button>';
     // Les ajouts du 16/11/2026 viennent apres tout le reste : aucun bouton
     // existant ne change de place.
+    if (exos.length) html += '<button type="button" class="btn-partage" id="ficheImage">' + ico('image') + 'PARTAGER EN IMAGE</button>';
     html += '<button type="button" class="btn-partage" id="ficheModele">' + ico('modele') + 'ENREGISTRER COMME MODÈLE</button>';
     hote.innerHTML = html;
   }
@@ -4543,7 +4544,8 @@
     coche:'<path d="M5 12.5l4.5 4.5L19 7.5"/>',
     fermer:'<path d="M6 6l12 12M18 6L6 18"/>',
     points:'<circle class="plein" cx="5.5" cy="12" r="1.7"/><circle class="plein" cx="12" cy="12" r="1.7"/><circle class="plein" cx="18.5" cy="12" r="1.7"/>',
-    modele:'<rect x="8" y="7.5" width="11.5" height="13" rx="2"/><path d="M5 16.5V5.5A2 2 0 0 1 7 3.5h9"/>'
+    modele:'<rect x="8" y="7.5" width="11.5" height="13" rx="2"/><path d="M5 16.5V5.5A2 2 0 0 1 7 3.5h9"/>',
+    image:'<rect x="4" y="4" width="16" height="16" rx="2.5"/><circle cx="9.5" cy="9.5" r="1.6"/><path d="M5 17.5l4.5-4.5 3 3 2.5-2.5 4 4"/>'
   };
   function ico(nom, seul){
     return '<svg class="ico' + (seul ? ' seul' : '') + '" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' + ICONES[nom] + '</svg>';
@@ -7511,6 +7513,8 @@
     html += '<p class="bilan-mot anim" style="--i:8">«\u00a0' + esc(b.mot) + '\u00a0»</p>'
       + '<button type="button" class="btn-sheet primary anim" style="--i:9" id="finFiche">VOIR LA FICHE DE LA SÉANCE</button>'
       + '<button type="button" class="btn-sheet anim" style="--i:9" id="finFermer">FERMER</button>'
+      // Apres FERMER : les deux gestes de toujours ne bougent pas. (16/11/2026)
+      + '<button type="button" class="btn-sheet anim" style="--i:9" id="finImage">' + ico('image') + 'PARTAGER EN IMAGE</button>'
       + '</div>';
     bilanCorps.innerHTML = html;
     animerCompteur(bilanCorps.querySelector('[data-compteur]'));
@@ -7536,6 +7540,292 @@
     requestAnimationFrame(pas);
   }
 
+  // ---------- l'image d'une seance, a partager (16/11/2026) ----------
+  // Une story de 1080 x 1920, dessinee sur le telephone et partagee par son
+  // menu : rien ne passe par un serveur. En haut le titre et la date ; au
+  // centre la silhouette des muscles ; dessous, jusqu'a cinq exercices avec
+  // leur meilleure serie, les records en jaune ; en bas series, exercices,
+  // duree, le logo et top-set.fr. Tout tient entre 200 et 1720 px de haut :
+  // Instagram couvre le haut et le bas d'une story.
+  //
+  // Le dessin se fait des l'ouverture du panneau, et le bouton ne fait que
+  // partager un fichier deja pret : sur iPhone, un partage lance apres une
+  // attente (polices, logo, encodage) est refuse, faute de doigt sur l'ecran.
+  // La silhouette est rejouee forme par forme dans le canvas, sans passer
+  // par une image SVG : une image SVG peut rendre le canvas illisible sur
+  // Safari, et le partage echouerait.
+  var STORY_L = 1080, STORY_H = 1920, STORY_MARGE = 90;
+  function jetonCss(nom, defaut){
+    var v = '';
+    try { v = getComputedStyle(document.documentElement).getPropertyValue(nom).trim(); } catch (err) {}
+    return v || defaut;
+  }
+  // La meilleure serie d'un exercice, dans sa propre unite : la charge pour
+  // la muscu (le top set), le temps pour un gainage, sinon les reps.
+  function meilleureDuJour(series){
+    var top = TS.calculerTopSet(series);
+    if (top) return top;
+    var duree = null, reps = null;
+    series.forEach(function(s){
+      var d = TS.dureeSecondes(s.reps);
+      if (d !== null && (!duree || d > TS.dureeSecondes(duree.reps))) duree = s;
+      var r = TS.nombreReps(s.reps);
+      if (r !== null && (!reps || r > TS.nombreReps(reps.reps))) reps = s;
+    });
+    return duree || reps || series[0];
+  }
+  function exosPourImage(ds){
+    var day = state.sessions[ds];
+    return ((day && day.exercises) || []).filter(function(e){ return seriesRemplies(e).length; }).map(function(e){
+      var remplies = seriesRemplies(e);
+      return { nom:normalizeName(nomCanonique(e.nom) || e.nom) || 'Sans nom',
+               perf:perfTexte(meilleureDuJour(remplies)),
+               record:remplies.some(function(s){ return isNewRecord(s, e.nom); }),
+               couleur:couleurGroupe(classement(e).groupe) };
+    });
+  }
+  // Un texte qui tient dans sa largeur, coupe d'une ellipse sinon.
+  function texteQuiTient(ctx, texte, largeur){
+    if (ctx.measureText(texte).width <= largeur) return texte;
+    var t = texte;
+    while (t.length > 1 && ctx.measureText(t + '…').width > largeur) t = t.slice(0, -1);
+    return t.replace(/\s+$/, '') + '…';
+  }
+  // Rejoue le SVG de la silhouette (muscleMapSVG) dans le canvas : chemins,
+  // ellipses, groupes deplaces, avec leurs couleurs ecrites en dur.
+  function dessinerSilhouette(ctx, svg, x, y, echelle){
+    var racine = new DOMParser().parseFromString(svg, 'image/svg+xml').documentElement;
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(echelle, echelle);
+    (function parcourir(el){
+      Array.prototype.forEach.call(el.children || [], function(n){
+        var tag = String(n.tagName).toLowerCase();
+        if (tag === 'g'){
+          var m = /translate\(\s*([-\d.]+)[\s,]+([-\d.]+)\s*\)/.exec(n.getAttribute('transform') || '');
+          ctx.save();
+          if (m) ctx.translate(+m[1], +m[2]);
+          parcourir(n);
+          ctx.restore();
+          return;
+        }
+        var forme = null;
+        if (tag === 'path') forme = new Path2D(n.getAttribute('d') || '');
+        else if (tag === 'ellipse'){
+          forme = new Path2D();
+          forme.ellipse(+n.getAttribute('cx'), +n.getAttribute('cy'), +n.getAttribute('rx'), +n.getAttribute('ry'), 0, 0, Math.PI * 2);
+        }
+        if (!forme) return;   // le texte FACE / DOS est ecrit a part
+        var fond = n.getAttribute('fill'), trait = n.getAttribute('stroke');
+        if (fond && fond !== 'none'){
+          ctx.globalAlpha = parseFloat(n.getAttribute('fill-opacity') || '1');
+          ctx.fillStyle = fond;
+          ctx.fill(forme);
+          ctx.globalAlpha = 1;
+        }
+        if (trait && trait !== 'none'){
+          ctx.lineWidth = parseFloat(n.getAttribute('stroke-width') || '1');
+          ctx.strokeStyle = trait;
+          ctx.stroke(forme);
+        }
+      });
+    })(racine);
+    ctx.restore();
+  }
+  var ETOILE_D = 'M12 3l2.6 5.6 6.1.8-4.5 4.2 1.2 6-5.4-3-5.4 3 1.2-6L3.3 9.4l6.1-.8z';
+  function dessinerStory(ds, logo){
+    var cv = document.createElement('canvas');
+    cv.width = STORY_L; cv.height = STORY_H;
+    var x = cv.getContext('2d');
+    var BG = jetonCss('--bg', '#0c0b0a'), INK = jetonCss('--ink', '#f5f2ec'), DIM = jetonCss('--dim', '#a39b8f');
+    var OR = jetonCss('--orange', '#ff5c38'), JA = jetonCss('--yellow', '#ffd23f');
+    var TITRE = '"Bricolage Grotesque", -apple-system, "Segoe UI", Roboto, sans-serif';
+    var UI = '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Arial, sans-serif';
+    var M = STORY_MARGE, L = STORY_L - 2 * M;
+    x.fillStyle = BG;
+    x.fillRect(0, 0, STORY_L, STORY_H);
+    x.textBaseline = 'alphabetic';
+
+    // En haut : la date, puis le titre (deux lignes au plus, la taille
+    // descend avant de couper).
+    var d = fromDateStr(ds);
+    x.fillStyle = OR;
+    x.font = '800 32px ' + UI;
+    x.fillText((DAY_NAMES[(d.getDay() + 6) % 7] + ' ' + d.getDate() + ' ' + MONTH_NAMES[d.getMonth()] + ' ' + d.getFullYear()).toUpperCase(), M, 250);
+    var titre = titreSeance(ds), taille = 96;
+    x.fillStyle = INK;
+    do { x.font = '800 ' + taille + 'px ' + TITRE; taille -= 6; } while (taille > 60 && x.measureText(titre).width > L * 1.9);
+    var mots = titre.split(/\s+/), lignes = [''];
+    mots.forEach(function(mot){
+      var essai = lignes[lignes.length - 1] ? lignes[lignes.length - 1] + ' ' + mot : mot;
+      if (x.measureText(essai).width <= L || !lignes[lignes.length - 1]) lignes[lignes.length - 1] = essai;
+      else lignes.push(mot);
+    });
+    if (lignes.length > 2) lignes = [lignes[0], lignes.slice(1).join(' ')];
+    var hTitre = taille + 6;
+    lignes.forEach(function(l, i){ x.fillText(texteQuiTient(x, l, L), M, 340 + i * (hTitre * 1.02)); });
+    var basTitre = 340 + (lignes.length - 1) * hTitre;
+
+    // Au centre : la silhouette, face et dos, aux couleurs des groupes. Elle
+    // prend la place que laissent le titre et les exercices, et rapetisse
+    // quand il en manque : rien ne doit descendre sous le trait des chiffres.
+    var exos = exosPourImage(ds), montres = exos.slice(0, 5), reste = exos.length - montres.length;
+    var pas = 82, hBloc = montres.length * pas + (reste ? 56 : 0), basBloc = 1490;
+    var sous = sousCountsIn(ds, ds);
+    var yS = basTitre + 70;
+    var ech = Math.max(1.6, Math.min(2.55, (basBloc - yS - hBloc - 130) / 200));
+    var lS = 190 * ech, hS = 200 * ech, xS = (STORY_L - lS) / 2;
+    dessinerSilhouette(x, muscleMapSVG(sous, ''), xS, yS, ech);
+    x.fillStyle = DIM;
+    x.font = '700 26px ' + UI;
+    x.textAlign = 'center';
+    x.fillText('FACE', xS + 45 * ech, yS + hS + 34);
+    x.fillText('DOS', xS + 145 * ech, yS + hS + 34);
+    x.textAlign = 'left';
+
+    // Dessous : cinq exercices au plus, centres dans la place qui reste.
+    var hautBloc = yS + hS + 60;
+    var y0 = hautBloc + Math.max(0, (basBloc - hautBloc - hBloc) / 2);
+    montres.forEach(function(e, i){
+      var yl = y0 + i * pas + 54;
+      if (i){ x.fillStyle = 'rgba(255,255,255,.08)'; x.fillRect(M, y0 + i * pas, L, 2); }
+      x.fillStyle = e.couleur;
+      x.beginPath(); x.arc(M + 9, yl - 13, 9, 0, Math.PI * 2); x.fill();
+      x.font = '800 44px ' + TITRE;
+      var perf = e.perf, lPerf = x.measureText(perf).width;
+      var lEtoile = e.record ? 46 : 0;
+      x.fillStyle = e.record ? JA : INK;
+      x.textAlign = 'right';
+      x.fillText(perf, STORY_L - M, yl);
+      x.textAlign = 'left';
+      if (e.record){
+        x.save();
+        x.translate(STORY_L - M - lPerf - 44, yl - 34);
+        x.scale(1.5, 1.5);
+        x.fillStyle = JA;
+        x.fill(new Path2D(ETOILE_D));
+        x.restore();
+      }
+      x.fillStyle = INK;
+      x.font = '700 38px ' + UI;
+      x.fillText(texteQuiTient(x, e.nom, L - 40 - lPerf - lEtoile - 28), M + 34, yl);
+    });
+    if (reste){
+      x.fillStyle = DIM;
+      x.font = '700 30px ' + UI;
+      x.fillText('+ ' + reste + (reste > 1 ? ' autres exercices' : ' autre exercice'), M + 34, y0 + montres.length * pas + 44);
+    }
+
+    // En bas : les chiffres, puis la signature.
+    var duree = dureeSeance(ds), records = exos.filter(function(e){ return e.record; }).length;
+    var stats = [
+      { v:String(compterJour(state.sessions[ds])), l:compterJour(state.sessions[ds]) > 1 ? 'SÉRIES' : 'SÉRIE' },
+      { v:String(exos.length), l:exos.length > 1 ? 'EXERCICES' : 'EXERCICE' },
+      duree ? { v:duree, l:'DURÉE' } : { v:String(records), l:records > 1 ? 'RECORDS' : 'RECORD', or:records > 0 }
+    ];
+    x.fillStyle = 'rgba(255,255,255,.12)';
+    x.fillRect(M, 1530, L, 2);
+    stats.forEach(function(s, i){
+      var xs = M + i * (L / 3);
+      x.fillStyle = s.or ? JA : INK;
+      x.font = '800 68px ' + TITRE;
+      x.fillText(texteQuiTient(x, s.v, L / 3 - 20), xs, 1612);
+      x.fillStyle = DIM;
+      x.font = '700 24px ' + UI;
+      x.fillText(s.l, xs, 1652);
+    });
+    if (logo){ try { x.drawImage(logo, M, 1676, 52, 52); } catch (err) {} }
+    x.fillStyle = INK;
+    x.font = '800 36px ' + TITRE;
+    x.fillText('TOP SET', M + (logo ? 70 : 0), 1714);
+    var lMarque = x.measureText('TOP SET').width;
+    x.fillStyle = DIM;
+    x.font = '700 30px ' + UI;
+    x.fillText('top-set.fr', M + (logo ? 70 : 0) + lMarque + 22, 1713);
+    return cv;
+  }
+  // Polices et logo d'abord, une seconde et demie au plus : sans eux,
+  // l'image part quand meme, dans la police du telephone.
+  function preparerStory(ds){
+    var polices = (document.fonts && document.fonts.load)
+      ? Promise.all([document.fonts.load('800 96px "Bricolage Grotesque"'), document.fonts.load('800 44px "Bricolage Grotesque"')]).catch(function(){})
+      : Promise.resolve();
+    var logo = new Promise(function(ok){
+      var im = new Image();
+      im.onload = function(){ ok(im); };
+      im.onerror = function(){ ok(null); };
+      im.src = 'icons/icon-192.png';
+    });
+    var delai = new Promise(function(ok){ setTimeout(ok, 1500); });
+    return Promise.race([Promise.all([polices, logo]), delai]).then(function(r){
+      var cv = dessinerStory(ds, r && r[1]);
+      return new Promise(function(ok, ko){
+        if (!cv.toBlob) return ko(new Error('toBlob'));
+        cv.toBlob(function(b){ if (b) ok({ canvas:cv, blob:b }); else ko(new Error('toBlob')); }, 'image/png');
+      });
+    });
+  }
+
+  var imageSheet = document.getElementById('imageSheet');
+  var imagePrete = null;   // { ds, fichier, url }
+  function oublierImage(){
+    if (imagePrete && imagePrete.url) { try { URL.revokeObjectURL(imagePrete.url); } catch (err) {} }
+    imagePrete = null;
+    var vieux = document.getElementById('imageApercu');
+    if (vieux) vieux.parentNode.removeChild(vieux);
+  }
+  // L'apercu est le canvas lui-meme : la politique de securite du site
+  // n'admet pas les images « blob: », et un apercu vide ne montrerait rien.
+  function ouvrirImage(ds){
+    if (!ds || !exosPourImage(ds).length){ showToast('Rien de noté ici'); return; }
+    oublierImage();
+    var bouton = document.getElementById('imagePartager');
+    var attente = document.getElementById('imageAttente');
+    attente.textContent = 'L\'image se prépare…';
+    attente.hidden = false;
+    bouton.disabled = true;
+    bouton.textContent = 'PARTAGER L\'IMAGE';
+    imageSheet.hidden = false;
+    preparerStory(ds).then(function(r){
+      var blob = r.blob, nom = 'top-set-' + ds + '.png', fichier = null;
+      try { fichier = new File([blob], nom, { type:'image/png' }); } catch (err) { fichier = null; }
+      var url = URL.createObjectURL(blob);
+      imagePrete = { ds:ds, fichier:fichier, blob:blob, nom:nom, url:url };
+      r.canvas.id = 'imageApercu';
+      r.canvas.className = 'image-apercu';
+      r.canvas.setAttribute('role', 'img');
+      r.canvas.setAttribute('aria-label', 'L\'image de la séance, telle qu\'elle sera partagée');
+      document.getElementById('imageCadre').appendChild(r.canvas);
+      attente.hidden = true;
+      var partage = !!(fichier && navigator.share && navigator.canShare && navigator.canShare({ files:[fichier] }));
+      bouton.textContent = partage ? 'PARTAGER L\'IMAGE' : 'ENREGISTRER L\'IMAGE';
+      bouton.disabled = false;
+    }, function(){
+      document.getElementById('imageAttente').textContent = 'Impossible de dessiner l\'image sur cet appareil.';
+    });
+  }
+  function fermerImage(){ imageSheet.hidden = true; oublierImage(); }
+  // Le fichier est deja pret : le partage part du doigt, sans attente.
+  function partagerImagePrete(){
+    var p = imagePrete;
+    if (!p) return;
+    if (p.fichier && navigator.share && navigator.canShare && navigator.canShare({ files:[p.fichier] })){
+      navigator.share({ files:[p.fichier] }).catch(function(e){
+        if (e && e.name !== 'AbortError') showToast('Le partage n\'a pas abouti');
+      });
+      return;
+    }
+    // Sans partage de fichiers (un ordinateur, souvent) : on l'enregistre.
+    var a = document.createElement('a');
+    a.href = p.url; a.download = p.nom;
+    document.body.appendChild(a); a.click(); a.remove();
+    showToast('Image enregistrée : ' + p.nom);
+  }
+  imageSheet.addEventListener('click', function(e){
+    if (e.target === this || e.target.closest('#imageClose')){ fermerImage(); return; }
+    if (e.target.closest('#imagePartager')) partagerImagePrete();
+  });
+
   document.getElementById('finZone').addEventListener('click', function(e){
     if (e.target.closest('#finBtn')) ouvrirEcranFin(state.selectedDay, false);
     else if (e.target.closest('#finRevoir')) ouvrirEcranFin(state.selectedDay, true);
@@ -7543,6 +7833,7 @@
   bilanEcran.addEventListener('click', function(e){
     if (e.target.closest('#finOui')) validerFin(bilanJour);
     else if (e.target.closest('#finNon') || e.target.closest('#finFermer')) fermerEcranFin();
+    else if (e.target.closest('#finImage')) ouvrirImage(bilanJour);
     else if (e.target.closest('#finFiche')){
       var ds = bilanJour;
       fermerEcranFin();
@@ -7623,6 +7914,10 @@
     }
     if (e.target.closest('#ficheModele')){
       ouvrirModeles('nouveau', state.seanceOuverte);
+      return;
+    }
+    if (e.target.closest('#ficheImage')){
+      ouvrirImage(state.seanceOuverte);
       return;
     }
     if (e.target.closest('#ficheIA')){
@@ -8488,7 +8783,7 @@
 
   // Ouvrir une page depuis une feuille, c'est quitter la feuille.
   function fermerFeuilles(){
-    ['dataSheet', 'profilSheet', 'retourSheet', 'partageSheet', 'iaSheet', 'modeleSheet', 'peseeSheet'].forEach(function(id){
+    ['dataSheet', 'profilSheet', 'retourSheet', 'partageSheet', 'iaSheet', 'modeleSheet', 'peseeSheet', 'imageSheet'].forEach(function(id){
       var el = document.getElementById(id);
       if (el) el.hidden = true;
     });

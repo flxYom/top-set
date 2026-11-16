@@ -9,6 +9,25 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ## [Unreleased]
 
+### Added — a session as a story image (2026-11-16)
+
+- `PARTAGER EN IMAGE`, under a session's page and after `FERMER` in the
+  end-of-session summary (no existing button moves), draws a 1080 × 1920
+  story on the phone: date and title at the top, the muscle silhouette in
+  the middle, up to five exercises with their best set (records in yellow,
+  with a star), then sets, exercises, duration (or records when the times
+  are unknown), the logo and top-set.fr. Everything stays between 200 and
+  1720 px, clear of Instagram's overlays; the silhouette shrinks when a long
+  title or six exercises need the room. The sheet shows the image itself
+  before sharing.
+- The silhouette is replayed shape by shape with `Path2D` instead of being
+  drawn as an SVG image, which can taint a canvas on Safari. The file is
+  prepared when the sheet opens and the button only shares it, because iOS
+  refuses a share that starts after an await. Without file sharing (most
+  desktops) the button saves the PNG. The preview is the canvas itself: the
+  site's CSP does not allow `blob:` images. Nothing is sent to a server.
+  Service worker v81, gabarits §55.
+
 ### Added — bodyweight and measurements (2026-11-16)
 
 - One weigh-in per day: a date, a weight and, optionally, waist, arm and

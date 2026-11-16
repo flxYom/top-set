@@ -595,6 +595,18 @@ read and copies nothing:
   before) and `↺ REFAIRE MA DERNIÈRE SÉANCE` when it is a different one, with
   their title; everything is copied by `selectionnerSeance`.
 
+**A session as an image (2026-11-16).** `PARTAGER EN IMAGE`, at the bottom of
+a session's page and after `FERMER` in the summary (no button moves), draws a
+1080 × 1920 story on the phone: date and title at the top, the muscle
+silhouette in the middle, up to five exercises with their best set (records in
+yellow, with a star), then sets, exercises, duration — or records when the
+times are missing —, the logo and top-set.fr. Everything stays between 200 and
+1,720 px, clear of Instagram's overlays; the silhouette shrinks when a long
+title or six exercises need the room. The sheet shows the image before
+sharing. The file is ready as soon as the sheet opens: on iPhone, a share that
+starts after a wait is refused. Without file sharing (a computer) the button
+saves the image. Nothing goes through a server.
+
 **Bodyweight (2026-11-16).** One weigh-in per day: a date, a weight and,
 optionally, waist, arm and thigh. PROGRÈS ends with it, after everything else:
 a single quiet line (`+ NOTER MON POIDS DU CORPS`) until the first weigh-in,

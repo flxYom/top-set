@@ -57,7 +57,9 @@ c'est exactement à ça que sert ce repo pour l'instant.
   exercice. Personne d'autre ne la voit, pas même son coach.
 - **Envoyer ses perfs à un ami.** On devient amis par un code, des deux côtés ;
   un exercice, une séance ou un récap part chez les amis qu'on choisit, en copie
-  figée. Pas de fil, pas de compteurs, pas de classement, pas de story.
+  figée. Pas de fil, pas de compteurs, pas de classement. Une séance peut aussi
+  devenir une image au format story, dessinée sur le téléphone et partagée par
+  son menu.
 - **Sa séance, dans son ordre.** Les exercices se déplacent à la poignée ou aux
   flèches, ou d'un cran depuis le menu de leur carte ; un superset se déplace
   d'un bloc. L'heure de début et l'heure de fin se posent toutes seules, sur la

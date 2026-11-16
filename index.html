@@ -3712,6 +3712,18 @@ a.ex-menu-item{display:flex;align-items:center;text-decoration:none;}
 .pesee-suppr.armed{background:var(--erreur);border-color:var(--erreur);color:#1a0508;}
 .exo-relatif{margin-top:8px;font-size:var(--t-2);color:var(--dim);}
 .exo-relatif b{color:var(--ink);font-variant-numeric:tabular-nums;}
+
+/* ---------- L'image d'une seance (16/11/2026) ----------
+   Le panneau montre l'image telle qu'elle partira : un apercu 9:16 aux
+   coins de carte, sur le fond de l'image. Il passe au-dessus du bilan, d'ou
+   il peut s'ouvrir (meme z-index, et le bilan vient plus loin dans la page). */
+.image-sheet{z-index:65;}
+/* La largeur se deduit de la hauteur : une hauteur bornee avec une largeur
+   a 100 % casserait le 9:16 et etirerait l'apercu. */
+.image-cadre{display:flex;align-items:center;justify-content:center;height:min(56vh, 480px);width:calc(min(56vh, 480px) * 9 / 16);max-width:100%;margin:4px auto 14px;
+  border:1px solid var(--trait);border-radius:var(--r-l);background:var(--bg);overflow:hidden;}
+.image-apercu{display:block;width:100%;height:100%;}
+.image-attente{margin:0;padding:16px;text-align:center;font-size:var(--t-2);color:var(--dim);}
 </style>
 </head>
 
@@ -4343,6 +4355,26 @@ a.ex-menu-item{display:flex;align-items:center;text-decoration:none;}
       Une pesée par jour : en noter une autre le même jour la corrige. Avec un
       compte, tes pesées suivent ton compte ; personne d'autre ne les voit, pas
       même ton coach, et elles ne partent dans aucun partage.
+    </p>
+  </div>
+</div>
+
+<!-- L'image d'une seance (16/11/2026) : dessinee ici, partagee par le
+     menu du telephone. Au-dessus du bilan, d'ou elle peut s'ouvrir. -->
+<div class="sheet image-sheet" id="imageSheet" hidden>
+  <div class="sheet-card" role="dialog" aria-modal="true" aria-labelledby="imageTitre">
+    <div class="sheet-head">
+      <h2 id="imageTitre">EN IMAGE</h2>
+      <button type="button" class="icon-btn" id="imageClose" aria-label="Fermer"><svg class="ico seul" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+    <div class="image-cadre" id="imageCadre">
+      <p class="image-attente" id="imageAttente">L'image se prépare…</p>
+    </div>
+    <button type="button" class="btn-sheet primary" id="imagePartager" disabled>PARTAGER L'IMAGE</button>
+    <p class="sheet-note">
+      Une image au format story : ta séance, ses records, sa durée. Elle est
+      dessinée sur ton téléphone ; rien ne part tant que tu ne choisis pas où
+      l'envoyer.
     </p>
   </div>
 </div>

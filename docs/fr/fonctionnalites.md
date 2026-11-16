@@ -650,6 +650,19 @@ dernière fois, qui se lit et ne recopie rien :
   semaine d'avant) et `↺ REFAIRE MA DERNIÈRE SÉANCE` si ce n'est pas la même,
   avec leur titre ; tout se recopie par `selectionnerSeance`.
 
+**L'image d'une séance (16/11/2026).** `PARTAGER EN IMAGE`, en bas de la fiche
+d'une séance et après `FERMER` dans le bilan (aucun bouton ne change de place),
+dessine sur le téléphone une story de 1080 × 1920 : la date et le titre en
+haut, la silhouette des muscles au centre, jusqu'à cinq exercices avec leur
+meilleure série (les records en jaune, avec une étoile), puis séries,
+exercices, durée — ou records quand les horaires manquent —, le logo et
+top-set.fr. Tout tient entre 200 et 1 720 px de haut, hors de ce qu'Instagram
+recouvre ; la silhouette rapetisse quand un long titre ou six exercices
+demandent la place. Le panneau montre l'image avant de la partager. Le fichier
+est prêt dès l'ouverture du panneau : sur iPhone, un partage lancé après une
+attente est refusé. Sans partage de fichiers (un ordinateur), le bouton
+enregistre l'image. Rien ne passe par un serveur.
+
 **Le poids du corps (16/11/2026).** Une pesée par jour : une date, un poids et,
 si on veut, les tours de taille, de bras et de cuisse. PROGRÈS finit par elle,
 après tout le reste : une seule ligne discrète (`+ NOTER MON POIDS DU

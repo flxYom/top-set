@@ -55,6 +55,9 @@ repository is for right now.
 - **Your bodyweight, for you.** One weigh-in a day, measurements if you want,
   its curve at the bottom of PROGRÈS and relative strength on an exercise
   page. Nobody else sees it, not even your coach.
+- **A session as a story image.** Drawn on the phone (silhouette, best sets,
+  records in yellow, duration) and shared through its own menu; nothing goes
+  through a server.
 - **Send your numbers to a friend.** Friends are made by a code, both sides
   agreeing; an exercise, a session or a recap goes to the friends you pick, as a
   frozen copy. No feed, no counters, no ranking, no stories.
