@@ -10,7 +10,7 @@
 // depuis un cache reviendrait a afficher des seances perimees en croyant
 // etre a jour. Le hors-ligne des donnees, c'est localStorage, pas ici.
 
-var VERSION = 'topset-v83';
+var VERSION = 'topset-v84';
 var COQUILLE = VERSION + '-coquille';
 var COURANT  = VERSION + '-courant';
 
@@ -20,7 +20,7 @@ var COURANT  = VERSION + '-courant';
 // demandait « app.js », que le cache servait tel quel : la premiere
 // reouverture apres une mise a jour montrait la page neuve avec l'ancien code,
 // et il fallait rouvrir l'app une seconde fois pour voir les nouveautes.
-// Avec « app.js?v=83 », l'ancienne version ne connait pas cette adresse et va
+// Avec « app.js?v=84 », l'ancienne version ne connait pas cette adresse et va
 // la chercher sur le reseau. Le numero suit VERSION (un gabarit le verifie).
 var A_PRECHARGER = [
   './',
@@ -47,12 +47,12 @@ var A_PRECHARGER = [
   'fonts/bricolage-latin-ext.woff2',
   'vendor/chart.umd.js',
   'supabase-config.js',
-  'intelligence.js?v=83',
+  'intelligence.js?v=84',
   // Le chargeur de la mesure d'audience : le seul script maison qui restait
   // hors de la coquille, donc absent du cache d'une installation qui n'a
   // jamais eu le temps de le charger en ligne.
   'mesure.js',
-  'app.js?v=83',
+  'app.js?v=84',
   // Le peintre de la braise (Web Worker) : sans lui hors ligne, le degrade CSS.
   'braise.js',
   'css/legal.css',

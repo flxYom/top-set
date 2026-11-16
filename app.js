@@ -110,17 +110,24 @@
 
   // ---------- exercices suivis (16/11/2026) ----------
   // Un exercice est suivi par son nom canonique, celui que le recap affiche.
+  // Reconnu par l'exercice, pas par l'ecriture : un nom affiche qui s'unifie
+  // (« leg curl » -> « Leg curl ») ou deux noms reunis ne font pas perdre un
+  // exercice suivi. (16/11/2026)
+  function indexSuivi(nom){
+    var cle = cleCanonique(nom);
+    for (var i = 0; i < reglages.suivis.length; i++){ if (cleCanonique(reglages.suivis[i]) === cle) return i; }
+    return -1;
+  }
   function estSuivi(nom){
-    return reglages.suivis.indexOf(nomCanonique(nom) || nom) > -1;
+    return indexSuivi(nom) > -1;
   }
   // Bascule, garde, et dit si l'exercice est suivi apres l'appel.
   function basculerSuivi(nom){
-    var cle = nomCanonique(nom) || nom;
-    var i = reglages.suivis.indexOf(cle);
+    var i = indexSuivi(nom);
     if (i > -1) reglages.suivis.splice(i, 1);
-    else if (reglages.suivis.length < SUIVIS_MAX) reglages.suivis.push(cle);
+    else if (reglages.suivis.length < SUIVIS_MAX) reglages.suivis.push(nomCanonique(nom) || nom);
     garderReglages();
-    return i < 0 && reglages.suivis.indexOf(cle) > -1;
+    return i < 0 && indexSuivi(nom) > -1;
   }
   // Les classes qui rangent une colonne : le CSS fait le reste, y compris
   // les largeurs de la grille des series.
@@ -483,6 +490,7 @@
       CUSTOM_PAR_CLE[cleExo(k)] = { nom:info.nom || k, groupe:info.groupe, alias:info.alias,
                                     seul:!!info.seul, sousGroupe:info.sousGroupe };
     });
+    rafraichirFusionAuto(true);
   }
   rebuildLower();
 
@@ -1506,6 +1514,9 @@
     if (info && info.alias) return info.alias;
     if (info && info.seul) return k;
     var syn = cleSynonymeDe(nom);
+    // Les noms qui se ressemblent, reunis seuls (16/11/2026). La cle gardee
+    // passe a son tour par le dictionnaire : « benchs » -> « bench » -> DC.
+    if ((!syn || syn === k) && FUSION_AUTO[k]) return cleCanonique(FUSION_AUTO[k]);
     if (!syn || syn === k) return k;
     // Le dictionnaire vise un nom qu'il a lui-meme rattache ailleurs : on
     // suit son choix jusqu'au bout.
@@ -1518,13 +1529,130 @@
   function nomCanonique(nom){
     return retenu(MEMO_NOMS.affiche, String(nom == null ? '' : nom), function(){ return nomCanoniqueCalcul(nom); });
   }
+  // Un seul nom affiche par cle, quelle que soit l'ecriture du jour : celui
+  // de la base, sinon le nom memorise, sinon l'ecriture la plus utilisee.
+  // Avant, « leg curl » et « Leg curl » avaient la meme cle mais deux noms
+  // affiches, donc deux lignes dans le recap. (16/11/2026)
   function nomCanoniqueCalcul(nom){
     var cle = cleCanonique(nom);
-    if (cle === cleExo(nom)) return normalizeName(nom);
-    var cible = CUSTOM_PAR_CLE[cle];
-    if (cible && cible.nom) return normalizeName(cible.nom);
     var dansBase = Object.keys(EXERCISE_DB).filter(function(n){ return cleExo(n) === cle; })[0];
-    return dansBase || cle;
+    if (dansBase) return dansBase;
+    var cible = CUSTOM_PAR_CLE[cle];
+    var n = AFFICHE_CLE[cle] || (cible && cible.nom && normalizeName(cible.nom)) || (cle === cleExo(nom) ? normalizeName(nom) : cle);
+    // Une majuscule au debut, comme les noms de la base.
+    return n.charAt(0).toUpperCase() + n.slice(1);
+  }
+
+  // ---------- les noms qui se ressemblent (16/11/2026) ----------
+  // « leg curl » et « Leg curl », « divierging seated row » et « Diverging
+  // seated row » : le meme exercice ecrit deux fois. Le recap en faisait deux
+  // lignes, et l'historique etait coupe en deux. L'app les reunit seule, sans
+  // rien demander, quand les deux noms ne different que par :
+  //   - les majuscules, les accents, la ponctuation, un pluriel en « s » ;
+  //   - une seule faute de frappe sur un seul mot (une lettre en trop, en
+  //     moins, changee ou inversee), sur un mot d'au moins cinq lettres qui
+  //     commence pareil — « incline » et « decline » restent deux exercices.
+  // Deux exercices de la base ne se reunissent jamais entre eux. Le nom garde
+  // est celui de la base ou du dictionnaire s'il y en a un, sinon le plus
+  // utilise. Sa decision passe avant : un nom rattache ou separe a la main
+  // n'est jamais touche, et LES SEPARER, dans le menu ⋯, defait une fusion.
+  var FUSION_AUTO = {};      // cle -> cle gardee
+  var AFFICHE_CLE = {};      // cle -> nom a afficher (l'ecriture la plus utilisee)
+  var signatureFusion = null;
+  function cleLache(k){
+    return sansAccents(k).replace(/[^a-z0-9]+/g, ' ').trim().split(' ')
+      .map(function(m){ return m.length > 3 ? m.replace(/s$/, '') : m; }).join(' ');
+  }
+  // Deux noms « laches » voisins : memes mots, sauf un, a une faute pres.
+  function motsVoisins(x, y){
+    if (x.length !== y.length) return false;
+    var diff = -1;
+    for (var i = 0; i < x.length; i++){
+      if (x[i] === y[i]) continue;
+      if (diff > -1) return false;
+      diff = i;
+    }
+    if (diff < 0) return true;
+    var m = x[diff], n = y[diff];
+    if (m.length < 5 || n.length < 5 || /\d/.test(m + n) || m.charAt(0) !== n.charAt(0)) return false;
+    return ecartMots(m, n, 1) <= 1;
+  }
+  function nomsDuCarnet(){
+    var jours = (typeof state !== 'undefined' && state && state.sessions) || {};
+    var usage = {}, ecritures = {};
+    Object.keys(jours).forEach(function(ds){
+      ((jours[ds] && jours[ds].exercises) || []).forEach(function(e){
+        var n = normalizeName(e && e.nom);
+        if (!n) return;
+        var k = cleExo(n);
+        usage[k] = (usage[k] || 0) + 1;
+        ecritures[k] = ecritures[k] || {};
+        ecritures[k][n] = (ecritures[k][n] || 0) + 1;
+      });
+    });
+    return { usage:usage, ecritures:ecritures };
+  }
+  function construireFusionAuto(carnet){
+    FUSION_AUTO = {};
+    AFFICHE_CLE = {};
+    var c = carnet || nomsDuCarnet();
+    // L'ecriture la plus utilisee d'une cle, a egalite celle qui commence par
+    // une majuscule : « Leg curl » plutot que « leg curl ».
+    Object.keys(c.ecritures).forEach(function(k){
+      var e = c.ecritures[k];
+      AFFICHE_CLE[k] = Object.keys(e).sort(function(a, b){
+        return (e[b] - e[a]) || ((/^[A-ZÀ-Ý]/.test(b) ? 1 : 0) - (/^[A-ZÀ-Ý]/.test(a) ? 1 : 0)) || (a < b ? -1 : 1);
+      })[0];
+    });
+    var base = {}, cles = {};
+    Object.keys(EXERCISE_DB).forEach(function(n){ var k = cleExo(n); base[k] = true; cles[k] = true; });
+    Object.keys(customExercises).forEach(function(n){ cles[cleExo(n)] = true; });
+    Object.keys(c.usage).forEach(function(k){ cles[k] = true; });
+    // Ce qu'il a tranche a la main ne bouge pas.
+    var liste = Object.keys(cles).filter(function(k){
+      var info = CUSTOM_PAR_CLE[k];
+      return k && !(info && (info.alias || info.seul));
+    });
+    var ancre = {}, mots = {}, parent = {};
+    liste.forEach(function(k){
+      ancre[k] = !!base[k] || !!cleSynonymeDe(k);
+      mots[k] = cleLache(k).split(' ');
+      parent[k] = k;
+    });
+    function racine(k){ while (parent[k] !== k) k = parent[k] = parent[parent[k]]; return k; }
+    for (var i = 0; i < liste.length; i++){
+      for (var j = i + 1; j < liste.length; j++){
+        var a = liste[i], b = liste[j];
+        if (base[a] && base[b]) continue;
+        if (mots[a].length !== mots[b].length) continue;
+        if (motsVoisins(mots[a], mots[b])) parent[racine(a)] = racine(b);
+      }
+    }
+    var groupes = {};
+    liste.forEach(function(k){ var r = racine(k); (groupes[r] = groupes[r] || []).push(k); });
+    Object.keys(groupes).forEach(function(r){
+      var g = groupes[r];
+      if (g.length < 2) return;
+      var ancres = g.filter(function(k){ return ancre[k]; });
+      // Deux ancres dans le meme groupe : on ne devine pas entre elles.
+      if (ancres.length > 1) return;
+      var garde = ancres[0] || g.slice().sort(function(a, b){
+        return ((c.usage[b] || 0) - (c.usage[a] || 0)) || (a < b ? -1 : 1);
+      })[0];
+      g.forEach(function(k){ if (k !== garde) FUSION_AUTO[k] = garde; });
+    });
+  }
+  // A reprendre quand les noms du carnet changent : un nom nouveau peut en
+  // rejoindre un autre. Rien ne se recalcule tant que la liste est la meme.
+  function rafraichirFusionAuto(force){
+    var carnet = nomsDuCarnet();
+    var sig = Object.keys(carnet.usage).sort().join('|') + '#' + Object.keys(customExercises).length;
+    if (!force && sig === signatureFusion) return false;
+    signatureFusion = sig;
+    construireFusionAuto(carnet);
+    MEMO_NOMS.canon.clear();
+    MEMO_NOMS.affiche.clear();
+    return true;
   }
 
   // Rattacher, c'est dire « c'est le meme exercice ». Le groupe musculaire
@@ -4328,6 +4456,7 @@
   });
 
   function renderRecap(){
+    rafraichirFusionAuto();
     var data = computeRecap(state.recapPeriod);
     document.getElementById('recapLabel').textContent = data.label.toUpperCase();
 
@@ -4493,13 +4622,22 @@
         + '<button type="button" class="btn-sheet suivis-choisir" data-page="tous">CHOISIR DANS TOUS ›</button>'
         + '</div>';
     }
-    var parNom = {};
-    data.items.forEach(function(it){ parNom[it.nom] = it; });
+    // Par exercice, pas par ecriture : un suivi note « leg curl » retrouve
+    // la ligne « Leg curl », et deux suivis devenus le meme exercice ne font
+    // qu'une tuile. (16/11/2026)
+    var parCle = {}, vus = {};
+    data.items.forEach(function(it){ parCle[cleCanonique(it.nom)] = it; });
     var avant = periodePrecedente(data);
-    var liste = reglages.suivis.map(function(nom){
-      var it = parNom[nom] || null;
+    var liste = reglages.suivis.filter(function(nom){
+      var k = cleCanonique(nom);
+      if (vus[k]) return false;
+      vus[k] = true;
+      return true;
+    }).map(function(nom){
+      var it = parCle[cleCanonique(nom)] || null;
+      var affiche = it ? it.nom : (nomCanonique(nom) || nom);
       var groupe = it ? it.groupe : classement({ nom:nom, groupe:groupeCanonique(nom) || 'Autre' }).groupe;
-      return { nom:nom, it:it, groupe:groupe };
+      return { nom:affiche, it:it, groupe:groupe };
     });
     liste.sort(function(x,y){
       var gi = GROUPS.indexOf(x.groupe) - GROUPS.indexOf(y.groupe);
@@ -7313,6 +7451,10 @@
     if (vieux) vieux.remove();
     var nomAffiche = normalizeName(ex.nom);
     var syn   = synonymeDe(ex.nom);
+    // Deja reuni seul a un nom qui lui ressemble : rien a demander.
+    // (16/11/2026)
+    rafraichirFusionAuto();
+    if (!syn && FUSION_AUTO[cleExo(ex.nom)]) return;
     var faute = syn ? null : fauteDeFrappe(ex.nom);
     var choix = (syn || faute) ? [] : candidatsAlias(ex.nom);
     var liste = tousLesExos(cleExo(ex.nom));
@@ -8425,6 +8567,7 @@
     var local = loadLocal();
     if (local) state.sessions = normalizeLocal(local);
     state.loading = false;
+    rafraichirFusionAuto(true);
     renderAll();
     Sync.demarrer();
     // Apres le premier rendu : l'ecran ne doit pas attendre une relecture de

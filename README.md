@@ -66,8 +66,9 @@ repository is for right now.
   moves as a block. Start and end times are stamped on their own, from the first
   and last logged set, and can be corrected in one tap.
 - **One movement, one history.** Gym shorthand (`bench`, `RDL`, `OHP`…) shares
-  the full name's history on its own, and the card's `⋯` menu merges or
-  separates two exercise names at any time.
+  the full name's history on its own, near-identical spellings (« leg curl »,
+  « Leg curls », a typo) merge without asking, and the card's `⋯` menu merges
+  or separates two exercise names at any time.
 - **See where you stand.** A calendar planning (day, week, month), planned
   sessions and history, an end-of-session recap compared with the same session
   last week, with the muscles worked and next time's target, weekly, monthly

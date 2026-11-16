@@ -1959,5 +1959,19 @@ ok('le bouton prend l icone de l outil', /iconeOutil\(outilDe\(ex\)\.outil\)/.te
 ok('le choix n apparait que dans la serie ouverte', REFONTE.includes('.serie-card.ouverte .serie-outil-choix{display:block;}'));
 ok('les reglages relisent les outils connus et eux seuls', /if \(TS\.OUTILS\.indexOf\(lu\.outils\[nom\]\) > -1\) r\.outils\[nom\] = lu\.outils\[nom\];/.test(SRC));
 
+console.log('\n== 58. Les noms qui se ressemblent se reunissent seuls (16/11) ==');
+ok('casse, accents, ponctuation et pluriel ne separent plus deux noms', /function cleLache\(k\)\{\s*return sansAccents\(k\)\.replace\(\/\[\^a-z0-9\]\+\/g, ' '\)/.test(SRC)
+   && /m\.length > 3 \? m\.replace\(\/s\$\/, ''\) : m/.test(SRC));
+ok('une faute sur un seul mot, de cinq lettres au moins, qui commence pareil',
+   /if \(m\.length < 5 \|\| n\.length < 5 \|\| \/\\d\/\.test\(m \+ n\) \|\| m\.charAt\(0\) !== n\.charAt\(0\)\) return false;\s*return ecartMots\(m, n, 1\) <= 1;/.test(SRC));
+ok('deux exercices de la base ne se reunissent jamais', /if \(base\[a\] && base\[b\]\) continue;/.test(SRC) && /if \(ancres\.length > 1\) return;/.test(SRC));
+ok('sa decision passe avant : un nom relie ou separe a la main ne bouge pas', /return k && !\(info && \(info\.alias \|\| info\.seul\)\);/.test(SRC));
+ok('la fusion passe apres l alias et le choix « separe », puis par le dictionnaire',
+   /if \(info && info\.seul\) return k;[\s\S]{0,400}if \(\(!syn \|\| syn === k\) && FUSION_AUTO\[k\]\) return cleCanonique\(FUSION_AUTO\[k\]\);/.test(SRC));
+ok('un seul nom affiche par exercice', /function nomCanoniqueCalcul\(nom\)\{[\s\S]{0,300}if \(dansBase\) return dansBase;[\s\S]{0,300}AFFICHE_CLE\[cle\]/.test(SRC));
+ok('les exercices suivis se reconnaissent par l exercice, pas par l ecriture', /function indexSuivi\(nom\)/.test(SRC) && /parCle\[cleCanonique\(it\.nom\)\] = it;/.test(SRC));
+ok('aucune question pour un nom deja reuni', /if \(!syn && FUSION_AUTO\[cleExo\(ex\.nom\)\]\) return;/.test(SRC));
+ok('recalcule quand les noms changent, pas a chaque ecran', /function rafraichirFusionAuto\(force\)\{[\s\S]{0,300}if \(!force && sig === signatureFusion\) return false;/.test(SRC));
+
 console.log(`\n${pass} reussis, ${fail} echoues`);
 process.exit(fail ? 1 : 0);

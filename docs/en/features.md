@@ -742,6 +742,19 @@ used to announce « ajouté à tes exercices » without showing that linking was
 possible — and since the new card, the box was inserted next to an element that
 had moved into the header, so it no longer appeared at all.
 
+**Look-alike names (2026-11-16).** « leg curl » and « Leg curl »,
+« divierging seated row » and « Diverging seated row »: one exercise typed two
+ways. The app merges them on its own, without asking, when the two names differ
+only by case, accents, punctuation, a plural « s », or a single typo on a single
+word (one letter added, missing, changed or swapped, on a word of at least five
+letters that starts the same). Two database exercises never merge: « Développé
+incliné » and « Développé décliné » stay apart. The kept name is the database's
+or the dictionary's, else the most used; the recap shows one name per exercise.
+A name linked or separated by hand is never touched, and `LES SÉPARER` in the
+`⋯` menu undoes a merge. Followed exercises are matched by exercise, not by
+spelling (`FUSION_AUTO`, `rafraichirFusionAuto`, recomputed only when names
+change).
+
 **Gym shorthand.** `RDL`, `OHP`, `bench`, `deadlift`, `BSS`…: some forty
 abbreviations and English names point at a name in the built-in list
 (`SYNONYMES`). No fuzzy match could find them — « RDL » and « Soulevé de terre

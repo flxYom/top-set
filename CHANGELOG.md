@@ -9,6 +9,24 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ## [Unreleased]
 
+### Changed — look-alike exercise names merge on their own (2026-11-16)
+
+- « leg curl », « Leg curl » and « Leg curls » were already one exercise for
+  the history, but the recap grouped by the name as typed that day, so it
+  showed one line per spelling. There is now one display name per exercise
+  (the database's, else the most used spelling, capitalised).
+- Names that differ only by case, accents, punctuation, a plural « s », or a
+  single typo on a single word (one letter added, missing, changed or
+  swapped, on a word of five letters or more that starts the same) now merge
+  without asking: « divierging seated row » and « Diverging seated row » are
+  one exercise. Two database exercises never merge (incliné / décliné stay
+  apart), names linked or separated by hand are left alone, and `LES SÉPARER`
+  in the `⋯` menu undoes an automatic merge. No question is asked when
+  typing a name that already merged. Followed exercises (SUIVIS) are matched
+  by exercise, not spelling, so none is lost. Recomputed only when the set of
+  names changes; the 18-month logbook bench shows no slowdown. Service
+  worker v84, gabarits §58.
+
 ### Changed — the plate line follows the equipment (2026-11-16)
 
 - The load line of the open set keeps its place and size but now speaks

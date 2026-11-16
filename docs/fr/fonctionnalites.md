@@ -811,6 +811,20 @@ annonçait « ajouté à tes exercices » sans montrer qu'on pouvait le rattache
 et depuis la nouvelle carte, l'encart s'insérait à côté d'un élément parti dans
 l'en-tête, donc il ne s'affichait plus du tout.
 
+**Les noms qui se ressemblent (16/11/2026).** « leg curl » et « Leg curl »,
+« divierging seated row » et « Diverging seated row » : le même exercice écrit
+deux fois. L'app les réunit seule, sans rien demander, quand les deux noms ne
+diffèrent que par les majuscules, les accents, la ponctuation, un pluriel en
+« s », ou une seule faute de frappe sur un seul mot (une lettre en trop, en
+moins, changée ou inversée, sur un mot d'au moins cinq lettres qui commence
+pareil). Deux exercices de la base ne se réunissent jamais : « Développé
+incliné » et « Développé décliné » restent deux exercices. Le nom gardé est
+celui de la base ou du dictionnaire, sinon le plus utilisé ; le récap n'affiche
+plus qu'un nom par exercice. Un nom relié ou séparé à la main n'est jamais
+touché, et `LES SÉPARER`, dans le menu `⋯`, défait une fusion. Les exercices
+suivis se reconnaissent par l'exercice, plus par l'écriture (`FUSION_AUTO`,
+`rafraichirFusionAuto`, recalculé seulement quand les noms changent).
+
 **Les abréviations de salle.** `RDL`, `OHP`, `bench`, `deadlift`, `BSS`… :
 une quarantaine d'abréviations et de noms anglais pointent vers un nom de la
 base (`SYNONYMES`). Aucun rapprochement automatique ne pouvait les trouver —

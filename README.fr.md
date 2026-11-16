@@ -65,8 +65,10 @@ c'est exactement à ça que sert ce repo pour l'instant.
   d'un bloc. L'heure de début et l'heure de fin se posent toutes seules, sur la
   première et la dernière série notées, et se corrigent d'un appui.
 - **Un mouvement, un historique.** Les abréviations de salle (`bench`, `RDL`,
-  `OHP`…) partagent l'historique du nom entier tout seules, et le menu `⋯` de
-  la carte fusionne ou sépare deux noms d'exercice à tout moment.
+  `OHP`…) partagent l'historique du nom entier tout seules, les écritures
+  proches (« leg curl », « Leg curls », une faute de frappe) se réunissent sans
+  rien demander, et le menu `⋯` de la carte fusionne ou sépare deux noms
+  d'exercice à tout moment.
 - **Voir où on en est.** Un planning en calendrier (jour, semaine, mois), les
   séances prévues et l'historique, un bilan de fin de séance comparé à la même
   séance la semaine d'avant, avec la silhouette des muscles travaillés et la
