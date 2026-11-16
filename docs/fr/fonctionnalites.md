@@ -419,6 +419,18 @@ ligne avec son nombre de séries, les muscles dessous). La légende est une seul
 fonction pour le récap, la fiche et le bilan. Pas de silhouette pendant la
 séance elle-même : l'écran de saisie reste réservé aux séries.
 
+**La régularité, comptée en semaines** (16 novembre 2026). Un objectif de
+séances par semaine (de 1 à 7, 3 par défaut) se règle dans RÉGLAGES ET PROFIL.
+Une semaine est « tenue » quand elle l'atteint. PROGRÈS montre le compte de la
+semaine, le nombre de semaines tenues d'affilée et huit colonnes pour les huit
+dernières semaines (une pastille par séance visée, vertes quand la semaine est
+tenue). La semaine en cours ne casse jamais la série avant d'être finie, et rien
+ne se compte en jours : un jour de repos fait partie de l'entraînement. Une
+séance, c'est un jour où au moins une série est notée. Le bilan dit où en est
+la semaine (« 3e séance de la semaine · objectif tenu · 5 semaines
+d'affilée »). La règle est `TS.regularite` dans `intelligence.js` ; l'objectif
+reste dans les réglages locaux (`topset_reglages.objectifSemaine`).
+
 **Duplication de série.** `+ SÉRIE` recopie la précédente : poids, reps, RPE,
 repos. Seul `fait` repart à zéro, et le commentaire ne se recopie pas. Sur cinq
 séries identiques, tu en saisis une et tu appuies quatre fois. La ligne s'ajoute

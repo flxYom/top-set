@@ -596,7 +596,10 @@ ok('un jour vide propose de refaire la seance de la semaine d avant ou la dernie
 
 ok('le bilan compare a la meme seance la semaine d avant, sans tonnage',
    /function seanceComparable\(ds, cles, minimum\)\{/.test(SRC) && /function comparerExo\(e, avant\)\{/.test(SRC)
-   && /PAR RAPPORT À /.test(SRC) && !/kg soulevés/.test(SRC) && !/CETTE SEMAINE/.test(SRC)
+   // Le bilan ne parle plus du tonnage de la semaine. « CETTE SEMAINE » vit
+   // ailleurs depuis le 16/11 : dans le bloc de regularite de PROGRES.
+   && /PAR RAPPORT À /.test(SRC) && !/kg soulevés/.test(SRC)
+   && !/CETTE SEMAINE/.test(corps('function montrerBilan(ds){', 'function animerCompteur(el){'))
    && !/function volumeSemaine/.test(SRC) && !/b\.volume/.test(SRC));
 ok('sous + AJOUTER UN EXERCICE, les exercices faits avec ceux-la la semaine d avant',
    /id="addExerciseBtn">\+ AJOUTER UN EXERCICE<\/button>\s*<div class="suggest-exo" id="suggestExo" hidden><\/div>/.test(HTML)
@@ -785,7 +788,7 @@ ok('chrono libre : une heure de depart gardee, pas un compteur qui tourne',
 // exos, desactiver activer le chrono et personnaliser des reglages simples. »
 ok('reglages : par defaut l app est en mode simple, et rien n est efface',
    SRC.indexOf('var REGLAGES_DEFAUT = { chronoAuto:true, btnChrono:false, champRepos:false, rpe:false, ecranAllume:true,') > -1
-   && SRC.indexOf('nomsLibres:false, couleurs:{}, barres:{}, suivis:[] };') > -1
+   && SRC.indexOf('nomsLibres:false, couleurs:{}, barres:{}, suivis:[], objectifSemaine:3 };') > -1
    && /document\.body\.classList\.toggle\('sans-rpe', !reglages\.rpe\);/.test(SRC)
    && /body\.sans-rpe \.serie-rpe,/.test(HTML)
    && /body\.sans-repos-champ \.serie-repos-champ\{display:none;\}/.test(HTML)
@@ -1676,7 +1679,7 @@ ok('le choix de page SUIVIS / TOUS, avec ses comptes',
    && /data-page="suivis" aria-pressed="false">SUIVIS<span class="seg-compte" id="recapNbSuivis">/.test(HTML)
    && /data-page="tous" aria-pressed="false">TOUS<span class="seg-compte" id="recapNbTous">/.test(HTML));
 ok('les suivis sont un reglage local, lu sans doublon et borne',
-   /couleurs:\{\}, barres:\{\}, suivis:\[\] \}/.test(SRC) && /var SUIVIS_MAX = 40;/.test(SRC)
+   /couleurs:\{\}, barres:\{\}, suivis:\[\], objectifSemaine:3 \}/.test(SRC) && /var SUIVIS_MAX = 40;/.test(SRC)
    && /k === 'suivis' \? \[\] : REGLAGES_DEFAUT\[k\]/.test(SRC)
    && /r\.suivis\.indexOf\(nom\) < 0 && r\.suivis\.length < SUIVIS_MAX/.test(SRC));
 ok('sans exercice suivi on arrive sur TOUS, sinon sur SUIVIS',
@@ -1730,6 +1733,23 @@ ok('elle dit ce qu elle montre', /muscleMapSVG\(sousC, 'Muscles travaillés pend
 ok('la fiche et le bilan la portent',
    /html \+= musclesDuJour\(ds, 'fiche-muscles'\);/.test(SRC) && /musclesDuJour\(ds, 'bilan-muscles anim'\)/.test(SRC));
 ok('le bilan la tient a 124 px de large', /\.bilan-muscles \.muscle-svg\{width:124px;height:auto;\}/.test(REFONTE));
+
+console.log('\n== 46. La regularite (16/11) : comptee en semaines ==');
+ok('la regle vit dans intelligence.js, l app ne fait que l appeler',
+   /return TS\.regularite\(jours, reglages\.objectifSemaine, ds\);/.test(SRC) && !/function lundiDe/.test(SRC));
+ok('une seance seulement prevue ne compte pas', /return d <= ds && compterJour\(state\.sessions\[d\]\) > 0;/.test(SRC));
+ok('l objectif est un reglage local, de 1 a 7',
+   /if \(o >= 1 && o <= 7\) r\.objectifSemaine = o;/.test(SRC)
+   && /id="regObjectif" role="group" aria-labelledby="regObjectifLabel"/.test(HTML)
+   && /reglages\.objectifSemaine = Number\(b\.dataset\.v\);/.test(SRC));
+ok('PROGRES porte le bloc, quelle que soit la periode',
+   /<div id="recapRegularite"><\/div>\s*<div id="recapHeatmap">/.test(HTML)
+   && /document\.getElementById\('recapRegularite'\)\.innerHTML = blocRegularite\(\);/.test(SRC));
+ok('chaque colonne dit sa semaine en mots', /role="img" aria-label="' \+ esc\(dit\) \+ '"/.test(SRC));
+ok('le vert dit tenue, comme fait', /\.regu-col\.tenue \.regu-pips i\.plein\{background:var\(--ok\);\}/.test(REFONTE)
+   && /\.bilan-regu\.tenue\{color:var\(--ok\);\}/.test(REFONTE));
+ok('le bilan dit ou en est la semaine', /\+ ligneRegularite\(regulariteAu\(ds\)\);/.test(SRC) && /' · objectif tenu'/.test(SRC));
+ok('le bouton OBJECTIF fait 44 px', /\.regu-objectif\{min-height:44px;/.test(REFONTE));
 
 console.log(`\n${pass} reussis, ${fail} echoues`);
 process.exit(fail ? 1 : 0);

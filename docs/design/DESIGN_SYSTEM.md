@@ -212,6 +212,15 @@ Garde : gabarits §40.
 **Le verre : une seule exception, la loupe des onglets** (décision du
 13/09/2026). Aucun nouvel élément en verre ailleurs.
 
+**La régularité — 16/11/2026.** Une carte `--s1` au rayon `--r-xl`, placée
+sous les trois tuiles de PROGRÈS. Deux chiffres en `--t-5` (la semaine « 2 / 3 »,
+la série de semaines, verte `--ok` dès qu'elle vaut 1), puis huit colonnes de
+46 px : autant de pastilles que l'objectif, `--s3` vides, `--ink3` pleines,
+`--ok` quand la semaine est tenue ; la semaine en cours porte un contour
+`--trait2`. Deux repères d'axe seulement (IL Y A 7 SEM., CETTE SEM.) : chaque
+colonne dit sa semaine en mots pour les lecteurs d'écran. Jamais de flamme ni
+de compteur de jours : la régularité ne punit pas le repos. Garde : gabarits §46.
+
 **La silhouette d'une séance — 16/11/2026.** Le schéma du récap
 (`muscleMapSVG`) sert aussi pour un seul jour : carte `--s1` au rayon
 `--r-xl` dans la fiche, bloc au rayon `--r-m` dans le bilan, où le dessin

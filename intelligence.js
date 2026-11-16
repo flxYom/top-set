@@ -937,6 +937,71 @@
     };
   }
 
+  // ------------------------------------------------------------------
+  // Regularite, comptee en semaines (16/11/2026)
+  // ------------------------------------------------------------------
+  // Un objectif de N seances par semaine, du lundi au dimanche. Une semaine
+  // est « tenue » quand elle l'atteint. La serie, c'est le nombre de semaines
+  // tenues d'affilee jusqu'a aujourd'hui ; la semaine en cours ne la casse pas
+  // tant qu'elle n'est pas finie — on ne punit pas un lundi. Jamais en jours :
+  // un jour de repos fait partie de l'entrainement, ce n'est pas un echec.
+  // Une seance, c'est un jour du carnet ou au moins une serie est notee : deux
+  // passages le meme jour comptent une fois.
+  var JOUR_MS = 864e5;
+  function deux(n) { return (n < 10 ? '0' : '') + n; }
+  function jourEpoque(ds) {
+    var p = String(ds).split('-').map(Number);
+    return Math.floor(Date.UTC(p[0], p[1] - 1, p[2]) / JOUR_MS);
+  }
+  // Le lundi de la semaine, en jours depuis 1970 (un jeudi).
+  function lundiDe(ds) {
+    var j = jourEpoque(ds);
+    return j - (((j + 3) % 7) + 7) % 7;
+  }
+  function dateDe(j) {
+    var d = new Date(j * JOUR_MS);
+    return d.getUTCFullYear() + '-' + deux(d.getUTCMonth() + 1) + '-' + deux(d.getUTCDate());
+  }
+  function regularite(dates, objectif, aujourdhui, nbSemaines) {
+    var obj = Math.max(1, Math.min(7, Math.round(Number(objectif)) || 3));
+    var n = Math.max(1, Math.round(Number(nbSemaines)) || 8);
+    var lundiAuj = lundiDe(aujourdhui);
+    var parSemaine = {}, vus = {}, premier = null;
+    (dates || []).forEach(function (ds) {
+      ds = String(ds);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(ds) || vus[ds] || ds > aujourdhui) return;
+      vus[ds] = true;
+      var l = lundiDe(ds);
+      parSemaine[l] = (parSemaine[l] || 0) + 1;
+      if (premier === null || l < premier) premier = l;
+    });
+    var compte = function (l) { return parSemaine[l] || 0; };
+    var cetteSemaine = compte(lundiAuj);
+    var serie = 0, meilleure = 0;
+    if (premier !== null) {
+      if (cetteSemaine >= obj) serie = 1;
+      for (var l = lundiAuj - 7; l >= premier && compte(l) >= obj; l -= 7) serie++;
+      var cours = 0;
+      for (var w = premier; w <= lundiAuj; w += 7) {
+        if (compte(w) >= obj) { cours++; if (cours > meilleure) meilleure = cours; }
+        else if (w !== lundiAuj) cours = 0;
+      }
+    }
+    var semaines = [];
+    for (var i = n - 1; i >= 0; i--) {
+      var lw = lundiAuj - 7 * i;
+      semaines.push({ lundi: dateDe(lw), seances: compte(lw), tenue: compte(lw) >= obj, enCours: i === 0 });
+    }
+    return {
+      objectif: obj,
+      cetteSemaine: cetteSemaine,
+      reste: Math.max(0, obj - cetteSemaine),
+      serie: serie,
+      meilleure: meilleure,
+      semaines: semaines
+    };
+  }
+
   return {
     TYPES: TYPES,
     TYPES_VALIDES: TYPES_VALIDES,
@@ -970,6 +1035,7 @@
     seriesEchauffement: seriesEchauffement,
     DISQUES: DISQUES,
     BARRES: BARRES,
-    chargerBarre: chargerBarre
+    chargerBarre: chargerBarre,
+    regularite: regularite
   };
 });

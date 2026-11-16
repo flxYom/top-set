@@ -9,6 +9,20 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ## [Unreleased]
 
+### Added — consistency counted in weeks (2026-11-16)
+
+- A weekly goal (1 to 7 sessions, 3 by default) in RÉGLAGES ET PROFIL. A week
+  is "held" when it reaches the goal; PROGRÈS shows this week's count, the
+  number of weeks held in a row, and eight columns for the last eight weeks
+  (one pip per targeted session, green when held). The current week never
+  breaks the streak before it ends, and it is never counted in days: a rest
+  day is part of training. A session is a day with at least one logged set.
+- The end-of-session summary says where the week stands: "3e séance de la
+  semaine · objectif tenu · 5 semaines d'affilée".
+- The rule is `TS.regularite` in `intelligence.js` (10 tests). The goal lives
+  in the local settings (`topset_reglages.objectifSemaine`), never synced.
+  Service worker v72, gabarits §46.
+
 ### Added — a session's muscle silhouette (2026-11-16)
 
 - The front-and-back silhouette of PROGRÈS now also shows one session: in

@@ -614,6 +614,29 @@ titre('Les modeles de carnet publies sur /outils se reimportent');
 }
 
 // ----------------------------------------------------------------
+titre('Regularite, comptee en semaines (16/11/2026)');
+{
+  const AUJ = '2026-11-18'; // un mercredi : la semaine va du 16 au 22
+  const deuxTenues = ['2026-11-02', '2026-11-04', '2026-11-06', '2026-11-09', '2026-11-11', '2026-11-13', '2026-11-16'];
+  const r = TS.regularite(deuxTenues, 3, AUJ);
+  egal('une seance cette semaine, deux a faire', [r.cetteSemaine, r.reste], [1, 2]);
+  egal('la semaine en cours ne casse pas la serie', r.serie, 2);
+  egal('huit semaines, la derniere en cours, du lundi', [r.semaines.length, r.semaines[7].lundi, r.semaines[7].enCours, r.semaines[6].tenue], [8, '2026-11-16', true, true]);
+  const tenue = TS.regularite(deuxTenues.concat(['2026-11-17', '2026-11-18']), 3, AUJ);
+  egal('la semaine en cours compte des qu elle est tenue', [tenue.serie, tenue.reste], [3, 0]);
+  const ratee = TS.regularite(['2026-10-26', '2026-10-28', '2026-10-30', '2026-11-02', '2026-11-04', '2026-11-06', '2026-11-09', '2026-11-11'], 3, AUJ);
+  egal('une semaine ratee remet la serie a zero, la meilleure reste', [ratee.serie, ratee.meilleure], [0, 2]);
+  egal('un jour en double, une date future ou illisible ne comptent pas',
+       TS.regularite(['2026-11-16', '2026-11-16', '2026-11-20', 'hier', null], 3, AUJ).cetteSemaine, 1);
+  egal('l objectif reste entre 1 et 7', [TS.regularite([], 9, AUJ).objectif, TS.regularite([], 0, AUJ).objectif, TS.regularite([], '2', AUJ).objectif], [7, 3, 2]);
+  egal('sans seance, tout est a zero', (({ cetteSemaine, serie, meilleure }) => [cetteSemaine, serie, meilleure])(TS.regularite([], 3, AUJ)), [0, 0, 0]);
+  egal('le 31 decembre et le 1er janvier sont dans la meme semaine',
+       TS.regularite(['2026-12-31', '2027-01-01'], 2, '2027-01-02').semaines[7], { lundi: '2026-12-28', seances: 2, tenue: true, enCours: true });
+  egal('un objectif d une seance : chaque semaine faite compte',
+       TS.regularite(['2026-11-03', '2026-11-12'], 1, AUJ).serie, 2);
+}
+
+// ----------------------------------------------------------------
 console.log('\n' + '='.repeat(52));
 if (echecs.length) {
   console.log(passes + ' tests passes, ' + echecs.length + ' ECHEC(S) :');

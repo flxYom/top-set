@@ -383,6 +383,17 @@ below). The legend is one shared function for the recap, the sheet and the
 summary. No silhouette during the session itself: the logging screen stays for
 sets.
 
+**Consistency, counted in weeks** (16 November 2026). A weekly goal (1 to 7
+sessions, 3 by default) is set in RÉGLAGES ET PROFIL. A week is "held" when it
+reaches it. PROGRÈS shows this week's count, the weeks held in a row and eight
+columns for the last eight weeks (one pip per targeted session, green when the
+week is held). The current week never breaks the streak before it ends, and
+nothing is counted in days: a rest day is part of training. A session is a day
+with at least one logged set. The summary says where the week stands ("3e séance
+de la semaine · objectif tenu · 5 semaines d'affilée"). The rule is
+`TS.regularite` in `intelligence.js`; the goal stays in the local settings
+(`topset_reglages.objectifSemaine`).
+
 **Set duplication.** `+ SÉRIE` copies the previous set — weight, reps, RPE, rest.
 Only `fait` resets, and the comment is not copied. Five identical sets means
 typing one and tapping four times. The row is added to the card without

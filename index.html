@@ -3535,6 +3535,35 @@ button:active:not(:disabled):not(.topbar-tab):not(.bulle-onglet){filter:brightne
 .bilan-muscles{border-radius:var(--r-m);padding:9px 11px 11px;}
 .bilan-muscles .muscle-svg{width:124px;height:auto;}
 .bilan-muscles .muscle-legend{gap:6px;}
+/* ---- Regularite (16/11/2026) : comptee en semaines ---- */
+/* Deux chiffres, puis huit colonnes : une par semaine, autant de pastilles
+   que l'objectif. Le vert dit « tenue », comme partout ailleurs « fait ». */
+.regu{display:flex;flex-direction:column;gap:12px;padding:13px 14px 12px;border:1px solid var(--trait);border-radius:var(--r-xl);background:var(--s1);}
+.regu-tete{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.regu-titre{font-family:var(--f-ui);font-size:var(--t-1);font-weight:700;letter-spacing:.08em;color:var(--dim);}
+.regu-objectif{min-height:44px;margin:-10px -6px -10px 0;padding:0 6px;background:none;border:0;color:var(--ink3);font-family:var(--f-ui);font-size:var(--t-1);font-weight:700;letter-spacing:.08em;}
+.regu-chiffres{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}
+.regu-chiffres div{display:flex;flex-direction:column;gap:2px;}
+.regu-chiffres b{font-size:var(--t-5);font-weight:800;letter-spacing:-.02em;line-height:1;font-variant-numeric:tabular-nums;}
+.regu-chiffres b small{font-size:var(--t-3);font-weight:700;letter-spacing:0;color:var(--dim);}
+.regu-chiffres .tenue b{color:var(--ok);}
+.regu-chiffres span{font-family:var(--f-ui);font-size:var(--t-1);font-weight:700;letter-spacing:.08em;color:var(--dim);}
+.regu-semaines{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:6px;align-items:end;}
+.regu-col{display:flex;flex-direction:column;align-items:center;gap:5px;}
+.regu-pips{display:flex;flex-direction:column-reverse;gap:3px;width:100%;max-width:22px;height:46px;}
+.regu-pips i{flex:1;border-radius:3px;background:var(--s3);}
+.regu-pips i.plein{background:var(--ink3);}
+.regu-col.tenue .regu-pips i.plein{background:var(--ok);}
+.regu-col b{font-size:var(--t-1);font-weight:700;color:var(--dim);font-variant-numeric:tabular-nums;}
+.regu-col.en-cours .regu-pips{outline:1px solid var(--trait2);outline-offset:3px;border-radius:4px;}
+.regu-col.en-cours b{color:var(--ink);}
+.regu-axe{display:flex;justify-content:space-between;margin-top:-6px;font-family:var(--f-ui);font-size:var(--t-1);font-weight:700;letter-spacing:.08em;color:var(--ink3);}
+.regu-note{margin:0;font-size:var(--t-2);line-height:1.45;color:var(--dim);}
+/* Les reglages : sept cases. */
+.segmented.reg-objectif{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));}
+/* Le bilan : une ligne sous la date. */
+.bilan-regu{margin:-4px 0 0;font-size:var(--t-2);font-weight:700;color:var(--dim);}
+.bilan-regu.tenue{color:var(--ok);}
 </style>
 </head>
 
@@ -3687,6 +3716,7 @@ button:active:not(:disabled):not(.topbar-tab):not(.bulle-onglet){filter:brightne
     <div class="recap-label" id="recapLabel">—</div>
     <div id="recapVolume"></div>
     <div class="stats-row" id="recapStats"></div>
+    <div id="recapRegularite"></div>
     <div id="recapHeatmap"></div>
     <div id="recapMuscle"></div>
     <p class="vue-sous-titre" id="recapPagesLabel">EXERCICES</p>
@@ -3916,6 +3946,13 @@ button:active:not(:disabled):not(.topbar-tab):not(.bulle-onglet){filter:brightne
       <p class="sheet-note">
         La couleur d'un groupe le suit partout : la carte de l'exercice, le
         planning, le récap et la silhouette.
+      </p>
+
+      <div class="sheet-label espace" id="regObjectifLabel">SÉANCES VISÉES PAR SEMAINE</div>
+      <div class="segmented reg-objectif" id="regObjectif" role="group" aria-labelledby="regObjectifLabel"></div>
+      <p class="sheet-note">
+        La régularité se compte en semaines, jamais en jours : un jour de repos
+        ne casse rien. PROGRÈS compte les semaines tenues d'affilée.
       </p>
 
       <div class="sheet-label espace">L'APP</div>

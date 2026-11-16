@@ -16,7 +16,7 @@
   // vit dans ce telephone et ne monte pas dans le compte.
   var CLE_REGLAGES = 'topset_reglages';
   var REGLAGES_DEFAUT = { chronoAuto:true, btnChrono:false, champRepos:false, rpe:false, ecranAllume:true,
-                          nomsLibres:false, couleurs:{}, barres:{}, suivis:[] };
+                          nomsLibres:false, couleurs:{}, barres:{}, suivis:[], objectifSemaine:3 };
   // Au plus quarante exercices suivis dans PROGRES : au-dela, « suivre » ne
   // veut plus rien dire.
   var SUIVIS_MAX = 40;
@@ -54,6 +54,10 @@
                 if (typeof nom === 'string' && nom.trim() && r.suivis.indexOf(nom) < 0 && r.suivis.length < SUIVIS_MAX) r.suivis.push(nom);
               });
             }
+          } else if (k === 'objectifSemaine'){
+            // Seances visees par semaine : un entier de 1 a 7, sinon 3.
+            var o = Math.round(Number(lu.objectifSemaine));
+            if (o >= 1 && o <= 7) r.objectifSemaine = o;
           } else if (typeof lu[k] === 'boolean') r[k] = lu[k];
         });
       }
@@ -67,6 +71,18 @@
   function couleurGroupe(g){
     return (g && reglages.couleurs[g]) || GROUP_COLORS[g] || GROUP_COLORS['Autre'];
   }
+  // ---------- regularite, en semaines (16/11/2026) ----------
+  // Les jours ou au moins une serie est notee, jusqu'a ds : c'est ce que la
+  // regle compte. Une seance seulement prevue ne compte pas.
+  function regulariteAu(ds){
+    var jours = Object.keys(state.sessions).filter(function(d){
+      return d <= ds && compterJour(state.sessions[d]) > 0;
+    });
+    return TS.regularite(jours, reglages.objectifSemaine, ds);
+  }
+  function ordinal(n){ return n + (n === 1 ? 're' : 'e'); }
+  function pluriel(n, mot){ return n + ' ' + mot + (n > 1 ? 's' : ''); }
+
   // ---------- exercices suivis (16/11/2026) ----------
   // Un exercice est suivi par son nom canonique, celui que le recap affiche.
   function estSuivi(nom){
@@ -4002,6 +4018,7 @@
       muscleEl.innerHTML = '';
       document.getElementById('recapStats').innerHTML = '';
       document.getElementById('recapHeatmap').innerHTML = '';
+      document.getElementById('recapRegularite').innerHTML = '';
       groupsEl.innerHTML = '<div class="empty-state">' + attente() + '</div>';
       return;
     }
@@ -4017,6 +4034,7 @@
     document.getElementById('recapStats').innerHTML =
       statTile(data.totalSeries,'Séries') + statTile(data.seances,'Séances') + statTile(data.mouvements,'Mouvements');
     document.getElementById('recapHeatmap').innerHTML = renderHeatmap(data.startStr, data.endStr);
+    document.getElementById('recapRegularite').innerHTML = blocRegularite();
 
     var counts = groupCountsIn(data.startStr, data.endStr);
     var sousC = sousCountsIn(data.startStr, data.endStr);
@@ -4050,6 +4068,37 @@
     document.getElementById('recapNbSuivis').textContent = reglages.suivis.length || '';
     document.getElementById('recapNbTous').textContent = data.items.length || '';
     groupsEl.innerHTML = page === 'suivis' ? rendreSuivis(data) : rendreTous(data);
+  }
+
+  // La regularite ne depend pas de la periode choisie : c'est toujours la
+  // semaine en cours et les sept d'avant. Rien tant que le carnet est vide.
+  function blocRegularite(){
+    var r = regulariteAu(toDateStr(new Date()));
+    if (!r.semaines.some(function(s){ return s.seances; }) && !r.meilleure) return '';
+    var colonnes = r.semaines.map(function(s){
+      var pleins = Math.min(s.seances, r.objectif), pips = '';
+      for (var i = 0; i < r.objectif; i++) pips += '<i' + (i < pleins ? ' class="plein"' : '') + '></i>';
+      var lundi = fromDateStr(s.lundi);
+      var dit = (s.enCours ? 'Cette semaine' : 'Semaine du ' + lundi.getDate() + ' ' + MONTH_NAMES[lundi.getMonth()])
+        + ' : ' + pluriel(s.seances, 'séance') + (s.tenue ? ', tenue' : '');
+      return '<div class="regu-col' + (s.tenue ? ' tenue' : '') + (s.enCours ? ' en-cours' : '') + '" role="img" aria-label="' + esc(dit) + '">'
+        + '<span class="regu-pips">' + pips + '</span><b>' + s.seances + '</b></div>';
+    }).join('');
+    var note = r.reste
+      ? 'Encore ' + pluriel(r.reste, 'séance') + ' pour tenir cette semaine.'
+      : 'Semaine tenue.';
+    if (r.meilleure > r.serie) note += ' Ta meilleure série : ' + pluriel(r.meilleure, 'semaine') + '.';
+    return '<div class="regu">'
+      + '<div class="regu-tete"><span class="regu-titre">RÉGULARITÉ</span>'
+      +   '<button type="button" class="regu-objectif" id="reguObjectif" aria-label="Objectif : ' + r.objectif + ' par semaine. Changer">OBJECTIF ' + r.objectif + ' / SEM. ›</button></div>'
+      + '<div class="regu-chiffres">'
+      +   '<div><b>' + r.cetteSemaine + '<small> / ' + r.objectif + '</small></b><span>CETTE SEMAINE</span></div>'
+      +   '<div' + (r.serie ? ' class="tenue"' : '') + '><b>' + r.serie + '</b><span>' + (r.serie > 1 ? 'SEMAINES D\'AFFILÉE' : 'SEMAINE D\'AFFILÉE') + '</span></div>'
+      + '</div>'
+      + '<div class="regu-semaines">' + colonnes + '</div>'
+      + '<div class="regu-axe" aria-hidden="true"><span>IL Y A 7 SEM.</span><span>CETTE SEM.</span></div>'
+      + '<p class="regu-note">' + esc(note) + '</p>'
+      + '</div>';
   }
 
   function pageRecap(){
@@ -4463,6 +4512,13 @@
     if (p){ state.recapPage = p.dataset.page; renderRecap(); return; }
     var btn = e.target.closest('[data-recap-name]'); if (!btn) return;
     ouvrirExercice(btn.dataset.recapName, 'recap');
+  });
+  // L'objectif se regle dans les reglages : on y va, au bon endroit.
+  document.getElementById('recapRegularite').addEventListener('click', function(e){
+    if (!e.target.closest('#reguObjectif')) return;
+    openProfil();
+    var z = document.getElementById('regObjectif');
+    if (z && z.scrollIntoView) z.scrollIntoView({ block:'center' });
   });
   document.getElementById('recapPages').addEventListener('click', function(e){
     var btn = e.target.closest('.seg-btn'); if (!btn) return;
@@ -6073,6 +6129,11 @@
               + (t[0] === GROUP_COLORS[g].toLowerCase() ? ' data-origine="1"' : '') + '></button>';
           }).join('') + '</div></div>';
     }).join('');
+    var zoneO = document.getElementById('regObjectif');
+    if (zoneO) zoneO.innerHTML = [1,2,3,4,5,6,7].map(function(n){
+      return '<button type="button" class="seg-btn' + (reglages.objectifSemaine === n ? ' active' : '') + '" data-reg="objectif" data-v="' + n + '"'
+        + ' aria-pressed="' + (reglages.objectifSemaine === n) + '" aria-label="' + n + (n > 1 ? ' séances' : ' séance') + ' par semaine">' + n + '</button>';
+    }).join('');
     zoneB.innerHTML = BASCULES.map(function(b){
       return '<button type="button" class="reg-bascule" data-reg="bascule" data-cle="' + b.cle + '" aria-pressed="' + !!reglages[b.cle] + '">'
         + '<span><b>' + esc(b.titre) + '</b><small>' + esc(b.note) + '</small></span>'
@@ -6090,6 +6151,8 @@
     if (b.dataset.reg === 'couleur'){
       if (b.dataset.v === GROUP_COLORS[b.dataset.groupe]) delete reglages.couleurs[b.dataset.groupe];
       else reglages.couleurs[b.dataset.groupe] = b.dataset.v;
+    } else if (b.dataset.reg === 'objectif'){
+      reglages.objectifSemaine = Number(b.dataset.v);
     } else {
       reglages[b.dataset.cle] = !reglages[b.dataset.cle];
       appliquerReglages();
@@ -6770,6 +6833,15 @@
     if (bilanJour === ds && !bilanEcran.hidden && bilanCorps.querySelector('.bilan-chargement')) montrerBilan(ds);
   }
 
+  // « 3e séance de la semaine · objectif tenu · 5 semaines d'affilée ».
+  function ligneRegularite(r){
+    if (!r.cetteSemaine) return '';
+    var t = ordinal(r.cetteSemaine) + ' séance de la semaine';
+    t += r.reste ? ' sur ' + r.objectif + ' · encore ' + r.reste : ' · objectif tenu';
+    if (!r.reste && r.serie > 1) t += ' · ' + r.serie + ' semaines d\'affilée';
+    return '<p class="bilan-regu anim' + (r.reste ? '' : ' tenue') + '" style="--i:2">' + esc(t) + '</p>';
+  }
+
   function montrerBilan(ds){
     var b = bilanDuJour(ds);
     if (!b){
@@ -6782,7 +6854,8 @@
     var html = '<div class="bilan-fini">'
       + '<p class="bilan-tag anim" style="--i:0">SÉANCE TERMINÉE</p>'
       + '<h2 class="bilan-titre anim" id="bilanTitre" style="--i:1">' + esc(b.titre) + '</h2>'
-      + '<p class="bilan-date anim" style="--i:1">' + esc(majuscule(DAY_NAMES[(d.getDay()+6)%7]) + ' ' + d.getDate() + ' ' + MONTH_NAMES[d.getMonth()]) + '</p>';
+      + '<p class="bilan-date anim" style="--i:1">' + esc(majuscule(DAY_NAMES[(d.getDay()+6)%7]) + ' ' + d.getDate() + ' ' + MONTH_NAMES[d.getMonth()]) + '</p>'
+      + ligneRegularite(regulariteAu(ds));
     var c = b.comparaison;
     if (c){
       var n = c.lignes.length;
