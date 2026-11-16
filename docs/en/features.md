@@ -432,6 +432,15 @@ one phone to another. One SVG set replaces them, drawn like the tab icons
 Typographic signs stay text: the × of "80 kg × 10", the arrow of times, ▲ ▼
 before a percentage, the › of links.
 
+**One colour per state** (16 November 2026). Errors have their own colour,
+`--erreur` (#ff4d6d), instead of the action orange: error messages, the card's
+"delete", the sheets' destructive buttons. It is 16 ΔE from the orange in normal
+vision; in tritanopia the two merge, so an error always carries a sentence and a
+deletion its bin. Alerts become neutral: yellow only means a record, and the
+previous top set in the PRÉC. column reads by weight. A record shows during the
+session: a solid yellow pill with a dark star at the corner of the tick, instead
+of a 15 px outlined star.
+
 **Set duplication.** `+ SÉRIE` copies the previous set — weight, reps, RPE, rest.
 Only `fait` resets, and the comment is not copied. Five identical sets means
 typing one and tapping four times. The row is added to the card without

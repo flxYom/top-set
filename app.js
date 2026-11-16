@@ -1873,7 +1873,9 @@
     });
   }
 
-  var ETOILE_PR = '<span class="serie-pr" title="Nouveau record" aria-label="Nouveau record"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ffd23f" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.6 5.6 6.1.8-4.5 4.2 1.2 6-5.4-3-5.4 3 1.2-6L3.3 9.4l6.1-.8z"></path></svg></span>';
+  // Une pastille jaune pleine, etoile sombre : l'ancienne etoile au trait,
+  // 15 px dans le coin de la coche, ne se voyait pas en seance. (16/11/2026)
+  var ETOILE_PR = '<span class="serie-pr" role="img" title="Nouveau record" aria-label="Nouveau record"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 3l2.6 5.6 6.1.8-4.5 4.2 1.2 6-5.4-3-5.4 3 1.2-6L3.3 9.4l6.1-.8z"></path></svg></span>';
 
   // ---------- la carte d'un exercice ----------
   // Une serie tient sur UNE ligne, comme dans les carnets qu'on connait

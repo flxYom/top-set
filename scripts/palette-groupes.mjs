@@ -13,6 +13,7 @@ const SRC = readFileSync(new URL('../app.js', import.meta.url), 'utf8');
 const bloc = (SRC.match(/var GROUP_COLORS = \{([\s\S]*?)\};/) || [])[1];
 if (!bloc) { console.error('GROUP_COLORS introuvable dans app.js'); process.exit(1); }
 const GROUPES = Object.fromEntries([...bloc.matchAll(/'([^']+)':'(#[0-9a-fA-F]{6})'/g)].map(m => [m[1], m[2]]));
+// erreur : posee le 16/11/2026 (--erreur dans la couche refonte).
 const SENS = { marque: '#ff5c38', record: '#ffd23f', reussite: '#2bd08a', info: '#4d7cff', erreur: '#ff4d6d' };
 const SURFACE = '#151412';
 // Entre groupes : au moins 7, l'ancienne palette tombait a 6,7 (deuteranopie).

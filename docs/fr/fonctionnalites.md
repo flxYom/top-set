@@ -481,6 +481,17 @@ vérifiées par un gabarit. Les signes typographiques restent du texte : le ×
 de « 80 kg × 10 », la flèche des horaires, ▲ ▼ devant un pourcentage, le ›
 des liens.
 
+**Une couleur par état** (16 novembre 2026). L'erreur a sa couleur,
+`--erreur` (#ff4d6d), au lieu de l'orange de l'action : messages d'erreur,
+« supprimer » de la carte, boutons destructifs des feuilles. Elle est à 16 de
+l'orange en vision normale ; en tritanopie les deux se confondent, donc une
+erreur porte toujours une phrase, et une suppression sa corbeille. L'alerte
+devient neutre (filet clair, texte blanc cassé) : le jaune ne dit plus que le
+record, et le top set de la dernière fois, dans la colonne PRÉC., se lit à la
+graisse. Le record se voit en séance : une pastille jaune pleine, étoile
+sombre, qui surgit au coin de la coche, à la place d'une étoile au trait de
+15 px.
+
 **Duplication de série.** `+ SÉRIE` recopie la précédente : poids, reps, RPE,
 repos. Seul `fait` repart à zéro, et le commentaire ne se recopie pas. Sur cinq
 séries identiques, tu en saisis une et tu appuies quatre fois. La ligne s'ajoute

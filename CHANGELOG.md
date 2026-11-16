@@ -9,6 +9,19 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ## [Unreleased]
 
+### Changed — one colour per state (2026-11-16)
+
+- Errors get their own colour, `--erreur` #ff4d6d, instead of the action
+  orange: error messages, the card's "delete", the sheet's destructive
+  buttons. It sits 16 ΔE from the orange in normal vision; in tritanopia
+  they merge, so an error always carries a sentence and a deletion its bin.
+- Alerts are neutral (light rule, off-white text): yellow now only means a
+  record. The previous top set in the PRÉC. column reads by weight instead
+  of yellow.
+- A record shows during the session: a solid yellow pill with a dark star
+  that pops at the corner of the tick, instead of a 15 px outlined star.
+  Stops with "reduce motion". Service worker v77, gabarits §51.
+
 ### Changed — one SVG icon set (2026-11-16)
 
 - The text glyphs used as icons (⇄ ↺ ✎ ⋯ △ ▲ ▼ ✕ ↗ ⇅ ⟳ ＋ ◷ ▶ ❚❚ ✓ × ‹ ›)

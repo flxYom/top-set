@@ -46,11 +46,16 @@ décoré, on ne le fait pas.
 | Jaune | `#ffd23f` | le record | une alerte, un groupe, un nom qui défile |
 | Vert | `#2bd08a` (`#12c07a` dans les styles d'origine) | série faite, réussite, progression | un groupe musculaire |
 | Bleu | `#4d7cff` | l'information, le commentaire | un groupe musculaire |
+| Rouge erreur | `#ff4d6d` (`--erreur`, posé le 16/11/2026) | l'erreur, la suppression | l'action, un groupe, une alerte |
 
-**À décider (phase 2)** :
-- une couleur d'erreur à part (aujourd'hui l'erreur est orange, comme l'action) ;
-- le jaune des alertes ;
-- la pastille TOP set.
+**Posé le 16/11/2026** (c'était « à décider, phase 2 ») :
+- l'erreur a sa couleur, `--erreur`, à 16 de l'orange en vision normale. En
+  tritanopie les deux se confondent : une erreur porte toujours une phrase,
+  une suppression sa corbeille ;
+- l'alerte est neutre (filet `--trait2`, texte `--ink`) : le jaune ne sert
+  qu'au record ;
+- le top set de la dernière fois (colonne PRÉC.) se lit à la graisse, plus en
+  jaune ; le type TOP de la série garde son libellé.
 
 ### Groupes musculaires — validés le 13/09/2026
 
@@ -312,7 +317,7 @@ en petit.
 
 ## 7. États
 
-**À décider (phase 2).**
+**Posé le 16/11/2026**, sauf la cible (voir la dernière ligne).
 
 Principe : un état ne se distingue jamais par la seule couleur. Il faut aussi
 une icône, un texte, une position ou un mouvement.
@@ -322,15 +327,17 @@ une icône, un texte, une position ou un mouvement.
 | Neutre | surface + filet | — |
 | Fait | ligne teintée verte + coche verte | lisible |
 | Cible / suggéré | bloc bordé orange au-dessus de la grille | prend ~100 px, couleur de la marque |
-| Record | petite étoile jaune dans le coin de la coche | quasi invisible en séance |
-| Alerte | trait gauche jaune | même jaune que le record |
-| Erreur | texte orange | même orange que l'action |
+| Record | pastille jaune pleine de 18 px, étoile sombre, qui surgit au coin de la coche (posé le 16/11) | réglé |
+| Alerte | filet `--ink3` ou `--trait2`, texte `--ink` (posé le 16/11) | réglé : le jaune reste au record |
+| Erreur | `--erreur`, toujours avec une phrase (posé le 16/11) | réglé : distinct de l'orange de l'action |
 
 ## 8. Icônes
 
-**À décider (phase 3).**
+**Posé le 16/11/2026** : un seul jeu SVG (`ico()` dans `app.js`, copies
+exactes dans le HTML statique, gabarits §50), décrit au §4. Ce qui suit est
+l'état de départ.
 
-Aujourd'hui, 13 SVG sur une grille de 24 px, avec 10 épaisseurs de trait
+Avant, 13 SVG sur une grille de 24 px, avec 10 épaisseurs de trait
 différentes, mêlés à des caractères (⇄ ↺ ◷ ✎ ✕). Les emoji du signal d'un
 exercice (🟢 🟠 🔴 ⚪) sont remplacés le 16/09 par un point dessiné en CSS, à
 côté du mot : la couleur n'est jamais seule.

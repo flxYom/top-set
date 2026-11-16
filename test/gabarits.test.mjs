@@ -1812,5 +1812,19 @@ ok('un bouton qui change de libelle passe par innerHTML', /bascule\.innerHTML = 
 ok('l icone prend la couleur du texte et un trait de 1,9',
    /\.ico\{[^}]*fill:none;stroke:currentColor;stroke-width:1\.9;stroke-linecap:round;stroke-linejoin:round;\}/.test(REFONTE));
 
+console.log('\n== 51. Les etats (16/11) : une couleur par role ==');
+ok('l erreur a sa couleur, la meme que celle que verifie le script de palette',
+   /:root\{--erreur:#ff4d6d;\}/.test(REFONTE) && /erreur: '#ff4d6d'/.test(lireLF('../scripts/palette-groupes.mjs')));
+ok('messages d erreur et suppressions passent au rouge, plus a l orange de l action',
+   /\.sheet-msg\.err,\.sheet-msg\.erreur\{[^}]*color:var\(--erreur\);\}/.test(REFONTE)
+   && /\.ex-menu-item\.danger,\.btn-sheet\.danger\{color:var\(--erreur\);\}/.test(REFONTE));
+ok('l alerte est neutre, le jaune reste au record',
+   /\.sheet-msg\.warn\{border-color:var\(--trait2\);background:var\(--s2\);color:var\(--ink\);\}/.test(REFONTE)
+   && /\.bilan-alerte\{border-left-color:var\(--ink3\);\}/.test(REFONTE) && /\.serie-prec\.top\{color:var\(--ink\);font-weight:800;\}/.test(REFONTE));
+ok('le record : une pastille pleine, nommee pour les lecteurs d ecran',
+   /var ETOILE_PR = '<span class="serie-pr" role="img" title="Nouveau record" aria-label="Nouveau record">/.test(SRC)
+   && /\.serie-pr\{[^}]*width:18px;height:18px;[^}]*background:var\(--yellow\);/.test(REFONTE));
+ok('la pastille ne surgit pas avec reduire les animations', /prefers-reduced-motion:reduce\)\{ \.serie-pr\{animation:none;\} \}/.test(REFONTE));
+
 console.log(`\n${pass} reussis, ${fail} echoues`);
 process.exit(fail ? 1 : 0);
