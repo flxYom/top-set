@@ -465,6 +465,21 @@ la semaine (« 3e séance de la semaine · objectif tenu · 5 semaines
 d'affilée »). La règle est `TS.regularite` dans `intelligence.js` ; l'objectif
 reste dans les réglages locaux (`topset_reglages.objectifSemaine`).
 
+**Des séries de travail, des repos fiables** (17 novembre 2026). Les
+échauffements comptaient comme des séries : dans le compte de PROGRÈS, les
+séries par groupe sous la silhouette, « Ton année », le texte pour une IA et
+les exports. Ils n'y comptent plus ; ils restent dans le volume levé (tout ce
+qui a été soulevé) et dans la séance elle-même, où le bandeau montre toujours
+toutes les séries notées. Les médianes de repos ne gardent que les repos
+fiables (`TS.reposFiable`) : de 20 s à 10 min, hors échauffements, et hors
+passage d'un exercice à l'autre dans un superset — seul compte le repos après
+le dernier exercice du bloc, entre deux tours. Avant, l'export gardait de 15 s
+à 15 min et comptait les passages de superset comme des repos de 25 s. Les
+repos notés ne bougent pas : la règle dit seulement ce qu'une médiane a le
+droit de lire. Le texte pour une IA donne aussi la densité de chaque séance
+(toutes les séries faites, divisées par la durée retenue) et dit ces trois
+règles dans « Comment lire les données ».
+
 **Copier pour une IA** (16 novembre 2026). Sous la fiche d'une séance et sous
 PROGRÈS, « COPIER POUR UNE IA » ouvre une feuille qui montre le texte avant
 toute copie : la question à poser d'abord (« Dis-moi ce qui progresse, ce qui

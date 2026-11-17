@@ -1342,6 +1342,7 @@
     REPOS_FIABLE_MAX: REPOS_FIABLE_MAX,
     reposFiable: reposFiable,
     reposDuJour: reposDuJour,
+    passagesDuJour: passagesDuJour,
     finDeSeance: finDeSeance,
     dureeRetenue: dureeRetenue
   };

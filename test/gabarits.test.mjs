@@ -1757,7 +1757,7 @@ ok('la feuille montre le texte avant de le copier',
    && /id="iaCopier">COPIER LE TEXTE<\/button>/.test(HTML) && /Rien ne part d'ici/.test(HTML));
 ok('le texte pose la question, donne les chiffres et dit les unites',
    /Dis-moi ce qui progresse, ce qui stagne et quoi ajuster la prochaine fois\./.test(SRC)
-   && /var IA_UNITES = 'Unités : « 80 kg × 10 » veut dire 10 répétitions à 80 kg ; PDC = poids du corps ; RPE sur 10\.';/.test(SRC)
+   && /var IA_UNITES = 'Unités : « 80 kg × 10 » veut dire 10 répétitions à 80 kg ; PDC = poids du corps ; RPE sur 10\. Les comptes de séries sont des séries de travail/.test(SRC)
    && (SRC.match(/IA_UNITES\)/g) || []).length + (SRC.match(/, IA_UNITES/g) || []).length >= 2);
 ok('la seance dit la fois d avant, la periode la premiere et la derniere',
    /'La fois d\\'avant \(' \+ jourCourt\(der\.date\)/.test(SRC) && /topSetsEntre\(it\.nom, data\.startStr, data\.endStr\)/.test(SRC));
@@ -2073,6 +2073,16 @@ ok('la base porte details, borne, et le rend aux deux lectures',
    /add column if not exists details jsonb/.test(SCHEMA) && /series_details_borne/.test(SCHEMA)
    && (SCHEMA.match(/'details', se\.details/g) || []).length === 2);
 ok('un type inconnu ne refuse plus la journee', /case when v_se ->> 'type' in \('echauffement','top','travail','backoff','drop','echec'\)/.test(SCHEMA));
+
+console.log('\n== 66. Des series de travail, des repos fiables (17/11) ==');
+const EXPORT = readFileSync(new URL('export.js', RACINE), 'utf8');
+ok('les series par groupe et le recap ne comptent pas les echauffements',
+   /function pasEchauffement\(s\)\{ return TS\.typeSerie\(s\) !== TS\.TYPES\.ECHAUFFEMENT; \}/.test(SRC)
+   && (SRC.match(/\.filter\(hasData\)\.filter\(pasEchauffement\)/g) || []).length === 2
+   && /var deTravail = validSeries\.filter\(pasEchauffement\)\.length;/.test(SRC));
+ok('l export lit les repos par la regle d intelligence.js, superset compris',
+   !/REPOS_MIN|reposValable/.test(EXPORT) && (EXPORT.match(/TS\.reposFiable\(s, j\.passage\[i\]\)/g) || []).length === 2
+   && /passagesDuJour: passagesDuJour/.test(INTEL));
 
 console.log(`\n${pass} reussis, ${fail} echoues`);
 process.exit(fail ? 1 : 0);

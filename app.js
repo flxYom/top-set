@@ -1792,15 +1792,21 @@
     });
 
     var totalSeries = 0, totalVolume = 0;
-    var byNorm = {}, byJour = {};
+    var byNorm = {}, byJour = {}, byTravail = {};
     days.forEach(function(d){
       state.sessions[d].exercises.forEach(function(ex){
         var validSeries = (ex.series||[]).filter(hasData);
         if (!validSeries.length) return;
-        totalSeries += validSeries.length;
+        // Les echauffements ne comptent pas comme des series (17/11/2026) :
+        // « 25 series » ne doit pas melanger la montee en charge et le
+        // travail. Ils restent dans le volume leve et dans la recherche de
+        // la charge maximale, qu'ils ne peuvent pas fausser.
+        var deTravail = validSeries.filter(pasEchauffement).length;
+        totalSeries += deTravail;
         validSeries.forEach(function(s){ totalVolume += serieVolume(s); });
         // Le nom n'est jamais requis pour compter — seule la donnée saisie (poids/reps) l'est.
         var norm = ex.nom && ex.nom.trim() ? nomCanonique(ex.nom) : 'Exercice sans nom';
+        byTravail[norm] = (byTravail[norm] || 0) + deTravail;
         if (!byNorm[norm]) byNorm[norm] = [];
         if (!byJour[norm]) byJour[norm] = {};
         byJour[norm][d] = 1;
@@ -1831,7 +1837,7 @@
                bodyweight:bodyweight,
                maxDuree: durees.length ? Math.max.apply(null, durees) : null,
                fois:Object.keys(byJour[norm] || {}).length,
-               series:entries.length };
+               series:byTravail[norm] || 0 };
     });
 
     items.sort(function(a,b){
@@ -1870,12 +1876,14 @@
     var v = formatVolume(kg);
     return v.num + ' ' + v.unit;
   }
+  function pasEchauffement(s){ return TS.typeSerie(s) !== TS.TYPES.ECHAUFFEMENT; }
+  // Des series de travail, par groupe : les echauffements n'y comptent pas.
   function groupCountsIn(startStr, endStr){
     var counts = {};
     Object.keys(state.sessions).forEach(function(ds){
       if (ds < startStr || ds > endStr) return;
       state.sessions[ds].exercises.forEach(function(e){
-        var n = (e.series||[]).filter(hasData).length;
+        var n = (e.series||[]).filter(hasData).filter(pasEchauffement).length;
         if (!n) return;
         var g = classement(e).groupe;
         counts[g] = (counts[g]||0) + n;
@@ -1889,7 +1897,7 @@
     Object.keys(state.sessions).forEach(function(ds){
       if (ds < startStr || ds > endStr) return;
       state.sessions[ds].exercises.forEach(function(e){
-        var n = (e.series||[]).filter(hasData).length;
+        var n = (e.series||[]).filter(hasData).filter(pasEchauffement).length;
         if (!n) return;
         var cl = classement(e);
         var k = cl.sous || cl.groupe;
@@ -8365,7 +8373,7 @@
   // on le copie, on le colle soi-meme. Le texte commence par la question a
   // poser, puis les chiffres, et finit par les unites — une IA qui lit
   // « 80 kg × 10 » sans savoir que c'est poids × reps se trompe.
-  var IA_UNITES = 'Unités : « 80 kg × 10 » veut dire 10 répétitions à 80 kg ; PDC = poids du corps ; RPE sur 10.';
+  var IA_UNITES = 'Unités : « 80 kg × 10 » veut dire 10 répétitions à 80 kg ; PDC = poids du corps ; RPE sur 10. Les comptes de séries sont des séries de travail, échauffements à part ; une durée « ≈ » est estimée par les repos, la fin de cette séance n\'ayant pas été notée.';
   function jourLong(ds){
     var d = fromDateStr(ds);
     return DAY_NAMES[(d.getDay()+6)%7].toLowerCase() + ' ' + d.getDate() + ' ' + MONTH_NAMES[d.getMonth()] + ' ' + d.getFullYear();
@@ -10905,6 +10913,7 @@
               groupe:cl.groupe, sous:cl.sous || '',
               mode:auTemps ? (estCardio(e) ? 'cardio' : 'temps') : 'reps',
               note:typeof e.note === 'string' ? e.note.trim() : '',
+              bloc:e.bloc || '',
               series:seriesRemplies(e).map(serieExport)
             };
           })

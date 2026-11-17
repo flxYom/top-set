@@ -9,6 +9,22 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ## [Unreleased]
 
+### Changed — counts are working sets, rest medians are reliable (2026-11-17)
+
+- Warm-ups no longer count as sets in PROGRÈS (series tile, per-exercise
+  count), sets per group and sub-group (silhouette, "Ton année"), the period
+  AI copy and the exports (sessions, weeks, exercises, profile). They stay in
+  the volume lifted and in the session banner. `groupCountsIn` /
+  `sousCountsIn` filter `pasEchauffement`.
+- Rest medians in the exports use `TS.reposFiable` (20 s – 10 min, warm-ups
+  out, superset moves out: only the block's last exercise rests between
+  rounds), replacing the export's own 15 s – 15 min filter. The export model
+  now carries each exercise's `bloc`.
+- The AI text gives each session's warm-ups apart (`18 séries + 3
+  échauffements`) and its density (`14 séries/h`), and its legend explains
+  the reliable rests, the working-set counts and the volume. The period copy's
+  units line says it too. 6 export tests, gabarits §66, service worker v93.
+
 ### Changed — a session ends at its last checked set (2026-11-17)
 
 - Sessions of 4 h 31 for 18 sets, from 10:45 to 21:21: the stored end followed

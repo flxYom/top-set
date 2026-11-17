@@ -436,6 +436,19 @@ de la semaine · objectif tenu · 5 semaines d'affilée"). The rule is
 `TS.regularite` in `intelligence.js`; the goal stays in the local settings
 (`topset_reglages.objectifSemaine`).
 
+**Working sets, reliable rests** (17 November 2026). Warm-ups counted as
+sets: in PROGRÈS's count, sets per group under the silhouette, "Ton année",
+the AI text and the exports. They no longer do; they stay in the volume lifted
+(everything that was lifted) and in the session itself, where the banner still
+shows every logged set. Rest medians keep only reliable rests
+(`TS.reposFiable`): 20 s to 10 min, warm-ups out, and the move from one
+exercise to the next inside a superset out — only the rest after the block's
+last exercise counts, between rounds. The export used to keep 15 s to 15 min
+and counted superset moves as 25 s rests. Logged rests don't change: the rule
+only says what a median may read. The AI text also gives each session's
+density (all sets done divided by the retained duration) and states these
+three rules in "Comment lire les données".
+
 **Copy for an AI** (16 November 2026). Under a session's sheet and under
 PROGRÈS, "COPIER POUR UNE IA" opens a sheet that shows the text before any copy:
 the question to ask first, then the numbers, then the units. A session gives

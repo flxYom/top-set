@@ -33,9 +33,8 @@
   var JOUR_MS = 86400000;
   // Les douze dernieres semaines : ce qu'un coach regarde d'abord.
   var RECENT = 12;
-  // Un repos plus court ou plus long ne dit rien de l'entrainement : une
-  // pastille oubliee, ou deux series cochees d'un coup.
-  var REPOS_MIN = 15, REPOS_MAX = 900;
+  // Un repos fiable : la regle d'intelligence.js (20 s a 10 min, hors
+  // echauffement, hors passage d'un exercice a l'autre dans un superset).
 
   function deux(n) { return (n < 10 ? '0' : '') + n; }
   function epoque(ds) {
@@ -91,9 +90,7 @@
     var t = l.slice().sort(function (a, b) { return a - b; }), m = Math.floor(t.length / 2);
     return t.length % 2 ? t[m] : (t[m - 1] + t[m]) / 2;
   }
-  function reposValable(s) {
-    return typeof s.repos === 'number' && s.repos >= REPOS_MIN && s.repos <= REPOS_MAX && s.type !== TS.TYPES.ECHAUFFEMENT;
-  }
+  function estEchauffement(s) { return s.type === TS.TYPES.ECHAUFFEMENT; }
   function trier(o) {
     return Object.keys(o).sort(function (a, b) { return o[b] - o[a] || (a < b ? -1 : 1); });
   }
@@ -120,17 +117,24 @@
     };
 
     // Chaque seance : ses series, son volume, ses groupes, ses repos.
+    // Les series comptees sont des series de travail (17/11/2026) ; les
+    // echauffements sont comptes a part, et restent dans le volume (tout ce
+    // qui a ete souleve). La densite, elle, compte tout ce qui a ete fait.
     jours.forEach(function (j) {
-      var st = { series: 0, volume: 0, groupes: {}, repos: [], rpe: [] };
-      j.exos.forEach(function (e) {
+      var st = { series: 0, echauffements: 0, volume: 0, groupes: {}, repos: [], rpe: [] };
+      j.passage = TS.passagesDuJour(j.exos);
+      j.exos.forEach(function (e, i) {
+        var travail = 0;
         e.series.forEach(function (s) {
-          st.series++;
+          if (estEchauffement(s)) st.echauffements++; else { st.series++; travail++; }
           st.volume += s.volume || 0;
-          if (reposValable(s)) st.repos.push(s.repos);
+          var r = TS.reposFiable(s, j.passage[i]);
+          if (r !== null) st.repos.push(r);
           if (typeof s.rpe === 'number') st.rpe.push(s.rpe);
         });
-        st.groupes[e.groupe] = (st.groupes[e.groupe] || 0) + e.series.length;
+        if (travail) st.groupes[e.groupe] = (st.groupes[e.groupe] || 0) + travail;
       });
+      st.densite = j.duree > 0 ? (st.series + st.echauffements) / (j.duree / 60) : null;
       j.stats = st;
     });
 
@@ -168,7 +172,7 @@
     // intelligence.js ({ date, series }).
     var parNom = {}, exos = [];
     jours.forEach(function (j) {
-      j.exos.forEach(function (e) {
+      j.exos.forEach(function (e, i) {
         var x = parNom[e.nom];
         if (!x) {
           x = parNom[e.nom] = { nom: e.nom, groupe: e.groupe, sous: e.sous, mode: e.mode, seances: [], nbSeries: 0, repos: [], rpe: [], reps: [] };
@@ -177,9 +181,10 @@
         var der = x.seances[x.seances.length - 1];
         if (der && der.date === j.date) der.series = der.series.concat(e.series);
         else x.seances.push({ date: j.date, series: e.series.slice() });
-        x.nbSeries += e.series.length;
+        x.nbSeries += e.series.filter(function (s) { return !estEchauffement(s); }).length;
         e.series.forEach(function (s) {
-          if (reposValable(s)) x.repos.push(s.repos);
+          var r = TS.reposFiable(s, j.passage[i]);
+          if (r !== null) x.repos.push(r);
           if (typeof s.rpe === 'number') x.rpe.push(s.rpe);
           if (typeof s.nbReps === 'number' && s.type !== TS.TYPES.ECHAUFFEMENT) x.reps.push(s.nbReps);
         });
@@ -569,7 +574,8 @@
   var LEGENDE = [
     '- « 100×5 » : 5 répétitions à 100 kg. « PDC×12 » : 12 répétitions au poids du corps. « 45 s » : une série tenue 45 secondes.',
     '- « @8 » : RPE 8 sur 10 (10 = à l\'échec, 9 = une répétition en réserve).',
-    '- « r150 » : 150 secondes de repos avant la série suivante (mesurées par l\'app ou notées).',
+    '- « r150 » : 150 secondes de repos avant la série suivante (mesurées par l\'app ou notées). Les médianes de repos ne gardent que les repos fiables : de 20 s à 10 min, hors échauffements, et hors passage d\'un exercice à l\'autre dans un superset (seul le repos après le dernier exercice du superset compte).',
+    '- Les comptes de séries sont des séries de travail ; les échauffements sont comptés à part. Le volume (kg) est tout ce qui a été soulevé, échauffements compris. « séries/h » : toutes les séries faites, divisées par la durée.',
     '- « É » : échauffement ; « T » : top set déclaré ; « B » : back-off. Sans lettre : série de travail.',
     '- 1RM estimé : formule d\'Epley (poids × (1 + reps / 30)), seulement jusqu\'à 12 répétitions.',
     '- Top set : la série la plus lourde de la séance, hors échauffement et back-off.',
@@ -658,7 +664,8 @@
       var info = [];
       if (j.cycle) info.push('cycle ' + j.cycle.toLowerCase());
       if (j.debutHM || j.finHM) info.push((j.debutHM || '?') + ' → ' + (j.finHM || '?') + (j.duree ? ' (' + (j.dureeEstimee ? '≈ ' + dureeTexte(j.duree) + ', estimée' : dureeTexte(j.duree)) + ')' : ''));
-      info.push(pluriel(j.stats.series, 'série'));
+      info.push(pluriel(j.stats.series, 'série') + (j.stats.echauffements ? ' + ' + pluriel(j.stats.echauffements, 'échauffement') : ''));
+      if (j.stats.densite) info.push(nombre(j.stats.densite, 0) + ' séries/h');
       if (j.validee) info.push('validée');
       L.push('', tete, info.join(' · '));
       if (j.ressenti) L.push('Ressenti : « ' + j.ressenti.replace(/\s+/g, ' ') + ' »');

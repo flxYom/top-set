@@ -80,6 +80,20 @@ ok('la regularite vient d\'intelligence.js', a.profil.regularite && a.profil.reg
 ok('le poids : derniere pesee et ecart a environ trois mois', a.poids && a.poids.dernier.poids === 78.4 && Math.abs(a.poids.ecart + 1.6) < 1e-9);
 ok('une phrase de synthese', /séance.* par semaine/.test(a.synthese) && /jambes/.test(a.synthese), a.synthese);
 ok('un carnet vide ne casse rien', X.analyser({ aujourdhui: '2026-11-16', jours: [], pesees: [] }).synthese.length > 0);
+// 17/11/2026 : les series comptees sont de travail ; les repos, fiables.
+const j1 = a.jours.find(j => j.date === '2026-10-19');
+ok('les echauffements sont comptes a part', j1.stats.series === 4 && j1.stats.echauffements === 1, JSON.stringify([j1.stats.series, j1.stats.echauffements]));
+ok('et pas dans les series par groupe', j1.stats.groupes.Jambes === 2 && j1.stats.groupes.Pectoraux === 2, JSON.stringify(j1.stats.groupes));
+ok('la densite compte tout ce qui a ete fait', Math.abs(j1.stats.densite - 5 / 1.2) < 1e-9, String(j1.stats.densite));
+ok('le squat compte ses series de travail', squat.nbSeries === 5, String(squat.nbSeries));
+const ss = X.analyser({ aujourdhui: '2026-11-16', pesees: [], jours: [J('2026-11-16', [
+  E('Curl', 'Bras', [S(14, 10, { repos: 25 }), S(14, 10, { repos: 30 })], { bloc: 'b1' }),
+  E('Extension', 'Bras', [S(20, 12, { repos: 120 }), S(20, 12, { repos: 140 })], { bloc: 'b1' })
+])] });
+ok('dans un superset, le passage d un exercice a l autre n est pas un repos', JSON.stringify(ss.jours[0].stats.repos) === '[120,140]', JSON.stringify(ss.jours[0].stats.repos));
+const texte0 = X.texteIA(ss);
+ok('le texte pour une IA dit la regle des repos et des series', /repos fiables : de 20 s à 10 min/.test(texte0) && /séries de travail ; les échauffements sont comptés à part/.test(texte0));
+
 
 console.log('\n— Le classeur Excel');
 const octets = X.xlsx(a, new Date(2026, 10, 16, 18, 0, 0));
