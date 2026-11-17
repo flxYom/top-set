@@ -117,14 +117,28 @@ alter table public.seances add column if not exists titre text;
 -- 'travail' partout ne dirait rien de plus et reecrirait tout l'historique.
 alter table public.series add column if not exists type text;
 
+-- 17/11/2026 : deux types de plus, le drop set et la serie a l'echec. La
+-- contrainte est refaite a chaque passage : c'est la seule facon d'en
+-- elargir la liste, et elle reste vraie pour toutes les lignes deja la.
+alter table public.series drop constraint if exists series_type_connu;
+alter table public.series
+  add constraint series_type_connu
+  check (type is null or type in ('echauffement','top','travail','backoff','drop','echec'));
+
+-- Les champs d'une serie qui n'ont pas leur propre colonne (17/11/2026) :
+-- l'heure ou elle a ete cochee, puis la variante, le lest ou l'assistance,
+-- la technique. Un seul objet, borne a 2 Ko, plutot qu'une colonne et un SQL
+-- de plus a chaque fois. Nullable : une serie d'avant n'a rien a porter.
+alter table public.series add column if not exists details jsonb;
+
 do $$
 begin
   if not exists (
-    select 1 from pg_constraint where conname = 'series_type_connu'
+    select 1 from pg_constraint where conname = 'series_details_borne'
   ) then
     alter table public.series
-      add constraint series_type_connu
-      check (type is null or type in ('echauffement','top','travail','backoff'));
+      add constraint series_details_borne
+      check (details is null or (jsonb_typeof(details) = 'object' and octet_length(details::text) <= 2048));
   end if;
 end $$;
 
@@ -446,7 +460,7 @@ begin
     j := 0;
     for v_se in select * from jsonb_array_elements(coalesce(v_ex -> 'series', '[]'::jsonb))
     loop
-      insert into public.series (id, exercice_id, user_id, ordre, poids, reps, rpe, repos, type, fait, note, vitesse, inclinaison)
+      insert into public.series (id, exercice_id, user_id, ordre, poids, reps, rpe, repos, type, fait, note, vitesse, inclinaison, details)
       values (public.uuid_ou_neuf(v_se ->> 'id'), v_ex_id, v_user, j,
               nullif(v_se ->> 'poids', '')::numeric,
               coalesce(v_se ->> 'reps', ''),
@@ -454,7 +468,8 @@ begin
               coalesce(v_se ->> 'repos', ''),
               -- Un type inconnu vaut mieux perdu que stocke : la contrainte
               -- refuserait la ligne entiere et la journee ne partirait plus.
-              nullif(v_se ->> 'type', ''),
+              case when v_se ->> 'type' in ('echauffement','top','travail','backoff','drop','echec')
+                   then v_se ->> 'type' end,
               coalesce((v_se ->> 'fait')::boolean, false),
               nullif(left(btrim(coalesce(v_se ->> 'note', '')), 500), ''),
               -- Vitesse et inclinaison : un nombre lisible et dans ses bornes,
@@ -464,7 +479,13 @@ begin
                    then round((v_se ->> 'vitesse')::numeric, 1) end,
               case when (v_se ->> 'inclinaison') ~ '^-?[0-9]{1,2}(\.[0-9]+)?$'
                    then case when (v_se ->> 'inclinaison')::numeric >= -30
-                             then round((v_se ->> 'inclinaison')::numeric, 1) end end);
+                             then round((v_se ->> 'inclinaison')::numeric, 1) end end,
+              -- Les details : un objet de 2 Ko au plus, sinon rien. Meme
+              -- regle que la contrainte, verifiee avant : une valeur refusee
+              -- par la contrainte ferait refuser la journee entiere.
+              case when jsonb_typeof(v_se -> 'details') = 'object'
+                        and octet_length((v_se -> 'details')::text) <= 2048
+                   then v_se -> 'details' end);
       j := j + 1;
     end loop;
     i := i + 1;
@@ -666,7 +687,8 @@ as $$
                     'fait',  se.fait,
                     'note',  se.note,
                     'vitesse', se.vitesse,
-                    'inclinaison', se.inclinaison
+                    'inclinaison', se.inclinaison,
+                    'details', se.details
                   ) order by se.ordre)
                 from public.series se where se.user_id = e.user_id and se.exercice_id = e.id
               ), '[]'::jsonb)
@@ -1550,7 +1572,8 @@ as $$
                     'fait',  se.fait,
                     'note',  se.note,
                     'vitesse', se.vitesse,
-                    'inclinaison', se.inclinaison
+                    'inclinaison', se.inclinaison,
+                    'details', se.details
                   ) order by se.ordre)
                 from public.series se where se.user_id = e.user_id and se.exercice_id = e.id
               ), '[]'::jsonb)

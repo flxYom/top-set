@@ -200,6 +200,20 @@ filling in a session from three weeks ago must not stamp it with tonight's
 time. They travel in the JSON backup too: the import's whitelist names them,
 or a restore would lose them.
 
+**A set's fields without a column travel in `details`** (17 November 2026).
+The time a set is checked is the first of several fields to come — variant,
+added weight or assistance, technique. Rather than one column and one more SQL
+each time, a single `series.details` column (`jsonb`, an object of at most
+2 KB, bounded by the database and by `pousser_jour`). The phone keeps them flat
+on the set; the push packs them into `details`, **always an object, even
+empty**, and the pull unpacks them. The difference matters: a database without
+the column, or a day pushed before it, returns sets without `details` or with
+`null` — "the database doesn't know" — and what is here stays (`jourDistant`);
+an up-to-date database returns `{}` — "nothing" — and then we follow it. The
+same SQL widens the set types to drop set and set to failure, not used by the
+app yet, and `pousser_jour` drops an unknown type instead of rejecting the
+whole day. File to run: `supabase/heure-des-series.txt`.
+
 **The CSV imports back.** `lireCsvCarnet()` reads the exported CSV, and what
 Excel makes of it when it re-saves it: commas instead of semicolons, DD/MM/YYYY
 dates. It then goes through exactly the same cleaning as a JSON file. The

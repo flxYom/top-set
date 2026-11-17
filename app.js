@@ -708,7 +708,25 @@
     if (vitesse !== undefined) sortie.vitesse = vitesse;
     var inclinaison = inclinaisonSure(s && s.inclinaison);
     if (inclinaison !== undefined) sortie.inclinaison = inclinaison;
+    // L'heure ou la serie a ete cochee (17/11/2026), seulement sur une serie
+    // faite. Elle arrive a plat d'ici, ou dans « details » depuis le compte.
+    var faitA = heureSure(s && (s.faitA || (s.details && typeof s.details === 'object' && s.details.faitA)));
+    if (faitA && sortie.fait) sortie.faitA = faitA;
     return sortie;
+  }
+  // Une heure ISO lisible, sinon rien.
+  function heureSure(v){
+    if (typeof v !== 'string' || v.length > 40 || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(v)) return undefined;
+    return isFinite(Date.parse(v)) ? v : undefined;
+  }
+  // Cocher ou decocher une serie. Cochee le jour meme, elle garde son heure :
+  // c'est elle qui dit quand la seance a vraiment fini. Cochee apres coup —
+  // on corrige une seance d'hier —, elle n'en a pas : l'heure de la
+  // correction ne dirait rien de la seance.
+  function cocherSerie(serie, ds, faite){
+    serie.fait = !!faite;
+    if (serie.fait && ds === toDateStr(new Date())) serie.faitA = new Date().toISOString();
+    else delete serie.faitA;
   }
 
   function normalizeExercise(ex){
@@ -3424,20 +3442,36 @@
   // La duree n'est affichee que si elle veut dire quelque chose : deux heures
   // a l'envers, ou une seance de onze heures parce qu'on a note une serie le
   // soir, ne disent rien.
+  // La duree retenue (17/11/2026, regle dans intelligence.js) : de la
+  // premiere a la derniere serie cochee, a 30 min pres de ce qui est
+  // enregistre. Les seances d'avant, sans heure par serie, gardent leurs
+  // heures ; une fin oubliee y devient une duree ESTIMEE par les repos,
+  // ecrite « ≈ ». Rien n'est reecrit : les heures stockees restent.
+  function dureeRetenueDe(ds){ return TS.dureeRetenue(state.sessions[ds]); }
   function minutesSeance(ds){
-    var h = horairesDe(ds);
-    if (!h || !h.debut || !h.fin) return null;
-    var ms = new Date(h.fin).getTime() - new Date(h.debut).getTime();
-    if (!(ms > 0) || ms > 8 * 3600000) return null;
-    return Math.round(ms / 60000);
+    var d = dureeRetenueDe(ds);
+    return d ? d.minutes : null;
+  }
+  function dureeEstimee(ds){
+    var d = dureeRetenueDe(ds);
+    return !!(d && d.nature === 'estimee');
   }
   function dureeSeance(ds){
     var mn = minutesSeance(ds);
     if (mn === null) return '';
-    return mn < 60 ? mn + ' min' : Math.floor(mn / 60) + 'h' + String(mn % 60).padStart(2, '0');
+    return (dureeEstimee(ds) ? '≈' : '') + (mn < 60 ? mn + ' min' : Math.floor(mn / 60) + 'h' + String(mn % 60).padStart(2, '0'));
+  }
+  // Les heures a montrer : celles de la duree retenue quand elle est
+  // mesuree — « 10h45 → 21h21 · 1h10 » ne se lirait pas —, sinon celles
+  // qui sont enregistrees.
+  function horairesRetenus(ds){
+    var h = horairesDe(ds);
+    if (!h) return null;
+    var r = dureeRetenueDe(ds);
+    return (r && r.nature === 'mesuree') ? { debut:r.debut, fin:r.fin } : h;
   }
   function horairesTexte(ds){
-    var h = horairesDe(ds);
+    var h = horairesRetenus(ds);
     if (!h) return '';
     var txt = (h.debut ? heureTexte(h.debut) : '?') + ' → ' + (h.fin ? heureTexte(h.fin) : '?');
     var duree = dureeSeance(ds);
@@ -3454,7 +3488,11 @@
     if (!day || compterJour(day) < 1) return;
     var avant = day.fin || '', avantDebut = day.debut || '';
     if (!day.debut) day.debut = new Date().toISOString();
-    day.fin = day.termine || new Date().toISOString();
+    // La derniere serie cochee fait la fin (17/11/2026) : une correction
+    // faite le soir, ou une validation oubliee une heure, ne la repoussent
+    // plus. Sans serie cochee avec son heure, comme avant : la validation,
+    // sinon la derniere modification.
+    day.fin = TS.finDeSeance(day) || day.termine || new Date().toISOString();
     // L'etiquette suit : la pose tombe une demi-seconde apres la frappe, bien
     // apres le rendu du bandeau, et personne ne repasserait derriere.
     if (ds === state.selectedDay && (avantDebut !== day.debut || avant !== day.fin)) {
@@ -6300,7 +6338,7 @@
       ex.series.push(cible);
     }
     cible.reps = TS.ecrireDuree(sec);
-    cible.fait = true;
+    cocherSerie(cible, c.ds, true);
     if (serieOuverte[ex.id] === cible.id) delete serieOuverte[ex.id];
     scheduleSave(c.ds, true);
     return { ex:ex, num:ex.series.indexOf(cible) + 1, sec:sec, ds:c.ds, serieId:cible.id };
@@ -6743,7 +6781,7 @@
     var f = day && findSerie(day, serieId);
     if (!f || f.serie.fait) return;
     var ds = focus.ds;
-    f.serie.fait = true;
+    cocherSerie(f.serie, ds, true);
     if (serieOuverte[f.exercise.id] === serieId) delete serieOuverte[f.exercise.id];
     scheduleSave(ds, true);
     var noteSec = finirRepos(true);
@@ -7312,7 +7350,7 @@
       var day4 = getOrCreateDay(state.selectedDay);
       var found4 = findSerie(day4, serieId2);
       if (!found4) return;
-      found4.serie.fait = !found4.serie.fait;
+      cocherSerie(found4.serie, state.selectedDay, !found4.serie.fait);
       scheduleSave(state.selectedDay,true);
       // Cochee : le repos d'avant s'arrete, le sien commence. Decochee : son
       // repos est annule.
@@ -10854,10 +10892,10 @@
       groupes:GROUPS.slice(),
       couleurs:couleurs,
       jours:joursExportables().map(function(ds){
-        var day = state.sessions[ds], h = horairesDe(ds) || {};
+        var day = state.sessions[ds], h = horairesRetenus(ds) || {};
         return {
           date:ds, titre:titreSeance(ds), titreChoisi:!!titreChoisi(ds), cycle:cycleDe(ds) || '',
-          debutHM:heureChamp(h.debut), finHM:heureChamp(h.fin), duree:minutesSeance(ds),
+          debutHM:heureChamp(h.debut), finHM:heureChamp(h.fin), duree:minutesSeance(ds), dureeEstimee:dureeEstimee(ds),
           validee:!!estTerminee(ds), ressenti:commentaireSeance(ds) || '',
           exos:(day.exercises || []).filter(function(e){ return seriesRemplies(e).length; }).map(function(e){
             var cl = classement(e), auTemps = estAuTemps(e);
@@ -11297,6 +11335,27 @@
     function jourLocal(ds){
       return state.sessions[ds] || { date:ds, exercises:[] };
     }
+    // Les champs d'une serie qui n'ont pas leur propre colonne voyagent
+    // ensemble dans « details » (17/11/2026) : un seul SQL pour tous ceux qui
+    // viendront. Toujours un objet, meme vide : la base dit alors « rien »,
+    // alors qu'une base sans la colonne ne dit rien du tout (voir jourDistant).
+    var CHAMPS_DETAILS = ['faitA'];
+    function pourBase(exercices){
+      return (exercices || []).map(function(e){
+        var c = {};
+        Object.keys(e || {}).forEach(function(k){ c[k] = e[k]; });
+        c.series = ((e && e.series) || []).map(function(s){
+          var cs = {}, d = {};
+          Object.keys(s || {}).forEach(function(k){
+            if (CHAMPS_DETAILS.indexOf(k) > -1){ if (s[k] != null && s[k] !== '') d[k] = s[k]; }
+            else cs[k] = s[k];
+          });
+          cs.details = d;
+          return cs;
+        });
+        return c;
+      });
+    }
     // Le carnet charge connait-il cette journee ? Non veut dire « on n'en sait
     // rien » — le chargement a pu rater — et non pas « elle est vide ». Une
     // journee videe pour de bon, elle, existe toujours dans le carnet avec
@@ -11329,7 +11388,12 @@
         function locale(s, k){ return ls.filter(function(x){ return x.id === s.id; })[0] || ls[k]; }
         function manquants(s, k){
           var lse = s && locale(s, k);
-          return lse ? CHAMPS_SERIE_RECENTS.filter(function(f){ return !(f in s) && lse[f] != null && lse[f] !== ''; }) : [];
+          if (!lse) return [];
+          // « details » absent ou nul : une base sans la colonne, ou une
+          // journee envoyee avant elle. Ce qui est ici reste.
+          var sansDetails = !(s.details && typeof s.details === 'object');
+          return CHAMPS_SERIE_RECENTS.filter(function(f){ return !(f in s) && lse[f] != null && lse[f] !== ''; })
+            .concat(sansDetails ? CHAMPS_DETAILS.filter(function(f){ return lse[f] != null && lse[f] !== ''; }) : []);
         }
         if (Array.isArray(e.series) && e.series.some(function(s, k){ return manquants(s, k).length; })){
           if (c === e) c = copie(e);
@@ -11412,7 +11476,7 @@
             if (!connueIci(ds)) return;
             // La marque est lue AVANT l'envoi : c'est la version qu'on envoie.
             var jeton = jetonDe('sales', ds);
-            return avecDelai(c.rpc('pousser_jour', { p_date:ds, p_exercices:jourLocal(ds).exercises }))
+            return avecDelai(c.rpc('pousser_jour', { p_date:ds, p_exercices:pourBase(jourLocal(ds).exercises) }))
               .then(function(r){
                 if (r.error) throw r.error;
                 // La journee ne quitte la file QUE si le serveur a confirme ET

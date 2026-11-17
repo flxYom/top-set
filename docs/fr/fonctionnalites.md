@@ -335,6 +335,28 @@ veut dire quelque chose : jamais à l'envers, jamais au-delà de huit heures.
 Côté compte : colonnes `seances.debut` et `seances.fin`, fonction
 `pousser_horaires`, sa propre file d'envoi.
 
+**La séance finit à la dernière série cochée** (17 novembre 2026). Des séances
+de 4 h 31 pour 18 séries, de 10 h 45 à 21 h 21 : la fin suivait la dernière
+*modification* — une correction faite le soir la repoussait —, la validation
+oubliée une heure aussi, et une séance préparée le matin (un modèle lancé, la
+dernière fois reprise) s'ouvrait à l'heure de la préparation. Chaque série
+cochée le jour même garde maintenant son heure (`faitA`). La fin enregistrée
+est la dernière série cochée, ou la validation si elle tombe dans les 30 min
+qui suivent (`TS.finDeSeance`). La durée retenue va de la première à la
+dernière série cochée, à 30 min près de ce qui est enregistré : une heure de
+début posée plus tôt, ou une fin plus tardive, ne comptent pas
+(`TS.dureeRetenue`). **Rien n'est réécrit** : les heures enregistrées restent,
+seule la lecture change, et la validation garde son heure.
+
+Les séances d'avant n'ont pas d'heure par série. Une séance de plus de 2 h à
+moins de 6 séries par heure est une fin oubliée : sa durée est **estimée** par
+ses repos — celui de chaque série, ou la médiane du jour, plus 40 s par série —,
+jamais au-dessus des heures notées, et elle s'écrit `≈48 MIN`. Sans trois repos
+fiables, elle n'a pas de durée. Une série cochée après coup, sur une séance
+d'hier, n'a pas d'heure : celle de la correction ne dirait rien de la séance.
+Côté compte, l'heure voyage dans la nouvelle colonne `series.details` (voir
+[Tes données](donnees.md)).
+
 **Le cycle d'entraînement** (10 octobre 2026, demandé par Kamil). « Lundi,
 pendant deux semaines, cycle force ; après, endurance. » Sous la date, une
 pastille dit le cycle en cours et l'ouvre : `FORCE`, `HYPERTROPHIE`,

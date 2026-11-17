@@ -315,6 +315,26 @@ correct both times; a hand-typed time is not replaced by the save that follows
 never backwards, never beyond eight hours. Account side: `seances.debut` and
 `seances.fin` columns, `pousser_horaires` function, its own send queue.
 
+**A session ends at its last checked set** (17 November 2026). Sessions of
+4 h 31 for 18 sets, from 10:45 to 21:21: the end followed the last *edit* (an
+evening correction pushed it), so did a validation forgotten for an hour, and a
+session prepared in the morning (a template launched, last time reused) opened
+at preparation time. Every set checked on the day now keeps its time
+(`faitA`). The stored end is the last checked set, or the validation if it
+falls within the next 30 min (`TS.finDeSeance`). The retained duration runs
+from the first to the last checked set, within 30 min of what is stored: an
+earlier start or a later end do not count (`TS.dureeRetenue`). **Nothing is
+rewritten**: stored times stay, only the reading changes, and the validation
+keeps its time.
+
+Older sessions have no time per set. A session over 2 h at fewer than 6 sets
+per hour is a forgotten end: its duration is **estimated** from its rests (each
+set's rest, or the day's median, plus 40 s per set), never above the logged
+times, and it reads `≈48 MIN`. Without three reliable rests it has no duration.
+A set checked afterwards, on yesterday's session, gets no time: the time of the
+correction would say nothing about the session. Account side, the time travels
+in the new `series.details` column (see [Your data](data.md)).
+
 **The training cycle** (2026-10-10, asked for by Kamil). « Monday, for two
 weeks, strength cycle; then endurance. » Under the date, a pill states the
 current cycle and opens it: `FORCE`, `HYPERTROPHIE`, `ENDURANCE`, or whatever

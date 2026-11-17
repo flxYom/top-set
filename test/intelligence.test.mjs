@@ -727,6 +727,54 @@ console.log('\n== Le materiel d un exercice (16/11/2026) ==');
   egal('un outil inconnu retombe sur la barre', TS.chargerOutil(60, 'trampoline', 20).outil, 'barre');
 }
 // ----------------------------------------------------------------
+titre('Repos et durees fiables (17/11/2026)');
+{
+  const h = (hh, mm) => new Date(2026, 10, 17, hh, mm, 0).toISOString();
+  const se = (o) => Object.assign({ poids: 80, reps: '8', fait: true }, o);
+  // Les repos.
+  egal('un repos de 15 s n est pas fiable', TS.reposFiable({ repos: '15' }), null);
+  egal('20 s l est', TS.reposFiable({ repos: '20' }), 20);
+  egal('10 min aussi', TS.reposFiable({ repos: 600 }), 600);
+  egal('au-dela de 10 min, non', TS.reposFiable({ repos: 601 }), null);
+  egal('un echauffement n a pas de repos fiable', TS.reposFiable({ repos: 90, type: 'echauffement' }), null);
+  egal('un repos absent non plus', TS.reposFiable({ repos: '' }), null);
+  const ss = { exercises: [
+    { bloc: 'b1', series: [se({ repos: 25 }), se({ repos: 30 })] },
+    { bloc: 'b1', series: [se({ repos: 120 }), se({ repos: 150 })] },
+    { series: [se({ repos: 180 })] }
+  ] };
+  egal('dans un superset, seul le repos du dernier exercice compte', TS.reposDuJour(ss).map(r => r.repos), [120, 150, 180]);
+
+  // La seance d'aujourd'hui : chaque serie cochee a son heure.
+  const avec = (o) => Object.assign({ exercises: [{ series: [
+    se({ faitA: h(19, 0) }), se({ faitA: h(19, 30) }), se({ faitA: h(20, 10) }), se({ fait: false, faitA: h(23, 0) })
+  ] }] }, o);
+  let d = TS.dureeRetenue(avec({ debut: h(10, 45), fin: h(21, 21), termine: h(21, 21) }));
+  egal('preparee le matin, validee le soir : de la premiere a la derniere serie cochee', [d.minutes, d.nature], [70, 'mesuree']);
+  egal('le debut retenu est la premiere serie', d.debut, h(19, 0));
+  ok('une serie decochee n a pas d heure qui compte', d.fin === h(20, 10));
+  d = TS.dureeRetenue(avec({ debut: h(18, 40), fin: h(20, 25) }));
+  egal('arrive 20 min avant sa premiere serie, valide 15 min apres sa derniere : garde', d.minutes, 105);
+  egal('la fin a enregistrer suit la validation proche', TS.finDeSeance(avec({ termine: h(20, 25) })), h(20, 25));
+  egal('pas une validation 45 min apres', TS.finDeSeance(avec({ termine: h(20, 55) })), h(20, 10));
+  egal('sans aucune serie cochee avec son heure, rien a enregistrer', TS.finDeSeance({ exercises: [{ series: [se({})] }] }), null);
+
+  // Les seances d'avant : pas d'heure par serie.
+  const vieux = (n, repos) => ({ exercises: [{ series: Array.from({ length: n }, () => se({ repos })) }] });
+  d = TS.dureeRetenue(Object.assign(vieux(18, '120'), { debut: h(17, 0), fin: h(21, 31) }));
+  egal('18 series en 4 h 31 : estimee par les repos (18 x 2 min + 18 x 40 s)', [d.minutes, d.nature], [48, 'estimee']);
+  ok('une estimation ne donne pas d heures', d.debut === null && d.fin === null);
+  egal('sans trois repos fiables, pas de duree du tout',
+       TS.dureeRetenue(Object.assign(vieux(18, ''), { debut: h(17, 0), fin: h(21, 31) })), null);
+  d = TS.dureeRetenue(Object.assign(vieux(20, '90'), { debut: h(18, 0), fin: h(19, 15) }));
+  egal('20 series en 1 h 15 : mesuree, telle quelle', [d.minutes, d.nature], [75, 'mesuree']);
+  d = TS.dureeRetenue(Object.assign(vieux(30, '150'), { debut: h(17, 0), fin: h(19, 30) }));
+  egal('une longue seance dense (30 series en 2 h 30) reste mesuree', [d.minutes, d.nature], [150, 'mesuree']);
+  egal('plus de 8 h : rien', TS.dureeRetenue(Object.assign(vieux(18, '90'), { debut: h(10, 45), fin: h(21, 21) })), null);
+  egal('sans debut : rien', TS.dureeRetenue(Object.assign(vieux(5, '90'), { fin: h(19, 0) })), null);
+  egal('la validation sert de fin quand il n y en a pas', TS.dureeRetenue(Object.assign(vieux(10, '90'), { debut: h(18, 0), termine: h(18, 50) })).minutes, 50);
+}
+// ----------------------------------------------------------------
 console.log('\n' + '='.repeat(52));
 if (echecs.length) {
   console.log(passes + ' tests passes, ' + echecs.length + ' ECHEC(S) :');

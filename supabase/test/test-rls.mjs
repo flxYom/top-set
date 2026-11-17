@@ -296,6 +296,29 @@ ok('hors bornes ou illisible : null, et la journee passe quand meme',
 ok('une descente (inclinaison negative) est gardee', Number(sc[3].inclinaison) === -2.5, JSON.stringify(sc[3].inclinaison));
 ok('les cles vitesse et inclinaison sont rendues sur chaque serie', sc.every(s => 'vitesse' in s && 'inclinaison' in s),
    JSON.stringify(sc.map(s => Object.keys(s))));
+console.log('\n== 13 ter ter. Les details d une serie et les deux types de plus (17/11/2026) ==');
+await as(A, "select public.pousser_jour('2026-09-10'::date, $1::jsonb)", [JSON.stringify([
+  { id: 'd1', nom: 'Squat', groupe: 'Jambes', series: [
+    { poids: 100, reps: '5', fait: true, details: { faitA: '2026-09-10T18:42:00.000Z' } },
+    { poids: 80, reps: '8', type: 'drop', details: {} },
+    { poids: 100, reps: '3', type: 'echec' },
+    { poids: 60, reps: '5', type: 'inconnu', details: 'pas un objet' },
+    { poids: 60, reps: '5', details: { x: 'y'.repeat(3000) } }
+  ] }
+])]);
+r = await as(A, "select public.tirer_jours(null) as j");
+const sd = r.rows[0].j['2026-09-10'].exercises[0].series;
+ok('l heure de la serie cochee fait l aller-retour', sd[0].details && sd[0].details.faitA === '2026-09-10T18:42:00.000Z', JSON.stringify(sd[0].details));
+ok('un objet vide revient vide, pas null', sd[1].details && Object.keys(sd[1].details).length === 0, JSON.stringify(sd[1].details));
+ok('drop set et serie a l echec sont acceptes', sd[1].type === 'drop' && sd[2].type === 'echec', JSON.stringify(sd.map(x => x.type)));
+ok('un type inconnu est perdu, et la journee passe quand meme', sd.length === 5 && sd[3].type === null, JSON.stringify(sd[3].type));
+ok('des details qui ne sont pas un objet, ou trop gros : null', sd[3].details === null && sd[4].details === null && sd[2].details === null,
+   JSON.stringify([sd[2].details, sd[3].details, sd[4].details]));
+ok('la cle details est rendue sur chaque serie', sd.every(x => 'details' in x));
+await refuse('la base refuse des details de plus de 2 Ko, meme en direct', () =>
+  db.query("update public.series set details = jsonb_build_object('x', repeat('y', 3000)) where user_id = $1", [A]));
+await refuse('et un type inconnu, meme en direct', () =>
+  db.query("update public.series set type = 'inconnu' where user_id = $1", [A]));
 await refuse('la base refuse une vitesse au-dela de 100 km/h', () =>
   db.query("update public.series set vitesse = 150 where user_id = $1", [A]));
 
@@ -728,6 +751,7 @@ ok('et il voit bien les series',
    rr.rows[0].j['2026-10-01'].exercises[0].series[0].poids === '140.00' ||
    Number(rr.rows[0].j['2026-10-01'].exercises[0].series[0].poids) === 140,
    JSON.stringify(rr.rows[0].j['2026-10-01'].exercises[0].series[0]));
+ok('il recoit aussi les details des series (17/11/2026)', 'details' in rr.rows[0].j['2026-10-01'].exercises[0].series[0]);
 ok('et le commentaire de l exercice',
    rr.rows[0].j['2026-10-01'].exercises[0].note === 'Dernière rep assistée',
    JSON.stringify(rr.rows[0].j['2026-10-01'].exercises[0].note));

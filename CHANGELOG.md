@@ -9,6 +9,32 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ## [Unreleased]
 
+### Changed — a session ends at its last checked set (2026-11-17)
+
+- Sessions of 4 h 31 for 18 sets, from 10:45 to 21:21: the stored end followed
+  the last edit, a late validation, and a morning-prepared session opened at
+  preparation time. Every set checked on the day now keeps its time (`faitA`,
+  `cocherSerie`, on the three check paths: row, full screen, chrono). The
+  stored end is the last checked set, or the validation within 30 min
+  (`TS.finDeSeance`). The retained duration (`TS.dureeRetenue`) runs from the
+  first to the last checked set, within 30 min of the stored times; the
+  banner shows those hours. Nothing stored is rewritten.
+- Older sessions (no time per set): over 2 h at fewer than 6 sets/hour, the
+  duration is estimated from rests (each set's reliable rest or the day's
+  median, plus 40 s per set), never above the logged times, written `≈48 MIN`;
+  without three reliable rests, no duration. The exports say "≈ 48 min,
+  estimée" and the AI legend explains it.
+- New rules in `intelligence.js`: `reposFiable` (20 s – 10 min, warm-ups out,
+  superset transitions out), `reposDuJour`, `finDeSeance`, `dureeRetenue`
+  (22 tests).
+- Account: new `series.details` jsonb column (2 KB object, constraint
+  `series_details_borne`) for set fields without a column; the push always
+  sends an object, the pull keeps local values when `details` is missing or
+  null (`jourDistant`). The same SQL widens `series_type_connu` to `drop` and
+  `echec` (unused yet) and `pousser_jour` drops unknown types instead of
+  rejecting the day. `supabase/heure-des-series.txt`, tested on PGlite against
+  the production schema, twice; RLS bench 379. Gabarits, service worker v92.
+
 ### Fixed — set types survive `+ SÉRIE` and the CSV (2026-11-17)
 
 - `+ SÉRIE` (and `+ UN TOUR`) copied the type `échauffement` to the next set:

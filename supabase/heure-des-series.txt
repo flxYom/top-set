@@ -1,0 +1,267 @@
+-- ===================================================================
+-- Top Set — L'HEURE DE CHAQUE SERIE (et la place pour la suite)
+--
+-- A coller dans l'editeur SQL de Supabase, projet TOP SET, puis RUN.
+-- Rien n'est efface : on ajoute une colonne, on elargit une liste, et on
+-- remplace trois fonctions par leur nouvelle version.
+-- Tu peux le relancer autant de fois que tu veux, ca ne change rien.
+-- Il s'arrete tout seul s'il est lance sur le projet Yom Nutrition.
+--
+-- L'app marche DEJA sans ce fichier : l'heure de chaque serie cochee est
+-- gardee sur le telephone. Tant qu'il n'est pas passe, elle ne suit
+-- simplement pas d'un appareil a l'autre.
+--
+-- La meme colonne servira aux lots suivants (variante, lest, technique) :
+-- ils n'auront pas besoin de SQL pour les series.
+-- ===================================================================
+
+do $$
+begin
+  if to_regclass('public.aliments_ciqual') is not null
+     or to_regclass('public.user_journal') is not null then
+    raise exception 'Mauvais projet Supabase : cette base est celle de Yom Nutrition. Change de projet en haut a gauche, puis relance ce fichier.';
+  end if;
+end $$;
+
+-- -------------------------------------------------------------------
+-- 1. La colonne « details » des series, et deux types de serie de plus
+--    (drop set, serie a l'echec) pour plus tard.
+-- -------------------------------------------------------------------
+-- 17/11/2026 : deux types de plus, le drop set et la serie a l'echec. La
+-- contrainte est refaite a chaque passage : c'est la seule facon d'en
+-- elargir la liste, et elle reste vraie pour toutes les lignes deja la.
+alter table public.series drop constraint if exists series_type_connu;
+alter table public.series
+  add constraint series_type_connu
+  check (type is null or type in ('echauffement','top','travail','backoff','drop','echec'));
+
+-- Les champs d'une serie qui n'ont pas leur propre colonne (17/11/2026) :
+-- l'heure ou elle a ete cochee, puis la variante, le lest ou l'assistance,
+-- la technique. Un seul objet, borne a 2 Ko, plutot qu'une colonne et un SQL
+-- de plus a chaque fois. Nullable : une serie d'avant n'a rien a porter.
+alter table public.series add column if not exists details jsonb;
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint where conname = 'series_details_borne'
+  ) then
+    alter table public.series
+      add constraint series_details_borne
+      check (details is null or (jsonb_typeof(details) = 'object' and octet_length(details::text) <= 2048));
+  end if;
+end $$;
+
+-- -------------------------------------------------------------------
+-- 2. L'envoi d'une journee ecrit les details.
+-- -------------------------------------------------------------------
+create or replace function public.pousser_jour(p_date date, p_exercices jsonb)
+returns timestamptz
+language plpgsql
+security invoker
+set search_path = public
+as $$
+declare
+  v_user   uuid := auth.uid();
+  v_seance uuid;
+  v_maj    timestamptz;
+  v_ex     jsonb;
+  v_se     jsonb;
+  v_ex_id  uuid;
+  i        smallint := 0;
+  j        smallint;
+begin
+  -- Le user_id ne vient JAMAIS du corps de la requête : il vient du jeton.
+  -- C'est la seule façon de garantir qu'on n'écrit pas chez quelqu'un d'autre.
+  if v_user is null then
+    raise exception 'Aucune session : connexion requise.';
+  end if;
+
+  insert into public.seances (user_id, date)
+  values (v_user, p_date)
+  on conflict (user_id, date) do update set updated_at = now()
+  returning id into v_seance;
+
+  -- Remplacement complet du jour. Les séries partent en cascade.
+  delete from public.exercices where user_id = v_user and seance_id = v_seance;
+
+  for v_ex in select * from jsonb_array_elements(coalesce(p_exercices, '[]'::jsonb))
+  loop
+    v_ex_id := public.uuid_ou_neuf(v_ex ->> 'id');
+    insert into public.exercices (id, seance_id, user_id, ordre, nom, groupe, repos, bloc, note)
+    values (v_ex_id, v_seance, v_user, i,
+            coalesce(v_ex ->> 'nom', ''),
+            coalesce(nullif(v_ex ->> 'groupe', ''), 'Autre'),
+            v_ex ->> 'repos',
+            nullif(v_ex ->> 'bloc', ''),
+            nullif(left(btrim(coalesce(v_ex ->> 'note', '')), 500), ''));
+
+    j := 0;
+    for v_se in select * from jsonb_array_elements(coalesce(v_ex -> 'series', '[]'::jsonb))
+    loop
+      insert into public.series (id, exercice_id, user_id, ordre, poids, reps, rpe, repos, type, fait, note, vitesse, inclinaison, details)
+      values (public.uuid_ou_neuf(v_se ->> 'id'), v_ex_id, v_user, j,
+              nullif(v_se ->> 'poids', '')::numeric,
+              coalesce(v_se ->> 'reps', ''),
+              nullif(v_se ->> 'rpe', '')::numeric,
+              coalesce(v_se ->> 'repos', ''),
+              -- Un type inconnu vaut mieux perdu que stocke : la contrainte
+              -- refuserait la ligne entiere et la journee ne partirait plus.
+              case when v_se ->> 'type' in ('echauffement','top','travail','backoff','drop','echec')
+                   then v_se ->> 'type' end,
+              coalesce((v_se ->> 'fait')::boolean, false),
+              nullif(left(btrim(coalesce(v_se ->> 'note', '')), 500), ''),
+              -- Vitesse et inclinaison : un nombre lisible et dans ses bornes,
+              -- sinon rien. On ne fait pas confiance au corps de la requete :
+              -- une valeur hors bornes ferait refuser la journee entiere.
+              case when (v_se ->> 'vitesse') ~ '^[0-9]{1,2}(\.[0-9]+)?$'
+                   then round((v_se ->> 'vitesse')::numeric, 1) end,
+              case when (v_se ->> 'inclinaison') ~ '^-?[0-9]{1,2}(\.[0-9]+)?$'
+                   then case when (v_se ->> 'inclinaison')::numeric >= -30
+                             then round((v_se ->> 'inclinaison')::numeric, 1) end end,
+              -- Les details : un objet de 2 Ko au plus, sinon rien. Meme
+              -- regle que la contrainte, verifiee avant : une valeur refusee
+              -- par la contrainte ferait refuser la journee entiere.
+              case when jsonb_typeof(v_se -> 'details') = 'object'
+                        and octet_length((v_se -> 'details')::text) <= 2048
+                   then v_se -> 'details' end);
+      j := j + 1;
+    end loop;
+    i := i + 1;
+  end loop;
+
+  update public.seances set updated_at = now()
+  where id = v_seance
+  returning updated_at into v_maj;
+
+  return v_maj;
+end;
+$$;
+
+-- -------------------------------------------------------------------
+-- 3. Les deux lectures (la tienne, et celle de ton coach) les rendent.
+-- -------------------------------------------------------------------
+create or replace function public.tirer_jours(p_depuis timestamptz default null)
+returns jsonb
+language sql
+security invoker
+stable
+set search_path = public
+as $$
+  select coalesce(jsonb_object_agg(d.jour_date, d.contenu), '{}'::jsonb)
+  from (
+    select
+      s.date::text as jour_date,
+      jsonb_build_object(
+        'date', s.date::text,
+        'titre', s.titre,
+        'termine', s.terminee,
+        'cycle', s.cycle,
+        'commentaire', s.commentaire,
+        'debut', s.debut,
+        'fin', s.fin,
+        'updatedAt', s.updated_at,
+        'exercises', coalesce((
+          select jsonb_agg(
+            jsonb_build_object(
+              'id', e.id,
+              'nom', e.nom,
+              'groupe', e.groupe,
+              'repos', coalesce(e.repos, ''),
+              'bloc', e.bloc,
+              'note', e.note,
+              'series', coalesce((
+                select jsonb_agg(
+                  jsonb_build_object(
+                    'id',    se.id,
+                    'poids', se.poids,
+                    'reps',  coalesce(se.reps, ''),
+                    'rpe',   se.rpe,
+                    'repos', coalesce(se.repos, ''),
+                    'type',  se.type,
+                    'fait',  se.fait,
+                    'note',  se.note,
+                    'vitesse', se.vitesse,
+                    'inclinaison', se.inclinaison,
+                    'details', se.details
+                  ) order by se.ordre)
+                from public.series se where se.user_id = e.user_id and se.exercice_id = e.id
+              ), '[]'::jsonb)
+            ) order by e.ordre)
+          from public.exercices e where e.user_id = s.user_id and e.seance_id = s.id
+        ), '[]'::jsonb)
+      ) as contenu
+    from public.seances s
+    where s.user_id = auth.uid()
+      and (p_depuis is null or s.updated_at > p_depuis)
+  ) d;
+$$;
+
+create or replace function public.tirer_jours_de(p_client uuid, p_depuis timestamptz default null)
+returns jsonb
+language sql
+security invoker
+stable
+set search_path = public
+as $$
+  select coalesce(jsonb_object_agg(d.jour_date, d.contenu), '{}'::jsonb)
+  from (
+    select
+      s.date::text as jour_date,
+      jsonb_build_object(
+        'date', s.date::text,
+        'titre', s.titre,
+        'termine', s.terminee,
+        'cycle', s.cycle,
+        'commentaire', s.commentaire,
+        'debut', s.debut,
+        'fin', s.fin,
+        'updatedAt', s.updated_at,
+        'exercises', coalesce((
+          select jsonb_agg(
+            jsonb_build_object(
+              'id', e.id,
+              'nom', e.nom,
+              'groupe', e.groupe,
+              'repos', coalesce(e.repos, ''),
+              'bloc', e.bloc,
+              'note', e.note,
+              'series', coalesce((
+                select jsonb_agg(
+                  jsonb_build_object(
+                    'id',    se.id,
+                    'poids', se.poids,
+                    'reps',  coalesce(se.reps, ''),
+                    'rpe',   se.rpe,
+                    'repos', coalesce(se.repos, ''),
+                    'type',  se.type,
+                    'fait',  se.fait,
+                    'note',  se.note,
+                    'vitesse', se.vitesse,
+                    'inclinaison', se.inclinaison,
+                    'details', se.details
+                  ) order by se.ordre)
+                from public.series se where se.user_id = e.user_id and se.exercice_id = e.id
+              ), '[]'::jsonb)
+            ) order by e.ordre)
+          from public.exercices e where e.user_id = s.user_id and e.seance_id = s.id
+        ), '[]'::jsonb)
+      ) as contenu
+    from public.seances s
+    where s.user_id = p_client
+      and (p_depuis is null or s.updated_at > p_depuis)
+  ) d;
+$$;
+
+-- -------------------------------------------------------------------
+-- 4. Les droits, redits a l'identique : personne d'autre qu'un compte
+--    connecte n'appelle ces fonctions.
+-- -------------------------------------------------------------------
+revoke execute on function public.pousser_jour(date, jsonb) from anon, public;
+revoke execute on function public.tirer_jours(timestamptz)  from anon, public;
+revoke execute on function public.tirer_jours_de(uuid, timestamptz) from anon, public;
+grant  execute on function public.pousser_jour(date, jsonb) to authenticated;
+grant  execute on function public.tirer_jours(timestamptz)  to authenticated;
+grant  execute on function public.tirer_jours_de(uuid, timestamptz) to authenticated;
+
+-- C'est fini. Ce que tu dois voir en bas : « Success. No rows returned ».

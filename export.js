@@ -573,7 +573,8 @@
     '- « É » : échauffement ; « T » : top set déclaré ; « B » : back-off. Sans lettre : série de travail.',
     '- 1RM estimé : formule d\'Epley (poids × (1 + reps / 30)), seulement jusqu\'à 12 répétitions.',
     '- Top set : la série la plus lourde de la séance, hors échauffement et back-off.',
-    '- Les semaines vont du lundi au dimanche. Une ligne de semaine à 0 séance est une semaine sans entraînement.'
+    '- Les semaines vont du lundi au dimanche. Une ligne de semaine à 0 séance est une semaine sans entraînement.',
+    '- Durée d\'une séance : de la première à la dernière série cochée. « ≈ » : une séance dont la fin n\'a pas été notée, durée estimée par ses repos (le repos de chaque série plus 40 s par série) ; une séance de plus de 8 h n\'a pas de durée.'
   ];
   function serieCourte(s) {
     var t = s.court || '';
@@ -656,7 +657,7 @@
       var tete = '### ' + j.date + ' (' + JOURS[jourSemaine(j.date)] + ') — ' + j.titre;
       var info = [];
       if (j.cycle) info.push('cycle ' + j.cycle.toLowerCase());
-      if (j.debutHM || j.finHM) info.push((j.debutHM || '?') + ' → ' + (j.finHM || '?') + (j.duree ? ' (' + dureeTexte(j.duree) + ')' : ''));
+      if (j.debutHM || j.finHM) info.push((j.debutHM || '?') + ' → ' + (j.finHM || '?') + (j.duree ? ' (' + (j.dureeEstimee ? '≈ ' + dureeTexte(j.duree) + ', estimée' : dureeTexte(j.duree)) + ')' : ''));
       info.push(pluriel(j.stats.series, 'série'));
       if (j.validee) info.push('validée');
       L.push('', tete, info.join(' · '));

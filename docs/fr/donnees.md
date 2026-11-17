@@ -213,6 +213,21 @@ la journée **du jour** — remplir une séance d'il y a trois semaines ne doit 
 lui coller l'heure de ce soir. Elles voyagent aussi dans la sauvegarde JSON :
 la liste blanche de l'import les nomme, sinon une restauration les perdrait.
 
+**Les champs d'une série sans colonne voyagent dans `details`** (17 novembre
+2026). L'heure où une série est cochée est le premier d'une série de champs à
+venir — variante, lest ou assistance, technique. Plutôt qu'une colonne et un
+SQL de plus à chaque fois, une seule colonne `series.details` (`jsonb`, un objet
+de 2 Ko au plus, borné par la base et par `pousser_jour`). Le téléphone les
+garde à plat sur la série ; l'envoi les range dans `details`, **toujours un
+objet, même vide**, et la lecture les remet à plat. La différence compte : une
+base sans la colonne, ou une journée envoyée avant elle, rend des séries sans
+`details` ou avec `null` — « la base ne sait pas » —, et ce qui est ici reste
+(`jourDistant`) ; une base à jour rend `{}` — « rien » —, et là, on suit. Le
+même SQL élargit la liste des types de série au drop set et à la série à
+l'échec, que l'app n'utilise pas encore, et `pousser_jour` perd un type inconnu
+au lieu de refuser la journée entière. Fichier à passer :
+`supabase/heure-des-series.txt`.
+
 **Le tableur se réimporte.** `lireCsvCarnet()` relit le CSV exporté, et ce
 qu'Excel en fait quand il le réenregistre : virgules au lieu de points-virgules,
 dates en JJ/MM/AAAA. Il passe ensuite par exactement le même nettoyage qu'un

@@ -238,6 +238,12 @@ groupe pour le groupe et l'exercice de l'année. Le grand chiffre est la
 haut, fermer à 44 px, pas de verre, pas de braise (décision du 18/09 : la braise
 reste à l'accueil, au bilan et au plein écran). Garde : gabarits §48.
 
+**Une estimation s'écrit « ≈ » — 17/11/2026.** Une valeur calculée par
+l'app à partir d'autres (la durée d'une séance dont la fin n'a pas été notée)
+se distingue d'une valeur mesurée par un seul signe collé au chiffre :
+`≈48 MIN`. Pas de couleur, pas d'icône, pas de mot de plus dans le bandeau ;
+l'export écrit « ≈ 48 min, estimée ». Même signe pour toute estimation à venir.
+
 **La régularité — 16/11/2026.** Une carte `--s1` au rayon `--r-xl`, placée
 sous les trois tuiles de PROGRÈS. Deux chiffres en `--t-5` (la semaine « 2 / 3 »,
 la série de semaines, verte `--ok` dès qu'elle vaut 1), puis huit colonnes de

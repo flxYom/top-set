@@ -1175,6 +1175,126 @@
     };
   }
 
+  // ------------------------------------------------------------------
+  // Des repos et des durees fiables (17/11/2026)
+  // ------------------------------------------------------------------
+  // Rien n'est jamais reecrit ni supprime : ces regles disent seulement ce
+  // qu'un calcul a le droit de lire.
+  //
+  // Un repos est fiable de 20 s a 10 min. En dessous, ce sont deux series
+  // cochees d'affilee, apres coup ; au-dessus, une pastille oubliee. Un
+  // echauffement n'a pas de repos qui dise quelque chose de l'entrainement.
+  // Dans un superset, le passage d'un exercice au suivant n'est pas un repos :
+  // seul compte celui du dernier exercice du bloc, entre deux tours.
+  var REPOS_FIABLE_MIN = 20, REPOS_FIABLE_MAX = 600;
+  function secondes(v) {
+    var n = typeof v === 'number' ? v : parseInt(String(v == null ? '' : v), 10);
+    return (isFinite(n) && n > 0) ? n : null;
+  }
+  function reposFiable(s, transition) {
+    if (!s || transition || typeSerie(s) === TYPES.ECHAUFFEMENT) return null;
+    var r = secondes(s.repos);
+    return (r !== null && r >= REPOS_FIABLE_MIN && r <= REPOS_FIABLE_MAX) ? r : null;
+  }
+  // Les exercices d'une journee dont le repos est un passage, pas un repos.
+  function passagesDuJour(exercices) {
+    var dernier = {}, passage = [];
+    (exercices || []).forEach(function (e, i) { if (e && e.bloc) dernier[e.bloc] = i; });
+    (exercices || []).forEach(function (e, i) { passage[i] = !!(e && e.bloc) && dernier[e.bloc] !== i; });
+    return passage;
+  }
+  // Les repos fiables d'une journee : [{ exercice, serie, repos }].
+  function reposDuJour(jour) {
+    var exos = (jour && jour.exercises) || [], passage = passagesDuJour(exos), out = [];
+    exos.forEach(function (e, i) {
+      ((e && e.series) || []).forEach(function (s) {
+        if (!serieRemplie(s)) return;
+        var r = reposFiable(s, passage[i]);
+        if (r !== null) out.push({ exercice: e, serie: s, repos: r });
+      });
+    });
+    return out;
+  }
+  function mediane(l) {
+    if (!l.length) return null;
+    var t = l.slice().sort(function (a, b) { return a - b; }), m = Math.floor(t.length / 2);
+    return t.length % 2 ? t[m] : (t[m - 1] + t[m]) / 2;
+  }
+
+  // La duree d'une seance. Depuis le 17/11/2026, chaque serie cochee garde
+  // son heure (faitA). La seance finit a la derniere serie cochee : une
+  // validation plus de 30 min apres, ou une fin posee par une correction
+  // faite le soir, ne compte pas. Elle commence a la premiere : une heure de
+  // debut posee plus de 30 min avant — une seance preparee le matin — ne
+  // compte pas non plus. Les heures enregistrees restent telles quelles.
+  //
+  // Avant cette date, aucune serie n'a d'heure. Une seance de plus de 2 h a
+  // moins de 6 series par heure (18 series en 4 h 31) est alors une fin
+  // oubliee : sa duree est ESTIMEE par ses repos (le repos de chaque serie,
+  // ou la mediane du jour, plus 40 s par serie), jamais au-dessus des heures
+  // notees. Sans trois repos fiables, elle n'est pas mesuree du tout.
+  //
+  // Rend { minutes, nature:'mesuree'|'estimee', debut, fin } ou null. Debut
+  // et fin (ISO) ne sont rendus que pour une duree mesuree.
+  var MARGE_SEANCE = 30 * 60000, DUREE_MAX = 480, DUREE_DOUTE = 120, DENSITE_MIN = 6, SECONDES_PAR_SERIE = 40;
+  function instant(iso) {
+    if (typeof iso !== 'string' || !iso) return null;
+    var t = Date.parse(iso);
+    return isFinite(t) ? t : null;
+  }
+  function heuresFaites(jour) {
+    var out = [];
+    ((jour && jour.exercises) || []).forEach(function (e) {
+      ((e && e.series) || []).forEach(function (s) {
+        var t = s && s.fait ? instant(s.faitA) : null;
+        if (t !== null) out.push(t);
+      });
+    });
+    return out.sort(function (a, b) { return a - b; });
+  }
+  // La fin a enregistrer pour une seance en cours : la derniere serie cochee,
+  // ou la validation si elle tombe dans les 30 min qui suivent. Null sans
+  // aucune serie cochee avec son heure.
+  function finDeSeance(jour) {
+    var faits = heuresFaites(jour);
+    if (!faits.length) return null;
+    var dernier = faits[faits.length - 1], valide = instant(jour && jour.termine);
+    var t = (valide !== null && valide >= dernier && valide <= dernier + MARGE_SEANCE) ? valide : dernier;
+    return new Date(t).toISOString();
+  }
+  function dureeRetenue(jour) {
+    if (!jour) return null;
+    var debut = instant(jour.debut), fin = instant(jour.fin);
+    if (fin === null) fin = instant(jour.termine);
+    var faits = heuresFaites(jour);
+    if (faits.length) {
+      var premier = faits[0], dernier = faits[faits.length - 1];
+      if (debut === null || debut < premier - MARGE_SEANCE || debut > premier) debut = premier;
+      if (fin === null || fin < dernier || fin > dernier + MARGE_SEANCE) fin = dernier;
+    }
+    if (debut === null || fin === null) return null;
+    var mn = (fin - debut) / 60000;
+    if (!(mn > 0) || mn > DUREE_MAX) return null;
+    if (!faits.length && mn > DUREE_DOUTE) {
+      var exos = jour.exercises || [], passage = passagesDuJour(exos), n = 0, total = 0, sans = 0;
+      var fiables = reposDuJour(jour).map(function (r) { return r.repos; });
+      exos.forEach(function (e, i) {
+        ((e && e.series) || []).forEach(function (s) {
+          if (!serieRemplie(s)) return;
+          n++;
+          var r = reposFiable(s, passage[i]);
+          if (r !== null) total += r; else if (!passage[i]) sans++;
+        });
+      });
+      if (n / (mn / 60) < DENSITE_MIN) {
+        if (fiables.length < 3) return null;
+        var sec = total + sans * mediane(fiables) + n * SECONDES_PAR_SERIE;
+        return { minutes: Math.max(1, Math.min(Math.round(mn), Math.round(sec / 60))), nature: 'estimee', debut: null, fin: null };
+      }
+    }
+    return { minutes: Math.round(mn), nature: 'mesuree', debut: new Date(debut).toISOString(), fin: new Date(fin).toISOString() };
+  }
+
   return {
     TYPES: TYPES,
     TYPES_VALIDES: TYPES_VALIDES,
@@ -1217,6 +1337,12 @@
     recordsBattus: recordsBattus,
     peseeProche: peseeProche,
     forceRelative: forceRelative,
-    evolutionPoids: evolutionPoids
+    evolutionPoids: evolutionPoids,
+    REPOS_FIABLE_MIN: REPOS_FIABLE_MIN,
+    REPOS_FIABLE_MAX: REPOS_FIABLE_MAX,
+    reposFiable: reposFiable,
+    reposDuJour: reposDuJour,
+    finDeSeance: finDeSeance,
+    dureeRetenue: dureeRetenue
   };
 });

@@ -582,7 +582,7 @@ ok('le cardio note minutes, vitesse et inclinaison, sans perdre ce qu une base p
    && /\.ex-card\[data-mode="cardio"\] \.serie-main\{/.test(HTML)
    && /'Vitesse \(km\/h\)','Inclinaison \(%\)'(,'Type')?\]/.test(SRC));
 ok('le chrono du gainage note une serie faite a chaque pause et survit a une app fermee',
-   /function arreterChrono\(\)\{/.test(SRC) && /cible\.fait = true;/.test(SRC)
+   /function arreterChrono\(\)\{/.test(SRC) && /cocherSerie\(cible, c\.ds, true\);/.test(SRC)
    && /localStorage\.setItem\(CLE_CHRONO/.test(SRC) && /data-action="chrono"/.test(SRC)
    && /\(\(auTemps \|\| reglages\.btnChrono\) && !estCardio\(ex\) \? boutonChronoHTML\(ex\) : ''\)/.test(SRC));
 
@@ -2057,6 +2057,22 @@ ok('+ SERIE ne recopie plus « echauffement » : seul le back-off se recopie',
 ok('le tableur ecrit le type, en derniere colonne', /'Inclinaison \(%\)','Type'\];/.test(SRC)
    && /csvChamp\(CSV_TYPES\[s\.type\] \|\| 'Travail'\)/.test(SRC));
 ok('et le relit par son nom', /type: col\('type', 'typedeserie'\)/.test(INTEL) && /function typeCsv\(v\) \{/.test(INTEL));
+
+console.log('\n== 65. L heure de chaque serie, la fin de seance, details (17/11) ==');
+const SCHEMA = lireLF('../supabase/schema.sql');
+ok('les trois chemins qui cochent passent par cocherSerie',
+   (SRC.match(/cocherSerie\(/g) || []).length === 4 && !/\.fait = !\w|serie\.fait = true;|cible\.fait = true;/.test(SRC));
+ok('l heure ne se pose que le jour meme', /if \(serie\.fait && ds === toDateStr\(new Date\(\)\)\) serie\.faitA = new Date\(\)\.toISOString\(\);/.test(SRC));
+ok('la fin enregistree suit la derniere serie cochee', /day\.fin = TS\.finDeSeance\(day\) \|\| day\.termine \|\| new Date\(\)\.toISOString\(\);/.test(SRC));
+ok('la duree affichee est la duree retenue, une estimation s ecrit ≈',
+   /function minutesSeance\(ds\)\{\s*var d = dureeRetenueDe\(ds\);/.test(SRC) && /\(dureeEstimee\(ds\) \? '≈' : ''\)/.test(SRC));
+ok('l envoi range les champs sans colonne dans details, toujours un objet',
+   /p_exercices:pourBase\(jourLocal\(ds\)\.exercises\)/.test(SRC) && /cs\.details = d;/.test(SRC));
+ok('une base sans details ne fait rien perdre', /var sansDetails = !\(s\.details && typeof s\.details === 'object'\);/.test(SRC));
+ok('la base porte details, borne, et le rend aux deux lectures',
+   /add column if not exists details jsonb/.test(SCHEMA) && /series_details_borne/.test(SCHEMA)
+   && (SCHEMA.match(/'details', se\.details/g) || []).length === 2);
+ok('un type inconnu ne refuse plus la journee', /case when v_se ->> 'type' in \('echauffement','top','travail','backoff','drop','echec'\)/.test(SCHEMA));
 
 console.log(`\n${pass} reussis, ${fail} echoues`);
 process.exit(fail ? 1 : 0);
