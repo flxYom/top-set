@@ -231,6 +231,23 @@ begin
   end if;
 end $$;
 
+-- Le bilan de forme (17/11/2026) : ce qu'on a note de sa forme en debut de
+-- seance — des jauges de 1 a 5, des choix, un mot. Un objet, borne a 2 Ko.
+-- Nullable : sans bilan, rien a porter. Ce sont des donnees de sante : elles
+-- ne sont ecrites que si l'on a active le bilan et rempli quelque chose.
+alter table public.seances add column if not exists forme jsonb;
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint where conname = 'seances_forme_borne'
+  ) then
+    alter table public.seances
+      add constraint seances_forme_borne
+      check (forme is null or (jsonb_typeof(forme) = 'object' and octet_length(forme::text) <= 2048));
+  end if;
+end $$;
+
 -- Le cardio : vitesse (km/h) et inclinaison (%) moyennes d'une serie.
 -- Nullables, et vides pour toutes les series d'avant : une serie de muscu
 -- n'en a pas. Les bornes sont larges mais reelles.
@@ -643,6 +660,37 @@ begin
 end;
 $$;
 
+-- Le bilan de forme d'une journee, seul, comme le mot de la seance. Un objet
+-- vide, trop gros ou qui n'en est pas un : rien (null), et la journee passe.
+create or replace function public.pousser_forme(p_date date, p_forme jsonb)
+returns timestamptz
+language plpgsql
+security invoker
+set search_path = public
+as $$
+declare
+  v_user uuid := auth.uid();
+  v_maj  timestamptz;
+  v_val  jsonb := case when jsonb_typeof(p_forme) = 'object'
+                            and p_forme <> '{}'::jsonb
+                            and octet_length(p_forme::text) <= 2048
+                       then p_forme end;
+begin
+  if v_user is null then
+    raise exception 'Aucune session : connexion requise.';
+  end if;
+
+  insert into public.seances (user_id, date, forme)
+  values (v_user, p_date, v_val)
+  on conflict (user_id, date) do update
+    set forme = v_val,
+        updated_at = now()
+  returning updated_at into v_maj;
+
+  return v_maj;
+end;
+$$;
+
 -- Rend les journées dans la forme exacte que l'app utilise en local, pour que
 -- le client n'ait aucune conversion à faire. Sans argument : tout l'historique
 -- (nouvel appareil). Avec p_depuis : seulement ce qui a bougé depuis.
@@ -663,6 +711,7 @@ as $$
         'termine', s.terminee,
         'cycle', s.cycle,
         'commentaire', s.commentaire,
+        'forme', s.forme,
         'debut', s.debut,
         'fin', s.fin,
         'updatedAt', s.updated_at,
@@ -788,6 +837,8 @@ revoke execute on function public.pousser_cycle(date, text) from anon, public;
 revoke execute on function public.pousser_commentaire(date, text) from anon, public;
 grant  execute on function public.pousser_cycle(date, text) to authenticated;
 grant  execute on function public.pousser_commentaire(date, text) to authenticated;
+revoke execute on function public.pousser_forme(date, jsonb) from anon, public;
+grant  execute on function public.pousser_forme(date, jsonb) to authenticated;
 
 revoke execute on function public.pousser_jour(date, jsonb) from anon, public;
 revoke execute on function public.tirer_jours(timestamptz)  from anon, public;
@@ -1548,6 +1599,7 @@ as $$
         'termine', s.terminee,
         'cycle', s.cycle,
         'commentaire', s.commentaire,
+        'forme', s.forme,
         'debut', s.debut,
         'fin', s.fin,
         'updatedAt', s.updated_at,

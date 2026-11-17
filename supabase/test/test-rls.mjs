@@ -319,6 +319,28 @@ await refuse('la base refuse des details de plus de 2 Ko, meme en direct', () =>
   db.query("update public.series set details = jsonb_build_object('x', repeat('y', 3000)) where user_id = $1", [A]));
 await refuse('et un type inconnu, meme en direct', () =>
   db.query("update public.series set type = 'inconnu' where user_id = $1", [A]));
+console.log('\n== 13 ter quater. Le bilan de forme (17/11/2026) ==');
+await as(A, "select public.pousser_forme('2026-09-10'::date, $1::jsonb)", [JSON.stringify({ energie: 4, sommeil: 3, heures: 7.5, ressenti: 'grosse journée' })]);
+r = await as(A, "select public.tirer_jours(null) as j");
+const fo = r.rows[0].j['2026-09-10'].forme;
+ok('le bilan fait l aller-retour', fo && fo.energie === 4 && fo.heures === 7.5 && fo.ressenti === 'grosse journée', JSON.stringify(fo));
+ok('la journee garde ses series', r.rows[0].j['2026-09-10'].exercises.length === 1);
+await as(A, "select public.pousser_jour('2026-09-10'::date, $1::jsonb)", [JSON.stringify([{ id: 'd1', nom: 'Squat', series: [{ poids: 100, reps: '5' }] }])]);
+r = await as(A, "select public.tirer_jours(null) as j");
+ok('renvoyer la journee ne fait pas perdre le bilan', r.rows[0].j['2026-09-10'].forme && r.rows[0].j['2026-09-10'].forme.energie === 4);
+await as(A, "select public.pousser_forme('2026-09-10'::date, $1::jsonb)", [JSON.stringify({ x: 'y'.repeat(3000) })]);
+r = await as(A, "select public.tirer_jours(null) as j");
+ok('un bilan trop gros devient null, sans erreur', r.rows[0].j['2026-09-10'].forme === null);
+await as(A, "select public.pousser_forme('2026-09-11'::date, '{}'::jsonb)");
+r = await as(A, "select public.tirer_jours(null) as j");
+ok('un bilan vide ne cree qu une journee sans bilan', r.rows[0].j['2026-09-11'] && r.rows[0].j['2026-09-11'].forme === null);
+ok('la cle forme est rendue sur chaque journee', Object.values(r.rows[0].j).every(x => 'forme' in x));
+await refuse('anon ne pousse pas de bilan', () => asAnon("select public.pousser_forme('2026-09-10'::date, '{}'::jsonb)"));
+await refuse('la base refuse un bilan de plus de 2 Ko, meme en direct', () =>
+  db.query("update public.seances set forme = jsonb_build_object('x', repeat('y', 3000)) where user_id = $1", [A]));
+await as(B, "select public.pousser_forme('2026-09-10'::date, $1::jsonb)", [JSON.stringify({ energie: 1 })]);
+r = await as(A, "select public.tirer_jours(null) as j");
+ok('B pousse son bilan chez lui, pas chez A', r.rows[0].j['2026-09-10'].forme === null);
 await refuse('la base refuse une vitesse au-dela de 100 km/h', () =>
   db.query("update public.series set vitesse = 150 where user_id = $1", [A]));
 
@@ -752,6 +774,7 @@ ok('et il voit bien les series',
    Number(rr.rows[0].j['2026-10-01'].exercises[0].series[0].poids) === 140,
    JSON.stringify(rr.rows[0].j['2026-10-01'].exercises[0].series[0]));
 ok('il recoit aussi les details des series (17/11/2026)', 'details' in rr.rows[0].j['2026-10-01'].exercises[0].series[0]);
+ok('et le bilan de forme de la journee', 'forme' in rr.rows[0].j['2026-10-01']);
 ok('et le commentaire de l exercice',
    rr.rows[0].j['2026-10-01'].exercises[0].note === 'Dernière rep assistée',
    JSON.stringify(rr.rows[0].j['2026-10-01'].exercises[0].note));

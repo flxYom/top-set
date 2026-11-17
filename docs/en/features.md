@@ -363,6 +363,33 @@ and an empty field shows the computed name as a placeholder. The same
 `definirTitre` as before — one path for naming, so `foisFaite` and the summary
 still agree.
 
+**The pre-session check-in** (17 November 2026). "Simply informative: to know
+next time what shape you were in for that session, and for a coach's or an
+AI's analysis." Optional, off by default. On first launch, a small window
+offers it and lets you pick what to log, among ten: **gauges** from 1 to 5
+(energy, fatigue, motivation, sleep with its hours, soreness, stress),
+**choices** (your day: not, a bit or very physical; food; a night out or
+alcohol the day before) and **a few words**. Five are ticked up front. The
+window says, before the button, that the check-in follows the account and that
+the coach sees it. Afterwards: `BILAN DE FORME` in settings.
+
+Once on, it opens **at the start of the session** — the first set checked, on
+the card or full screen, or a template launched —, once a day and only on
+today's session (`proposerForme`). Not on the first exercise added: the
+keyboard is open on its name. An untouched gauge is **unknown, never zero**;
+tapping the chosen notch again clears it. `PAS MAINTENANT` closes it; the
+banner's `FORME ?` tag reopens it, then reads `FORME ÉNERGIE 4/5` once filled.
+It reads back in the session sheet — next time —, and goes into a session's AI
+text, the AI export (with a legend line and one more question: form before
+sessions, as a trend, never a cause) and the workbook (`Forme avant la séance`
+column).
+
+It lives on the day (`day.forme`, cleaned by `formeSure`), travels in the JSON
+backup, merges like the session note (`CHAMPS_JOUR`), and follows the account
+through `pousser_forme` (column `seances.forme`). A database without the column
+doesn't lose it. The coach reads it with the logbook. Privacy policy 3.5: it
+is health data, stored only once you turn it on.
+
 **A word on the whole session** (2026-10-10). There was a set's comment and an
 exercise's; the day's was missing — « slept badly », « first one since the
 break » belong to no set. Under the list, `＋ UN MOT SUR LA SÉANCE` opens a

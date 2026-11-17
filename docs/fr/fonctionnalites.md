@@ -387,6 +387,36 @@ sous la date, avec le `✎`, et le champ vide affiche le nom calculé en
 filigrane. Le même `definirTitre` qu'avant — un seul chemin pour nommer, donc
 `foisFaite` et le bilan continuent de s'y retrouver.
 
+**Le bilan de forme** (17 novembre 2026). « Simplement informatif : savoir la
+fois d'après dans quelle forme on était lors de cette séance, et pour les
+analyses d'un coach ou d'une IA. » Facultatif, désactivé par défaut. Au premier
+lancement, une petite fenêtre le propose et laisse choisir ce qu'on note, parmi
+dix : des **jauges** de 1 à 5 (énergie, fatigue, motivation, sommeil avec ses
+heures, courbatures, stress), des **choix** (ta journée : pas, un peu ou très
+physique ; l'alimentation ; une soirée ou de l'alcool la veille) et **quelques
+mots**. Cinq sont cochés d'avance. La fenêtre dit, avant le bouton, que le bilan
+suit le compte et que le coach le voit. Ensuite : `BILAN DE FORME` dans les
+réglages.
+
+Une fois actif, il s'ouvre **au début de la séance** — à la première série
+cochée, dans la carte ou en grand, ou quand on lance un modèle —, une fois par
+jour et seulement sur la séance du jour (`proposerForme`). Pas au premier
+exercice ajouté : le clavier est ouvert sur son nom. Une jauge non touchée est
+**inconnue, jamais zéro** ; retoucher le cran choisi l'efface. `PAS MAINTENANT`
+le referme ; l'étiquette `FORME ?` du bandeau le rouvre, puis dit
+`FORME ÉNERGIE 4/5` une fois rempli. Il se relit dans la fiche de la séance —
+la fois d'après —, et part dans le texte d'une séance pour une IA, l'export
+pour une IA (avec une ligne de légende et une question de plus : la forme
+avant les séances, en tendance, jamais en cause) et le classeur (colonne
+`Forme avant la séance`).
+
+Il vit sur la journée (`day.forme`, nettoyé par `formeSure`), voyage dans la
+sauvegarde JSON, se fusionne comme le mot de la séance (`CHAMPS_JOUR`), et suit
+le compte par `pousser_forme` (colonne `seances.forme`). Une base sans la
+colonne ne le fait pas perdre. Le coach le lit avec le carnet. Politique de
+confidentialité 3.5 : ce sont des données de santé, enregistrées seulement si
+on l'active.
+
 **Un mot sur la séance entière** (10 octobre 2026). Il y avait le commentaire
 d'une série et celui d'un exercice ; il manquait celui du jour — « mal dormi »,
 « première depuis la coupure » n'appartiennent à aucune série. Sous la liste,

@@ -124,7 +124,12 @@ Storage keys: `musculation_sessions` (the logbook), `topset_custom_exercises`
 (the losing side of a conflict, never discarded silently — capped at twenty
 since 2026-10-14: it grew without bound and could end up filling the phone's
 storage), `topset_verifies` (the "à vérifier" entries kept as they are, 500 at
-most, on this phone only: a screen setting, not logbook data).
+most, on this phone only: a screen setting, not logbook data),
+`topset_forme_demandee` (the day the check-in was already offered, so it is
+offered once a day). The check-in itself lives in the logbook, on the day
+(`forme`), and follows the account through its `seances.forme` column and the
+`pousser_forme` function (`supabase/bilan-de-forme.txt`, which also carries the
+set times).
 
 **Full storage no longer fails silently.** `localStorage.setItem()` throws when
 the quota is reached, and the `catch` swallowed it: nothing was written until a

@@ -52,6 +52,9 @@ c'est exactement à ça que sert ce repo pour l'instant.
   la séance précédente et n'écrase jamais ce qui est déjà saisi. Une séance se
   garde comme modèle (« Push A », rangé en dossier) et se relance d'un appui
   sur un jour vide, avec les charges de ta dernière fois.
+- **Dire dans quelle forme on arrive.** Un bilan facultatif au début de la
+  séance — des jauges, des choix, un mot —, qu'on relit la fois d'après et que
+  son coach ou une IA peuvent prendre en compte.
 - **Son poids du corps, pour soi.** Une pesée par jour, des mensurations si on
   veut, sa courbe en bas de PROGRÈS et la force relative dans la fiche d'un
   exercice. Personne d'autre ne la voit, pas même son coach.

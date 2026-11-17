@@ -699,7 +699,7 @@ ok('iPhone : la date du jour se lit, et une seule fois',
      SW.indexOf("if (url.pathname.indexOf('/_vercel/') === 0) return;") > -1);
   const CONF = readFileSync(new URL('confidentialite.html', racine), 'utf8');
   ok('mesure d audience : annoncee par la politique, et l app enregistre sa version',
-     CONF.indexOf('Version 3.4') > -1 && CONF.indexOf('Vercel Web Analytics') > -1 && SRC.indexOf("var VERSION_POLITIQUE = '3.4';") > -1);
+     CONF.indexOf('Version 3.5') > -1 && CONF.indexOf('Vercel Web Analytics') > -1 && SRC.indexOf("var VERSION_POLITIQUE = '3.5';") > -1);
 
   // Les pages legales doivent decrire l'app TELLE QU'ELLE EST. Les amis et le
   // partage existaient depuis des semaines quand la politique affirmait encore
@@ -789,7 +789,7 @@ ok('chrono libre : une heure de depart gardee, pas un compteur qui tourne',
 // exos, desactiver activer le chrono et personnaliser des reglages simples. »
 ok('reglages : par defaut l app est en mode simple, et rien n est efface',
    SRC.indexOf('var REGLAGES_DEFAUT = { chronoAuto:true, btnChrono:false, champRepos:false, rpe:false, ecranAllume:true,') > -1
-   && SRC.indexOf('nomsLibres:false, pasPoids:true, couleurs:{}, barres:{}, outils:{}, suivis:[], objectifSemaine:3 };') > -1
+   && /nomsLibres:false, pasPoids:true, couleurs:\{\}, barres:\{\}, outils:\{\}, suivis:\[\], objectifSemaine:3(,\s*forme:null)? \};/.test(SRC)
    && /document\.body\.classList\.toggle\('sans-rpe', !reglages\.rpe\);/.test(SRC)
    && /body\.sans-rpe \.serie-rpe,/.test(HTML)
    && /body\.sans-repos-champ \.serie-repos-champ\{display:none;\}/.test(HTML)
@@ -1677,8 +1677,8 @@ ok('le choix de page SUIVIS / TOUS, avec ses comptes',
    && /data-page="suivis" aria-pressed="false">SUIVIS<span class="seg-compte" id="recapNbSuivis">/.test(HTML)
    && /data-page="tous" aria-pressed="false">TOUS<span class="seg-compte" id="recapNbTous">/.test(HTML));
 ok('les suivis sont un reglage local, lu sans doublon et borne',
-   /couleurs:\{\}, barres:\{\},( outils:\{\},)? suivis:\[\], objectifSemaine:3 \}/.test(SRC) && /var SUIVIS_MAX = 40;/.test(SRC)
-   && /k === 'suivis' \? \[\] : REGLAGES_DEFAUT\[k\]/.test(SRC)
+   /couleurs:\{\}, barres:\{\},( outils:\{\},)? suivis:\[\], objectifSemaine:3(,\s*forme:null)? \}/.test(SRC) && /var SUIVIS_MAX = 40;/.test(SRC)
+   && /k === 'suivis' \? \[\] : (\(k === 'forme' \? formeReglageNeuf\(\) : )?REGLAGES_DEFAUT\[k\]/.test(SRC)
    && /r\.suivis\.indexOf\(nom\) < 0 && r\.suivis\.length < SUIVIS_MAX/.test(SRC));
 ok('sans exercice suivi on arrive sur TOUS, sinon sur SUIVIS',
    /return reglages\.suivis\.length \? 'suivis' : 'tous';/.test(SRC));
@@ -2005,7 +2005,7 @@ console.log('\n== 60. Exporter mes donnees, a la place de synchroniser (16/11) =
   ok('les regles viennent d intelligence.js', /TS\.pointsTopSet\(/.test(EXP) && /TS\.tendanceForce\(/.test(EXP) && /TS\.progressionsComparables\(/.test(EXP) && /TS\.meilleurPoids\(/.test(EXP) && /TS\.regularite\(/.test(EXP));
   ok('un fichier part dans le geste ; refuse, il attend un second appui', /exportPret = \{ format:format, fichier:fichier, blob:blob, nom:nom \};/.test(SRC)
      && /if \(exportPret && exportPret\.format === format\)\{ envoyerExportPret\(\); return; \}/.test(SRC));
-  ok('l ecran se ferme avec les autres feuilles', /'imageSheet', 'exportSheet'(, 'verifSheet')?\]\.forEach/.test(SRC));
+  ok('l ecran se ferme avec les autres feuilles', /'imageSheet', 'exportSheet'(, 'verifSheet')?(, 'formeSheet', 'formePrefsSheet')?\]\.forEach/.test(SRC));
 }
 
 console.log('\n== 61. Le carnet PDF pour un coach (16/11) ==');
@@ -2103,6 +2103,22 @@ ok('la fiche montre la tendance et les progres a effort egal', /html \+= blocPro
 ok('rien sous trois seances', /if \(n < 3\) note = 'Pas encore assez de séances pour parler de progression : 3 au moins\.';/.test(SRC));
 ok('la courbe porte la tendance en pointilles neutres', /borderColor:'#a39b8f', borderDash:\[5, 4\]/.test(SRC));
 ok('la tendance demande six semaines', /if \(dernier - \(FENETRE_TENDANCE - 7\) <= premier \+ \(FENETRE_TENDANCE - 7\)\)/.test(INTEL));
+
+console.log('\n== 69. Le bilan de forme (17/11) ==');
+const SCHEMA69 = lireLF('../supabase/schema.sql');
+ok('desactive par defaut, propose une fois au lancement', /function formeReglageNeuf\(\)\{ return \{ actif:false, propose:false, items:FORME_DEFAUT\.slice\(\) \}; \}/.test(SRC)
+   && /setTimeout\(proposerPrefsForme, 1500\);/.test(SRC) && /if \(reglages\.forme\.propose \|\| reglages\.forme\.actif\) return;/.test(SRC));
+ok('la fenetre dit, avant le bouton, que c est suivi par le compte et vu par le coach',
+   /et ton coach le voit si tu en as un\. Ce sont des données de santé/.test(HTML.replace(/\s+/g, ' ')));
+ok('au debut de la seance : premiere serie cochee, plein ecran, modele ; une fois par jour, aujourd hui seulement',
+   (SRC.match(/proposerForme\((state\.selectedDay|ds)\);/g) || []).length === 3
+   && /if \(ds !== toDateStr\(new Date\(\)\) \|\| formeDe\(ds\) \|\| formeDemandeeLe\(\) === ds\) return;/.test(SRC));
+ok('une jauge non touchee est inconnue, jamais zero', /if \(n >= 1 && n <= 5\) o\[it\.cle\] = n;/.test(SRC) && /if \(formeEtat\.b\[cle\] === v\) delete formeEtat\.b\[cle\];/.test(SRC));
+ok('le bilan passe au-dessus de l exercice en grand', REFONTE.includes('.forme-sheet{z-index:80;}'));
+ok('il suit le compte et une base sans la colonne ne le perd pas',
+   /pousserParDate\('formes', 'pousser_forme', 'p_forme'/.test(SRC) && /else if \(state\.sessions\[ds\] && state\.sessions\[ds\]\.forme\) j\.forme = state\.sessions\[ds\]\.forme;/.test(SRC)
+   && /add column if not exists forme jsonb/.test(SCHEMA69) && (SCHEMA69.match(/'forme', s\.forme,/g) || []).length === 2);
+ok('il se fusionne et se reimporte comme le reste de la journee', /'debut', 'fin', 'forme'\]/.test(INTEL) && /if \(fImp\) clean\[ds\]\.forme = fImp;/.test(SRC));
 
 console.log(`\n${pass} reussis, ${fail} echoues`);
 process.exit(fail ? 1 : 0);

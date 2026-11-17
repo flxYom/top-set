@@ -39,9 +39,27 @@
   // dans la serie, part dans les exports et revient si on rallume la
   // colonne. Un reglage est un etat d'ecran, pas une donnee du carnet : il
   // vit dans ce telephone et ne monte pas dans le compte.
+  // Le bilan de forme (17/11/2026) : ce qu'on peut noter en debut de seance.
+  // Une jauge de 1 a 5, un choix, ou quelques mots. Rien n'est demande tant
+  // qu'on ne l'a pas active, et chacun choisit ses items.
+  var FORME_ITEMS = [
+    { cle:'energie',     titre:'ÉNERGIE',     type:'jauge', bas:'à plat', haut:'au top' },
+    { cle:'fatigue',     titre:'FATIGUE',     type:'jauge', bas:'reposé', haut:'épuisé' },
+    { cle:'motivation',  titre:'MOTIVATION',  type:'jauge', bas:'aucune', haut:'à fond' },
+    { cle:'sommeil',     titre:'SOMMEIL',     type:'jauge', bas:'mauvais', haut:'excellent', heures:true },
+    { cle:'courbatures', titre:'COURBATURES', type:'jauge', bas:'aucune', haut:'fortes' },
+    { cle:'stress',      titre:'STRESS',      type:'jauge', bas:'calme', haut:'tendu' },
+    { cle:'travail',     titre:'TA JOURNÉE',  type:'choix', choix:[['calme', 'PAS PHYSIQUE'], ['leger', 'UN PEU PHYSIQUE'], ['dur', 'TRÈS PHYSIQUE']] },
+    { cle:'alimentation', titre:'ALIMENTATION', type:'choix', choix:[['bien', 'BIEN MANGÉ'], ['moyen', 'MOYEN'], ['peu', 'PAS ASSEZ']] },
+    { cle:'veille',      titre:'SOIRÉE OU ALCOOL HIER', type:'choix', choix:[['non', 'NON'], ['oui', 'OUI']] },
+    { cle:'ressenti',    titre:'EN QUELQUES MOTS', type:'texte' }
+  ];
+  var FORME_DEFAUT = ['energie', 'fatigue', 'motivation', 'sommeil', 'ressenti'];
+  function formeReglageNeuf(){ return { actif:false, propose:false, items:FORME_DEFAUT.slice() }; }
   var CLE_REGLAGES = 'topset_reglages';
   var REGLAGES_DEFAUT = { chronoAuto:true, btnChrono:false, champRepos:false, rpe:false, ecranAllume:true,
-                          nomsLibres:false, pasPoids:true, couleurs:{}, barres:{}, outils:{}, suivis:[], objectifSemaine:3 };
+                          nomsLibres:false, pasPoids:true, couleurs:{}, barres:{}, outils:{}, suivis:[], objectifSemaine:3,
+                          forme:null };
   // Au plus quarante exercices suivis dans PROGRES : au-dela, « suivre » ne
   // veut plus rien dire.
   var SUIVIS_MAX = 40;
@@ -51,7 +69,7 @@
   var reglages = (function(){
     var r = {};
     Object.keys(REGLAGES_DEFAUT).forEach(function(k){
-      r[k] = (k === 'couleurs' || k === 'barres' || k === 'outils') ? {} : (k === 'suivis' ? [] : REGLAGES_DEFAUT[k]);
+      r[k] = (k === 'couleurs' || k === 'barres' || k === 'outils') ? {} : (k === 'suivis' ? [] : (k === 'forme' ? formeReglageNeuf() : REGLAGES_DEFAUT[k]));
     });
     try {
       var lu = JSON.parse(localStorage.getItem(CLE_REGLAGES) || 'null');
@@ -86,6 +104,16 @@
               lu.suivis.forEach(function(nom){
                 if (typeof nom === 'string' && nom.trim() && r.suivis.indexOf(nom) < 0 && r.suivis.length < SUIVIS_MAX) r.suivis.push(nom);
               });
+            }
+          } else if (k === 'forme'){
+            // Le bilan de forme : actif ou non, deja propose ou non, et les
+            // items choisis, parmi ceux qu'on connait.
+            if (lu.forme && typeof lu.forme === 'object'){
+              r.forme.actif = lu.forme.actif === true;
+              r.forme.propose = lu.forme.propose === true;
+              if (Array.isArray(lu.forme.items)){
+                r.forme.items = FORME_ITEMS.map(function(it){ return it.cle; }).filter(function(c){ return lu.forme.items.indexOf(c) > -1; });
+              }
             }
           } else if (k === 'objectifSemaine'){
             // Seances visees par semaine : un entier de 1 a 7, sinon 3.
@@ -2016,6 +2044,14 @@
         + (hh ? esc(hh.toUpperCase()) : ico('horloge') + 'HORAIRES') + '</button>';
     }
 
+    // Le bilan de forme : une etiquette de plus, quand il est actif (ou deja
+    // note ce jour-la). « FORME ? » tant qu'il ne l'est pas, sur aujourd'hui.
+    var fJour = formeDe(ds);
+    if (fJour || (reglages.forme.actif && (nExos || ds === toDateStr(new Date())))){
+      var fCourt = fJour ? (fJour.energie ? 'ÉNERGIE ' + fJour.energie + '/5' : 'NOTÉE') : '?';
+      tags += '<button type="button" class="hero-tag hero-forme' + (fJour ? ' notee' : '') + '" id="heroForme" aria-label="Bilan de forme">FORME ' + fCourt + '</button>';
+    }
+
     var hero = document.getElementById('heroBand');
     hero.style.setProperty('--hero-color', heroColor);
     if (dom && ILLUSTRATIONS[dom]) hero.dataset.illu = ILLUSTRATIONS[dom];
@@ -3104,6 +3140,7 @@
   // tient sur la zone, pas sur le bouton.
   document.getElementById('heroCorps').addEventListener('click', function(e){
     if (e.target.closest('#heroHeures')) ouvrirHeures();
+    if (e.target.closest('#heroForme')) ouvrirForme(state.selectedDay);
   });
   document.getElementById('heuresClose').addEventListener('click', fermerHeures);
   document.getElementById('heuresSheet').addEventListener('click', function(e){
@@ -3409,6 +3446,225 @@
     if (v) day.commentaire = v; else delete day.commentaire;
     persistDay(ds);
     if (typeof Sync !== 'undefined' && Sync.marquerCommentaire) Sync.marquerCommentaire(ds);
+  }
+
+  // ---------- le bilan de forme (17/11/2026) ----------
+  // « Simplement informatif : savoir la fois d'apres dans quelle forme on
+  // etait lors de cette seance, et pour un coach ou une IA. » Au debut de la
+  // seance — a la premiere serie cochee, ou quand on lance un modele —, une
+  // feuille s'ouvre une fois par jour : des jauges de 1 a 5, des choix, un
+  // mot. On la passe d'un appui, on la remplit plus tard depuis le bandeau.
+  // Il vit sur la journee (day.forme), suit le compte et se lit chez le
+  // coach, comme le mot de la seance. Une jauge non touchee est INCONNUE,
+  // jamais zero : elle n'est simplement pas ecrite.
+  var FORME_PAR_CLE = {};
+  FORME_ITEMS.forEach(function(it){ FORME_PAR_CLE[it.cle] = it; });
+  var FORME_DEMANDEE_KEY = 'topset_forme_demandee';
+  function formeSure(v){
+    if (!v || typeof v !== 'object') return undefined;
+    var o = {};
+    FORME_ITEMS.forEach(function(it){
+      var x = v[it.cle];
+      if (x == null || x === '') return;
+      if (it.type === 'jauge'){
+        var n = Math.round(Number(x));
+        if (n >= 1 && n <= 5) o[it.cle] = n;
+      } else if (it.type === 'choix'){
+        if (it.choix.some(function(c){ return c[0] === x; })) o[it.cle] = x;
+      } else {
+        var t = String(x).replace(/\s+/g, ' ').trim().slice(0, 300);
+        if (t) o[it.cle] = t;
+      }
+    });
+    var h = Number(String(v.heures == null ? '' : v.heures).replace(',', '.'));
+    if (v.heures != null && v.heures !== '' && isFinite(h) && h > 0 && h <= 16) o.heures = Math.round(h * 2) / 2;
+    return Object.keys(o).length ? o : undefined;
+  }
+  function formeDe(ds){ var day = state.sessions[ds]; return (day && formeSure(day.forme)) || null; }
+  // En mots, pour la fiche, le texte d'une IA et les exports.
+  function formeTexte(f){
+    f = formeSure(f);
+    if (!f) return '';
+    var l = [];
+    FORME_ITEMS.forEach(function(it){
+      var v = f[it.cle];
+      if (it.cle === 'sommeil'){
+        if (v || f.heures) l.push('sommeil ' + [f.heures ? String(f.heures).replace('.', ',') + ' h' : '', v ? v + '/5' : ''].filter(Boolean).join(' · '));
+        return;
+      }
+      if (v == null) return;
+      if (it.type === 'jauge') l.push(it.titre.toLowerCase() + ' ' + v + '/5');
+      else if (it.cle === 'travail') l.push({ calme:'journée pas physique', leger:'journée un peu physique', dur:'journée très physique' }[v]);
+      else if (it.cle === 'alimentation') l.push({ bien:'bien mangé', moyen:'alimentation moyenne', peu:'pas assez mangé' }[v]);
+      else if (it.cle === 'veille') l.push(v === 'oui' ? 'soirée ou alcool la veille' : 'pas de soirée la veille');
+      else l.push('« ' + v + ' »');
+    });
+    return l.join(' · ');
+  }
+  function definirForme(ds, f){
+    var day = getOrCreateDay(ds);
+    var v = formeSure(f);
+    if (v) day.forme = v; else delete day.forme;
+    persistDay(ds, true);
+    if (typeof Sync !== 'undefined' && Sync.marquerForme) Sync.marquerForme(ds);
+  }
+  function formeDemandeeLe(){ try { return localStorage.getItem(FORME_DEMANDEE_KEY) || ''; } catch (err) { return ''; } }
+  function noterFormeDemandee(ds){ try { localStorage.setItem(FORME_DEMANDEE_KEY, ds); } catch (err) {} }
+  // Le debut de la seance : une fois par jour, seulement aujourd'hui, et
+  // seulement si le bilan est actif et pas encore rempli.
+  function proposerForme(ds){
+    if (!reglages.forme.actif || !reglages.forme.items.length) return;
+    if (ds !== toDateStr(new Date()) || formeDe(ds) || formeDemandeeLe() === ds) return;
+    noterFormeDemandee(ds);
+    setTimeout(function(){ ouvrirForme(ds); }, 350);
+  }
+
+  var formeSheet = document.getElementById('formeSheet');
+  var formeEtat = { ds:null, b:{} };
+  function rendreForme(){
+    var b = formeEtat.b, html = '';
+    reglages.forme.items.forEach(function(cle){
+      var it = FORME_PAR_CLE[cle];
+      if (!it) return;
+      html += '<div class="forme-item">';
+      if (it.type === 'jauge'){
+        html += '<div class="forme-tete"><span>' + esc(it.titre) + '</span><span class="forme-val">' + (b[cle] ? b[cle] + '/5' : '—') + '</span></div>'
+          + '<div class="forme-jauge" role="group" aria-label="' + esc(it.titre.toLowerCase()) + ', de 1 (' + esc(it.bas) + ') à 5 (' + esc(it.haut) + ')">';
+        for (var n = 1; n <= 5; n++){
+          html += '<button type="button" class="forme-cran' + (b[cle] >= n ? ' plein' : '') + '" data-forme="' + cle + '" data-v="' + n + '"'
+            + ' aria-pressed="' + (b[cle] === n) + '" aria-label="' + n + ' sur 5"></button>';
+        }
+        html += '</div><div class="forme-bornes"><span>' + esc(it.bas) + '</span><span>' + esc(it.haut) + '</span></div>';
+        if (it.heures){
+          html += '<label class="forme-heures-l" for="formeHeures">HEURES DE SOMMEIL</label>'
+            + '<input type="text" inputmode="decimal" class="sheet-input forme-heures" id="formeHeures" placeholder="7,5" value="' + (b.heures ? esc(String(b.heures).replace('.', ',')) : '') + '">';
+        }
+      } else if (it.type === 'choix'){
+        html += '<div class="forme-tete"><span>' + esc(it.titre) + '</span></div><div class="forme-choix">'
+          + it.choix.map(function(c){
+              return '<button type="button" class="forme-puce" data-forme="' + cle + '" data-v="' + c[0] + '" aria-pressed="' + (b[cle] === c[0]) + '">' + esc(c[1]) + '</button>';
+            }).join('') + '</div>';
+      } else {
+        html += '<label class="forme-tete" for="formeRessenti"><span>' + esc(it.titre) + '</span></label>'
+          + '<textarea class="sheet-input forme-texte" id="formeRessenti" rows="2" maxlength="300" placeholder="mal au dos, grosse journée…">' + esc(b.ressenti || '') + '</textarea>';
+      }
+      html += '</div>';
+    });
+    document.getElementById('formeChamps').innerHTML = html;
+    document.getElementById('formeRetirer').hidden = !formeDe(formeEtat.ds);
+  }
+  function ouvrirForme(ds){
+    if (!formeSheet) return;
+    var f = formeDe(ds) || {};
+    formeEtat = { ds:ds, b:JSON.parse(JSON.stringify(f)) };
+    var d = fromDateStr(ds);
+    document.getElementById('formeQuand').textContent = (ds === toDateStr(new Date()) ? 'Aujourd\'hui' : DAY_NAMES[(d.getDay() + 6) % 7] + ' ' + d.getDate() + ' ' + MONTH_NAMES[d.getMonth()]);
+    rendreForme();
+    formeSheet.hidden = false;
+  }
+  function lireChampsForme(){
+    var h = document.getElementById('formeHeures'), r = document.getElementById('formeRessenti');
+    if (h) formeEtat.b.heures = h.value;
+    if (r) formeEtat.b.ressenti = r.value;
+  }
+  function fermerForme(){ if (formeSheet) formeSheet.hidden = true; }
+  if (formeSheet) formeSheet.addEventListener('click', function(e){
+    if (e.target === this || e.target.closest('#formeClose') || e.target.closest('#formePasser')){ fermerForme(); return; }
+    var b = e.target.closest('[data-forme]');
+    if (b){
+      lireChampsForme();
+      var cle = b.dataset.forme, it = FORME_PAR_CLE[cle];
+      var v = it.type === 'jauge' ? Number(b.dataset.v) : b.dataset.v;
+      // Toucher la valeur deja choisie la retire : « je ne sais pas » reste
+      // possible, et ce n'est pas zero.
+      if (formeEtat.b[cle] === v) delete formeEtat.b[cle]; else formeEtat.b[cle] = v;
+      rendreForme();
+      return;
+    }
+    if (e.target.closest('#formeValider')){
+      lireChampsForme();
+      definirForme(formeEtat.ds, formeEtat.b);
+      fermerForme();
+      if (formeEtat.ds === state.selectedDay) renderBandeau();
+      showToast(formeDe(formeEtat.ds) ? 'Bilan noté' : 'Rien de noté');
+      return;
+    }
+    if (e.target.closest('#formeRetirer')){
+      definirForme(formeEtat.ds, null);
+      fermerForme();
+      if (formeEtat.ds === state.selectedDay) renderBandeau();
+      showToast('Bilan retiré');
+    }
+  });
+
+  // Les preferences : la premiere fois, une petite fenetre au lancement ;
+  // ensuite, depuis les reglages. Activer, c'est accepter qu'il soit garde
+  // (et suive le compte) : la fenetre le dit avant le bouton.
+  var formePrefsSheet = document.getElementById('formePrefsSheet');
+  var formePrefsChoix = [];
+  function rendrePrefsForme(){
+    document.getElementById('formePrefsListe').innerHTML = FORME_ITEMS.map(function(it){
+      var on = formePrefsChoix.indexOf(it.cle) > -1;
+      return '<button type="button" class="reg-bascule" data-forme-item="' + it.cle + '" aria-pressed="' + on + '">'
+        + '<span><b>' + esc(it.titre.charAt(0) + it.titre.slice(1).toLowerCase()) + '</b><small>'
+        + esc(it.type === 'jauge' ? 'Une jauge de 1 (' + it.bas + ') à 5 (' + it.haut + ')' + (it.heures ? ', et tes heures' : '') + '.'
+             : it.type === 'choix' ? it.choix.map(function(c){ return c[1].toLowerCase(); }).join(', ') + '.' : 'Ce que tu veux, en une phrase.')
+        + '</small></span><span class="reg-temoin" aria-hidden="true"></span></button>';
+    }).join('');
+    document.getElementById('formeActiver').textContent = reglages.forme.actif ? 'ENREGISTRER' : 'ACTIVER LE BILAN';
+    document.getElementById('formeDesactiver').textContent = reglages.forme.actif ? 'DÉSACTIVER LE BILAN' : 'PAS POUR MOI';
+  }
+  function ouvrirPrefsForme(){
+    if (!formePrefsSheet) return;
+    formePrefsChoix = reglages.forme.items.slice();
+    if (!reglages.forme.propose){ reglages.forme.propose = true; garderReglages(); }
+    rendrePrefsForme();
+    formePrefsSheet.hidden = false;
+  }
+  function fermerPrefsForme(){
+    if (formePrefsSheet) formePrefsSheet.hidden = true;
+    var lien = document.getElementById('regForme');
+    if (lien) lien.textContent = 'BILAN DE FORME : ' + (reglages.forme.actif ? 'ACTIVÉ' : 'DÉSACTIVÉ') + ' ›';
+  }
+  if (formePrefsSheet) formePrefsSheet.addEventListener('click', function(e){
+    if (e.target === this || e.target.closest('#formePrefsClose')){ fermerPrefsForme(); return; }
+    var it = e.target.closest('[data-forme-item]');
+    if (it){
+      var cle = it.dataset.formeItem, i = formePrefsChoix.indexOf(cle);
+      if (i > -1) formePrefsChoix.splice(i, 1); else formePrefsChoix.push(cle);
+      formePrefsChoix = FORME_ITEMS.map(function(x){ return x.cle; }).filter(function(c){ return formePrefsChoix.indexOf(c) > -1; });
+      rendrePrefsForme();
+      return;
+    }
+    if (e.target.closest('#formeActiver')){
+      if (!formePrefsChoix.length){ showToast('Choisis au moins une chose à noter'); return; }
+      reglages.forme.actif = true;
+      reglages.forme.items = formePrefsChoix.slice();
+      garderReglages();
+      fermerPrefsForme();
+      renderBandeau();
+      showToast('Bilan de forme activé : il s\'ouvrira au début de ta séance');
+      return;
+    }
+    if (e.target.closest('#formeDesactiver')){
+      reglages.forme.actif = false;
+      garderReglages();
+      fermerPrefsForme();
+      renderBandeau();
+      showToast('Bilan de forme désactivé');
+    }
+  });
+  document.getElementById('regForme').addEventListener('click', function(){
+    document.getElementById('profilSheet').hidden = true;
+    ouvrirPrefsForme();
+  });
+  // Une seule fois, a l'ouverture de l'app : jamais par-dessus une autre
+  // feuille, l'accueil, l'exercice en grand ou une seance en cours.
+  function proposerPrefsForme(){
+    if (reglages.forme.propose || reglages.forme.actif) return;
+    if (document.querySelector('.sheet:not([hidden]), .bilan:not([hidden]), .accueil:not([hidden])')) return;
+    if (document.body.classList.contains('en-focus')) return;
+    ouvrirPrefsForme();
   }
 
   // ---------- l'heure de debut et l'heure de fin ----------
@@ -4032,6 +4288,8 @@
       // regarder une seance passee.
       + (commentaireSeance(ds)
           ? '<div class="fiche-mot">«\u00a0' + esc(commentaireSeance(ds)) + '\u00a0»</div>' : '')
+      // La forme de ce jour-la : c'est ici qu'on la relit, la fois d'apres.
+      + (formeDe(ds) ? '<div class="fiche-forme"><span>FORME</span>' + esc(formeTexte(formeDe(ds))) + '</div>' : '')
       + '</div>';
 
     if (!tous.length){
@@ -6239,6 +6497,7 @@
     populateDatalist();
     renderSeanceJour(true);
     showToast(m.nom + ' posé : ' + pluriel(n, 'exercice'));
+    proposerForme(state.selectedDay);
   });
 
   // Le panneau des modeles : enregistrer une seance sous un nom, ou ranger,
@@ -6960,6 +7219,7 @@
     rendreFocus();
     renderBandeau();
     showToast('Série ' + num + ' notée' + (noteSec ? ' · repos ' + texteChrono(noteSec) : ''));
+    proposerForme(ds);
   }
   // Ecrire dans la serie comme sa ligne : meme lecture, meme sauvegarde.
   function ecrireFocus(serieId, champ, valeur){
@@ -7239,6 +7499,8 @@
       return '<button type="button" class="seg-btn' + (reglages.objectifSemaine === n ? ' active' : '') + '" data-reg="objectif" data-v="' + n + '"'
         + ' aria-pressed="' + (reglages.objectifSemaine === n) + '" aria-label="' + n + (n > 1 ? ' séances' : ' séance') + ' par semaine">' + n + '</button>';
     }).join('');
+    var lienF = document.getElementById('regForme');
+    if (lienF) lienF.textContent = 'BILAN DE FORME : ' + (reglages.forme.actif ? 'ACTIVÉ' : 'DÉSACTIVÉ') + ' ›';
     zoneB.innerHTML = BASCULES.map(function(b){
       return '<button type="button" class="reg-bascule" data-reg="bascule" data-cle="' + b.cle + '" aria-pressed="' + !!reglages[b.cle] + '">'
         + '<span><b>' + esc(b.titre) + '</b><small>' + esc(b.note) + '</small></span>'
@@ -7523,6 +7785,7 @@
       if (found4.serie.fait){
         finirRepos(true);
         lancerRepos(state.selectedDay, serieId2);
+        proposerForme(state.selectedDay);
       } else if (repos && repos.serieId === serieId2) finirRepos(false);
       // Faite, la serie se replie et la suivante s'ouvre ; decochee, elle
       // se rouvre pour qu'on la corrige.
@@ -8560,6 +8823,7 @@
     l.push('Séance du ' + jourLong(ds) + ' — ' + titreSeance(ds) + (cycle ? ' (cycle ' + cycle.toLowerCase() + ')' : ''));
     if (horaires) l.push('Horaires : ' + horaires);
     if (mot) l.push('Ressenti : « ' + mot + ' »');
+    if (formeDe(ds)) l.push('Forme avant la séance (bilan noté, jauges de 1 à 5) : ' + formeTexte(formeDe(ds)));
     exos.forEach(function(e){
       var nom = nomCanonique(e.nom) || normalizeName(e.nom) || 'Exercice sans nom';
       l.push('', nom + ' — ' + groupeIA(e));
@@ -8891,6 +9155,7 @@
     // toutes les reserves, et la reparation se voit tres bien une demi-
     // seconde plus tard.
     setTimeout(reparerAuDemarrage, 60);
+    setTimeout(proposerPrefsForme, 1500);
   }
 
   // Le carnet affiche doit etre le plus complet que ce telephone connaisse.
@@ -9133,6 +9398,8 @@
       if (typeof day.cycle === 'string' && day.cycle.trim()) clean[ds].cycle = day.cycle.trim().slice(0, CYCLE_MAX);
       if (typeof day.commentaire === 'string' && day.commentaire.trim()) clean[ds].commentaire = noteSure(day.commentaire.trim());
       if (typeof day.termine === 'string' && day.termine.trim()) clean[ds].termine = day.termine.trim().slice(0, 40);
+      var fImp = formeSure(day.forme);
+      if (fImp) clean[ds].forme = fImp;
       // Les horaires voyagent avec le reste : une liste blanche qui les
       // oublierait les perdrait a la premiere restauration.
       ['debut', 'fin'].forEach(function(k){
@@ -9376,7 +9643,7 @@
 
   // Ouvrir une page depuis une feuille, c'est quitter la feuille.
   function fermerFeuilles(){
-    ['dataSheet', 'profilSheet', 'retourSheet', 'partageSheet', 'iaSheet', 'modeleSheet', 'peseeSheet', 'imageSheet', 'exportSheet', 'verifSheet'].forEach(function(id){
+    ['dataSheet', 'profilSheet', 'retourSheet', 'partageSheet', 'iaSheet', 'modeleSheet', 'peseeSheet', 'imageSheet', 'exportSheet', 'verifSheet', 'formeSheet', 'formePrefsSheet'].forEach(function(id){
       var el = document.getElementById(id);
       if (el) el.hidden = true;
     });
@@ -11065,7 +11332,7 @@
         return {
           date:ds, titre:titreSeance(ds), titreChoisi:!!titreChoisi(ds), cycle:cycleDe(ds) || '',
           debutHM:heureChamp(h.debut), finHM:heureChamp(h.fin), duree:minutesSeance(ds), dureeEstimee:dureeEstimee(ds),
-          validee:!!estTerminee(ds), ressenti:commentaireSeance(ds) || '',
+          validee:!!estTerminee(ds), ressenti:commentaireSeance(ds) || '', forme:formeTexte(day.forme),
           exos:(day.exercises || []).filter(function(e){ return seriesRemplies(e).length; }).map(function(e){
             var cl = classement(e), auTemps = estAuTemps(e);
             return {
@@ -11348,7 +11615,10 @@
   // personne elle-meme, et rien ne se note sans qu'elle tape un poids. Ils
   // ne sont lus que par leur auteur — ni coach, ni amis, ni equipe.
   // (16/11/2026)
-  var VERSION_POLITIQUE = '3.4';
+  // La 3.5 non plus : le bilan de forme n'existe que si on l'active, et la
+  // fenetre qui le propose dit avant le bouton qu'il suit le compte et que
+  // le coach le voit. Activer, c'est consentir. (17/11/2026)
+  var VERSION_POLITIQUE = '3.5';
   var SYNC_KEY      = 'topset_sync';
 
   var Sync = (function(){
@@ -11585,6 +11855,8 @@
       // cycle:null, et la, on suit.
       if (d && ('cycle' in d)){ if (d.cycle) j.cycle = String(d.cycle).trim().slice(0, CYCLE_MAX); }
       else if (state.sessions[ds] && state.sessions[ds].cycle) j.cycle = state.sessions[ds].cycle;
+      if (d && ('forme' in d)){ var fD = formeSure(d.forme); if (fD) j.forme = fD; }
+      else if (state.sessions[ds] && state.sessions[ds].forme) j.forme = state.sessions[ds].forme;
       if (d && ('commentaire' in d)){ if (d.commentaire) j.commentaire = noteSure(String(d.commentaire).trim()); }
       else if (state.sessions[ds] && state.sessions[ds].commentaire) j.commentaire = state.sessions[ds].commentaire;
       // « Séance terminée » suit la même règle que les commentaires : une base
@@ -11668,6 +11940,7 @@
           .then(function(){ return pousserTitres().catch(function(){}); })
           .then(function(){ return pousserCycles().catch(function(){}); })
           .then(function(){ return pousserMots().catch(function(){}); })
+          .then(function(){ return pousserFormes().catch(function(){}); })
           .then(function(){ return pousserFins().catch(function(){}); })
           .then(function(){ return pousserHoraires().catch(function(){}); })
           .then(function(){ return pousserCollections(); })
@@ -11889,6 +12162,12 @@
       });
     }
 
+    function pousserFormes(){
+      return pousserParDate('formes', 'pousser_forme', 'p_forme', function(ds){
+        return formeSure(state.sessions[ds] && state.sessions[ds].forme) || null;
+      });
+    }
+
     // Les horaires partent par le meme chemin que la fin, mais a deux valeurs :
     // pousserParDate n'en porte qu'une, donc cette file-ci a son corps.
     function pousserHoraires(){
@@ -11967,6 +12246,15 @@
       if (!dispo()) return;
       var qm = marque();
       majMeta(function(m){ m.mots = m.mots || {}; m.mots[ds] = qm; });
+      if (user) planifier(2500);
+    }
+
+    // Le bilan de forme part comme le mot de la seance : une file de dates,
+    // un appel par date. (17/11/2026)
+    function marquerForme(ds){
+      if (!dispo()) return;
+      var qf = marque();
+      majMeta(function(m){ m.formes = m.formes || {}; m.formes[ds] = qf; });
       if (user) planifier(2500);
     }
 
@@ -12155,6 +12443,7 @@
         .then(function(){ return pousserTitres().catch(function(){}); })
         .then(function(){ return pousserCycles().catch(function(){}); })
         .then(function(){ return pousserMots().catch(function(){}); })
+        .then(function(){ return pousserFormes().catch(function(){}); })
         .then(function(){ majUI(); })
         .catch(function(e){ echec = messageErreur(e); majUI(); });
     }
@@ -12538,7 +12827,7 @@
       // cycle, le mot, la validation et les horaires du carnet qu'on range
       // n'ont rien a faire dans la file du compte qui arrive. (22/10/2026)
       majMeta(function(m){
-        m.sales = {}; m.titres = {}; m.cycles = {}; m.mots = {};
+        m.sales = {}; m.titres = {}; m.cycles = {}; m.mots = {}; m.formes = {};
         m.fins = {}; m.horaires = {}; m.depuis = null; m.coll = {};
       });
     }
@@ -13113,7 +13402,7 @@
       adminRetours:function(s){ return rpcAdmin('admin_retours', { p_statut: s || null }); },
       adminMarquer:function(id, s){ return rpcAdmin('admin_marquer_retour', { p_id:id, p_statut:s }); },
       marquerExos:marquerExos, marquerTitre:marquerTitre, marquerFin:marquerFin, marquerColl:marquerColl,
-      marquerCycle:marquerCycle, marquerCommentaire:marquerCommentaire,
+      marquerCycle:marquerCycle, marquerCommentaire:marquerCommentaire, marquerForme:marquerForme,
       enregistrerPseudo:enregistrerPseudo, envoyerLienMdp:envoyerLienMdp,
       changerMdp:changerMdp, modeAccueil:modeAccueil,
       montrerAccueil:montrerAccueil, fermerAccueil:fermerAccueil,

@@ -510,12 +510,12 @@
     var seances = { nom: 'Séances', colonnes: [
       C('Date', 11, 'date'), C('Jour', 10), C('Titre', 24), C('Cycle', 12), C('Début', 8, 'heure'), C('Fin', 8, 'heure'),
       C('Durée (min)', 11), C('Exercices', 10), C('Séries', 8), C('Volume (kg)', 12), C('Repos médian (s)', 15),
-      C('RPE moyen', 10), C('Groupes (séries)', 34), C('Validée', 8), C('Ressenti', 40)
+      C('RPE moyen', 10), C('Groupes (séries)', 34), C('Validée', 8), C('Ressenti', 40), C('Forme avant la séance', 50)
     ], lignes: a.jours.map(function (j) {
       return [j.date, JOURS[jourSemaine(j.date)], j.titre, j.cycle, j.debutHM, j.finHM, j.duree, j.exos.length,
         j.stats.series, Math.round(j.stats.volume) || null, arrondi(mediane(j.stats.repos), 0), arrondi(moyenne(j.stats.rpe), 1),
         trier(j.stats.groupes).map(function (g) { return g + ' ' + j.stats.groupes[g]; }).join(', '),
-        j.validee ? 'oui' : 'non', j.ressenti];
+        j.validee ? 'oui' : 'non', j.ressenti, j.forme || ''];
     }) };
     var semaines = { nom: 'Semaines', colonnes: [
       C('Semaine du', 12, 'date'), C('Séances', 8), C('Séries', 8), C('Volume (kg)', 12), C('Temps total (min)', 15),
@@ -579,6 +579,7 @@
     '5. Le volume : séries par semaine et par groupe musculaire, l\'équilibre poussée / tirage et haut / bas du corps, les groupes négligés ou trop chargés.',
     '6. Le temps passé : la durée des séances, son évolution, la densité (séries par heure).',
     '7. Le poids du corps et la force relative, s\'il y a des pesées.',
+    '8. La forme avant les séances, si je l\'ai notée : ce qui va avec mes meilleures et mes moins bonnes séances. Parle de tendance, jamais de cause, et dis quand il y a trop peu de bilans pour conclure.',
     '',
     'Termine par : mes 3 points forts, les 3 problèmes à corriger en priorité, et un plan concret pour les 4 prochaines semaines (exercices, séries, répétitions, repos). Réponds en français.'
   ];
@@ -586,6 +587,7 @@
     '- « 100×5 » : 5 répétitions à 100 kg. « PDC×12 » : 12 répétitions au poids du corps. « 45 s » : une série tenue 45 secondes.',
     '- « @8 » : RPE 8 sur 10 (10 = à l\'échec, 9 = une répétition en réserve).',
     '- « r150 » : 150 secondes de repos avant la série suivante (mesurées par l\'app ou notées). Les médianes de repos ne gardent que les repos fiables : de 20 s à 10 min, hors échauffements, et hors passage d\'un exercice à l\'autre dans un superset (seul le repos après le dernier exercice du superset compte).',
+    '- « Forme avant la séance » : un bilan facultatif noté au début de la séance. Jauges de 1 à 5 : énergie et motivation (5 = au top), fatigue, courbatures et stress (5 = au plus fort), sommeil (5 = excellent, avec les heures). Une jauge absente n\'a pas été notée : ce n\'est pas zéro.',
     '- Les comptes de séries sont des séries de travail ; les échauffements sont comptés à part. Le volume (kg) est tout ce qui a été soulevé, échauffements compris. « séries/h » : toutes les séries faites, divisées par la durée.',
     '- « É » : échauffement ; « T » : top set déclaré ; « B » : back-off. Sans lettre : série de travail.',
     '- 1RM estimé : formule d\'Epley (poids × (1 + reps / 30)), seulement jusqu\'à 12 répétitions.',
@@ -687,6 +689,7 @@
       if (j.validee) info.push('validée');
       L.push('', tete, info.join(' · '));
       if (j.ressenti) L.push('Ressenti : « ' + j.ressenti.replace(/\s+/g, ' ') + ' »');
+      if (j.forme) L.push('Forme avant la séance : ' + j.forme);
       j.exos.forEach(function (e) {
         L.push('- ' + e.nom + ' [' + e.groupe + (e.sous ? ' · ' + e.sous : '') + '] : ' + e.series.map(serieCourte).join(' · ') +
           (e.note ? ' — note : « ' + e.note.replace(/\s+/g, ' ') + ' »' : ''));

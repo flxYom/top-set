@@ -3699,6 +3699,29 @@ a.ex-menu-item{display:flex;align-items:center;text-decoration:none;}
    donc ni vert ni orange. La courbe reprend celle des exercices suivis. */
 .exo-prog{margin:0 0 8px;font-size:var(--t-3);line-height:1.45;color:var(--ink);}
 .exo-prog-mot{display:block;margin-bottom:2px;font:700 var(--t-1)/1.2 var(--f-ui);letter-spacing:.08em;color:var(--ink3);}
+/* Le bilan de forme (17/11/2026) : au-dessus de l'exercice en grand, ou il
+   peut s'ouvrir a la premiere serie validee. Des jauges a cinq crans, des
+   puces, un mot ; ni couleur de note ni smiley : on decrit, on ne juge pas. */
+.forme-sheet{z-index:80;}
+#formeChamps{display:flex;flex-direction:column;gap:16px;margin:4px 0 14px;}
+.forme-item{display:flex;flex-direction:column;gap:7px;}
+.forme-tete{display:flex;justify-content:space-between;align-items:baseline;font:700 var(--t-1)/1.2 var(--f-ui);letter-spacing:.08em;color:var(--ink3);}
+.forme-val{color:var(--ink);font-variant-numeric:tabular-nums;}
+.forme-jauge{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;}
+.forme-cran{min-height:44px;border:1px solid var(--trait);border-radius:var(--r-s);background:var(--s2);}
+.forme-cran.plein{background:var(--ink3);border-color:var(--ink3);}
+.forme-cran[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);}
+.forme-bornes{display:flex;justify-content:space-between;font-size:var(--t-1);color:var(--dim);}
+.forme-heures-l{margin-top:4px;font:700 var(--t-1)/1.2 var(--f-ui);letter-spacing:.08em;color:var(--ink3);}
+.forme-choix{display:flex;flex-wrap:wrap;gap:6px;}
+.forme-puce{min-height:44px;padding:0 14px;border:1px solid var(--trait);border-radius:999px;background:none;color:var(--ink);font:700 var(--t-1)/1.2 var(--f-ui);letter-spacing:.06em;}
+.forme-puce[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--bg);}
+.forme-texte{resize:vertical;}
+#regForme{margin-top:12px;}
+.hero-forme{border:1px solid rgba(255,255,255,.3);}
+.hero-forme.notee{border-color:transparent;}
+.fiche-forme{margin-top:9px;font-size:var(--t-2);line-height:1.45;color:var(--ink);}
+.fiche-forme span{display:block;margin-bottom:2px;font:700 var(--t-1)/1.2 var(--f-ui);letter-spacing:.08em;color:var(--ink3);}
 .verif-ligne{display:flex;align-items:center;justify-content:center;width:100%;min-height:48px;margin-top:12px;
   border:1px solid var(--trait);border-radius:var(--r-m);background:none;color:var(--dim);
   font:700 var(--t-2)/1.2 var(--f-ui);letter-spacing:.06em;}
@@ -4192,6 +4215,39 @@ a.ex-menu-item{display:flex;align-items:center;text-decoration:none;}
   </div>
 </div>
 
+<div class="sheet forme-sheet" id="formeSheet" hidden>
+  <div class="sheet-card" role="dialog" aria-modal="true" aria-labelledby="formeTitre">
+    <div class="sheet-head">
+      <h2 id="formeTitre">COMMENT TU TE SENS ?</h2>
+      <button type="button" class="icon-btn" id="formeClose" aria-label="Fermer"><svg class="ico seul" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+    <p class="sheet-note"><b id="formeQuand"></b> · Rien d'obligatoire : touche ce que tu veux. Ça reste avec ta séance, et la fois d'après tu sais dans quelle forme tu étais.</p>
+    <div id="formeChamps"></div>
+    <button type="button" class="btn-sheet primary" id="formeValider">ENREGISTRER</button>
+    <button type="button" class="btn-sheet" id="formePasser">PAS MAINTENANT</button>
+    <button type="button" class="btn-sheet" id="formeRetirer" hidden>RETIRER CE BILAN</button>
+  </div>
+</div>
+
+<div class="sheet" id="formePrefsSheet" hidden>
+  <div class="sheet-card" role="dialog" aria-modal="true" aria-labelledby="formePrefsTitre">
+    <div class="sheet-head">
+      <h2 id="formePrefsTitre">TON BILAN DE FORME</h2>
+      <button type="button" class="icon-btn" id="formePrefsClose" aria-label="Fermer"><svg class="ico seul" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+    <p class="sheet-note">Au début de ta séance, l'app peut te demander comment tu te
+      sens : des jauges, des choix, un mot. Quinze secondes, rien d'obligatoire, et
+      ça reste avec ta séance. La fois d'après, tu sais dans quelle forme tu étais ;
+      ton coach ou une IA peuvent en tenir compte. Choisis ce que tu veux noter :</p>
+    <div id="formePrefsListe"></div>
+    <p class="sheet-note">Avec un compte, ton bilan suit ton compte comme ta séance,
+      et ton coach le voit si tu en as un. Ce sont des données de santé : rien n'est
+      noté sans toi, et tu peux le retirer séance par séance.</p>
+    <button type="button" class="btn-sheet primary" id="formeActiver">ACTIVER LE BILAN</button>
+    <button type="button" class="btn-sheet" id="formeDesactiver">PAS POUR MOI</button>
+  </div>
+</div>
+
 <div class="sheet" id="profilSheet" hidden>
   <div class="sheet-card" role="dialog" aria-modal="true" aria-labelledby="profilTitre">
     <div class="sheet-head">
@@ -4217,6 +4273,7 @@ a.ex-menu-item{display:flex;align-items:center;text-decoration:none;}
 
       <div class="sheet-label espace">L'APP</div>
       <div id="regBascules"></div>
+      <button type="button" class="btn-sheet" id="regForme">BILAN DE FORME : DÉSACTIVÉ ›</button>
       <p class="sheet-note">
         Ces réglages ne changent que l'affichage, sur ce téléphone. Une
         valeur déjà notée reste dans ta séance et dans tes exports, même
@@ -4657,11 +4714,11 @@ a.ex-menu-item{display:flex;align-items:center;text-decoration:none;}
 </div>
 <div class="toast" id="toast"></div>
 
-<script src="intelligence.js?v=95" defer></script>
+<script src="intelligence.js?v=96" defer></script>
 <!-- Coordonnees publiques du projet Supabase. Absent ou vide : l'app reste
      en mode 100 % local, sans bouton mort ni erreur. -->
 <script src="supabase-config.js" defer></script>
-<script src="app.js?v=95" defer></script>
+<script src="app.js?v=96" defer></script>
 <script src="mesure.js" defer></script>
 </body>
 </html>

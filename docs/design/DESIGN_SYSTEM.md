@@ -238,6 +238,15 @@ groupe pour le groupe et l'exercice de l'année. Le grand chiffre est la
 haut, fermer à 44 px, pas de verre, pas de braise (décision du 18/09 : la braise
 reste à l'accueil, au bilan et au plein écran). Garde : gabarits §48.
 
+**Le bilan de forme — 17/11/2026.** Une feuille ordinaire, mais à `z-index:80`
+pour passer au-dessus de l'exercice en grand. Chaque jauge est une barre de
+cinq crans de 44 px (`.forme-cran`, fond `--s2`) qui se remplit jusqu'au cran
+touché en `--ink3`, le cran choisi en `--ink` ; les bornes en mots dessous
+(« à plat », « au top »). Les choix sont des puces de 44 px qui s'inversent. Ni
+couleur de note, ni smiley, ni vert ou rouge : on décrit sa forme, on ne la
+juge pas. Dans le bandeau, une étiquette de plus, `FORME ?` cerclée tant
+qu'elle est vide.
+
 **La progression — 17/11/2026.** Dans la fiche d'un exercice, un `.exo-bloc`
 de plus : chaque constat en deux lignes, son mot (`TENDANCE`, `À CHARGE ÉGALE`,
 `À REPS ÉGALES`, `MOINS D'EFFORT`) en `--t-1` capitales `--ink3`, puis la phrase

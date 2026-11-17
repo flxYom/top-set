@@ -583,7 +583,7 @@
 
   // Les champs qui vivent sur la journee elle-meme, a cote de ses exercices.
   // Le titre a sa propre regle juste en dessous (il se tronque et se compte).
-  var CHAMPS_JOUR = ['cycle', 'commentaire', 'termine', 'debut', 'fin'];
+  var CHAMPS_JOUR = ['cycle', 'commentaire', 'termine', 'debut', 'fin', 'forme'];
 
   function fusionnerCarnets(local, entrant, fabrique) {
     var sortie = {};

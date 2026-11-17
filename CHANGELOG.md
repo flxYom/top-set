@@ -9,6 +9,28 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ## [Unreleased]
 
+### Added — the pre-session check-in (2026-11-17)
+
+- "It didn't ask me at the start of the session how I was." Optional and off
+  by default: on first launch a small window offers it and lets you pick what
+  to log among ten items — 1–5 gauges (energy, fatigue, motivation, sleep with
+  hours, soreness, stress), choices (your day's physical load, food, a night
+  out the day before) and a few words; five pre-ticked. It says before the
+  button that the check-in follows the account and the coach sees it.
+  Settings: `BILAN DE FORME`.
+- Once on, it opens at the session's start (first set checked, on the card or
+  full screen, or a template launched), once a day, today only. An untouched
+  gauge is unknown, never zero. Banner tag `FORME ?` / `FORME ÉNERGIE 4/5`;
+  the session sheet reads it back; it goes into the session AI copy, the AI
+  export (legend line, one more question) and the workbook.
+- `day.forme` (cleaned by `formeSure`), JSON import whitelist, merge
+  (`CHAMPS_JOUR`), sync through `pousser_forme` and `seances.forme` (2 KB jsonb
+  object); a database without the column loses nothing. Coach pull returns
+  it. `supabase/bilan-de-forme.txt` also carries yesterday's set-times SQL,
+  tested on PGlite before and after it, twice; RLS bench 389.
+- Privacy policy 3.5 (health data, article 9.2.a consent by turning it on).
+  Bench 25 checks, gabarits §69, service worker v96.
+
 ### Changed — progression as a trend and at comparable effort (2026-11-17)
 
 - "First session versus last" is gone: a light last session made it read as
