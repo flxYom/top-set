@@ -2039,5 +2039,20 @@ ok('le bouton s eloigne des boutons du dessus', REFONTE.includes('#compteDeconne
 ok('la confirmation dit ce qui n est pas encore parti', /enAttente:function\(\)\{ return nbSales\(\) \+ Object\.keys\(lireMeta\(\)\.titres \|\| \{\}\)\.length; \}/.test(SRC) && /pas encore envoyée/.test(SRC));
 ok('rouvrir le profil la referme', /function openProfil\(\)\{\s*desarmerDeconnexion\(\);/.test(SRC));
 
+console.log('\n== 63. Supersets a 3, 4 exercices et plus (17/11) ==');
+ok('le bouton de toujours reste : un membre vide, juste apres', /'AJOUTER UN EXERCICE EN SUPERSET<\/button>'/.test(SRC)
+   && /var suivant = nouveauMembre\(source\.bloc\);\s*dayS\.exercises\.splice\(idx \+ 1, 0, suivant\);/.test(SRC));
+ok('le pied du bloc : + UN TOUR et + UN EXERCICE, dans le superset seulement', /'<div class="superset-pied">'/.test(SRC)
+   && corps('function exercisesHTML(', 'function nettoyerBlocs(').indexOf('data-action="ss-tour"') > -1
+   && corps('function exercisesHTML(', 'function nettoyerBlocs(').indexOf('data-action="ss-ajout"') > -1
+   && corps('function exerciseCardHTML(', 'function repeindreCarte(').indexOf('ss-tour') < 0);
+ok('l etiquette compte les exercices a partir de trois', />SUPERSET' \+ \(groupe\.length > 2 \? ' · ' \+ groupe\.length \+ ' EXERCICES' : ''\)/.test(SRC));
+ok('+ UN TOUR recopie comme + SERIE : une seule regle', (SRC.match(/serieSuivante\(/g) || []).length === 3 && /var newSerie = serieSuivante\(ex2\);/.test(SRC));
+ok('reprendre un exercice de la seance : seulement hors d un autre superset', /x !== ex && !x\.bloc && String\(x\.nom \|\| ''\)\.trim\(\)/.test(SRC)
+   && /if \(!vide \|\| !pris \|\| !vide\.bloc \|\| pris\.bloc\) return;/.test(SRC));
+ok('sortir du milieu d un superset ne le coupe plus en deux', /sans\.splice\(dernierD \+ 1, 0, exD\); dayD\.exercises = sans;/.test(SRC));
+ok('plein ecran : a partir de trois, ceux qui attendent se resument', /var corpsM = \(membres\.length > 2 && !estActif\)/.test(SRC) && REFONTE.includes('.fs-ss-prevu{'));
+ok('les puces tiennent dans la carte', REFONTE.includes('.ss-prendre-puce{min-height:40px;max-width:100%;'));
+
 console.log(`\n${pass} reussis, ${fail} echoues`);
 process.exit(fail ? 1 : 0);

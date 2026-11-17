@@ -61,7 +61,8 @@ c'est exactement à ça que sert ce repo pour l'instant.
   devenir une image au format story, dessinée sur le téléphone et partagée par
   son menu.
 - **Sa séance, dans son ordre.** Les exercices se déplacent à la poignée ou aux
-  flèches, ou d'un cran depuis le menu de leur carte ; un superset se déplace
+  flèches, ou d'un cran depuis le menu de leur carte. Un superset réunit deux,
+  trois, quatre exercices ou plus, et ajoute un tour d'un appui ; il se déplace
   d'un bloc. L'heure de début et l'heure de fin se posent toutes seules, sur la
   première et la dernière série notées, et se corrigent d'un appui.
 - **Un mouvement, un historique.** Les abréviations de salle (`bench`, `RDL`,

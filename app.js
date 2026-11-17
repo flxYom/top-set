@@ -2569,6 +2569,27 @@
     if (menu) menu.innerHTML = menuExoHTML(ex);
   }
 
+  // Un membre de superset tout neuf (sans nom ni serie) peut reprendre un
+  // exercice deja dans la seance, series comprises, au lieu de le retaper.
+  // Seulement ceux qui ne sont pas deja dans un superset : on ne defait pas
+  // un autre bloc en silence. (17/11/2026)
+  function membreVide(ex){
+    return !String(ex.nom || '').trim() && !(ex.series || []).some(hasData) && !String(ex.note || '').trim();
+  }
+  function prendreHTML(ex){
+    if (!ex.bloc || !membreVide(ex)) return '';
+    var day = state.sessions[state.selectedDay];
+    var exs = (day && day.exercises) || [];
+    if (exs.indexOf(ex) < 0) return '';
+    var autres = exs.filter(function(x){ return x !== ex && !x.bloc && String(x.nom || '').trim(); }).slice(0, 8);
+    if (!autres.length) return '';
+    return '<div class="ss-prendre"><p class="ss-prendre-titre">OU PRENDS UN EXERCICE DE TA SÉANCE</p><div class="ss-prendre-liste">'
+      + autres.map(function(x){
+          return '<button type="button" class="ss-prendre-puce" data-action="ss-prendre" data-id="' + esc(ex.id) + '" data-prendre="' + esc(x.id) + '">'
+            + esc(nomCanonique(x.nom) || normalizeName(x.nom)) + '</button>';
+        }).join('')
+      + '</div></div>';
+  }
   function exerciseCardHTML(ex){
     var cl = classement(ex);
     var color = couleurGroupe(cl.groupe);
@@ -2593,6 +2614,7 @@
       + '</div>'
       + menu
       + '<div class="ex-body">'
+      +   prendreHTML(ex)
       +   (ex.note ? '<div class="ex-prev-note">«\u00a0' + esc(ex.note) + '\u00a0»</div>' : '')
       +   '<div class="ex-prev-zone">' + blocPrecedentHTML(ex, p) + '</div>'
       +   '<div class="series-list">'+seriesListeHTML(ex, auTemps, p)+'</div>'
@@ -2744,6 +2766,21 @@
     });
   }
 
+  // Recopie la derniere serie : sur 5 series identiques, on ne retape rien.
+  // "fait" repart a faux, c'est le seul champ qui ne se duplique pas. Le
+  // type se recopie aussi — on enchaine deux echauffements, jamais deux top
+  // sets : apres un top set la serie suivante repart neutre.
+  function serieSuivante(ex){
+    var last = (ex.series || [])[(ex.series || []).length - 1];
+    var typeSuivant = (last && last.type && last.type !== TS.TYPES.TOP) ? last.type : undefined;
+    return last
+      ? { id:genSerieId(), poids:last.poids, reps:last.reps, rpe:last.rpe, vitesse:last.vitesse, inclinaison:last.inclinaison, repos:last.repos, type:typeSuivant, fait:false }
+      : { id:genSerieId(), poids:null, reps:'', rpe:null, repos:'', fait:false };
+  }
+  function nouveauMembre(bloc){
+    return { id:genId(), nom:'', groupe:'Autre', repos:'', bloc:bloc,
+             series:[{ id:genSerieId(), poids:null, reps:'', rpe:null, repos:'', fait:false }] };
+  }
   function exercisesHTML(exercises){
     var out = '', i = 0;
     while (i < exercises.length){
@@ -2754,9 +2791,15 @@
       // Un bloc reduit a un seul exercice n'est plus un superset : on l'affiche
       // comme un exercice normal plutot que d'encadrer une carte toute seule.
       if (groupe.length < 2){ out += exerciseCardHTML(groupe[0]); continue; }
-      out += '<div class="superset"><div class="superset-tag">SUPERSET</div>'
+      // Trois, quatre exercices ou plus (17/11/2026) : le pied du bloc en
+      // ajoute un, ou ajoute un tour entier, une serie a chacun.
+      var b = esc(bloc);
+      out += '<div class="superset" data-bloc="' + b + '"><div class="superset-tag">SUPERSET' + (groupe.length > 2 ? ' · ' + groupe.length + ' EXERCICES' : '') + '</div>'
            + groupe.map(exerciseCardHTML).join('')
-           + '</div>';
+           + '<div class="superset-pied">'
+           +   '<button type="button" class="btn-superset" data-action="ss-tour" data-bloc="' + b + '">+ UN TOUR</button>'
+           +   '<button type="button" class="btn-superset" data-action="ss-ajout" data-bloc="' + b + '">' + ico('lien') + '+ UN EXERCICE</button>'
+           + '</div></div>';
     }
     return out;
   }
@@ -5507,6 +5550,8 @@
       repeindreSeries(card, ex);
       majMenuExo(card, ex);
       majNomLong(card);
+      var aReprendre = card && card.querySelector('.ss-prendre');
+      if (aReprendre) aReprendre.hidden = !!t.value.trim();
       // Une abreviation connue se propose pendant la frappe : attendre de
       // quitter le champ, c'est deja trop tard, on est passe a la suite.
       var pourSyn = synonymeDe(t.value);
@@ -6597,9 +6642,15 @@
         var clm = classement(m);
         if (!af) return '<div class="fs-carte fs-ss fini"><div class="fs-ss-tete"><span class="fs-lettre">' + lettre + '</span><b>' + esc(normalizeName(m.nom) || 'Sans nom') + '</b><span>' + ico('coche') + 'fini</span></div></div>';
         var estActif = m === actif;
+        // A partir de trois (17/11/2026), ceux qui attendent leur tour se
+        // resument a leur serie prevue : quatre blocs de champs ne tiennent
+        // pas sur un telephone. A deux, rien ne change.
+        var corpsM = (membres.length > 2 && !estActif)
+          ? '<p class="fs-ss-prevu">' + (hasData(af.serie) ? esc(perfTexte(af.serie)) : 'à remplir à son tour') + '</p>'
+          : champsHTML(m, af.serie, true);
         return '<div class="fs-carte fs-ss' + (estActif ? ' actif' : ' en-attente') + '" data-ex-id="' + esc(m.id) + '" data-serie-id="' + esc(af.serie.id) + '">'
           + '<div class="fs-ss-tete"><span class="fs-lettre">' + lettre + '</span><b>' + esc(normalizeName(m.nom) || 'Sans nom') + '</b><span>' + esc(libelleMuscle(clm)) + ' · S' + af.num + '</span></div>'
-          + champsHTML(m, af.serie, true)
+          + corpsM
           + '</div>';
       }).join('') + '</div>';
     } else {
@@ -7134,8 +7185,7 @@
       if (!source.bloc) source.bloc = genId();
       // Insere juste apres, jamais a la fin : un superset dont les membres sont
       // separes par trois autres exercices n'a plus aucun sens a l'ecran.
-      var suivant = { id:genId(), nom:'', groupe:'Autre', repos:'', bloc:source.bloc,
-                      series:[{ id:genSerieId(), poids:null, reps:'', rpe:null, repos:'', fait:false }] };
+      var suivant = nouveauMembre(source.bloc);
       dayS.exercises.splice(idx + 1, 0, suivant);
       scheduleSave(state.selectedDay,true);
       renderDayPanel(true);
@@ -7147,11 +7197,82 @@
       return;
     }
 
+    // Un exercice de plus dans un superset deja forme (17/11/2026) : en fin
+    // de bloc, pour que l'ordre du tour reste celui de l'ecran.
+    var ssAjout = e.target.closest('[data-action="ss-ajout"]');
+    if (ssAjout){
+      var dayA = getOrCreateDay(state.selectedDay);
+      var finBloc = -1;
+      dayA.exercises.forEach(function(x, k){ if (x.bloc === ssAjout.dataset.bloc) finBloc = k; });
+      if (finBloc < 0) return;
+      var neuf = nouveauMembre(ssAjout.dataset.bloc);
+      dayA.exercises.splice(finBloc + 1, 0, neuf);
+      scheduleSave(state.selectedDay,true);
+      renderDayPanel(true);
+      renderBandeau();
+      requestAnimationFrame(function(){
+        var el = exListEl.querySelector('.ex-name[data-id="'+neuf.id+'"]');
+        if (el) el.focus();
+      });
+      return;
+    }
+    // Un tour de plus : une serie a chaque exercice du superset, recopiee de
+    // sa derniere, comme « + SERIE » sur chaque carte. Les cartes se
+    // repeignent sur place, sans refaire le panneau.
+    var ssTour = e.target.closest('[data-action="ss-tour"]');
+    if (ssTour){
+      var dayT = getOrCreateDay(state.selectedDay);
+      var membresT = dayT.exercises.filter(function(x){ return x.bloc === ssTour.dataset.bloc; });
+      if (membresT.length < 2) return;
+      membresT.forEach(function(x){
+        if (!x.series) x.series = [];
+        var sT = serieSuivante(x);
+        x.series.push(sT);
+        serieOuverte[x.id] = sT.id;
+      });
+      scheduleSave(state.selectedDay,true);
+      membresT.forEach(function(x){ repeindreCarte(exListEl.querySelector('.ex-card[data-id="' + x.id + '"]'), x); });
+      renderBandeau();
+      var nTour = Math.max.apply(null, membresT.map(function(x){ return x.series.length; }));
+      showToast('Tour ' + nTour + ' ajouté : une série de plus sur ' + membresT.length + ' exercices');
+      return;
+    }
+    // Reprendre un exercice de la seance dans le superset : il quitte sa
+    // place, garde ses series, et prend celle du membre vide.
+    var ssPrendre = e.target.closest('[data-action="ss-prendre"]');
+    if (ssPrendre){
+      var dayP = getOrCreateDay(state.selectedDay);
+      var vide = findExercise(dayP, ssPrendre.dataset.id);
+      var pris = findExercise(dayP, ssPrendre.dataset.prendre);
+      if (!vide || !pris || !vide.bloc || pris.bloc) return;
+      var reste = dayP.exercises.filter(function(x){ return x !== pris; });
+      var ou = reste.indexOf(vide);
+      pris.bloc = vide.bloc;
+      if (membreVide(vide)) reste.splice(ou, 1, pris);
+      else reste.splice(ou + 1, 0, pris);
+      dayP.exercises = reste;
+      nettoyerBlocs(dayP);
+      scheduleSave(state.selectedDay,true);
+      renderDayPanel(true);
+      renderBandeau();
+      showToast((nomCanonique(pris.nom) || normalizeName(pris.nom)) + ' rejoint le superset');
+      return;
+    }
+
     var detBtn = e.target.closest('[data-action="detacher"]');
     if (detBtn){
       var dayD = getOrCreateDay(state.selectedDay);
       var exD = findExercise(dayD, detBtn.dataset.id);
       if (!exD) return;
+      // Celui qui sort se range juste apres le superset : sorti du milieu
+      // d'un bloc de trois ou plus, il le coupait en deux. (17/11/2026)
+      var blocD = exD.bloc;
+      if (blocD){
+        var sans = dayD.exercises.filter(function(x){ return x !== exD; });
+        var dernierD = -1;
+        sans.forEach(function(x, k){ if (x.bloc === blocD) dernierD = k; });
+        if (dernierD > -1){ sans.splice(dernierD + 1, 0, exD); dayD.exercises = sans; }
+      }
       delete exD.bloc;
       nettoyerBlocs(dayD);
       scheduleSave(state.selectedDay,true);
@@ -7167,15 +7288,7 @@
       var ex2 = findExercise(day2, exId);
       if (!ex2) return;
       if (!ex2.series) ex2.series = [];
-      // Recopie la derniere serie : sur 5 series identiques, on ne retape rien.
-      // "fait" repart a faux, c'est le seul champ qui ne se duplique pas.
-      var last = ex2.series[ex2.series.length - 1];
-      // Le type se recopie aussi — on enchaine deux echauffements, jamais
-      // deux top sets : apres un top set la serie suivante repart neutre.
-      var typeSuivant = (last && last.type && last.type !== TS.TYPES.TOP) ? last.type : undefined;
-      var newSerie = last
-        ? { id:genSerieId(), poids:last.poids, reps:last.reps, rpe:last.rpe, vitesse:last.vitesse, inclinaison:last.inclinaison, repos:last.repos, type:typeSuivant, fait:false }
-        : { id:genSerieId(), poids:null, reps:'', rpe:null, repos:'', fait:false };
+      var newSerie = serieSuivante(ex2);
       ex2.series.push(newSerie);
       serieOuverte[ex2.id] = newSerie.id;
       // La ligne s'ajoute a la carte, sans rien refaire autour. Refaire le

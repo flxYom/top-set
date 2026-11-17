@@ -236,6 +236,18 @@ d'ordre provisoire à valider. Reprendre une séance ne veut pas dire la refaire
 dans le même ordre : la machine est prise, ou on n'a plus de jus pour commencer
 par les jambes.
 
+**Supersets à trois, quatre exercices et plus** (17/11/2026, « donne la
+possibilité de mettre 3 voire 4 exos dans le superset, même plus »). Le bouton
+de toujours crée le superset ; le reste n'apparaît que dedans. Sous le bloc,
+`+ UN EXERCICE` ajoute un membre à la fin, sans limite, et `+ UN TOUR` ajoute
+une série à chaque membre d'un coup, recopiée de sa dernière (la même règle que
+`+ SÉRIE`). Un membre tout neuf propose en puces les exercices de la séance qui
+ne sont pas déjà dans un superset : un appui l'y fait entrer avec ses séries.
+L'étiquette dit `SUPERSET · 3 EXERCICES` à partir de trois. En plein écran, à
+partir de trois, ceux qui attendent leur tour se résument à leur série prévue ;
+à deux, rien ne change. Sortir un exercice du milieu d'un bloc le range juste
+après le superset, qui reste d'un seul tenant.
+
 Un **superset** tient sur une seule ligne et se déplace d'un bloc — ses membres
 doivent rester côte à côte dans `day.exercises`, sinon le bloc n'existe plus.
 Le geste vit dans une feuille et pas sur la carte elle-même : les cartes sont

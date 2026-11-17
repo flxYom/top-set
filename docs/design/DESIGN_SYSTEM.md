@@ -591,7 +591,10 @@ avant de le faire.
   - une ligne par série ;
   - outils seulement sur la série ouverte ;
   - commentaire par série ;
-  - superset sous « + SÉRIE ».
+  - superset sous « + SÉRIE » ;
+  - dans un superset (17/11/2026), un pied de bloc : `+ UN TOUR` et
+    `+ UN EXERCICE` côte à côte, même style que le bouton de superset ; un
+    membre vide propose les exercices de la séance en puces de 40 px.
 - **Colonne de la dernière fois** (13/09) : elle se lit, ne recopie pas, et sa
   date ouvre la séance d'avant.
 - **Pages de contenu** (11/09) : sans photos.

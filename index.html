@@ -3166,6 +3166,18 @@
   body.sans-rpe .ex-card.sans-prec[data-mode="temps"] .serie-main{grid-template-columns:40px minmax(80px,1fr) 44px;}
   body.sans-repos-champ .serie-repos-champ{display:none;}
   body.sans-pas-poids .step-poids{display:none;}
+  /* Supersets a plusieurs (17/11/2026) : le pied du bloc (+ un tour, + un
+     exercice) et les exercices de la seance a reprendre. */
+  .superset-pied{display:flex;gap:8px;}
+  .superset-pied .btn-superset{flex:1;min-width:0;margin-top:0;}
+  .ss-prendre{display:flex;flex-direction:column;gap:6px;}
+  .ss-prendre[hidden]{display:none;}
+  .ss-prendre-titre{margin:0;font:700 var(--t-1)/1.2 var(--f-ui);letter-spacing:.08em;color:var(--dim);}
+  .ss-prendre-liste{display:flex;flex-wrap:wrap;gap:6px;}
+  .ss-prendre-puce{min-height:40px;max-width:100%;padding:0 12px;border:1px solid var(--trait2);border-radius:var(--r-s);
+    background:var(--s2);color:var(--ink);font:700 var(--t-2)/1.1 var(--f-ui);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .ss-prendre-puce:active{border-color:var(--yellow);color:var(--yellow);}
+  .fs-ss-prevu{margin:8px 0 0;font-size:var(--t-3);color:var(--ink3);}
   /* Se deconnecter (17/11/2026) : a l'ecart des boutons du dessus, et
      confirme. La question occupe la place du bouton (48 px) : un second
      appui au meme endroit tombe sur du texte. */
@@ -4629,11 +4641,11 @@ a.ex-menu-item{display:flex;align-items:center;text-decoration:none;}
 </div>
 <div class="toast" id="toast"></div>
 
-<script src="intelligence.js?v=88" defer></script>
+<script src="intelligence.js?v=89" defer></script>
 <!-- Coordonnees publiques du projet Supabase. Absent ou vide : l'app reste
      en mode 100 % local, sans bouton mort ni erreur. -->
 <script src="supabase-config.js" defer></script>
-<script src="app.js?v=88" defer></script>
+<script src="app.js?v=89" defer></script>
 <script src="mesure.js" defer></script>
 </body>
 </html>

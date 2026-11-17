@@ -9,6 +9,27 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ## [Unreleased]
 
+### Added — supersets of 3, 4 exercises and more (2026-11-17)
+
+- "Make supersets more practical: allow 3, even 4 exercises, even more." A
+  superset could only hold two: once an exercise was in one, its button
+  became `SORTIR DU SUPERSET` and nothing added a third. The usual button is
+  unchanged; what is new only shows inside a superset:
+  - a footer under the block: `+ UN EXERCICE` adds a member at the end (no
+    limit), `+ UN TOUR` adds one set to every member at once, each copying its
+    own last set (the same rule as `+ SÉRIE`, now one function,
+    `serieSuivante`);
+  - a new, still empty member offers the session's other exercises (those not
+    already in a superset) as chips: one tap moves that exercise into the
+    superset with its sets, instead of retyping it. Typing a name hides them;
+  - the tag reads `SUPERSET · 3 EXERCICES` from three on;
+  - full screen, from three members on, those waiting for their turn shrink
+    to their planned set: four blocks of fields do not fit on a phone. With
+    two, nothing changes.
+- Fixed: leaving from the middle of a superset of three or more split it in
+  two (the last member fell out). The exercise that leaves now goes right
+  after the superset. Gabarits §63, service worker v89.
+
 ### Changed — logging out asks first (2026-11-17)
 
 - "I mis-tapped SE DÉCONNECTER and it logged me out at once." The first tap

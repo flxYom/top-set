@@ -217,6 +217,18 @@ immediately, there is no draft order to confirm. Redoing a session does not mean
 redoing it in the same order: the rack is taken, or there is nothing left in the
 legs to start with them.
 
+**Supersets of three, four exercises and more** (2026-11-17, "let me put 3,
+even 4 exercises in a superset, even more"). The usual button creates the
+superset; everything else only shows inside it. Under the block, `+ UN
+EXERCICE` adds a member at the end, with no limit, and `+ UN TOUR` adds one
+set to every member at once, copied from its last (the same rule as `+ SÉRIE`).
+A brand-new member offers as chips the session's exercises not already in a
+superset: one tap moves it in with its sets. The tag reads `SUPERSET · 3
+EXERCICES` from three on. Full screen, from three on, those waiting for their
+turn shrink to their planned set; with two, nothing changes. Taking an
+exercise out of the middle of a block puts it right after the superset, which
+stays in one piece.
+
 A **superset** holds one row and moves as a block — its members must stay side
 by side in `day.exercises`, or the block no longer exists. The gesture lives in
 a sheet rather than on the card itself: cards are full of fields, and a vertical
