@@ -1545,14 +1545,11 @@ ok('un lien vers la page qui explique vit a cote du chiffre, pas en decoration',
    && /lienSavoir\('\/entrainement\/surcharge-progressive'/.test(SRC)
    && /\.lien-savoir\{/.test(HTML));
 
-ok('le recap situe les series par groupe, et seulement sur la semaine',
-   /var REPERE_SERIES = 10;/.test(SRC)
-   && /function repereHebdo\(counts, worked\)\{/.test(SRC)
-   // Un lundi soir, tout est « sous le repere » : le dire serait idiot.
-   && /if \(state\.recapPeriod !== 'semaine' \|\| !worked\.length\) return '';/.test(SRC)
-   && /if \(jour < 3\) return '';/.test(SRC)
-   && /nombre-de-series-par-muscle/.test(SRC)
-   && /\.muscle-repere\{/.test(HTML));
+// 17/11/2026 : plus de repere universel ni de relance (« feel good et safe »).
+ok('le recap ne note pas les series par groupe contre un repere universel',
+   !/REPERE_SERIES|repereHebdo|Sous ce repère/.test(SRC) && !/\.muscle-repere\{/.test(HTML));
+ok('la regularite ne relance pas : pas de « encore N seances »',
+   !/pour tenir cette semaine/.test(SRC) && /var note = r\.reste \? '' : 'Semaine tenue\.';/.test(SRC));
 
 ok('le calculateur de disques fait le meme calcul que le carnet',
    /function chargerBarre\(cible, barre, dispo\) \{/.test(INTEL)

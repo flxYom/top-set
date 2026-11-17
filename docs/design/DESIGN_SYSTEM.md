@@ -245,7 +245,11 @@ la série de semaines, verte `--ok` dès qu'elle vaut 1), puis huit colonnes de
 `--ok` quand la semaine est tenue ; la semaine en cours porte un contour
 `--trait2`. Deux repères d'axe seulement (IL Y A 7 SEM., CETTE SEM.) : chaque
 colonne dit sa semaine en mots pour les lecteurs d'écran. Jamais de flamme ni
-de compteur de jours : la régularité ne punit pas le repos. Garde : gabarits §46.
+de compteur de jours : la régularité ne punit pas le repos. Depuis le
+17/11/2026, la note sous les colonnes ne dit que ce qui est acquis (« Semaine
+tenue », la meilleure série) : plus de « encore N séances », et plus de repère
+universel de séries sous la silhouette. Une information douce, jamais une
+relance. Garde : gabarits §46.
 
 **La silhouette d'une séance — 16/11/2026.** Le schéma du récap
 (`muscleMapSVG`) sert aussi pour un seul jour : carte `--s1` au rayon

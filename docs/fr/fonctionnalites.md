@@ -275,24 +275,24 @@ de forme à chaque rendu.
 **L'app explique ce qu'elle affiche** (22 octobre 2026). Audit du marché du
 22/10 : Strong et Hevy notent, comptent, et ne situent jamais rien — c'est le
 reproche qui revient le plus dans les comparatifs. Top Set a des pages sourcées
-depuis six semaines, et **aucun chiffre de l'app n'y menait**. Trois liens
+depuis six semaines, et **aucun chiffre de l'app n'y menait**. Deux liens
 discrets (`.lien-savoir`, 44 px de haut, à côté du chiffre et jamais en
 décoration) :
 
 - le **signal** d'un exercice (`STAGNATION`, `EN BAISSE`…) → `QUE FAIRE ?`,
   vers `/entrainement/stagnation` ou `/entrainement/surcharge-progressive`
   selon le signal ;
-- la **charge suggérée** → `D'OÙ ÇA VIENT ?`, vers la surcharge progressive ;
-- le **récap de la semaine** → `POURQUOI 10 ?`, vers le nombre de séries par
-  muscle.
+- la **charge suggérée** → `D'OÙ ÇA VIENT ?`, vers la surcharge progressive.
 
-**Le récap situe les séries par groupe** (22 octobre 2026). « 6 séries épaules »
-ne dit rien tout seul. Sous la silhouette, une ligne : *Repère : au moins
-10 séries par groupe et par semaine. Sous ce repère : épaules 6, biceps 4.*
-Trois garde-fous pour ne pas dire de bêtise : **seulement sur la semaine** (le
-repère est hebdomadaire, le comparer à un mois serait faux), seulement à partir
-du jeudi (un lundi soir, tout est sous le repère), et jamais sur une semaine
-vide. Du texte gris, pas une alerte : ça situe, ça ne reproche rien.
+**Le récap ne note plus les séries par groupe** (17 novembre 2026). Du 22/10
+au 17/11, une ligne disait sous la silhouette *« Repère : au moins 10 séries par
+groupe et par semaine. Sous ce repère : épaules 6 »*, et la régularité ajoutait
+*« Encore 2 séances pour tenir cette semaine »*. Les deux sont retirées : « le
+but c'est pas de pousser à l'effort bêtement », l'app doit rester « feel good
+et safe ». Le récap dit ce qui a été fait, sans le comparer à une norme
+universelle ; la régularité ne dit que ce qui est acquis (« Semaine tenue »,
+ta meilleure série). La page sur le nombre de séries par muscle reste dans
+APPRENDRE.
 
 **Le calculateur de disques** (22 octobre 2026). « 82,5 kg, c'est quoi de chaque
 côté ? » La question se pose à chaque changement de charge, et c'est la

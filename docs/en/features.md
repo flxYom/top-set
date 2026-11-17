@@ -259,9 +259,19 @@ weeks and **no figure in the app led to them**. Three discreet links
 exercise's **signal** (`STAGNATION`, `EN BAISSE`…) → `QUE FAIRE ?`, pointing at
 `/entrainement/stagnation` or `/entrainement/surcharge-progressive` depending
 on the signal; the **suggested load** → `D'OÙ ÇA VIENT ?`; and the **weekly
-recap** → `POURQUOI 10 ?`.
+recap** → `POURQUOI 10 ?` (removed on 17 November 2026, see below).
 
-**The recap situates sets per muscle group** (22 October 2026). « 6 sets
+**The recap no longer grades sets per muscle group** (17 November 2026).
+From 22/10 to 17/11 a line under the silhouette read *« Repère : au moins 10
+séries par groupe et par semaine. Sous ce repère : épaules 6 »*, and
+consistency added *« Encore 2 séances pour tenir cette semaine »*. Both are
+gone: "the goal isn't to push effort mindlessly", the app must stay "feel good
+and safe". The recap says what was done without comparing it to a universal
+norm; consistency only states what is achieved ("Semaine tenue", the best
+streak). The page on sets per muscle stays in APPRENDRE. What follows is the
+original 22 October design, kept for history.
+
+**The recap situated sets per muscle group** (22 October 2026). « 6 sets
 shoulders » says nothing on its own. Under the silhouette, one line: *Repère :
 au moins 10 séries par groupe et par semaine. Sous ce repère : épaules 6,
 biceps 4.* Three guards so it never says anything silly: **week only** (the

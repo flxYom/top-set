@@ -9,6 +9,17 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ## [Unreleased]
 
+### Changed — the recap no longer pushes (2026-11-17)
+
+- "The goal isn't to push effort mindlessly, or overtraining: the app must be
+  feel good and safe, the information smooth." Removed the weekly line
+  `Repère : au moins 10 séries par groupe et par semaine. Sous ce repère : …`
+  under the recap silhouette (and its `POURQUOI 10 ?` link), and the
+  consistency note `Encore N séances pour tenir cette semaine`. The note now
+  only states what is achieved (`Semaine tenue`, the best streak); with
+  nothing achieved there is no note. The sets-per-muscle page stays in
+  APPRENDRE. Gabarits §32 rewritten, service worker v90.
+
 ### Added — supersets of 3, 4 exercises and more (2026-11-17)
 
 - "Make supersets more practical: allow 3, even 4 exercises, even more." A

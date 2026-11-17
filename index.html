@@ -1443,13 +1443,6 @@
   .muscle-name{font-size:12px;font-weight:700;flex:1;min-width:0;}
   .muscle-val{font-size:12px;font-weight:800;}
   .muscle-note{border-top:2px solid var(--line);padding-top:8px;font-size:10.5px;font-weight:700;color:var(--orange);}
-  /* Le repere hebdomadaire : du texte gris, pas une alerte. Il situe, il ne
-     reproche rien. */
-  .muscle-repere{
-    border-top:2px solid var(--line);margin-top:8px;padding-top:8px;
-    font-size:11px;font-weight:700;line-height:1.45;color:var(--dim);
-  }
-  .muscle-repere .lien-savoir{margin-left:6px;min-height:34px;}
 
   .recap-groups{display:flex;flex-direction:column;gap:14px;}
   .recap-section{border:2.5px solid var(--ink);box-shadow:4px 4px 0 var(--sect-color,var(--orange));background:var(--panel);}
@@ -2673,7 +2666,6 @@
   .apprendre-liste a{border:1px solid var(--trait);border-radius:var(--r-m);background:var(--s1);}
   .apprendre-liste a:active{border-color:var(--orange);background:var(--s2);}
   .apprendre-sous{font-family:var(--f-ui);color:var(--ink3);}
-  .muscle-repere{border-top:1px solid var(--trait);color:var(--ink3);font-family:var(--f-ui);}
   .lien-savoir{border-bottom:1px solid currentColor;font-family:var(--f-ui);}
 
   /* ---- Feuilles ----------------------------------------------------------------- */
@@ -3363,7 +3355,7 @@
   .exo-jour-note,.exo-note,.exo-periode,.exo-record-reps,.fiche-cycle,.fiche-defaut,
   .fiche-delta,.fiche-quand,.fiche-serie.vide,.fin-faite-heure,.fin-faite-tag,.heat-legend,
   .lect-date,.lect-serie,.legal-footer .sep,.legal-footer a,.legal-footer button,.lien-savoir,
-  .muscle-repere,.notif-quand,.notif-type,.ordre-fleche,.outil-lien span,.outils-planning-tete,
+  .notif-quand,.notif-type,.ordre-fleche,.outil-lien span,.outils-planning-tete,
   .pg-qui span,.pg-serie,.pg-sous,.recap-chart-empty,.recap-name .chev,.repos-mot,.retour-diag,
   .retour-mien-tete,.retour-quand,.retour-reste,.retour-type,.seance-badge,.seance-chiffres,
   .seance-chip,.seance-quand,.seance-tete-cycle,.seg-btn,.serie-disques-barre,.sheet-label,
@@ -4641,11 +4633,11 @@ a.ex-menu-item{display:flex;align-items:center;text-decoration:none;}
 </div>
 <div class="toast" id="toast"></div>
 
-<script src="intelligence.js?v=89" defer></script>
+<script src="intelligence.js?v=90" defer></script>
 <!-- Coordonnees publiques du projet Supabase. Absent ou vide : l'app reste
      en mode 100 % local, sans bouton mort ni erreur. -->
 <script src="supabase-config.js" defer></script>
-<script src="app.js?v=89" defer></script>
+<script src="app.js?v=90" defer></script>
 <script src="mesure.js" defer></script>
 </body>
 </html>

@@ -4288,30 +4288,6 @@
     return html + '</div><p class="cal-resume">' + resume + '</p>'
       + '<div class="cal-legende"><span class="faite"><i></i>faite</span><span class="prevue"><i></i>prévue</span></div>';
   }
-  // Les groupes sous le repere hebdomadaire, nommes avec leur compte. Rend
-  // une chaine vide des que la comparaison n'aurait pas de sens : autre
-  // periode, semaine vide, ou semaine en cours a peine commencee — un lundi
-  // soir, tout est « sous le repere », et le dire serait idiot.
-  var REPERE_SERIES = 10;
-  function repereHebdo(counts, worked){
-    if (state.recapPeriod !== 'semaine' || !worked.length) return '';
-    var auj = new Date();
-    var jour = (auj.getDay() + 6) % 7;        // 0 = lundi
-    if (jour < 3) return '';
-    var sous = worked.filter(function(g){
-      return g !== 'Cardio' && g !== 'Autre' && counts[g] < REPERE_SERIES;
-    });
-    if (!sous.length){
-      return '<div class="muscle-repere">Tous les groupes travaillés sont à '
-        + REPERE_SERIES + ' séries ou plus cette semaine.'
-        + lienSavoir('/entrainement/nombre-de-series-par-muscle', 'LE REPÈRE\u00a0?') + '</div>';
-    }
-    return '<div class="muscle-repere">Repère : au moins ' + REPERE_SERIES
-      + ' séries par groupe et par semaine. Sous ce repère : '
-      + sous.map(function(g){ return esc(g.toLowerCase()) + ' ' + counts[g]; }).join(', ') + '.'
-      + lienSavoir('/entrainement/nombre-de-series-par-muscle', 'POURQUOI 10\u00a0?') + '</div>';
-  }
-
   // La legende du schema : un groupe par ligne avec son nombre de series, et
   // sous chaque groupe le detail de ses muscles. Partagee par le recap, la
   // fiche d'une seance et le bilan.
@@ -4561,12 +4537,10 @@
     var note = pasTouche.length && worked.length
       ? '<div class="muscle-note">Pas touché : '+pasTouche.join(', ')+'.</div>'
       : '';
-    // Un carnet qui compte sans jamais situer ne sert qu'a moitie : « 6 series
-    // epaules » ne dit rien tout seul. Le repere des meta-analyses — au moins
-    // 10 series par groupe et par semaine — le situe, et la page qui le
-    // justifie est a un appui. Seulement sur la SEMAINE : le repere est
-    // hebdomadaire, le comparer a un mois serait faux. (22/10/2026)
-    note += repereHebdo(counts, worked);
+    // Plus de repere universel (« au moins 10 series par groupe… sous ce
+    // repere : epaules 6 ») depuis le 17/11/2026 : « le but c'est pas de
+    // pousser a l'effort betement », l'app doit rester « feel good et safe ».
+    // Le recap dit ce qui a ete fait, il ne le note pas.
     muscleEl.innerHTML = '<div class="muscle-panel">'
       + '<div class="muscle-title">CE QUE TU AS TRAVAILLÉ</div>'
       + '<div class="muscle-body">'+muscleMapSVG(sousC)+'<div class="muscle-legend">'+legend+note+'</div></div>'
@@ -4599,10 +4573,11 @@
       return '<div class="regu-col' + (s.tenue ? ' tenue' : '') + (s.enCours ? ' en-cours' : '') + '" role="img" aria-label="' + esc(dit) + '">'
         + '<span class="regu-pips">' + pips + '</span><b>' + s.seances + '</b></div>';
     }).join('');
-    var note = r.reste
-      ? 'Encore ' + pluriel(r.reste, 'séance') + ' pour tenir cette semaine.'
-      : 'Semaine tenue.';
-    if (r.meilleure > r.serie) note += ' Ta meilleure série : ' + pluriel(r.meilleure, 'semaine') + '.';
+    // Rien ne relance (17/11/2026) : « encore 2 séances pour tenir cette
+    // semaine » poussait a venir. La semaine en cours se lit dans sa colonne
+    // et dans CETTE SEMAINE ; la note ne dit que ce qui est acquis.
+    var note = r.reste ? '' : 'Semaine tenue.';
+    if (r.meilleure > r.serie) note += (note ? ' ' : '') + 'Ta meilleure série : ' + pluriel(r.meilleure, 'semaine') + '.';
     return '<div class="regu">'
       + '<div class="regu-tete"><span class="regu-titre">RÉGULARITÉ</span>'
       +   '<button type="button" class="regu-objectif" id="reguObjectif" aria-label="Objectif : ' + r.objectif + ' par semaine. Changer">OBJECTIF ' + r.objectif + ' / SEM. ›</button></div>'
@@ -4612,7 +4587,7 @@
       + '</div>'
       + '<div class="regu-semaines">' + colonnes + '</div>'
       + '<div class="regu-axe" aria-hidden="true"><span>IL Y A 7 SEM.</span><span>CETTE SEM.</span></div>'
-      + '<p class="regu-note">' + esc(note) + '</p>'
+      + (note ? '<p class="regu-note">' + esc(note) + '</p>' : '')
       + '</div>';
   }
 
