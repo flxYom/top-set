@@ -383,6 +383,14 @@ une icône, un texte, une position ou un mouvement.
 | Alerte | filet `--ink3` ou `--trait2`, texte `--ink` (posé le 16/11) | réglé : le jaune reste au record |
 | Erreur | `--erreur`, toujours avec une phrase (posé le 16/11) | réglé : distinct de l'orange de l'action |
 
+**Confirmer une action qui fait sortir** (17/11/2026, se déconnecter) : la
+question prend la place exacte du bouton, à la même hauteur, pour qu'un second
+appui tombe sur du texte ; dessous, ce qui va se passer en une phrase, puis
+`ANNULER` d'abord et le oui en dernier, plein `--erreur`, sourd aux appuis
+pendant 500 ms. Un bouton qui fait sortir garde 22 px d'écart avec ses
+voisins. Le second appui sur le même bouton (`armed`, pour supprimer un
+modèle) reste réservé à ce qui se défait facilement.
+
 ## 8. Icônes
 
 **Posé le 16/11/2026** : un seul jeu SVG (`ico()` dans `app.js`, copies

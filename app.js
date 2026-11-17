@@ -9049,7 +9049,15 @@
 
   // Le profil : le compte, le pseudo, le coach. Separe des donnees, qui
   // parlent de fichiers — deux questions differentes, deux portes.
+  // Une confirmation de deconnexion laissee ouverte ne survit pas a la
+  // feuille : on la retrouve fermee en revenant. (17/11/2026)
+  function desarmerDeconnexion(){
+    var c = document.getElementById('decoConfirm'), b = document.getElementById('compteDeconnexion');
+    if (c) c.hidden = true;
+    if (b) b.hidden = false;
+  }
   function openProfil(){
+    desarmerDeconnexion();
     fermerFeuilles();
     rendreReglages();
     Sync.majUI();
@@ -12775,6 +12783,8 @@
       changerMdp:changerMdp, modeAccueil:modeAccueil,
       montrerAccueil:montrerAccueil, fermerAccueil:fermerAccueil,
       synchroniser:synchroniser, migrer:migrer,
+      // Ce qui n'est pas encore parti : la confirmation de deconnexion le dit.
+      enAttente:function(){ return nbSales() + Object.keys(lireMeta().titres || {}).length; },
       connecter:connecter, inscrire:inscrire, deconnecter:deconnecter,
       messageErreur:messageErreur, msgCompte:msgCompte,
       estConnecte:function(){ return !!user; }
@@ -12888,8 +12898,29 @@
     document.getElementById('compteMigrer').addEventListener('click', function(){
       occupe(this, 'ENVOI…', function(){ return Sync.migrer(); });
     });
+    // Se deconnecter se confirme (17/11/2026). Le premier appui ne fait que
+    // poser la question ; le oui est plus bas, et ignore pendant une
+    // demi-seconde : un double appui ne deconnecte pas.
+    var decoArme = 0;
     document.getElementById('compteDeconnexion').addEventListener('click', function(){
-      occupe(this, '…', function(){ return Sync.deconnecter(); });
+      var n = Sync.enAttente();
+      document.getElementById('decoNote').textContent = n
+        ? pluriel(n, 'journée') + ' pas encore envoyée' + (n > 1 ? 's' : '') + ' sur ton compte : elles restent sur ce téléphone et partiront à ta prochaine connexion.'
+        : 'Ton carnet est mis de côté sur ce téléphone et revient à ta prochaine connexion.';
+      this.hidden = true;
+      document.getElementById('decoConfirm').hidden = false;
+      decoArme = Date.now();
+      document.getElementById('decoAnnuler').focus();
+    });
+    document.getElementById('decoAnnuler').addEventListener('click', function(){
+      desarmerDeconnexion();
+      document.getElementById('compteDeconnexion').focus();
+    });
+    document.getElementById('decoOui').addEventListener('click', function(){
+      if (Date.now() - decoArme < 500) return;
+      occupe(this, 'DÉCONNEXION…', function(){
+        return Sync.deconnecter().then(function(){ desarmerDeconnexion(); });
+      });
     });
   })();
 

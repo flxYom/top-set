@@ -3166,6 +3166,15 @@
   body.sans-rpe .ex-card.sans-prec[data-mode="temps"] .serie-main{grid-template-columns:40px minmax(80px,1fr) 44px;}
   body.sans-repos-champ .serie-repos-champ{display:none;}
   body.sans-pas-poids .step-poids{display:none;}
+  /* Se deconnecter (17/11/2026) : a l'ecart des boutons du dessus, et
+     confirme. La question occupe la place du bouton (48 px) : un second
+     appui au meme endroit tombe sur du texte. */
+  #compteDeconnexion{margin-top:22px;}
+  .deco-confirm{margin:22px 0 8px;padding:12px;border:1px solid color-mix(in srgb, var(--erreur) 45%, transparent);border-radius:var(--r-m);background:var(--s1);}
+  .deco-question{min-height:48px;display:flex;align-items:center;margin:0;font:800 var(--t-3)/1.25 var(--f-titre);letter-spacing:.03em;color:var(--ink);}
+  .deco-confirm .sheet-note{margin:0 0 12px;}
+  .deco-choix{display:flex;flex-direction:column;gap:8px;}
+  .deco-choix .btn-sheet{margin:0;}
   /* Exporter (16/11/2026) : un fichier pret a renvoyer se voit. */
   #exportSheet .btn-sheet.pret{border-color:var(--orange);color:var(--orange);}
   @media (max-width:359px){ .ex-head{gap:6px;} .ex-groupe-chip{padding:0 8px;} .fs-ligne{grid-template-columns:48px minmax(0,1fr) 48px;} .fs-pm{height:52px;} }
@@ -4271,7 +4280,18 @@ a.ex-menu-item{display:flex;align-items:center;text-decoration:none;}
         <p class="sheet-note" id="compteNote"></p>
 
         <button type="button" class="btn-sheet" id="compteAdmin" hidden>ADMINISTRATION</button>
+        <!-- Se deconnecter se confirme (17/11/2026, « j'ai miss clic et ca m'a
+             deco instant ») : le bouton laisse sa place a une question, et le
+             oui est plus bas, apres ANNULER, jamais sous le meme doigt. -->
         <button type="button" class="btn-sheet danger" id="compteDeconnexion">SE DÉCONNECTER</button>
+        <div class="deco-confirm" id="decoConfirm" role="group" aria-labelledby="decoQuestion" hidden>
+          <p class="deco-question" id="decoQuestion">TE DÉCONNECTER DE CE TÉLÉPHONE&nbsp;?</p>
+          <p class="sheet-note" id="decoNote"></p>
+          <div class="deco-choix">
+            <button type="button" class="btn-sheet" id="decoAnnuler">ANNULER</button>
+            <button type="button" class="btn-sheet danger armed" id="decoOui">OUI, ME DÉCONNECTER</button>
+          </div>
+        </div>
       </div>
 
     </div>
@@ -4609,11 +4629,11 @@ a.ex-menu-item{display:flex;align-items:center;text-decoration:none;}
 </div>
 <div class="toast" id="toast"></div>
 
-<script src="intelligence.js?v=87" defer></script>
+<script src="intelligence.js?v=88" defer></script>
 <!-- Coordonnees publiques du projet Supabase. Absent ou vide : l'app reste
      en mode 100 % local, sans bouton mort ni erreur. -->
 <script src="supabase-config.js" defer></script>
-<script src="app.js?v=87" defer></script>
+<script src="app.js?v=88" defer></script>
 <script src="mesure.js" defer></script>
 </body>
 </html>

@@ -9,6 +9,19 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ## [Unreleased]
 
+### Changed — logging out asks first (2026-11-17)
+
+- "I mis-tapped SE DÉCONNECTER and it logged me out at once." The first tap
+  now only asks: the button gives way to « TE DÉCONNECTER DE CE TÉLÉPHONE ? »,
+  which takes its exact place (48 px), so a second tap on the same spot lands
+  on text. Below it, a line says what happens (the logbook is set aside on
+  the phone and comes back at the next login, or how many days are not yet
+  sent), then `ANNULER` first and `OUI, ME DÉCONNECTER` last. The yes ignores
+  taps for half a second after the question appears: a double tap never logs
+  out. The button also sits 22 px away from ADMINISTRATION and EXPORTER MES
+  DONNÉES above it, and reopening the profile closes a pending question.
+  Nothing changes in what logging out does. Gabarits §62, service worker v88.
+
 ### Added — the PDF logbook for a coach (2026-11-16)
 
 - "A PDF book a coach looks at and says: ok, this guy does this, this and

@@ -2027,5 +2027,17 @@ console.log('\n== 61. Le carnet PDF pour un coach (16/11) ==');
   ok('les titres en Bricolage, chargee a l ouverture de l ecran', /document\.fonts\.load\('800 20px "Bricolage Grotesque"'\)/.test(corps('function ouvrirExport(){', 'function fermerExport(')));
 }
 
+console.log('\n== 62. Se deconnecter se confirme (17/11) ==');
+ok('le premier appui pose la question, il ne deconnecte pas', (() => {
+  const c = corps("document.getElementById('compteDeconnexion').addEventListener('click'", "document.getElementById('decoAnnuler')");
+  return c.length > 100 && c.indexOf('Sync.deconnecter') < 0 && /this\.hidden = true;/.test(c) && /getElementById\('decoConfirm'\)\.hidden = false;/.test(c);
+})());
+ok('le oui est plus bas, apres ANNULER, et ignore une demi-seconde', HTML.indexOf('id="decoAnnuler"') > HTML.indexOf('id="decoQuestion"') && HTML.indexOf('id="decoOui"') > HTML.indexOf('id="decoAnnuler"')
+   && /if \(Date\.now\(\) - decoArme < 500\) return;\s*occupe\(this, 'DÉCONNEXION…', function\(\)\{\s*return Sync\.deconnecter\(\)/.test(SRC));
+ok('la question tient la place du bouton : un second appui tombe sur du texte', REFONTE.includes('.deco-question{min-height:48px;'));
+ok('le bouton s eloigne des boutons du dessus', REFONTE.includes('#compteDeconnexion{margin-top:22px;}'));
+ok('la confirmation dit ce qui n est pas encore parti', /enAttente:function\(\)\{ return nbSales\(\) \+ Object\.keys\(lireMeta\(\)\.titres \|\| \{\}\)\.length; \}/.test(SRC) && /pas encore envoyée/.test(SRC));
+ok('rouvrir le profil la referme', /function openProfil\(\)\{\s*desarmerDeconnexion\(\);/.test(SRC));
+
 console.log(`\n${pass} reussis, ${fail} echoues`);
 process.exit(fail ? 1 : 0);

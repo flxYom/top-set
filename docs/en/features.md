@@ -879,6 +879,14 @@ is waiting. See [Messaging](coach-and-admin.md#messaging).
 (account, pseudonym, coach, exports) and `⇅` for **data** (backup, CSV, import).
 Account and files used to share one sheet, which had become a catch-all.
 
+**Logging out asks first** (2026-11-17, "I mis-tapped log out and it logged
+me out at once"). The first tap asks the question ("TE DÉCONNECTER DE CE
+TÉLÉPHONE ?"), which takes the button's exact place: a second tap on the same
+spot lands on text. A line says what happens (the logbook set aside, or the
+days not yet sent), then `ANNULER`, then `OUI, ME DÉCONNECTER`, which ignores
+taps for half a second: a double tap never logs out. The button sits 22 px
+away from the buttons above it.
+
 **Export my data** (2026-11-16, "the sync button doesn't really do
 anything"). In the account section, `EXPORTER MES DONNÉES` replaces
 `SYNCHRONISER MAINTENANT`: sync already runs on its own, back in the app, back

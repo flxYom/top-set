@@ -965,6 +965,15 @@ attend. Voir [La messagerie](coach-et-admin.md#la-messagerie).
 (sauvegarde, tableur, import). Le compte et les fichiers vivaient dans la même
 feuille, qui était devenue un fourre-tout.
 
+**Se déconnecter se confirme** (17/11/2026, « j'ai miss clic sur se
+déconnecter et ça m'a déco instant »). Le premier appui pose la question
+(« TE DÉCONNECTER DE CE TÉLÉPHONE ? »), qui prend exactement la place du
+bouton : un second appui au même endroit tombe sur du texte. Une ligne dit ce
+qui se passe (le carnet mis de côté, ou les journées pas encore envoyées), puis
+`ANNULER`, puis `OUI, ME DÉCONNECTER`, qui ignore les appuis pendant une
+demi-seconde : un double appui ne déconnecte jamais. Le bouton est écarté de
+22 px des boutons du dessus.
+
 **Exporter mes données** (16/11/2026, « le bouton synchronisé ne sert pas
 vraiment à grand-chose »). Dans le compte, `EXPORTER MES DONNÉES` remplace
 `SYNCHRONISER MAINTENANT` : la synchro se fait déjà seule, au retour dans l'app,
