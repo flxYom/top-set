@@ -1028,6 +1028,30 @@ propres partages — RLS filtre des lignes et pas des colonnes, et « chacun
 modifie ses reçus » aurait laissé passer un `update` qui se rend destinataire
 d'un partage adressé à quelqu'un d'autre.
 
+**La progression qui ne ment pas** (17 novembre 2026). « Première séance
+contre dernière » faisait croire à une régression dès que la dernière était
+légère. Deux lectures la remplacent partout — la fiche d'un exercice,
+« Ton année », le texte pour une IA, le classeur et le carnet PDF :
+
+- **la tendance** (`TS.tendanceForce`) : le meilleur 1RM estimé de chaque
+  semaine (celui du top set), puis la médiane des trois premières semaines de
+  l'historique contre celle des trois dernières. Une séance légère n'est pas la
+  meilleure de sa semaine ; une semaine entière légère est écartée par la
+  médiane (la médiane haute à deux semaines : la meilleure des deux). Il faut
+  trois séances et six semaines d'historique, sinon rien : « pas encore assez
+  de données ». « Stable » à moins de 2 % ;
+- **à effort comparable** (`TS.progressionsComparables`) : à charge égale, plus
+  de répétitions (`100 kg : 5 reps le 7 sept. → 7 reps le 2 nov.`) ; à
+  répétitions égales, plus de charge ; à charge et répétitions égales, un RPE
+  plus bas. Seules les séries de travail chiffrées se comparent (ni
+  échauffement, ni back-off, ni série au temps), la première mesure contre la
+  plus récente, deux au plus par lecture. Seuls les progrès sont listés : la
+  tendance, elle, dit la direction dans les deux sens.
+
+La fiche d'un exercice gagne un bloc `PROGRESSION` sous ses chiffres, et sa
+courbe une ligne de tendance en pointillés neutres sous celle des séances. Une
+estimation s'écrit `≈`, et rien n'est en couleur d'alerte.
+
 **Graphique de progression** par exercice, tracé depuis ton propre historique.
 
 **Faire un retour.** Un lien en bas de chaque écran ouvre un formulaire : un bug,

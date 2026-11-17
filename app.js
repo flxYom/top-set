@@ -5015,6 +5015,47 @@
     window.scrollTo(0, 0);
   }
 
+  // ---------- la progression qui ne ment pas (17/11/2026) ----------
+  // Dans la fiche d'un exercice : la tendance du 1RM estime (mediane des
+  // meilleures semaines au debut contre a la fin), puis ce qui a progresse a
+  // effort comparable. Les regles sont dans intelligence.js. Une estimation
+  // s'ecrit « ≈ » ; rien n'est en couleur d'alerte : l'information est douce.
+  function kgRm(v){ return formatWeight(Math.round(v * 2) / 2); }
+  function pourcent(g){ return (g > 0 ? '+' : (g < 0 ? '−' : '')) + String(Math.abs(g)).replace('.', ',') + '\u00a0%'; }
+  function blocProgression(toutes){
+    var t = TS.tendanceForce(toutes), c = TS.progressionsComparables(toutes);
+    var lignes = [];
+    // « le 16 nov. » finit deja par un point : pas de second.
+    function ligne(mot, txt){ lignes.push('<p class="exo-prog"><span class="exo-prog-mot">' + mot + '</span>' + esc(txt.replace(/\.\.$/, '.')) + '</p>'); }
+    if (t && t.gain !== null){
+      var sens = Math.abs(t.gain) < 2 ? 'stable' : (t.gain > 0 ? 'en hausse' : 'en baisse');
+      ligne('TENDANCE', '1RM estimé ' + sens + ' : ≈' + kgRm(t.debut.valeur) + ' kg → ≈' + kgRm(t.fin.valeur) + ' kg (' + pourcent(t.gain)
+        + '), du ' + jourCourt(t.debut.du) + ' au ' + jourCourt(t.fin.au) + '.');
+    }
+    c.chargeEgale.forEach(function(x){
+      ligne('À CHARGE ÉGALE', formatWeight(x.poids) + ' kg : ' + pluriel(x.avant.reps, 'rep') + ' le ' + jourCourt(x.avant.date)
+        + ' → ' + pluriel(x.apres.reps, 'rep') + ' le ' + jourCourt(x.apres.date) + '.');
+    });
+    c.repsEgales.forEach(function(x){
+      ligne('À REPS ÉGALES', pluriel(x.reps, 'rep') + ' : ' + formatWeight(x.avant.poids) + ' kg le ' + jourCourt(x.avant.date)
+        + ' → ' + formatWeight(x.apres.poids) + ' kg le ' + jourCourt(x.apres.date) + '.');
+    });
+    c.rpe.forEach(function(x){
+      ligne('MOINS D\'EFFORT', formatWeight(x.poids) + ' kg × ' + x.reps + ' : RPE ' + String(x.avant.rpe).replace('.', ',') + ' le ' + jourCourt(x.avant.date)
+        + ' → RPE ' + String(x.apres.rpe).replace('.', ',') + ' le ' + jourCourt(x.apres.date) + '.');
+    });
+    var n = TS.pointsTopSet(toutes).length;
+    var note;
+    if (n < 3) note = 'Pas encore assez de séances pour parler de progression : 3 au moins.';
+    else if (!t || t.gain === null) note = 'La tendance demande six semaines d\'historique. Seules les séries de travail se comparent ; échauffements et back-offs restent à part.';
+    else note = 'Tendance : le meilleur 1RM estimé de chaque semaine, trois semaines au début contre trois à la fin. Seules les séries de travail se comparent ; échauffements et back-offs restent à part.';
+    return '<div class="exo-bloc">'
+      + '<div class="exo-bloc-titre">PROGRESSION</div>'
+      + lignes.join('')
+      + '<div class="exo-note">' + esc(note) + '</div>'
+      + '</div>';
+  }
+
   function renderExerciceDetail(){
     var hote = document.getElementById('exoDetail');
     var nom = state.exoOuvert;
@@ -5095,6 +5136,7 @@
     var fr = pc ? TS.forceRelative(rm, pc.poids) : null;
     if (fr) html += '<div class="exo-relatif">1RM estimé\u00a0: <b>' + String(fr).replace('.', ',') + '\u00a0×</b> ton poids du corps'
       + ' (' + esc(kgTexte(pc.poids)) + '\u00a0kg le ' + esc(jourCourt(pc.date)) + ')</div>';
+    html += blocProgression(toutes);
     }
 
     // --- courbe
@@ -5153,13 +5195,14 @@
 
     var points = seancesFiltrees(toutes);
     var zone = document.getElementById('exoChart');
-    loadChartLib().then(function(){ dessinerCourbeExo(zone, points, auTemps); }).catch(function(){
+    var tendance = auTemps ? null : TS.tendanceForce(toutes);
+    loadChartLib().then(function(){ dessinerCourbeExo(zone, points, auTemps, tendance); }).catch(function(){
       zone.innerHTML = '<div class="recap-chart-empty">Graphique indisponible hors-ligne.</div>';
     });
   }
 
   var courbeExo = null;
-  function dessinerCourbeExo(zone, seances, auTemps){
+  function dessinerCourbeExo(zone, seances, auTemps, tendance){
     if (courbeExo){ courbeExo.destroy(); courbeExo = null; }
     var pts = auTemps ? TS.pointsDuree(seances) : TS.pointsTopSet(seances);
     if (pts.length < 2){
@@ -5178,13 +5221,23 @@
         pointBorderColor:'#0d0c0a',
         pointBorderWidth:2, pointRadius:4, pointHitRadius:16,
         borderWidth:2.5, tension:0, fill:true
-      }] },
+      }].concat(tendance ? [{
+        // La tendance (17/11/2026) : la mediane des meilleures semaines,
+        // en pointilles neutres sous la courbe des seances.
+        data: pts.map(function(p){
+          var q = tendance.parSeance.filter(function(x){ return x.date === p.date; })[0];
+          return q ? q.tendance : null;
+        }),
+        borderColor:'#a39b8f', borderDash:[5, 4], borderWidth:2,
+        pointRadius:0, pointHitRadius:8, tension:0, fill:false, spanGaps:true
+      }] : []) },
       options:{
         responsive:true, maintainAspectRatio:false,
         interaction:{ mode:'index', intersect:false },
         plugins:{ legend:{display:false}, tooltip:{ callbacks:{
           label:function(ctx){
             var p = pts[ctx.dataIndex];
+            if (ctx.datasetIndex === 1) return 'Tendance ≈' + formatWeight(ctx.parsed.y) + ' kg';
             var t = p.topSet ? perfTexte(p.topSet) : '';
             if (auTemps) return TS.formatDuree(p.valeur);
             return formatWeight(p.valeur) + ' kg estimés' + (t ? ' — ' + t : '');
@@ -8534,7 +8587,7 @@
     var counts = groupCountsIn(data.startStr, data.endStr);
     var g = GROUPS.filter(function(x){ return counts[x]; });
     if (g.length) l.push('Séries par groupe musculaire : ' + g.map(function(x){ return x + ' ' + counts[x]; }).join(', ') + '.');
-    l.push('', 'Par exercice (meilleure série de la période, puis le top set de la première et de la dernière séance) :');
+    l.push('', 'Par exercice (meilleure série de la période ; le top set de la première et de la dernière séance, un repère et non une tendance ; la tendance du 1RM estimé quand la période a six semaines) :');
     data.items.forEach(function(it){
       var pts = topSetsEntre(it.nom, data.startStr, data.endStr);
       var evo = '';
@@ -8542,6 +8595,8 @@
         var a = pts[0], b = pts[pts.length - 1];
         evo = ' · ' + serieIA(a.top) + ' le ' + jourCourt(a.date) + ' → ' + serieIA(b.top) + ' le ' + jourCourt(b.date);
       }
+      var tdIA = TS.tendanceForce(seancesDeLExo(it.nom).filter(function(j){ return j.date >= data.startStr && j.date <= data.endStr; }));
+      if (tdIA && tdIA.gain !== null) evo += ' · tendance ≈' + kgRm(tdIA.debut.valeur) + ' → ≈' + kgRm(tdIA.fin.valeur) + ' kg (' + pourcent(tdIA.gain).replace('\u00a0', ' ') + ')';
       l.push('- ' + it.nom + ' (' + it.groupe + ') : ' + valeurRecap(it) + ' · ' + pluriel(it.fois, 'séance') + ', ' + pluriel(it.series, 'série') + evo);
     });
     // Le detail seance par seance, sauf sur l'annee : trop long pour etre lu.
@@ -8663,7 +8718,8 @@
       var toutes = seancesDeLExo(x.brut);
       D.records += TS.recordsBattus(toutes, debut, fin);
       var dansAn = toutes.filter(function(j){ return j.date >= debut && j.date <= fin; });
-      var p = dansAn.length >= 3 ? TS.progressionTopSet(dansAn) : null;
+      var p = TS.tendanceForce(dansAn);
+      p = (p && p.gain !== null) ? p : null;
       if (p && p.gain > 0 && (!D.progres || p.gain > D.progres.p.gain)) D.progres = { nom:x.nom, groupe:x.groupe, p:p };
       dansAn.forEach(function(j){
         j.series.forEach(function(s){
@@ -8706,7 +8762,7 @@
     if (D.progres){
       var a = D.progres.p.debut, b = D.progres.p.fin;
       L.push(diapo('var(--ok)', 'TA PLUS BELLE PROGRESSION', '+' + String(D.progres.p.gain).replace('.', ',') + '<small> %</small>', D.progres.nom,
-        perfTexte(a.top) + ' le ' + jourCourt(a.date) + ' → ' + perfTexte(b.top) + ' le ' + jourCourt(b.date) + ', sur le 1RM estimé.'));
+        '≈' + kgRm(a.valeur) + ' kg → ≈' + kgRm(b.valeur) + ' kg de 1RM estimé, du ' + jourCourt(a.du) + ' au ' + jourCourt(b.au) + ' : la tendance de tes meilleures semaines.'));
     }
     if (D.records || D.lourd){
       L.push(diapo('var(--yellow)', 'RECORDS', compteur(D.records), D.records > 1 ? 'records battus' : 'record battu',

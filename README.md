@@ -75,7 +75,8 @@ repository is for right now.
   last week, with the muscles worked and next time's target, weekly, monthly
   and yearly recaps with the exercises you chose to track shown first,
   consistency counted in weeks, the year replayed screen by screen, and each
-  exercise's progression and records, and "À vérifier": sets that look like a
+  exercise's progression as a trend and at comparable effort (a light session
+  isn't a drop), its records, and "À vérifier": sets that look like a
   typo, fixed in one tap if you want.
 - **Ask an AI.** A session or a period copies as clean text, question and
   units included, ready to paste into Claude or ChatGPT.

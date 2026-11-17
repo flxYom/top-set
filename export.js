@@ -91,6 +91,13 @@
     return t.length % 2 ? t[m] : (t[m - 1] + t[m]) / 2;
   }
   function estEchauffement(s) { return s.type === TS.TYPES.ECHAUFFEMENT; }
+  // La tendance du 1RM estime, sous la forme que lisent les feuilles et le
+  // PDF : null tant qu'il n'y a pas six semaines a comparer.
+  function progressionDe(seances) {
+    var t = TS.tendanceForce(seances);
+    if (!t || t.gain === null) return null;
+    return { debut: { rm: t.debut.valeur, du: t.debut.du, au: t.debut.au }, fin: { rm: t.fin.valeur, du: t.fin.du, au: t.fin.au }, gain: t.gain };
+  }
   function trier(o) {
     return Object.keys(o).sort(function (a, b) { return o[b] - o[a] || (a < b ? -1 : 1); });
   }
@@ -210,8 +217,11 @@
       if (x.mode === 'reps') {
         x.points = TS.pointsTopSet(x.seances);
         x.meilleur = x.points.reduce(function (b, p) { return !b || p.valeur > b.valeur ? p : b; }, null);
-        x.progression = TS.progressionTopSet(x.seances);
-        x.progressionRecente = TS.progressionTopSet(x.seances.filter(function (se) { return se.date >= debutRecent; }));
+        // La tendance (17/11/2026) : mediane des meilleures semaines au
+        // debut contre a la fin, plus « premiere seance contre derniere ».
+        x.progression = progressionDe(x.seances);
+        x.progressionRecente = progressionDe(x.seances.filter(function (se) { return se.date >= debutRecent; }));
+        x.comparables = TS.progressionsComparables(x.seances);
       } else {
         x.points = TS.pointsDuree(x.seances);
         x.meilleur = x.points.reduce(function (b, p) { return !b || p.valeur > b.valeur ? p : b; }, null);
@@ -519,8 +529,8 @@
     var exercices = { nom: 'Exercices', colonnes: [
       C('Exercice', 28), C('Groupe', 11), C('Sous-groupe', 13), C('Mesure', 9), C('Séances', 8), C('Séries', 8),
       C('Première fois', 13, 'date'), C('Dernière fois', 13, 'date'), C('Charge max (kg)', 14), C('Le', 11, 'date'),
-      C('Meilleure série', 18), C('Meilleur 1RM estimé (kg)', 21), C('Le', 11, 'date'), C('1RM estimé au début (kg)', 21),
-      C('1RM estimé à la fin (kg)', 21), C('Progression (%)', 14), C('Repos médian (s)', 15), C('RPE moyen', 10)
+      C('Meilleure série', 18), C('Meilleur 1RM estimé (kg)', 21), C('Le', 11, 'date'), C('Tendance 1RM, début (kg)', 21),
+      C('Tendance 1RM, fin (kg)', 21), C('Progression (%)', 14), C('Repos médian (s)', 15), C('RPE moyen', 10)
     ], lignes: a.exercices.map(function (x) {
       var b = x.meilleur, p = x.progression;
       return [x.nom, x.groupe, x.sous, x.mode === 'reps' ? 'reps' : x.mode === 'cardio' ? 'cardio' : 'temps', x.fois, x.nbSeries,
@@ -542,6 +552,7 @@
       ['Séries : une ligne par série notée. Reps = répétitions ; Durée = secondes tenues (gainage, cardio).'],
       ['RPE : effort ressenti sur 10 (10 = à l\'échec). Repos : secondes avant la série suivante, mesurées ou notées.'],
       ['Volume = poids × répétitions. 1RM estimé : formule d\'Epley, seulement jusqu\'à 12 répétitions.'],
+      ['Tendance 1RM : le meilleur 1RM estimé de chaque semaine, médiane des trois premières semaines contre celle des trois dernières. Vide sans six semaines d\'historique.'],
       ['Top set : la série la plus lourde de la séance, hors échauffement et back-off.'],
       ['Semaines : du lundi au dimanche, semaines sans séance comprises.'],
       ['Ce fichier est à toi : il a été fabriqué dans ton téléphone, sans passer par un serveur.']
@@ -579,6 +590,7 @@
     '- « É » : échauffement ; « T » : top set déclaré ; « B » : back-off. Sans lettre : série de travail.',
     '- 1RM estimé : formule d\'Epley (poids × (1 + reps / 30)), seulement jusqu\'à 12 répétitions.',
     '- Top set : la série la plus lourde de la séance, hors échauffement et back-off.',
+    '- « 1RM estimé en tendance » : le meilleur 1RM estimé de chaque semaine, médiane des trois premières semaines contre celle des trois dernières (six semaines d\'historique au moins). Une séance ou une semaine légère n\'y pèse pas. « À charge égale », « à N reps », « RPE » : ce qui a progressé à effort comparable, séries de travail seulement (ni échauffement ni back-off), première mesure contre la plus récente.',
     '- Les semaines vont du lundi au dimanche. Une ligne de semaine à 0 séance est une semaine sans entraînement.',
     '- Durée d\'une séance : de la première à la dernière série cochée. « ≈ » : une séance dont la fin n\'a pas été notée, durée estimée par ses repos (le repos de chaque série plus 40 s par série) ; une séance de plus de 8 h n\'a pas de durée.'
   ];
@@ -647,7 +659,13 @@
       if (x.chargeMax) bits.push('charge max ' + nombre(x.chargeMax, 2) + ' kg (' + x.chargeMaxDate + ')');
       if (x.meilleur && x.mode === 'reps') bits.push('meilleur 1RM estimé ' + nombre(x.meilleur.valeur, 1) + ' kg (' + x.meilleur.topSet.court + ', ' + x.meilleur.date + ')');
       if (x.meilleur && x.mode !== 'reps') bits.push('meilleure série ' + x.meilleur.topSet.court + ' (' + x.meilleur.date + ')');
-      if (x.progression) bits.push('1RM estimé ' + nombre(x.progression.debut.rm, 1) + ' → ' + nombre(x.progression.fin.rm, 1) + ' kg (' + (x.progression.gain >= 0 ? '+' : '') + nombre(x.progression.gain, 1) + ' %)');
+      if (x.progression) bits.push('1RM estimé en tendance ≈ ' + nombre(x.progression.debut.rm, 1) + ' → ≈ ' + nombre(x.progression.fin.rm, 1) + ' kg (' + (x.progression.gain >= 0 ? '+' : '') + nombre(x.progression.gain, 1) + ' %, semaines du ' + x.progression.debut.du + ' et du ' + x.progression.fin.au + ')');
+      var cp = x.comparables;
+      if (cp) {
+        cp.chargeEgale.forEach(function (c) { bits.push('à charge égale ' + nombre(c.poids, 2) + ' kg : ' + c.avant.reps + ' reps le ' + c.avant.date + ' → ' + c.apres.reps + ' le ' + c.apres.date); });
+        cp.repsEgales.forEach(function (c) { bits.push('à ' + c.reps + ' reps : ' + nombre(c.avant.poids, 2) + ' kg le ' + c.avant.date + ' → ' + nombre(c.apres.poids, 2) + ' kg le ' + c.apres.date); });
+        cp.rpe.forEach(function (c) { bits.push(nombre(c.poids, 2) + '×' + c.reps + ' : RPE ' + nombre(c.avant.rpe, 1) + ' le ' + c.avant.date + ' → ' + nombre(c.apres.rpe, 1) + ' le ' + c.apres.date); });
+      }
       if (x.reposMedian) bits.push('repos médian ' + Math.round(x.reposMedian) + ' s');
       if (x.rpeMoyen) bits.push('RPE moyen ' + nombre(x.rpeMoyen, 1));
       L.push(bits.join(' ; ') + '.');
@@ -1172,7 +1190,7 @@
       '@8 : RPE 8 sur 10, l\'effort ressenti (10 = à l\'échec). É : série d\'échauffement.',
       'Top set : la série la plus lourde de la séance, hors échauffement et back-off.',
       '1RM estimé : formule d\'Epley, poids × (1 + reps / 30), jusqu\'à 12 répétitions. Une estimation, pas une charge soulevée.',
-      'Tendance : écart du 1RM estimé entre la première et la dernière séance de la période ; « stable » à moins de 2 %.',
+      'Tendance : le meilleur 1RM estimé de chaque semaine, médiane des trois premières semaines contre celle des trois dernières ; « stable » à moins de 2 %, « — » sans six semaines d\'historique.',
       'Repos : secondes entre deux séries, mesurées par l\'app ou notées. Semaines du lundi au dimanche.'
     ];
     place(30 + leg.length * 11);

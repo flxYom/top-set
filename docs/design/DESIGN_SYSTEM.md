@@ -238,6 +238,14 @@ groupe pour le groupe et l'exercice de l'année. Le grand chiffre est la
 haut, fermer à 44 px, pas de verre, pas de braise (décision du 18/09 : la braise
 reste à l'accueil, au bilan et au plein écran). Garde : gabarits §48.
 
+**La progression — 17/11/2026.** Dans la fiche d'un exercice, un `.exo-bloc`
+de plus : chaque constat en deux lignes, son mot (`TENDANCE`, `À CHARGE ÉGALE`,
+`À REPS ÉGALES`, `MOINS D'EFFORT`) en `--t-1` capitales `--ink3`, puis la phrase
+en `--t-3` `--ink`, avec ses dates et ses charges. Ni vert, ni rouge : une
+hausse comme une baisse se lisent en neutre (réponse du 17/11 : « feel good et
+safe »). Sur la courbe, la tendance est un trait pointillé `#a39b8f` (5/4), sans
+point, sous la courbe orange des séances.
+
 **À vérifier — 17/11/2026.** La ligne de PROGRÈS reprend exactement le style
 de `+ NOTER MON POIDS DU CORPS` (`.verif-ligne` : 48 px, bord `--trait`, texte
 `--dim`) : une information, pas une alerte, donc ni couleur d'erreur ni

@@ -946,6 +946,27 @@ legend, the per-muscle breakdown; each exercise row carries its sub-group.
 **Recap.** Total volume (weight × reps, summed), a training calendar, per-exercise
 records and a muscle-group split — over a week, a month or a year.
 
+**Progression that doesn't lie** (17 November 2026). "First session versus
+last" made a light last session look like a regression. Two readings replace
+it everywhere — the exercise sheet, "Ton année", the AI text, the workbook and
+the PDF logbook:
+
+- **the trend** (`TS.tendanceForce`): each week's best estimated 1RM (the top
+  set's), then the median of the first three weeks of history against the last
+  three. A light session isn't its week's best; a whole light week is set
+  aside by the median (the upper median with two weeks: the better of the
+  two). It needs three sessions and six weeks of history, otherwise nothing:
+  "not enough data yet". "Stable" under 2 %;
+- **at comparable effort** (`TS.progressionsComparables`): same load, more reps
+  (`100 kg : 5 reps le 7 sept. → 7 reps le 2 nov.`); same reps, more load; same
+  load and reps, a lower RPE. Only numbered working sets compare (no warm-up,
+  back-off or timed set), first measure against the latest, two at most per
+  reading. Only progress is listed: the trend gives the direction both ways.
+
+The exercise sheet gains a `PROGRESSION` block under its figures, and its
+chart a neutral dashed trend line under the session line. An estimate reads
+`≈`, and nothing uses an alert colour.
+
 **Progression chart** per exercise, drawn from your own history.
 
 **Feedback.** A link at the bottom of every screen opens a form: a bug, an idea,

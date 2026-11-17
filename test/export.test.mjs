@@ -66,7 +66,20 @@ const squat = a.exercices.find(x => x.nom === 'Squat');
 ok('le squat d\'abord : le plus pratique', a.exercices[0].nom === 'Squat' && squat.fois === 3, a.exercices.map(x => x.nom + ' ' + x.fois).join(', '));
 ok('deux squats le meme jour font une seance', squat.seances.find(s => s.date === '2026-11-02').series.length === 2);
 ok('charge max hors echauffement, et sa date', squat.chargeMax === 110 && squat.chargeMaxDate === '2026-11-12');
-ok('progression du 1RM estime : 100×5 -> 110×3', squat.progression && squat.progression.debut.rm === 116.67 && squat.progression.fin.rm === 121, JSON.stringify(squat.progression && [squat.progression.debut.rm, squat.progression.fin.rm]));
+// 17/11/2026 : plus de « premiere seance contre derniere ». Trois semaines et
+// demie d'historique ne font pas une tendance.
+ok('sans six semaines, pas de tendance (plus de premier contre dernier)', squat.progression === null, JSON.stringify(squat.progression));
+ok('mais ce qui a progresse a effort comparable : a 5 reps, 100 puis 105 kg',
+  squat.comparables && squat.comparables.repsEgales.some(c => c.reps === 5 && c.avant.poids === 100 && c.apres.poids === 105), JSON.stringify(squat.comparables));
+{
+  const sq = (d, p, r) => J(d, [E('Squat', 'Jambes', [S(p, r)])]);
+  const long = X.analyser({ aujourdhui: '2026-11-16', pesees: [], jours: [sq('2026-09-07', 100, 5), sq('2026-09-14', 100, 6), sq('2026-09-21', 102.5, 5),
+    sq('2026-10-19', 105, 6), sq('2026-10-26', 107.5, 5), sq('2026-11-02', 105, 5), sq('2026-11-09', 60, 10)] });
+  const p = long.exercices[0].progression;
+  ok('sur deux mois, la tendance : une derniere semaine legere ne fait pas une baisse', p && p.gain > 0 && p.debut.du === '2026-09-07' && p.fin.au === '2026-11-09', JSON.stringify(p));
+  const t = X.texteIA(long);
+  ok('le texte pour une IA dit la tendance et ce qui a progresse a effort egal', /1RM estimé en tendance ≈/.test(t) && /à charge égale 100 kg : 5 reps/.test(t), (t.match(/### Squat[^\n]*\n[^\n]*/) || [''])[0]);
+}
 ok('le repos median ignore l\'echauffement et les repos absurdes', squat.reposMedian === 165, String(squat.reposMedian));
 ok('un exercice au temps n\'a pas de 1RM, mais une meilleure duree', (() => {
   const g = a.exercices.find(x => x.nom === 'Gainage');
@@ -157,7 +170,7 @@ if (zipLu) {
   const s3 = zipLu['xl/worksheets/sheet3.xml'];
   ok('les semaines vides sont dans le classeur', (s3.match(/<row /g) || []).length === 6);
   const s4 = zipLu['xl/worksheets/sheet4.xml'];
-  ok('les exercices et leur progression', s4.includes('Squat') && /<v>3\.7<\/v>/.test(s4), (s4.match(/<v>[\d.]+<\/v>/g) || []).slice(0, 30).join(''));
+  ok('les exercices et leur tendance', s4.includes('Squat') && s4.includes('Tendance 1RM, début (kg)') && s4.includes('<v>122.5</v>'), (s4.match(/<v>[\d.]+<\/v>/g) || []).slice(0, 30).join(''));
   ok('l\'en-tete est fige et en gras', s1.includes('state="frozen"') && s1.includes('s="1"'));
   ok('un caractere de controle ne casse pas le XML', bienForme(X.classeur([{ nom: 'a', colonnes: [{ titre: 'x' }], lignes: [['a\u0001b<&>"']] }]).length > 0 ? lireZip(X.classeur([{ nom: 'a', colonnes: [{ titre: 'x' }], lignes: [['a\u0001b<&>"']] }]))['xl/worksheets/sheet1.xml'] : ''));
 }

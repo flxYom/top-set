@@ -810,6 +810,39 @@ titre('Les saisies a verifier (17/11/2026)');
   egal('un carnet propre : rien', TS.seriesAVerifier({ '2026-11-08': S['2026-11-08'] }).length, 0);
 }
 // ----------------------------------------------------------------
+titre('La progression qui ne ment pas (17/11/2026)');
+{
+  const s = (p, r, o = {}) => Object.assign({ poids: p, reps: String(r), fait: true }, o);
+  const J = (d, ss) => ({ date: d, series: ss });
+  const h = [J('2026-09-07', [s(100, 5), s(100, 5)]), J('2026-09-14', [s(100, 6)]), J('2026-09-21', [s(102.5, 5)]),
+    J('2026-10-05', [s(105, 5, { rpe: 9 })]), J('2026-10-19', [s(105, 6)]), J('2026-10-26', [s(107.5, 5)]),
+    J('2026-11-02', [s(100, 7), s(105, 5, { rpe: 8 })]), J('2026-11-09', [s(60, 10)])];
+  const t = TS.tendanceForce(h);
+  egal('une semaine entierement legere a la fin ne fait pas croire a une baisse', t.gain, 2.4);
+  ok('premier contre dernier, lui, y croyait', TS.progressionTopSet(h).gain < 0);
+  egal('les deux fenetres : trois semaines au debut, trois a la fin', [t.debut.du, t.debut.au, t.fin.du, t.fin.au],
+       ['2026-09-07', '2026-09-21', '2026-10-26', '2026-11-09']);
+  const leger = TS.tendanceForce(h.slice(0, 7).concat([J('2026-11-03', [s(60, 10)])]));
+  egal('une seance legere dans une bonne semaine ne compte pas : la meilleure de la semaine reste', leger.semaines.find(w => w.lundi === '2026-11-02').meilleur, 122.5);
+  egal('une courbe de tendance par seance', t.parSeance.length, 8);
+  const trou = TS.tendanceForce(h.slice(0, 7).concat([J('2026-11-16', [s(60, 10)])]));
+  ok('une semaine sautee, puis une semaine legere : la meilleure des deux semaines compte', trou.fin.valeur === 122.5 && trou.gain > 0, JSON.stringify(trou.fin));
+  egal('moins de trois seances : rien', TS.tendanceForce(h.slice(0, 2)), null);
+  const court = TS.tendanceForce(h.slice(0, 4));
+  ok('moins de six semaines : pas de comparaison, mais la courbe', court && court.gain === null && court.debut === null && court.parSeance.length === 4);
+  ok('un echauffement plus lourd ne compte pas', TS.tendanceForce([J('2026-09-07', [s(140, 3, { type: 'echauffement' }), s(100, 5)]), J('2026-09-14', [s(100, 5)]), J('2026-09-21', [s(100, 5)])]).semaines[0].meilleur === 116.67);
+
+  const c = TS.progressionsComparables(h);
+  egal('a charge egale : 100 kg, 5 reps puis 7', c.chargeEgale.map(x => [x.poids, x.avant.reps, x.apres.reps, x.apres.date]), [[100, 5, 7, '2026-11-02']]);
+  egal('a reps egales : la plus recente d abord', c.repsEgales.map(x => [x.reps, x.avant.poids, x.apres.poids]), [[5, 100, 105], [6, 100, 105]]);
+  egal('meme charge, memes reps, RPE plus bas', c.rpe.map(x => [x.poids, x.reps, x.avant.rpe, x.apres.rpe]), [[105, 5, 9, 8]]);
+  const bo = TS.progressionsComparables([J('2026-09-07', [s(100, 5), s(80, 8, { type: 'backoff' })]), J('2026-09-14', [s(100, 5), s(80, 12, { type: 'backoff' })]),
+    J('2026-09-21', [s(100, 5), s(80, 10, { type: 'echauffement' })])]);
+  ok('back-offs et echauffements ne se comparent pas aux series de travail', bo.chargeEgale.length === 0 && bo.repsEgales.length === 0);
+  ok('moins de trois seances : rien', TS.progressionsComparables(h.slice(0, 2)).chargeEgale.length === 0);
+  ok('une baisse n est pas rendue comme un progres', TS.progressionsComparables([J('2026-09-07', [s(100, 8)]), J('2026-09-14', [s(100, 6)]), J('2026-09-21', [s(100, 5)])]).chargeEgale.length === 0);
+}
+// ----------------------------------------------------------------
 console.log('\n' + '='.repeat(52));
 if (echecs.length) {
   console.log(passes + ' tests passes, ' + echecs.length + ' ECHEC(S) :');

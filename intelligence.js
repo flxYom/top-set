@@ -1377,6 +1377,105 @@
     return out;
   }
 
+  // ------------------------------------------------------------------
+  // La progression qui ne ment pas (17/11/2026)
+  // ------------------------------------------------------------------
+  // « Premiere seance contre derniere » fait croire a une regression des que
+  // la derniere seance est legere. Deux lectures la remplacent.
+  //
+  // 1. La tendance : le meilleur 1RM estime de chaque semaine (celui du top
+  //    set, echauffements et back-offs exclus), puis la mediane des trois
+  //    premieres semaines de l'historique contre celle des trois dernieres.
+  //    Une seance legere ne pese plus rien : elle n'est pas la meilleure de
+  //    sa semaine ; une semaine entierement legere non plus : la mediane de
+  //    trois semaines l'ecarte (la moyenne, elle, la faisait peser un tiers). Il faut trois seances au moins, et que les deux fenetres
+  //    de trois semaines ne se chevauchent pas (six semaines d'historique) ;
+  //    sinon, null : pas encore assez de donnees.
+  //    parSeance donne, pour chaque seance, la mediane des trois semaines
+  //    qui finissent par la sienne : c'est la courbe de tendance.
+  var FENETRE_TENDANCE = 21;
+  function tendanceForce(seances) {
+    var pts = pointsTopSet(seances);
+    if (pts.length < SEANCES_MINI) return null;
+    var parSemaine = {}, lundis = [];
+    pts.forEach(function (p) {
+      var l = lundiDe(p.date), w = parSemaine[l];
+      if (!w) { w = parSemaine[l] = { lundi: dateDe(l), l: l, meilleur: p.valeur, topSet: p.topSet, date: p.date }; lundis.push(l); }
+      else if (p.valeur > w.meilleur) { w.meilleur = p.valeur; w.topSet = p.topSet; w.date = p.date; }
+    });
+    lundis.sort(function (a, b) { return a - b; });
+    var semaines = lundis.map(function (l) { return parSemaine[l]; });
+    function medianeEntre(a, b) {
+      var l = semaines.filter(function (w) { return w.l >= a && w.l <= b; }).map(function (w) { return w.meilleur; });
+      if (!l.length) return null;
+      // La mediane haute : a deux semaines, la meilleure des deux. Sinon une
+      // semaine legere sur deux retirait encore la moitie de l'ecart.
+      var t = l.slice().sort(function (x, y) { return x - y; });
+      return Math.round(t[Math.floor(t.length / 2)] * 100) / 100;
+    }
+    semaines.forEach(function (w) { w.tendance = medianeEntre(w.l - (FENETRE_TENDANCE - 7), w.l); });
+    var parSeance = pts.map(function (p) { return { date: p.date, tendance: parSemaine[lundiDe(p.date)].tendance }; });
+    var premier = lundis[0], dernier = lundis[lundis.length - 1];
+    var base = { semaines: semaines.map(function (w) { return { lundi: w.lundi, meilleur: w.meilleur, tendance: w.tendance, date: w.date, topSet: w.topSet }; }),
+                 parSeance: parSeance, seances: pts.length };
+    if (dernier - (FENETRE_TENDANCE - 7) <= premier + (FENETRE_TENDANCE - 7)) { base.debut = null; base.fin = null; base.gain = null; return base; }
+    base.debut = { du: dateDe(premier), au: dateDe(premier + FENETRE_TENDANCE - 7), valeur: medianeEntre(premier, premier + FENETRE_TENDANCE - 7) };
+    base.fin = { du: dateDe(dernier - (FENETRE_TENDANCE - 7)), au: dateDe(dernier), valeur: medianeEntre(dernier - (FENETRE_TENDANCE - 7), dernier) };
+    base.gain = Math.round((base.fin.valeur - base.debut.valeur) / base.debut.valeur * 1000) / 10;
+    return base;
+  }
+
+  // 2. A effort comparable, ce qui a progresse : a charge egale, plus de
+  //    repetitions (100 x 5 -> 100 x 7) ; a repetitions egales, plus de
+  //    charge (80 x 6 -> 82,5 x 6) ; a charge et repetitions egales, un RPE
+  //    plus bas. Chaque fois la premiere seance ou la mesure existe contre la
+  //    plus recente. Ne se comparent que des series de travail chiffrees
+  //    (ni echauffement, ni back-off, ni serie au temps), de 1 a 30 reps.
+  //    Rien sous trois seances. Seuls les progres sont rendus, du plus
+  //    recent au plus ancien, deux au plus par lecture : la tendance, elle,
+  //    dit la direction dans les deux sens.
+  function progressionsComparables(seances) {
+    var jours = (seances || []).filter(function (j) { return j && j.date; }).slice().sort(parDate);
+    var sortie = { chargeEgale: [], repsEgales: [], rpe: [] };
+    if (pointsTopSet(jours).length < SEANCES_MINI) return sortie;
+    var parPoids = {}, parReps = {}, parCouple = {};
+    jours.forEach(function (j) {
+      var maxReps = {}, maxPoids = {}, minRpe = {};
+      (j.series || []).forEach(function (s) {
+        var t = typeSerie(s);
+        if (!serieRemplie(s) || t === TYPES.ECHAUFFEMENT || t === TYPES.BACKOFF || serieAuTemps(s)) return;
+        var p = poidsDe(s), r = nombreReps(s.reps);
+        if (p === null || p <= 0 || r === null || r > 30 || r !== Math.round(r)) return;
+        if (!(maxReps[p] >= r)) maxReps[p] = r;
+        if (!(maxPoids[r] >= p)) maxPoids[r] = p;
+        var e = rpeDe(s);
+        if (e !== null) { var k = p + 'x' + r; if (!(minRpe[k] <= e)) minRpe[k] = e; }
+      });
+      Object.keys(maxReps).forEach(function (p) { (parPoids[p] = parPoids[p] || []).push({ date: j.date, reps: maxReps[p] }); });
+      Object.keys(maxPoids).forEach(function (r) { (parReps[r] = parReps[r] || []).push({ date: j.date, poids: maxPoids[r] }); });
+      Object.keys(minRpe).forEach(function (k) { (parCouple[k] = parCouple[k] || []).push({ date: j.date, rpe: minRpe[k] }); });
+    });
+    Object.keys(parPoids).forEach(function (p) {
+      var l = parPoids[p];
+      if (l.length > 1 && l[l.length - 1].reps > l[0].reps) sortie.chargeEgale.push({ poids: Number(p), avant: l[0], apres: l[l.length - 1] });
+    });
+    Object.keys(parReps).forEach(function (r) {
+      var l = parReps[r];
+      if (l.length > 1 && l[l.length - 1].poids > l[0].poids) sortie.repsEgales.push({ reps: Number(r), avant: l[0], apres: l[l.length - 1] });
+    });
+    Object.keys(parCouple).forEach(function (k) {
+      var l = parCouple[k], pr = k.split('x');
+      if (l.length > 1 && l[l.length - 1].rpe < l[0].rpe) sortie.rpe.push({ poids: Number(pr[0]), reps: Number(pr[1]), avant: l[0], apres: l[l.length - 1] });
+    });
+    function recent(a, b) {
+      return a.apres.date < b.apres.date ? 1 : (a.apres.date > b.apres.date ? -1 : ((b.poids || 0) - (a.poids || 0)));
+    }
+    sortie.chargeEgale = sortie.chargeEgale.sort(recent).slice(0, 2);
+    sortie.repsEgales = sortie.repsEgales.sort(recent).slice(0, 2);
+    sortie.rpe = sortie.rpe.sort(recent).slice(0, 2);
+    return sortie;
+  }
+
   return {
     TYPES: TYPES,
     TYPES_VALIDES: TYPES_VALIDES,
@@ -1427,6 +1526,8 @@
     passagesDuJour: passagesDuJour,
     finDeSeance: finDeSeance,
     dureeRetenue: dureeRetenue,
-    seriesAVerifier: seriesAVerifier
+    seriesAVerifier: seriesAVerifier,
+    tendanceForce: tendanceForce,
+    progressionsComparables: progressionsComparables
   };
 });

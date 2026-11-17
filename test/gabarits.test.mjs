@@ -1768,7 +1768,7 @@ ok('la feuille se ferme avec les autres', /'partageSheet', 'iaSheet'(, '\w+')*\]
 ok('aucune taille de police sur le texte (garde iOS)', !/\.ia-texte\{[^}]*font-size/.test(REFONTE));
 
 console.log('\n== 48. L annee, ecran par ecran (16/11) ==');
-ok('les regles viennent d intelligence.js', /TS\.recordsBattus\(toutes, debut, fin\)/.test(SRC) && /TS\.progressionTopSet\(dansAn\)/.test(SRC)
+ok('les regles viennent d intelligence.js', /TS\.recordsBattus\(toutes, debut, fin\)/.test(SRC) && /TS\.tendanceForce\(dansAn\)/.test(SRC)
    && /TS\.regularite\(joursAvecSeries\('0000-01-01', fin\), reglages\.objectifSemaine, fin, nbSem\)/.test(SRC));
 ok('pas de tonnage dans le bilan de l annee', !/volume|tonnage|kg soulevés/i.test(corps('function donneesAnnee(an){', 'function diapo(')));
 ok('en janvier, l annee qui vient de finir', /if \(d\.getMonth\(\) === 0 && joursAvecSeries\(an - 1/.test(SRC));
@@ -2002,7 +2002,7 @@ console.log('\n== 60. Exporter mes donnees, a la place de synchroniser (16/11) =
   ok('le modele ne porte que le carnet, les pesees et le pseudo', corps('function modeleExport(){', 'var exportLib = null;').length > 500
      && !/email|localStorage|session_|token|reglages\.(?!objectifSemaine)/.test(corps('function modeleExport(){', 'var exportLib = null;')));
   ok('export.js ne lit ni le stockage, ni le reseau, ni l ecran', !/localStorage|fetch\(|XMLHttpRequest|document\.|navigator\./.test(EXP.replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, '')));
-  ok('les regles viennent d intelligence.js', /TS\.pointsTopSet\(/.test(EXP) && /TS\.progressionTopSet\(/.test(EXP) && /TS\.meilleurPoids\(/.test(EXP) && /TS\.regularite\(/.test(EXP));
+  ok('les regles viennent d intelligence.js', /TS\.pointsTopSet\(/.test(EXP) && /TS\.tendanceForce\(/.test(EXP) && /TS\.progressionsComparables\(/.test(EXP) && /TS\.meilleurPoids\(/.test(EXP) && /TS\.regularite\(/.test(EXP));
   ok('un fichier part dans le geste ; refuse, il attend un second appui', /exportPret = \{ format:format, fichier:fichier, blob:blob, nom:nom \};/.test(SRC)
      && /if \(exportPret && exportPret\.format === format\)\{ envoyerExportPret\(\); return; \}/.test(SRC));
   ok('l ecran se ferme avec les autres feuilles', /'imageSheet', 'exportSheet'(, 'verifSheet')?\]\.forEach/.test(SRC));
@@ -2094,6 +2094,15 @@ ok('la ligne de PROGRES n apparait que s il y a quelque chose, avant le poids du
 ok('retirer une copie se confirme', /if \(x\.sorte === 'doublon' && verifArme !== cle\)\{ verifArme = cle; rendreVerif\(\); return; \}/.test(SRC));
 ok('corriger une seance d avant ne touche pas a ses horaires', /persistDay\(x\.date, true\);/.test(SRC));
 ok('les boutons de la feuille font 48 px, comme les autres feuilles', REFONTE.includes('.verif-actions{display:flex;flex-direction:column;gap:8px;}'));
+
+console.log('\n== 68. La progression qui ne ment pas (17/11) ==');
+const EXP68 = readFileSync(new URL('export.js', RACINE), 'utf8');
+ok('plus aucun ecran ne lit premiere seance contre derniere', !/TS\.progressionTopSet\(/.test(SRC) && !/TS\.progressionTopSet\(/.test(EXP68));
+ok('la fiche montre la tendance et les progres a effort egal', /html \+= blocProgression\(toutes\);/.test(SRC)
+   && /TS\.tendanceForce\(toutes\), c = TS\.progressionsComparables\(toutes\)/.test(SRC));
+ok('rien sous trois seances', /if \(n < 3\) note = 'Pas encore assez de séances pour parler de progression : 3 au moins\.';/.test(SRC));
+ok('la courbe porte la tendance en pointilles neutres', /borderColor:'#a39b8f', borderDash:\[5, 4\]/.test(SRC));
+ok('la tendance demande six semaines', /if \(dernier - \(FENETRE_TENDANCE - 7\) <= premier \+ \(FENETRE_TENDANCE - 7\)\)/.test(INTEL));
 
 console.log(`\n${pass} reussis, ${fail} echoues`);
 process.exit(fail ? 1 : 0);

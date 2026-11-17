@@ -75,7 +75,8 @@ c'est exactement à ça que sert ce repo pour l'instant.
   séance la semaine d'avant, avec la silhouette des muscles travaillés et la
   cible de la prochaine fois, le récap de la semaine, du mois et de l'année avec
   les exercices qu'on suit en premier, la régularité comptée en semaines, l'année
-  rejouée écran par écran, la progression et les records de chaque exercice,
+  rejouée écran par écran, la progression de chaque exercice en tendance et à
+  effort comparable (une séance légère ne fait pas une baisse), ses records,
   et « À vérifier » : les séries qui ressemblent à une erreur de saisie,
   corrigées d'un appui si on veut.
 - **Demander l'avis d'une IA.** Une séance ou une période se copie en texte

@@ -9,6 +9,21 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ## [Unreleased]
 
+### Changed — progression as a trend and at comparable effort (2026-11-17)
+
+- "First session versus last" is gone: a light last session made it read as
+  a regression. `TS.tendanceForce`: each week's best estimated 1RM, the upper
+  median of the first three weeks against the last three (three sessions and
+  six weeks of history at least, otherwise null). `TS.progressionsComparables`:
+  same load more reps, same reps more load, same load and reps lower RPE, on
+  numbered working sets only, first measure against the latest. 15 tests.
+- Used everywhere the old reading was: the exercise sheet (new `PROGRESSION`
+  block, a neutral dashed trend line on the chart), "Ton année" ("ta plus
+  belle progression"), the period AI copy, the AI text, the workbook (columns
+  `Tendance 1RM, début / fin`) and the PDF logbook, whose legends explain it.
+  `TS.progressionTopSet` stays for its tests but no screen reads it any more.
+- Gabarits §68, service worker v95.
+
 ### Added — « À vérifier »: entries that look like typos (2026-11-17)
 
 - `TS.seriesAVerifier` finds four kinds of likely typos, conservative by
