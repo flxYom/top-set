@@ -572,6 +572,22 @@ titre('Relire le tableur exporte');
   egal('le commentaire perd son apostrophe de protection', rn[2].series[1].note, '-10 % de charge, fatigué');
   ok('un ancien export, sans la colonne, se relit sans commentaire',
      r.sessions['2026-09-01'].exercises.every(e => e.series.every(s => !('note' in s))));
+
+  // Le type (17/11/2026) : sans lui, un echauffement revenait en travail.
+  const avecType = 'Date;Exercice;Serie;Poids (kg);Repetitions;Type\r\n'
+    + '2026-09-04;Squat;1;60;5;Échauffement\r\n'
+    + '2026-09-04;Squat;2;120;3;Top set\r\n'
+    + '2026-09-04;Squat;3;100;5;Back-off\r\n'
+    + '2026-09-04;Squat;4;100;5;Travail\r\n'
+    + '2026-09-04;Squat;5;100;5;\r\n'
+    + '2026-09-04;Squat;6;50;5;echauf\r\n'
+    + '2026-09-04;Squat;7;100;5;nimporte\r\n';
+  const rt = TS.lireCsvCarnet(avecType).sessions['2026-09-04'].exercises[0].series;
+  egal('le type ecrit en mots est relu', rt.slice(0, 3).map(s => s.type), ['echauffement', 'top', 'backoff']);
+  ok('Travail, vide ou inconnu : pas de type, la valeur par defaut', [3, 4, 6].every(i => !('type' in rt[i])));
+  egal('une abreviation tapee a la main passe', rt[5].type, 'echauffement');
+  ok('un ancien export, sans la colonne, se relit sans type',
+     r.sessions['2026-09-01'].exercises.every(e => e.series.every(s => !('type' in s))));
 }
 
 // ----------------------------------------------------------------

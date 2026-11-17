@@ -9,6 +9,19 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ## [Unreleased]
 
+### Fixed — set types survive `+ SÉRIE` and the CSV (2026-11-17)
+
+- `+ SÉRIE` (and `+ UN TOUR`) copied the type `échauffement` to the next set:
+  after a warm-up ramp, every working set stayed a warm-up and dropped out of
+  top sets and records without anything showing it. Only back-off is copied
+  now (`serieSuivante`); the set after a warm-up is a working set.
+- The CSV had no type column, so a CSV backup imported back turned warm-ups
+  into working sets. New last column `Type` (`Échauffement`, `Top set`,
+  `Back-off`, `Travail`); `lireCsvCarnet` reads it by name (`typeCsv`, also
+  `É`/`echauf`/`T`/`B` typed by hand), so older CSVs still import. Both
+  `/outils` CSV templates and their page gain the column. 4 tests, gabarits
+  §64, service worker v91.
+
 ### Changed — the recap no longer pushes (2026-11-17)
 
 - "The goal isn't to push effort mindlessly, or overtraining: the app must be

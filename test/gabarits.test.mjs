@@ -580,7 +580,7 @@ ok('le cardio note minutes, vitesse et inclinaison, sans perdre ce qu une base p
    /data-field="minutes"/.test(SRC) && /data-field="vitesse"/.test(SRC) && /data-field="inclinaison"/.test(SRC)
    && /var CHAMPS_SERIE_RECENTS = \['note', 'vitesse', 'inclinaison'\];/.test(SRC)
    && /\.ex-card\[data-mode="cardio"\] \.serie-main\{/.test(HTML)
-   && /'Vitesse \(km\/h\)','Inclinaison \(%\)'\]/.test(SRC));
+   && /'Vitesse \(km\/h\)','Inclinaison \(%\)'(,'Type')?\]/.test(SRC));
 ok('le chrono du gainage note une serie faite a chaque pause et survit a une app fermee',
    /function arreterChrono\(\)\{/.test(SRC) && /cible\.fait = true;/.test(SRC)
    && /localStorage\.setItem\(CLE_CHRONO/.test(SRC) && /data-action="chrono"/.test(SRC)
@@ -2050,6 +2050,13 @@ ok('reprendre un exercice de la seance : seulement hors d un autre superset', /x
 ok('sortir du milieu d un superset ne le coupe plus en deux', /sans\.splice\(dernierD \+ 1, 0, exD\); dayD\.exercises = sans;/.test(SRC));
 ok('plein ecran : a partir de trois, ceux qui attendent se resument', /var corpsM = \(membres\.length > 2 && !estActif\)/.test(SRC) && REFONTE.includes('.fs-ss-prevu{'));
 ok('les puces tiennent dans la carte', REFONTE.includes('.ss-prendre-puce{min-height:40px;max-width:100%;'));
+
+console.log('\n== 64. Le bon type de serie, apres un echauffement et dans le tableur (17/11) ==');
+ok('+ SERIE ne recopie plus « echauffement » : seul le back-off se recopie',
+   /var typeSuivant = \(last && last\.type === TS\.TYPES\.BACKOFF\) \? last\.type : undefined;/.test(SRC));
+ok('le tableur ecrit le type, en derniere colonne', /'Inclinaison \(%\)','Type'\];/.test(SRC)
+   && /csvChamp\(CSV_TYPES\[s\.type\] \|\| 'Travail'\)/.test(SRC));
+ok('et le relit par son nom', /type: col\('type', 'typedeserie'\)/.test(INTEL) && /function typeCsv\(v\) \{/.test(INTEL));
 
 console.log(`\n${pass} reussis, ${fail} echoues`);
 process.exit(fail ? 1 : 0);

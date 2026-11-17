@@ -2767,12 +2767,16 @@
   }
 
   // Recopie la derniere serie : sur 5 series identiques, on ne retape rien.
-  // "fait" repart a faux, c'est le seul champ qui ne se duplique pas. Le
-  // type se recopie aussi — on enchaine deux echauffements, jamais deux top
-  // sets : apres un top set la serie suivante repart neutre.
+  // "fait" repart a faux, c'est le seul champ qui ne se duplique pas. Seul
+  // le back-off se recopie (17/11/2026) : la serie qui suit un echauffement
+  // est presque toujours la premiere de travail. Recopier « echauffement »
+  // marquait toutes les series de travail suivantes comme des echauffements,
+  // et elles sortaient des top sets et des records sans qu'on le voie. Une
+  // montee en charge se pose d'un appui (menu de la carte), ou se marque
+  // serie par serie.
   function serieSuivante(ex){
     var last = (ex.series || [])[(ex.series || []).length - 1];
-    var typeSuivant = (last && last.type && last.type !== TS.TYPES.TOP) ? last.type : undefined;
+    var typeSuivant = (last && last.type === TS.TYPES.BACKOFF) ? last.type : undefined;
     return last
       ? { id:genSerieId(), poids:last.poids, reps:last.reps, rpe:last.rpe, vitesse:last.vitesse, inclinaison:last.inclinaison, repos:last.repos, type:typeSuivant, fait:false }
       : { id:genSerieId(), poids:null, reps:'', rpe:null, repos:'', fait:false };
@@ -8766,7 +8770,15 @@
   // serie.
   var CSV_COLONNES = ['Date','Jour','Exercice','Groupe','Serie','Poids (kg)',
                       'Repetitions','RPE','Repos (s)','Volume (kg)','Fait','Commentaire',
-                      'Vitesse (km/h)','Inclinaison (%)'];
+                      'Vitesse (km/h)','Inclinaison (%)','Type'];
+  // Le type de la serie, en mots (17/11/2026). Sans cette colonne, un carnet
+  // sauvegarde en tableur puis reimporte rendait ses echauffements en series
+  // de travail. Ajoutee a la fin : l'import lit les colonnes par leur nom,
+  // donc un tableur plus ancien se reimporte toujours.
+  var CSV_TYPES = {};
+  CSV_TYPES[TS.TYPES.ECHAUFFEMENT] = 'Échauffement';
+  CSV_TYPES[TS.TYPES.TOP] = 'Top set';
+  CSV_TYPES[TS.TYPES.BACKOFF] = 'Back-off';
   function csvChamp(v){
     var t = (v == null) ? '' : String(v);
     return /[";\r\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t;
@@ -8812,7 +8824,8 @@
             csvTexte(s.repos || ''), csvChamp(csvNombre(serieVolume(s))),
             csvChamp(s.fait ? 'oui' : 'non'),
             csvTexte((s.note || '').trim()),
-            csvChamp(csvNombre(s.vitesse)), csvChamp(csvNombre(s.inclinaison))
+            csvChamp(csvNombre(s.vitesse)), csvChamp(csvNombre(s.inclinaison)),
+            csvChamp(CSV_TYPES[s.type] || 'Travail')
           ].join(';'));
         });
       });

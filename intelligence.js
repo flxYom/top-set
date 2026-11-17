@@ -819,6 +819,17 @@
     return null;
   }
 
+  // Le type ecrit en mots par l'export (« Échauffement », « Top set »,
+  // « Back-off », « Travail »), ou abrege a la main. Rien de reconnu, ou
+  // « Travail » : pas de type, c'est la valeur par defaut.
+  function typeCsv(v) {
+    var t = sansAccent(texteCsv(v));
+    if (/^(echauffement|echauf|warmup|e)$/.test(t)) return TYPES.ECHAUFFEMENT;
+    if (/^(topset|top|t)$/.test(t)) return TYPES.TOP;
+    if (/^(backoff|b)$/.test(t)) return TYPES.BACKOFF;
+    return null;
+  }
+
   function lireCsvCarnet(texte) {
     var t = String(texte || '').replace(/^\ufeff/, '');
     var premiere = t.split(/\r?\n/)[0] || '';
@@ -839,7 +850,8 @@
       poids: col('poidskg', 'poids'), reps: col('repetitions', 'reps'), rpe: col('rpe'),
       repos: col('reposs', 'repos'), fait: col('fait'),
       note: col('commentaire', 'commentaires', 'note', 'notes'),
-      vitesse: col('vitessekmh', 'vitesse'), inclinaison: col('inclinaison')
+      vitesse: col('vitessekmh', 'vitesse'), inclinaison: col('inclinaison'),
+      type: col('type', 'typedeserie')
     };
     if (C.date < 0 || C.exo < 0 || (C.poids < 0 && C.reps < 0)) {
       return { erreur: 'Ce tableur ne vient pas de Top Set : il faut au moins les colonnes Date, Exercice, et Poids ou Répétitions.' };
@@ -877,6 +889,8 @@
       if (vitesse !== null) serie.vitesse = vitesse;
       var inclinaison = C.inclinaison > -1 ? nombreCsv(l[C.inclinaison]) : null;
       if (inclinaison !== null) serie.inclinaison = inclinaison;
+      var type = C.type > -1 ? typeCsv(l[C.type]) : null;
+      if (type) serie.type = type;
       ex.series.push(serie);
       dernier = { ds: ds, nom: nom, num: num, ex: ex };
       lues++;

@@ -505,7 +505,11 @@ sombre, qui surgit au coin de la coche, à la place d'une étoile au trait de
 15 px.
 
 **Duplication de série.** `+ SÉRIE` recopie la précédente : poids, reps, RPE,
-repos. Seul `fait` repart à zéro, et le commentaire ne se recopie pas. Sur cinq
+repos. Seul `fait` repart à zéro, et le commentaire ne se recopie pas. Du type,
+seul le back-off se recopie (17/11/2026) : la série qui suit un échauffement est
+une série de travail. Recopier « échauffement » marquait toutes les séries de
+travail suivantes comme des échauffements, et elles sortaient des top sets et
+des records sans que rien ne le montre. Sur cinq
 séries identiques, tu en saisis une et tu appuies quatre fois. La ligne s'ajoute
 à la carte sans refaire l'écran, et sans ouvrir le clavier : elle est déjà
 remplie, et `−` `+` corrigent le poids. Refaire tout le panneau supprimait le
@@ -646,7 +650,10 @@ une valeur illisible ou hors bornes plutôt que de refuser la journée. Tant que
 `schema.sql` n'a pas été relancé, une base qui ne rend pas ces clés ne les efface
 pas du téléphone (`jourDistant`, comme pour les commentaires). Le tableur gagne
 deux colonnes à droite, `Vitesse (km/h)` et `Inclinaison (%)` ; un ancien tableur
-se réimporte tel quel. Un tapis déjà noté en répétitions le reste : l'historique
+se réimporte tel quel. Le 17/11/2026, une dernière colonne `Type`
+(`Échauffement`, `Top set`, `Back-off`, `Travail`) : sans elle, un carnet
+sauvegardé en tableur puis réimporté rendait ses échauffements en séries de
+travail. Un tapis déjà noté en répétitions le reste : l'historique
 passe avant le nom.
 
 **Refaire la dernière fois.** Trois gestes, jamais depuis la colonne de la

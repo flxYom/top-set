@@ -464,6 +464,9 @@ session: a solid yellow pill with a dark star at the corner of the tick, instead
 of a 15 px outlined star.
 
 **Set duplication.** `+ SÉRIE` copies the previous set — weight, reps, RPE, rest.
+Of the type, only back-off is copied (17 November 2026): the set after a
+warm-up is a working set. Copying "warm-up" marked every following working set
+as a warm-up, and they silently dropped out of top sets and records.
 Only `fait` resets, and the comment is not copied. Five identical sets means
 typing one and tapping four times. The row is added to the card without
 re-rendering the screen, and without opening the keyboard: it is already
@@ -601,7 +604,9 @@ an unreadable or out-of-range value instead of rejecting the day. Until
 `schema.sql` is re-run, a database that doesn't return those keys doesn't wipe
 them from the phone (`jourDistant`, as for comments). The CSV gains two columns
 on the right, `Vitesse (km/h)` and `Inclinaison (%)`; an older CSV still
-imports. A treadmill already logged in reps stays in reps: history wins over
+imports. On 17/11/2026 a last `Type` column (`Échauffement`, `Top set`,
+`Back-off`, `Travail`): without it, a logbook saved as CSV and imported back
+turned its warm-ups into working sets. A treadmill already logged in reps stays in reps: history wins over
 the name.
 
 **Redo last time.** Three gestures, never from the last-time column, which is
