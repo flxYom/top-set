@@ -449,6 +449,27 @@ only says what a median may read. The AI text also gives each session's
 density (all sets done divided by the retained duration) and states these
 three rules in "Comment lire les données".
 
+**À vérifier** (17 November 2026). Data typed fast at the gym holds typos
+that analyses take at face value. `TS.seriesAVerifier` looks for four, chosen
+to be wrong as rarely as possible — when in doubt, nothing is flagged:
+
+- working sets copied as warm-ups: at least two sets marked warm-up, of 3 reps
+  or more, at the exercise's heaviest load that day (a heavy single before the
+  work stays a warm-up);
+- weight and reps swapped: "15 kg × 80" on an exercise usually done around
+  80 kg × 10, from at least three working sets elsewhere;
+- a tiny duration ("1 s", 10 s at most) with a load, on an exercise done in
+  reps everywhere else;
+- the same exercise twice on the same day with the same sets (two at least,
+  outside supersets).
+
+A line at the bottom of PROGRÈS, just before body weight, shows only when
+there is something: `À VÉRIFIER : 3 SAISIES`. The sheet states each case in one
+sentence with its fix (`EN SÉRIES DE TRAVAIL`, `INVERSER : 80 KG × 15`,
+`EN RÉPÉTITIONS : 1`, `RETIRER LA COPIE`, confirmed by a second tap) and
+`C'EST BON, GARDER`, which the phone remembers (`topset_verifies`). Nothing is
+fixed without a tap, and fixing an older session doesn't touch its times.
+
 **Copy for an AI** (16 November 2026). Under a session's sheet and under
 PROGRÈS, "COPIER POUR UNE IA" opens a sheet that shows the text before any copy:
 the question to ask first, then the numbers, then the units. A session gives

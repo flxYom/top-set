@@ -123,7 +123,8 @@ Storage keys: `musculation_sessions` (the logbook), `topset_custom_exercises`
 (remembered exercises), `topset_sync` (queue and sync cursor), `topset_conflits`
 (the losing side of a conflict, never discarded silently — capped at twenty
 since 2026-10-14: it grew without bound and could end up filling the phone's
-storage).
+storage), `topset_verifies` (the "à vérifier" entries kept as they are, 500 at
+most, on this phone only: a screen setting, not logbook data).
 
 **Full storage no longer fails silently.** `localStorage.setItem()` throws when
 the quota is reached, and the `catch` swallowed it: nothing was written until a

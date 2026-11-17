@@ -9,6 +9,23 @@ while it stays below `1.0.0`, breaking changes (in particular to the
 
 ## [Unreleased]
 
+### Added — « À vérifier »: entries that look like typos (2026-11-17)
+
+- `TS.seriesAVerifier` finds four kinds of likely typos, conservative by
+  design: working sets copied as warm-ups (≥ 2 warm-up sets of ≥ 3 reps at the
+  day's heaviest load), weight and reps swapped (against the exercise's usual
+  sets), a ≤ 10 s duration with a load on a reps exercise, and the same
+  exercise twice the same day with the same sets (outside supersets). 10
+  tests.
+- PROGRÈS shows `À VÉRIFIER : N SAISIES` only when there is something, just
+  before body weight. The sheet gives each case in one sentence with its fix
+  (`EN SÉRIES DE TRAVAIL`, `INVERSER`, `EN RÉPÉTITIONS`, `RETIRER LA COPIE` with
+  a confirming second tap) and `C'EST BON, GARDER` (remembered locally,
+  `topset_verifies`). Nothing changes without a tap; fixing an older session
+  doesn't touch its times. Measured at 375 px: no overflow, 48 px buttons.
+- The hours sheet now says the last *checked* set closes the session.
+  Gabarits §67, service worker v94.
+
 ### Changed — counts are working sets, rest medians are reliable (2026-11-17)
 
 - Warm-ups no longer count as sets in PROGRÈS (series tile, per-exercise

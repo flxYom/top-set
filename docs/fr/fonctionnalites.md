@@ -480,6 +480,30 @@ droit de lire. Le texte pour une IA donne aussi la densité de chaque séance
 (toutes les séries faites, divisées par la durée retenue) et dit ces trois
 règles dans « Comment lire les données ».
 
+**À vérifier** (17 novembre 2026). Des données saisies vite, à la salle,
+contiennent des fautes de frappe que les analyses prennent pour argent comptant.
+`TS.seriesAVerifier` en cherche quatre, choisies pour se tromper le moins
+possible — dans le doute, rien n'est signalé :
+
+- des séries de travail recopiées en échauffement : au moins deux séries
+  marquées échauffement, de 3 répétitions ou plus, à la charge la plus lourde de
+  l'exercice ce jour-là (un single lourd avant le travail reste un
+  échauffement) ;
+- un poids et des répétitions inversés : « 15 kg × 80 » sur un exercice fait
+  d'habitude vers 80 kg × 10, d'après au moins trois séries de travail ailleurs ;
+- une durée minuscule (« 1 s », 10 s au plus) avec une charge, sur un exercice
+  fait en répétitions partout ailleurs ;
+- le même exercice deux fois le même jour, avec les mêmes séries (deux au moins,
+  hors superset).
+
+Une ligne en bas de PROGRÈS, juste avant le poids du corps, n'apparaît que s'il
+y a quelque chose : `À VÉRIFIER : 3 SAISIES`. La feuille dit chaque cas en une
+phrase, avec sa correction (`EN SÉRIES DE TRAVAIL`, `INVERSER : 80 KG × 15`,
+`EN RÉPÉTITIONS : 1`, `RETIRER LA COPIE`, qui se confirme d'un second appui) et
+`C'EST BON, GARDER`, dont le téléphone se souvient (`topset_verifies`). Rien
+n'est corrigé sans un appui, et corriger une séance d'avant ne touche pas à ses
+horaires.
+
 **Copier pour une IA** (16 novembre 2026). Sous la fiche d'une séance et sous
 PROGRÈS, « COPIER POUR UNE IA » ouvre une feuille qui montre le texte avant
 toute copie : la question à poser d'abord (« Dis-moi ce qui progresse, ce qui

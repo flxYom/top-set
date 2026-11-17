@@ -238,6 +238,14 @@ groupe pour le groupe et l'exercice de l'année. Le grand chiffre est la
 haut, fermer à 44 px, pas de verre, pas de braise (décision du 18/09 : la braise
 reste à l'accueil, au bilan et au plein écran). Garde : gabarits §48.
 
+**À vérifier — 17/11/2026.** La ligne de PROGRÈS reprend exactement le style
+de `+ NOTER MON POIDS DU CORPS` (`.verif-ligne` : 48 px, bord `--trait`, texte
+`--dim`) : une information, pas une alerte, donc ni couleur d'erreur ni
+pastille. Dans la feuille, un cas par bloc séparé d'un filet : l'exercice et
+la date en `--t-2`, la phrase en `--t-3`, puis deux boutons pleine largeur de
+48 px, la correction en premier ; retirer une copie passe en `danger armed`
+au premier appui, comme la déconnexion.
+
 **Une estimation s'écrit « ≈ » — 17/11/2026.** Une valeur calculée par
 l'app à partir d'autres (la durée d'une séance dont la fin n'a pas été notée)
 se distingue d'une valeur mesurée par un seul signe collé au chiffre :

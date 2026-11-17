@@ -133,7 +133,9 @@ Clés de stockage : `musculation_sessions` (le carnet), `topset_custom_exercises
 (exercices mémorisés), `topset_sync` (file d'attente et curseur de synchro),
 `topset_conflits` (la version perdante d'un conflit, jamais jetée en silence —
 bornée à vingt depuis le 14/10/2026 : elle grossissait sans fin et pouvait finir
-par remplir le stockage du téléphone).
+par remplir le stockage du téléphone), `topset_verifies` (les saisies « à
+vérifier » qu'on a choisi de garder telles quelles, 500 au plus, sur ce
+téléphone seulement : c'est un réglage d'écran, pas une donnée du carnet).
 
 **Le stockage plein ne se perd plus en silence.** `localStorage.setItem()` lève
 quand le quota est atteint, et le `catch` l'avalait : plus rien n'était écrit

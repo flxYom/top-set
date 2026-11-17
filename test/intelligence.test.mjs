@@ -775,6 +775,41 @@ titre('Repos et durees fiables (17/11/2026)');
   egal('la validation sert de fin quand il n y en a pas', TS.dureeRetenue(Object.assign(vieux(10, '90'), { debut: h(18, 0), termine: h(18, 50) })).minutes, 50);
 }
 // ----------------------------------------------------------------
+titre('Les saisies a verifier (17/11/2026)');
+{
+  const s = (id, poids, reps, type) => Object.assign({ id, poids, reps: String(reps), fait: true }, type ? { type } : {});
+  const S = {
+    '2026-11-12': { exercises: [
+      { id: 'e1', nom: 'Squat', series: [s('a', 60, 5, 'echauffement'), s('b', 100, 5, 'echauffement'), s('c', 100, 5, 'echauffement'), s('d', 100, 5, 'echauffement')] },
+      { id: 'e2', nom: 'Hip thrust', series: [s('h1', 120, 10), s('h2', 120, '1 s')] },
+      { id: 'e3', nom: 'Curl', series: [s('c1', 14, 10), s('c2', 14, 10)] },
+      { id: 'e4', nom: 'Curl', series: [s('c3', 14, 10), s('c4', 14, 10)] },
+      { id: 'e5', nom: 'Pompes', series: [s('p1', null, 20)] }, { id: 'e6', nom: 'Pompes', series: [s('p2', null, 20)] }
+    ] },
+    '2026-11-10': { exercises: [
+      { id: 'f1', nom: 'Développé couché', series: [s('x1', 80, 10), s('x2', 80, 10), s('x3', 15, 80)] },
+      { id: 'f2', nom: 'Hip thrust', series: [s('h3', 120, 10), s('h4', 120, 10)] },
+      { id: 'f3', nom: 'Squat', series: [s('q1', 140, 1, 'echauffement'), s('q2', 140, 2, 'echauffement'), s('q3', 120, 5)] },
+      { id: 'f4', nom: 'Planche', series: [s('pl1', null, '45 s'), s('pl2', null, '5 s')] },
+      { id: 'f5', nom: 'Crunch', series: [s('cr1', null, 40), s('cr2', null, 35)] }
+    ] },
+    '2026-11-08': { exercises: [{ id: 'g1', nom: 'Développé couché', series: [s('y1', 80, 8), s('y2', 80, 9)] }] }
+  };
+  const v = TS.seriesAVerifier(S);
+  const de = (sorte) => v.filter(x => x.sorte === sorte);
+  egal('des series de travail recopiees en echauffement', de('echauffement').map(x => x.series.join('+')), ['b+c+d']);
+  ok('un single lourd avant le travail n est pas signale', !v.some(x => x.exId === 'f3'));
+  egal('poids et repetitions inverses, d apres l habitude de l exercice', de('inversee').map(x => [x.series[0], x.poids, x.reps]), [['x3', 15, 80]]);
+  egal('« 1 s » avec une charge sur un exercice en repetitions', de('duree').map(x => x.series[0]), ['h2']);
+  ok('une planche courte reste une planche', !v.some(x => x.exId === 'f4'));
+  ok('40 crunchs au poids du corps ne sont pas inverses', !v.some(x => x.exId === 'f5'));
+  egal('le meme exercice deux fois avec les memes series : la copie, pas l original', de('doublon').map(x => [x.exId, x.original]), [['e4', 'e3']]);
+  ok('une seule serie identique deux fois ne suffit pas', !de('doublon').some(x => x.exId === 'e6'));
+  ok('du plus recent au plus ancien, avec une cle stable', v[0].date === '2026-11-12' && v[v.length - 1].date === '2026-11-10'
+     && v.every(x => typeof x.cle === 'string' && x.cle.indexOf(x.date) === 0));
+  egal('un carnet propre : rien', TS.seriesAVerifier({ '2026-11-08': S['2026-11-08'] }).length, 0);
+}
+// ----------------------------------------------------------------
 console.log('\n' + '='.repeat(52));
 if (echecs.length) {
   console.log(passes + ' tests passes, ' + echecs.length + ' ECHEC(S) :');

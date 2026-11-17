@@ -4364,6 +4364,109 @@
       + '</div>';
   }
 
+  // ---------- les saisies a verifier (17/11/2026) ----------
+  // La regle est dans intelligence.js (seriesAVerifier). Ici : une ligne
+  // discrete en bas de PROGRES quand il y a quelque chose, une feuille qui
+  // montre chaque cas avec sa correction, et « C'EST BON » qui s'en souvient
+  // sur ce telephone. Rien n'est corrige sans un appui ; retirer une copie se
+  // confirme d'un second appui.
+  var VERIF_KEY = 'topset_verifies', VERIF_MAX = 500;
+  var verifSheet = document.getElementById('verifSheet');
+  var verifArme = null;
+  function verifiesGardes(){
+    try { var l = JSON.parse(localStorage.getItem(VERIF_KEY) || '[]'); return Array.isArray(l) ? l : []; }
+    catch (err) { return []; }
+  }
+  function garderVerif(cle){
+    var l = verifiesGardes();
+    if (l.indexOf(cle) < 0) l.push(cle);
+    try { localStorage.setItem(VERIF_KEY, JSON.stringify(l.slice(-VERIF_MAX))); } catch (err) {}
+  }
+  function aVerifier(){
+    var g = verifiesGardes();
+    return TS.seriesAVerifier(state.sessions).filter(function(x){ return g.indexOf(x.cle) < 0; });
+  }
+  function blocVerifier(){
+    var n = aVerifier().length;
+    if (!n) return '';
+    return '<button type="button" class="verif-ligne" data-action="verifier">À VÉRIFIER : '
+      + n + (n > 1 ? ' SAISIES' : ' SAISIE') + ' ›</button>';
+  }
+  function texteVerif(x){
+    var kg = function(v){ return kgTexte(v) + ' kg'; };
+    if (x.sorte === 'echauffement') return x.series.length + ' séries de ' + kg(x.poids) + ' × ' + x.reps
+      + ' sont marquées échauffement, à la charge la plus lourde du jour. Elles sortent de tes top sets et de tes records.';
+    if (x.sorte === 'inversee') return kg(x.poids) + ' × ' + x.reps + ' : d\'habitude, cet exercice se fait vers '
+      + kg(x.habitude.poids) + ' × ' + Math.round(x.habitude.reps) + '. Poids et répétitions inversés\u00a0?';
+    if (x.sorte === 'duree') return '« ' + x.secondes + ' s » se lit comme une série tenue ' + pluriel(x.secondes, 'seconde')
+      + ', alors que cet exercice se fait en répétitions.';
+    return 'Le même exercice deux fois ce jour-là, avec les mêmes séries. Une copie\u00a0?';
+  }
+  function libelleVerif(x){
+    if (x.sorte === 'echauffement') return 'EN SÉRIES DE TRAVAIL';
+    if (x.sorte === 'inversee') return 'INVERSER : ' + kgTexte(x.reps) + ' KG × ' + x.poids;
+    if (x.sorte === 'duree') return 'EN RÉPÉTITIONS : ' + x.secondes;
+    return verifArme === x.cle ? 'OUI, RETIRER LA COPIE' : 'RETIRER LA COPIE';
+  }
+  function rendreVerif(){
+    var liste = aVerifier(), el = document.getElementById('verifListe');
+    if (!liste.length){
+      el.innerHTML = '<p class="sheet-note">Plus rien à vérifier.</p>';
+      return;
+    }
+    el.innerHTML = liste.map(function(x){
+      return '<div class="verif-item">'
+        + '<p class="verif-quoi"><b>' + esc(nomCanonique(x.nom) || normalizeName(x.nom) || 'Exercice') + '</b> · ' + esc(jourCourt(x.date)) + '</p>'
+        + '<p class="verif-texte">' + esc(texteVerif(x)) + '</p>'
+        + '<div class="verif-actions">'
+        +   '<button type="button" class="btn-sheet primary' + (verifArme === x.cle ? ' danger armed' : '') + '" data-verif-corriger="' + esc(x.cle) + '">' + esc(libelleVerif(x)) + '</button>'
+        +   '<button type="button" class="btn-sheet" data-verif-garder="' + esc(x.cle) + '">C\'EST BON, GARDER</button>'
+        + '</div></div>';
+    }).join('');
+  }
+  function ouvrirVerif(){
+    verifArme = null;
+    rendreVerif();
+    verifSheet.hidden = false;
+  }
+  function fermerVerif(){
+    verifSheet.hidden = true;
+    if (state.view === 'recap') renderRecap();
+  }
+  function corrigerVerif(cle){
+    var x = aVerifier().filter(function(v){ return v.cle === cle; })[0];
+    if (!x) return;
+    if (x.sorte === 'doublon' && verifArme !== cle){ verifArme = cle; rendreVerif(); return; }
+    verifArme = null;
+    var day = state.sessions[x.date];
+    var ex = day && findExercise(day, x.exId);
+    if (!ex) return;
+    if (x.sorte === 'doublon'){
+      day.exercises = day.exercises.filter(function(e){ return e !== ex; });
+    } else {
+      (ex.series || []).forEach(function(s){
+        if (x.series.indexOf(s.id) < 0) return;
+        if (x.sorte === 'echauffement') delete s.type;
+        else if (x.sorte === 'inversee'){ s.poids = x.reps; s.reps = String(x.poids); }
+        else if (x.sorte === 'duree') s.reps = String(x.secondes);
+      });
+    }
+    // Une seance d'avant : sa correction ne touche pas a ses horaires.
+    persistDay(x.date, true);
+    rendreVerif();
+    showToast(x.sorte === 'doublon' ? 'Copie retirée' : 'Corrigé');
+  }
+  verifSheet.addEventListener('click', function(e){
+    if (e.target === this || e.target.closest('#verifClose')){ fermerVerif(); return; }
+    var c = e.target.closest('[data-verif-corriger]');
+    if (c){ corrigerVerif(c.dataset.verifCorriger); return; }
+    var g = e.target.closest('[data-verif-garder]');
+    if (g){ verifArme = null; garderVerif(g.dataset.verifGarder); rendreVerif(); showToast('Gardé tel quel'); }
+  });
+  document.getElementById('recapVerifier').addEventListener('click', function(e){
+    if (e.target.closest('[data-action="verifier"]')) ouvrirVerif();
+  });
+
   // ---------- le poids du corps (16/11/2026) ----------
   // Une pesee par jour : une date, un poids et, si on veut, les tours de
   // taille, de bras et de cuisse. Rien n'est demande : sans pesee, PROGRES
@@ -4558,6 +4661,7 @@
       document.getElementById('recapRegularite').innerHTML = '';
       document.getElementById('recapAnnee').innerHTML = '';
       document.getElementById('recapPoids').innerHTML = '';
+      document.getElementById('recapVerifier').innerHTML = '';
       groupsEl.innerHTML = '<div class="empty-state">' + attente() + '</div>';
       return;
     }
@@ -4576,6 +4680,7 @@
     document.getElementById('recapRegularite').innerHTML = blocRegularite();
     document.getElementById('recapAnnee').innerHTML = lienAnnee();
     document.getElementById('recapPoids').innerHTML = blocPoids(data.startStr, data.endStr);
+    document.getElementById('recapVerifier').innerHTML = blocVerifier();
 
     var counts = groupCountsIn(data.startStr, data.endStr);
     var sousC = sousCountsIn(data.startStr, data.endStr);
@@ -9215,7 +9320,7 @@
 
   // Ouvrir une page depuis une feuille, c'est quitter la feuille.
   function fermerFeuilles(){
-    ['dataSheet', 'profilSheet', 'retourSheet', 'partageSheet', 'iaSheet', 'modeleSheet', 'peseeSheet', 'imageSheet', 'exportSheet'].forEach(function(id){
+    ['dataSheet', 'profilSheet', 'retourSheet', 'partageSheet', 'iaSheet', 'modeleSheet', 'peseeSheet', 'imageSheet', 'exportSheet', 'verifSheet'].forEach(function(id){
       var el = document.getElementById(id);
       if (el) el.hidden = true;
     });

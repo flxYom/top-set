@@ -1295,6 +1295,88 @@
     return { minutes: Math.round(mn), nature: 'mesuree', debut: new Date(debut).toISOString(), fin: new Date(fin).toISOString() };
   }
 
+  // ------------------------------------------------------------------
+  // Les saisies a verifier (17/11/2026)
+  // ------------------------------------------------------------------
+  // Des series qui ressemblent a une erreur de saisie. L'app les MONTRE, elle
+  // ne corrige rien toute seule : chaque cas propose sa correction, et on
+  // peut aussi le garder tel quel. Quatre cas, choisis pour se tromper le
+  // moins possible — dans le doute, on ne dit rien :
+  //   - echauffement : au moins deux series marquees echauffement, de 3 reps
+  //     ou plus, a la charge la plus lourde de l'exercice ce jour-la. Ce sont
+  //     des series de travail recopiees en echauffement : elles sortent des
+  //     top sets et des records. Un single lourd avant le travail, lui, reste.
+  //   - inversee : « 15 kg x 80 » sur un exercice fait d'habitude vers
+  //     80 kg x 10 (au moins 3 series de travail chiffrees ailleurs).
+  //   - duree : « 1 s » (10 s au plus) avec une charge, sur un exercice fait
+  //     en repetitions partout ailleurs.
+  //   - doublon : le meme exercice deux fois le meme jour, avec les memes
+  //     series (deux au moins).
+  // Rend [{ cle, date, exId, sorte, series:[ids], ... }], du plus recent au
+  // plus ancien. La cle est stable : « garder » s'en souvient.
+  function seriesAVerifier(sessions) {
+    var jours = Object.keys(sessions || {}).sort().reverse();
+    // L'habitude de chaque exercice : ses series de travail chiffrees.
+    var habitude = carte();
+    jours.forEach(function (ds) {
+      (((sessions[ds] || {}).exercises) || []).forEach(function (e) {
+        var k = cleNom(e && e.nom);
+        if (!k) return;
+        var h = habitude[k] || (habitude[k] = { reps: [], poids: [], temps: 0, chiffrees: 0 });
+        ((e && e.series) || []).forEach(function (s) {
+          if (!serieRemplie(s) || typeSerie(s) === TYPES.ECHAUFFEMENT) return;
+          if (dureeSecondes(s.reps) !== null) { h.temps++; return; }
+          var r = nombreReps(s.reps), p = poidsDe(s);
+          if (r !== null && p !== null && p > 0) { h.reps.push(r); h.poids.push(p); h.chiffrees++; }
+        });
+      });
+    });
+    var out = [];
+    jours.forEach(function (ds) {
+      var exos = ((sessions[ds] || {}).exercises) || [];
+      var vus = carte();
+      exos.forEach(function (e) {
+        if (!e || !e.id) return;
+        var remplies = (e.series || []).filter(serieRemplie);
+        if (!remplies.length) return;
+        var k = cleNom(e.nom), h = habitude[k];
+        // Le doublon : meme nom, memes series, deja vu ce jour-la.
+        if (k && remplies.length >= 2 && !e.bloc) {
+          var sig = signatureExo(e);
+          if (vus[sig]) out.push({ cle: ds + '|' + e.id + '|doublon', date: ds, exId: e.id, sorte: 'doublon', series: [], original: vus[sig], nom: e.nom });
+          else vus[sig] = e.id;
+        }
+        // Les echauffements a la charge du travail.
+        var max = 0;
+        remplies.forEach(function (s) { var p = poidsDe(s); if (p !== null && p > max) max = p; });
+        var lourds = remplies.filter(function (s) {
+          return typeSerie(s) === TYPES.ECHAUFFEMENT && max > 0 && poidsDe(s) === max && (nombreReps(s.reps) || 0) >= 3;
+        });
+        if (lourds.length >= 2) {
+          out.push({ cle: ds + '|' + e.id + '|echauffement', date: ds, exId: e.id, sorte: 'echauffement', nom: e.nom,
+            series: lourds.map(function (s) { return s.id; }), poids: max, reps: lourds[0].reps });
+        }
+        remplies.forEach(function (s) {
+          var p = poidsDe(s), r = nombreReps(s.reps), d = dureeSecondes(s.reps);
+          // Poids et repetitions inverses.
+          if (h && h.chiffrees >= 3 && p !== null && p > 0 && p === Math.round(p) && r !== null && r >= 25) {
+            var mr = mediane(h.reps), mp = mediane(h.poids);
+            if (mr <= 15 && Math.abs(mp - r) / mp <= 0.35 && Math.abs(mr - p) / mr <= 0.5) {
+              out.push({ cle: ds + '|' + s.id + '|inversee', date: ds, exId: e.id, sorte: 'inversee', nom: e.nom,
+                series: [s.id], poids: p, reps: r, habitude: { poids: mp, reps: mr } });
+            }
+          }
+          // Une duree minuscule sur un exercice en repetitions.
+          if (h && d !== null && d <= 10 && p !== null && p > 0 && h.chiffrees >= 3 && h.temps <= 1) {
+            out.push({ cle: ds + '|' + s.id + '|duree', date: ds, exId: e.id, sorte: 'duree', nom: e.nom,
+              series: [s.id], secondes: d, poids: p });
+          }
+        });
+      });
+    });
+    return out;
+  }
+
   return {
     TYPES: TYPES,
     TYPES_VALIDES: TYPES_VALIDES,
@@ -1344,6 +1426,7 @@
     reposDuJour: reposDuJour,
     passagesDuJour: passagesDuJour,
     finDeSeance: finDeSeance,
-    dureeRetenue: dureeRetenue
+    dureeRetenue: dureeRetenue,
+    seriesAVerifier: seriesAVerifier
   };
 });

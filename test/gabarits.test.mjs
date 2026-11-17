@@ -1885,7 +1885,7 @@ ok('les pesees vivent sous topset_pesees, bornees comme en base',
    && /borneMesure\(p\[m\.cle\], 10, 300, 10\)/.test(SRC));
 ok('les calculs viennent d intelligence.js', /TS\.evolutionPoids\(liste, debut, fin\)/.test(SRC) && /TS\.peseeProche\(peseesVivantes\(\), derniere\.date\)/.test(SRC)
    && /TS\.forceRelative\(rm, pc\.poids\)/.test(SRC));
-ok('PROGRES finit par le poids, apres COPIER POUR UNE IA', /id="recapIA">COPIER POUR UNE IA<\/button>\s*<div id="recapPoids"><\/div>\s*<\/section>/.test(HTML));
+ok('PROGRES finit par le poids, apres COPIER POUR UNE IA', /id="recapIA">COPIER POUR UNE IA<\/button>\s*(<div id="recapVerifier"><\/div>\s*)?<div id="recapPoids"><\/div>\s*<\/section>/.test(HTML));
 ok('sans pesee, une seule ligne', /if \(!liste\.length\)\{\s*return '<button type="button" class="poids-vide" data-action="pesee">/.test(SRC));
 ok('une variation de poids s ecrit en neutre', /\.poids-ecart\{[^}]*color:var\(--ink\)/.test(REFONTE) && !/poids-ecart[^{]*\.(hausse|baisse)/.test(REFONTE));
 ok('la synchro des pesees passe par la regle commune', /pesees: \{\s*pousser:'pousser_pesees', tirer:'tirer_pesees', arg:'p_pesees'/.test(SRC));
@@ -2005,7 +2005,7 @@ console.log('\n== 60. Exporter mes donnees, a la place de synchroniser (16/11) =
   ok('les regles viennent d intelligence.js', /TS\.pointsTopSet\(/.test(EXP) && /TS\.progressionTopSet\(/.test(EXP) && /TS\.meilleurPoids\(/.test(EXP) && /TS\.regularite\(/.test(EXP));
   ok('un fichier part dans le geste ; refuse, il attend un second appui', /exportPret = \{ format:format, fichier:fichier, blob:blob, nom:nom \};/.test(SRC)
      && /if \(exportPret && exportPret\.format === format\)\{ envoyerExportPret\(\); return; \}/.test(SRC));
-  ok('l ecran se ferme avec les autres feuilles', /'imageSheet', 'exportSheet'\]\.forEach/.test(SRC));
+  ok('l ecran se ferme avec les autres feuilles', /'imageSheet', 'exportSheet'(, 'verifSheet')?\]\.forEach/.test(SRC));
 }
 
 console.log('\n== 61. Le carnet PDF pour un coach (16/11) ==');
@@ -2083,6 +2083,17 @@ ok('les series par groupe et le recap ne comptent pas les echauffements',
 ok('l export lit les repos par la regle d intelligence.js, superset compris',
    !/REPOS_MIN|reposValable/.test(EXPORT) && (EXPORT.match(/TS\.reposFiable\(s, j\.passage\[i\]\)/g) || []).length === 2
    && /passagesDuJour: passagesDuJour/.test(INTEL));
+
+console.log('\n== 67. A verifier : les saisies qui ressemblent a une erreur (17/11) ==');
+ok('la regle vit dans intelligence.js', /function seriesAVerifier\(sessions\) \{/.test(INTEL) && /seriesAVerifier: seriesAVerifier/.test(INTEL));
+ok('un single lourd reste un echauffement : 3 reps au moins, deux series au moins',
+   /\(nombreReps\(s\.reps\) \|\| 0\) >= 3/.test(INTEL) && /if \(lourds\.length >= 2\)/.test(INTEL));
+ok('la ligne de PROGRES n apparait que s il y a quelque chose, avant le poids du corps',
+   /if \(!n\) return '';\s*return '<button type="button" class="verif-ligne" data-action="verifier">/.test(SRC)
+   && /<div id="recapVerifier"><\/div>\s*<div id="recapPoids"><\/div>/.test(HTML));
+ok('retirer une copie se confirme', /if \(x\.sorte === 'doublon' && verifArme !== cle\)\{ verifArme = cle; rendreVerif\(\); return; \}/.test(SRC));
+ok('corriger une seance d avant ne touche pas a ses horaires', /persistDay\(x\.date, true\);/.test(SRC));
+ok('les boutons de la feuille font 48 px, comme les autres feuilles', REFONTE.includes('.verif-actions{display:flex;flex-direction:column;gap:8px;}'));
 
 console.log(`\n${pass} reussis, ${fail} echoues`);
 process.exit(fail ? 1 : 0);

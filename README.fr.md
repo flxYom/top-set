@@ -75,7 +75,9 @@ c'est exactement à ça que sert ce repo pour l'instant.
   séance la semaine d'avant, avec la silhouette des muscles travaillés et la
   cible de la prochaine fois, le récap de la semaine, du mois et de l'année avec
   les exercices qu'on suit en premier, la régularité comptée en semaines, l'année
-  rejouée écran par écran, la progression et les records de chaque exercice.
+  rejouée écran par écran, la progression et les records de chaque exercice,
+  et « À vérifier » : les séries qui ressemblent à une erreur de saisie,
+  corrigées d'un appui si on veut.
 - **Demander l'avis d'une IA.** Une séance ou une période se copie en texte
   propre, question et unités comprises, prête à coller dans Claude ou ChatGPT.
 - **Garder la main sur ses données.** Hors-ligne, sans compte par défaut, export
@@ -152,7 +154,8 @@ node test/intelligence.test.mjs && node test/gabarits.test.mjs && node test/lien
 - **Pas un entraîneur automatique.** Il enregistre ce que tu as fait ; il ne te dit pas
   quoi faire.
 - **Pas un dispositif médical.** Les charges et le RPE sont ceux que tu as saisis.
-  Rien n'est vérifié, validé ni conseillé.
+  Rien n'est validé ni conseillé ; l'app signale seulement ce qui ressemble à
+  une faute de frappe, et ne corrige rien sans toi.
 - **Pas une app sociale.** Pas de fil d'actualité, pas d'amis, pas de
   classement. On écrit à l'équipe, à son coach ou à ses coachés — à personne
   d'autre.

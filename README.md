@@ -75,7 +75,8 @@ repository is for right now.
   last week, with the muscles worked and next time's target, weekly, monthly
   and yearly recaps with the exercises you chose to track shown first,
   consistency counted in weeks, the year replayed screen by screen, and each
-  exercise's progression and records.
+  exercise's progression and records, and "À vérifier": sets that look like a
+  typo, fixed in one tap if you want.
 - **Ask an AI.** A session or a period copies as clean text, question and
   units included, ready to paste into Claude or ChatGPT.
 - **Keep your data.** Works offline, no account by default, JSON or spreadsheet
@@ -150,8 +151,9 @@ node test/intelligence.test.mjs && node test/gabarits.test.mjs && node test/lien
 ## What it is not
 
 - **Not an automatic trainer.** It records what you did; it does not tell you what to do.
-- **Not a medical device.** Weights and RPE are what you typed. Nothing is checked,
-  validated or advised.
+- **Not a medical device.** Weights and RPE are what you typed. Nothing is
+  validated or advised; the app only points out what looks like a typo, and
+  changes nothing without you.
 - **Not social.** No feed, no friends, no leaderboard. You write to the team,
   your coach or your clients — to no one else.
 
